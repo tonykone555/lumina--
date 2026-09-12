@@ -1,0 +1,59 @@
+       {pinned.some(x=>x.id===p.id) && <span className="pin-dot"><Pin /></span>}
+              <span className="orb-hover"><b>{p.brand}</b>{p.title}</span>
+            </button>;
+          })}
+
+          <button className="discovery-pocket" style={{left:1580,top:1110}} onClick={()=>explore("unexpected but relevant")}>✦ Surprise me slightly</button>
+        </div>
+      </section>
+
+      <div className="journey-dock">
+        <div className="catalog-pill"><span className="live-dot"/>{source}</div>
+        <div className="taste-strip">
+          {taste.slice(-5).map(t => <button key={t} onClick={()=>setTaste(v=>v.filter(x=>x!==t))}>{t}<X /></button>)}
+          {avoid.slice(-3).map(t => <button key={t} className="avoid-chip" onClick={()=>setAvoid(v=>v.filter(x=>x!==t))}><Ban />{t}<X /></button>)}
+        </div>
+        <div className="zoom-pill"><button onClick={()=>setZoom(z=>Math.max(.5,z-.12))}><Minus /></button><span>{zoomLabel}</span><button onClick={()=>setZoom(z=>Math.min(1.9,z+.12))}><Plus /></button></div>
+      </div>
+
+      <button className="refine-orb" onClick={()=>setRefineOpen(v=>!v)}><i><SlidersHorizontal /></i><span><b>Refine this world</b><small>{cat} · {activeRefine.length} active</small></span></button>
+
+      {refineOpen && <aside className="refine-panel">
+        <div className="panel-head"><div><span>Shape this world</span><h2>Choose what should appear</h2></div><button onClick={()=>setRefineOpen(false)}><X /></button></div>
+        <p>These control the large directions in the map. You can still discover outside them.</p>
+        {groups.map(group => <div className="refine-group" key={group.name}><label>{group.name}</label><div>{group.options.map(o => <button key={o} className={activeRefine.includes(o)?"active":""} onClick={()=>setActiveRefine(v=>v.includes(o)?v.filter(x=>x!==o):[...v,o].slice(-9))}>{o}</button>)}</div></div>)}
+        <div className="not-this-zone" onDragOver={e=>e.preventDefault()} onDrop={e=>{const t=e.dataTransfer.getData("lumina/tag");if(t)setAvoid(v=>[...new Set([...v,t])]);}}><Ban/><span>Drop a tag here to move away from it</span></div>
+        <button className="apply-refine" onClick={()=>{setRefineOpen(false);fetchProducts({direction:activeRefine.join(", ")})}}>Reshape world</button>
+      </aside>}
+
+      {pinned.length > 0 && <div className="pin-shelf"><div>{pinned.map(p=><img key={p.id} src={p.image} alt="" />)}</div><span>{pinned.length} pinned</span>{pinned.length>1&&<button onClick={blend}><Sparkles/> Blend</button>}</div>}
+
+      {crumbs.length>0 && <nav className="crumb-trail">{crumbs.map((c,i)=><button key={`${c.label}-${i}`} onClick={()=>restore(c)}>{c.label}</button>)}</nav>}
+
+      <aside className={`product-panel ${selected?"open":""}`}>
+        {selected ? <>
+          <button className="panel-close" onClick={()=>setSelected(null)}><X/></button>
+          <img className="product-hero" src={selected.image} alt={selected.title}/>
+          <div className="product-info">
+            <span>{selected.brand || "Shopify merchant"}</span>
+            <h2>{selected.title}</h2>
+            <div className="product-price">{price(selected)}</div>
+            <div className="product-tags">
+              {(selected.tags||[]).slice(0,8).map(tag=><button key={tag} draggable onDragStart={e=>{e.dataTransfer.setData("lumina/tag",tag);setDraggingTag(tag);}} onDragEnd={()=>setDraggingTag(null)} title="Drag this tag into the world"><GripVertical/>{tag}</button>)}
+            </div>
+            <div className="match-row"><span>94% match</span><span>★★★★★ <b>4.8</b></span></div>
+            <p className="product-copy">Chosen for its close match to the intent, quality and price signals shaping this world.</p>
+            <div className="panel-actions"><a href={selected.url||"#"} target="_blank" rel="noreferrer">View at store <ExternalLink/></a><button onClick={()=>togglePin(selected)} className={pinned.some(x=>x.id===selected.id)?"active":""}><Pin/>{pinned.some(x=>x.id===selected.id)?"Pinned":"Pin"}</button><button className="at-orb" onClick={()=>setAtOpen(v=>!v)}><AtSign/></button></div>
+            <button className="try-action" onClick={()=>alert(cat==="fashion"||cat==="fitness"?"Virtual try-on is ready for the selected product.":`Your illustrative ${cat} goal experience is ready.`)}><ScanFace/>{cat==="fashion"||cat==="fitness"?"Try it on":`Explore your ${cat} goal`}</button>
+            {atOpen && <div className="at-composer"><label><AtSign/> What do you specifically like or dislike?</label><textarea value={atText} onChange={e=>setAtText(e.target.value)} placeholder="I love the neckline and curve, but not the satin. Show me something cheaper…"/><button onClick={applyAt}>Explore from this</button></div>}
+            <div className="quick-branches"><button onClick={()=>explore(`more like ${selected.title}`)}>More like this</button><button onClick={()=>explore(`cheaper than ${selected.title}`)}>Cheaper</button><button onClick={()=>explore(`more premium than ${selected.title}`)}>More premium</button><button onClick={()=>explore(`same shape, different style`)}>Same shape</button></div>
+          </div>
+        </> : <div className="panel-empty"><AtSign/><h2>Select a product</h2><p>The real product, draggable tags, @ prompt, and product actions appear here.</p></div>}
+      </aside>
+
+      {dropOpen && <div className="drop-backdrop" onClick={e=>{if(e.currentTarget===e.target)setDropOpen(false)}}><div className="drop-card"><button className="drop-close" onClick={()=>setDropOpen(false)}><X/></button><Sparkles className="drop-icon"/><h2>Drop anything into Lumina @</h2><p>Start from an idea or product URL. Image search is prepared for the visual-search stage.</p><textarea value={dropText} onChange={e=>setDropText(e.target.value)} placeholder="Paste a product URL, or describe what you want…"/><div className="drop-modes"><button><Link2/> Product URL</button><button disabled><ImageIcon/> Image soon</button></div><button className="drop-explore" onClick={()=>{if(dropText.trim()){setQuery(dropText);setSubmittedQuery(dropText);setDropOpen(false);setDropText("")}}}>Explore this</button></div></div>}
+
+      {loading && <div className="loading-pill"><span/>Searching further into this world…</div>}
+    </main>
+  );
+}
