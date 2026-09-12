@@ -1,0 +1,152 @@
+, "skin", "smile"] as const;
+
+function category(query: string) {
+  const q = query.toLowerCase();
+  if (/dog|cat|pet|puppy|kitten|animal/.test(q)) return "pet";
+  if (/travel|flight|luggage|suitcase|holiday|city break/.test(q)) return "travel";
+  if (/baby|child|children|kid|toy|nursery/.test(q)) return "kids";
+  if (/fitness|shoe|running|sport|gym|training|recovery|shorts/.test(q)) return "fitness";
+  if (/hair|scalp|shampoo|conditioner|density/.test(q)) return "hair";
+  if (/skin|serum|cream|blemish|acne|tone|moistur/.test(q)) return "skin";
+  if (/smile|teeth|tooth|oral|whitening|enamel/.test(q)) return "smile";
+  if (/sofa|chair|lamp|home|table|furniture|decor|bed|kitchen/.test(q)) return "home";
+  if (/phone|laptop|camera|headphone|speaker|monitor|tech|keyboard/.test(q)) return "tech";
+  if (/coffee|espresso|grinder|cafetiere/.test(q)) return "coffee";
+  if (/hike|camp|outdoor|tent|trail|backpack|climbing/.test(q)) return "outdoor";
+  if (/cook|kitchen|pan|knife|bake|food|drink|tea|wine/.test(q)) return "kitchen";
+  if (/dress|fashion|shirt|trouser|jean|jacket|coat|sandal|jewelry|jewellery|watch|bag/.test(q)) return "fashion";
+  return "retail";
+}
+
+function price(p: Product) {
+  if (p.price == null) return "";
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency: p.currency || "EUR", maximumFractionDigits: 0 }).format(p.price);
+  } catch {
+    return `${p.price}`;
+  }
+}
+
+function hash(s: string) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+
+export default function LuminaWorld() {
+  const [query, setQuery] = useState(SCENE.fashion.query);
+  const [submittedQuery, setSubmittedQuery] = useState(query);
+  const [direction, setDirection] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selected, setSelected] = useState<Product | null>(null);
+  const [taste, setTaste] = useState<string[]>(["Black", "Wedding guest", "Under €150"]);
+  const [avoid, setAvoid] = useState<string[]>([]);
+  const [anchors, setAnchors] = useState<Anchor[]>([]);
+  const [pinned, setPinned] = useState<Product[]>([]);
+  const [refineOpen, setRefineOpen] = useState(false);
+  const [activeRefine, setActiveRefine] = useState<string[]>(["Elegant", "Maxi", "Satin", "Minimal"]);
+  const [atOpen, setAtOpen] = useState(false);
+  const [atText, setAtText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [source, setSource] = useState("Catalog ready");
+  const [crumbs, setCrumbs] = useState<Snapshot[]>([]);
+  const [zoom, setZoom] = useState(0.88);
+  const [pan, setPan] = useState({ x: -1200, y: -820 });
+  const [dropOpen, setDropOpen] = useState(false);
+  const [dropText, setDropText] = useState("");
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [cursor, setCursor] = useState("");
+  const [draggingTag, setDraggingTag] = useState<string | null>(null);
+  const worldRef = useRef<HTMLDivElement>(null);
+  const panRef = useRef({ dragging: false, px: 0, py: 0 });
+  const cat = category(submittedQuery);
+  const scene = SCENE[cat] || SCENE.fashion;
+  const groups = REFINE[cat] || REFINE.default;
+
+  const semanticTitle = useMemo(() => {
+    if (direction) return direction;
+    if (cat === "fashion") return "Wedding guest world";
+    if (cat === "fitness") return "Built for strength";
+    if (cat === "hair") return "Your fuller-hair routine";
+    if (cat === "skin") return "Calm, even-tone care";
+    if (cat === "smile") return "A brighter, gentler routine";
+    if (cat === "home") return "Made for your space";
+    if (cat === "tech") return "Technology for the way you work";
+    if (cat === "coffee") return "Your better coffee ritual";
+    if (cat === "outdoor") return "Ready for the path ahead";
+    if (cat === "kitchen") return "Made for the way you cook";
+    if (cat === "pet") return "Better choices for your companion";
+    if (cat === "travel") return "Ready for where you are going";
+    if (cat === "kids") return "Thoughtful choices for growing worlds";
+    if (cat === "retail") return "A world shaped around what you mean";
+    return "Your product world";
+  }, [direction, cat]);
+
+  const fetchProducts = useCallback(async (opts?: { direction?: string; append?: boolean }) => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ q: submittedQuery });
+      const combined = [opts?.direction || direction, ...taste.slice(-4), ...activeRefine.slice(-4), ...anchors.slice(-3).map(a => a.label)]
+        .filter(Boolean)
+        .join(", ");
+      if (combined) params.set("direction", combined);
+      if (opts?.append && cursor) params.set("cursor", cursor);
+      const response = await fetch(`/api/catalog?${params.toString()}`);
+      const data = await response.json();
+      const list: Product[] = data.products || [];
+      setCursor(data.pagination?.cursor || "");
+      setSource(data.source === "shopify-global-catalog" ? "Live Shopify" : "Prototype catalog");
+      setProducts(prev => {
+        const incoming = list.map((p, i) => {
+          const h = hash(p.id || `${p.title}-${i}`);
+          const radius = 190 + (h % 330) + (opts?.append ? 360 : 0);
+          const angle = ((h % 628) / 100) + (anchors.length * 0.34);
+          return { ...p, x: 1300 + Math.cos(angle) * radius, y: 900 + Math.sin(angle) * radius };
+        });
+        if (!opts?.append) return incoming;
+        const ids = new Set(prev.map(p => p.id));
+        return [...prev, ...incoming.filter(p => !ids.has(p.id))].slice(-42);
+      });
+    } catch {
+      setSource("Catalog unavailable");
+    } finally {
+      setLoading(false);
+    }
+  }, [submittedQuery, direction, taste, activeRefine, anchors, cursor]);
+
+  useEffect(() => { fetchProducts({ direction: "" }); }, [submittedQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function snapshot(label: string) {
+    setCrumbs(c => [...c.slice(-5), { label, query: submittedQuery, direction, taste: [...taste], avoid: [...avoid] }]);
+  }
+
+  async function explore(nextDirection: string) {
+    snapshot(nextDirection);
+    setDirection(nextDirection);
+    setTaste(t => [...new Set([...t, nextDirection])].slice(-8));
+    await fetchProducts({ direction: nextDirection });
+  }
+
+  function restore(s: Snapshot) {
+    setSubmittedQuery(s.query);
+    setQuery(s.query);
+    setDirection(s.direction);
+    setTaste(s.taste);
+    setAvoid(s.avoid);
+  }
+
+  function submitSearch() {
+    setDirection("");
+    setAnchors([]);
+    setSelected(null);
+    setSubmittedQuery(query.trim() || "popular products");
+    setCrumbs([]);
+  }
+
+  function switchNiche(next: string) {
+    if (!SCENE[next]) return;
+    const nextQuery = SCENE[next].query;
+    setQuery(nextQuery); setSubmittedQuery(nextQuery); setDirection(""); setSelected(null);
+    setAnchors([]); setPinned([]); setCrumbs([]); setAvoid([]);
+    setActiveRefine((REFINE[next] || REFINE.default).flatMap(g=>g.options).slice(0,4));
+    setTaste((REFINE[next]
