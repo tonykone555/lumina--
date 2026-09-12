@@ -1,0 +1,30 @@
+name: Materialize Lumina source
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.source-parts/**'
+      - 'scripts/reconstruct.mjs'
+      - '.github/workflows/materialize-lumina.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node scripts/reconstruct.mjs
+      - name: Commit reconstructed source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/globals.css components/lumina/LuminaWorld.tsx
+          git diff --cached --quiet && exit 0
+          git commit -m "Materialize exact Lumina @ source"
+          git push
