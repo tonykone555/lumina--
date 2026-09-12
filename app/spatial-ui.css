@@ -1,153 +1,32 @@
-/* Lumina @ spatial chrome — invisible until the user reaches for it */
+/* Lumina @ v4 — Pinterest Explore × Apple spatial UI × Vita bubbles */
+.lv4-shell{--ink:#2b2622;position:relative;width:100vw;height:100dvh;overflow:hidden;background:linear-gradient(135deg,var(--a),var(--b) 70%,var(--c));color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif}
+.lv4-scene{position:absolute;inset:-3%;background:linear-gradient(rgba(246,243,239,.72),rgba(242,238,233,.6)),var(--scene) center/cover;filter:saturate(.76) contrast(.9);transform:scale(1.04);transition:background .6s ease}
+.lv4-shell:after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(circle at 50% 44%,rgba(255,255,255,.02),rgba(255,255,255,.18) 55%,rgba(31,25,20,.1));mix-blend-mode:soft-light}
 
-/* Top search: the hit-area remains available, but the chrome disappears. */
-.search-float{
-  top:0!important;
-  left:84px!important;
-  right:300px!important;
-  height:76px!important;
-  padding:12px 18px!important;
-  border:0!important;
-  border-radius:0!important;
-  background:transparent!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-  box-shadow:none!important;
-  opacity:0!important;
-  transition:opacity .22s ease, transform .28s ease!important;
-  transform:translateY(-7px)!important;
-  pointer-events:auto!important;
-}
+.lv4-world{position:absolute;inset:0;z-index:5;overflow:hidden;cursor:grab;touch-action:none}.lv4-world:active{cursor:grabbing}.lv4-stage{position:absolute;left:50%;top:50%;width:2600px;height:1800px;transform-origin:0 0;will-change:transform}
+.lv4-intent{position:absolute;left:1300px;top:900px;transform:translate(-50%,-50%);z-index:2;max-width:480px;border:0;background:transparent;color:rgba(41,35,30,.86);text-align:center;cursor:pointer;padding:0}.lv4-intent span{display:block;font:italic 44px/1.02 Georgia,serif;letter-spacing:-.035em;text-wrap:balance;text-shadow:0 2px 22px rgba(255,255,255,.65)}.lv4-intent small{display:block;margin-top:10px;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:rgba(52,45,40,.48)}
 
-.search-float:hover,
-.search-float:focus-within{
-  opacity:1!important;
-  transform:translateY(0)!important;
-}
+.lv4-product{--s:112px;position:absolute;width:var(--s);height:var(--s);padding:0;transform:translate(-50%,-50%);border:1px solid rgba(255,255,255,.76);border-radius:50%;background:rgba(255,255,255,.35);box-shadow:0 14px 42px rgba(56,42,31,.12),inset 0 0 0 1px rgba(255,255,255,.16);overflow:visible;cursor:pointer;transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s,filter .28s,opacity .28s;animation:lv4float 8s ease-in-out infinite alternate}.lv4-product:nth-of-type(3n){animation-duration:10s;animation-delay:-2s}.lv4-product:nth-of-type(4n){animation-duration:12s;animation-delay:-5s}.lv4-product img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}.lv4-product:hover{transform:translate(-50%,-50%) scale(1.08);z-index:15}.lv4-product.selected{transform:translate(-50%,-50%) scale(1.18);z-index:24;box-shadow:0 22px 66px rgba(45,33,24,.2),0 0 0 6px rgba(255,255,255,.18)}
+.lv4-price{position:absolute;right:-8px;bottom:3px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);font-size:9px;font-weight:800;box-shadow:0 6px 18px rgba(40,30,23,.08)}.lv4-orbmeta{position:absolute;left:50%;top:calc(100% + 10px);width:170px;transform:translateX(-50%);text-align:center;pointer-events:none}.lv4-orbmeta b,.lv4-orbmeta em{display:block}.lv4-orbmeta b{font-size:10px}.lv4-orbmeta em{font-style:normal;font-size:8px;color:rgba(44,38,34,.55);margin-top:2px}
 
-.search-float input{
-  color:rgba(39,34,30,.94)!important;
-  font-size:15px!important;
-  font-weight:520!important;
-  letter-spacing:-.015em!important;
-  text-shadow:0 1px 18px rgba(255,255,255,.95)!important;
-  background:transparent!important;
+.lv4-textbubble,.lv4-worldbubble{position:absolute;transform:translate(-50%,-50%);border:0;color:rgba(47,40,35,.8);cursor:pointer;transition:transform .25s ease,opacity .25s ease,background .25s ease}.lv4-textbubble{padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.2);backdrop-filter:blur(10px);font:500 11px/1 Inter;box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 8px 22px rgba(57,42,31,.05)}.lv4-textbubble:hover,.lv4-textbubble.active{transform:translate(-50%,-50%) scale(1.12);background:rgba(255,255,255,.5)}.lv4-worldbubble{width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.13);backdrop-filter:blur(9px);font:italic 20px Georgia;text-transform:capitalize;box-shadow:inset 0 0 26px rgba(255,255,255,.24)}.lv4-worldbubble:hover{transform:translate(-50%,-50%) scale(1.08);background:rgba(255,255,255,.3)}
+.level-worlds .lv4-product{opacity:.18;filter:blur(2px);pointer-events:none}.level-worlds .lv4-textbubble{opacity:.2}.level-themes .lv4-product{opacity:.48;filter:saturate(.78)}.level-themes .lv4-price,.level-themes .lv4-orbmeta{opacity:0}.level-products .lv4-worldbubble,.level-details .lv4-worldbubble{opacity:0;pointer-events:none}.level-products .lv4-textbubble,.level-details .lv4-textbubble{opacity:.72}
+
+.lv4-search{position:absolute;z-index:60;top:0;left:90px;right:90px;height:78px;display:flex;align-items:center;gap:10px;padding:0 16px;border:0;background:transparent;opacity:0;transform:translateY(-8px);transition:opacity .2s,transform .25s;pointer-events:auto}.lv4-search:hover,.lv4-search:focus-within{opacity:1;transform:none}.lv4-search svg{width:17px;opacity:.45}.lv4-search input{flex:1;border:0;outline:0;background:transparent;color:rgba(37,32,28,.94);font-size:15px;font-weight:520;text-shadow:0 1px 16px rgba(255,255,255,.95)}.lv4-search button{border:0;background:transparent;font-size:18px;color:rgba(37,32,28,.45)}
+
+.lv4-rail{position:absolute;z-index:60;left:0;top:0;bottom:0;width:76px;display:flex;flex-direction:column;align-items:center;gap:12px;padding:18px 8px;opacity:0;transform:translateX(-8px);transition:opacity .2s,transform .25s}.lv4-rail:hover,.lv4-rail:focus-within{opacity:1;transform:none}.lv4-rail button{position:relative;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.46);background:rgba(255,255,255,.15);backdrop-filter:blur(12px);display:grid;place-items:center;color:rgba(46,39,34,.78);box-shadow:0 7px 24px rgba(47,35,27,.06);cursor:pointer}.lv4-rail button svg{width:16px}.lv4-rail button span{position:absolute;left:52px;white-space:nowrap;opacity:0;pointer-events:none;font-size:9px}.lv4-rail button:hover{transform:scale(1.08);background:rgba(255,255,255,.34)}.lv4-rail button:hover span{opacity:.6}.lv4-logo{font:700 15px Georgia!important}
+
+.lv4-source-tabs{position:absolute;z-index:55;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:2px;opacity:.12;transition:opacity .2s}.lv4-source-tabs:hover,.lv4-source-tabs:focus-within{opacity:1}.lv4-source-tabs button{border:0;background:transparent;padding:7px 9px;border-radius:999px;font-size:9px;color:rgba(42,36,32,.55);cursor:pointer}.lv4-source-tabs button.active{background:rgba(255,255,255,.26);backdrop-filter:blur(10px);color:rgba(42,36,32,.9)}
+.lv4-zoomhint{position:absolute;z-index:50;right:16px;bottom:16px;font-size:8px;text-transform:uppercase;letter-spacing:.1em;color:rgba(44,38,33,.3);opacity:.45}.lv4-zoomhint span{margin-left:8px}.lv4-refine{position:absolute;z-index:50;left:16px;bottom:16px;border:0;background:transparent;color:rgba(44,38,33,.32);display:flex;gap:6px;align-items:center;opacity:.35;cursor:pointer}.lv4-refine svg{width:13px}.lv4-refine span{font-size:8px;text-transform:uppercase;letter-spacing:.08em}.lv4-refine:hover{opacity:.8}
+
+.lv4-detail{position:absolute;z-index:70;right:18px;top:18px;bottom:18px;width:min(340px,38vw);border:1px solid rgba(255,255,255,.24);border-radius:30px;background:linear-gradient(180deg,rgba(248,244,239,.34),rgba(248,244,239,.14));backdrop-filter:blur(24px) saturate(.92);box-shadow:0 20px 70px rgba(48,31,19,.08);overflow:hidden;animation:lv4panel .26s ease}.lv4-detail>img{width:100%;height:43%;object-fit:cover;border-radius:30px 30px 18px 18px}.lv4-close{position:absolute;right:12px;top:12px;z-index:2;width:34px;height:34px;border:0;border-radius:50%;background:rgba(255,255,255,.45);backdrop-filter:blur(10px);display:grid;place-items:center}.lv4-close svg{width:15px}.lv4-detailcopy{padding:18px}.lv4-detailcopy small{font-size:8px;text-transform:uppercase;letter-spacing:.11em;color:rgba(50,42,37,.52)}.lv4-detailcopy h2{font:italic 28px/1.02 Georgia;margin:7px 0 4px;letter-spacing:-.025em}.lv4-detailcopy strong{font-size:13px}.lv4-detailcopy p{font-size:10px;line-height:1.5;color:rgba(50,42,37,.62);margin:12px 0}.lv4-tagrow{display:flex;flex-wrap:wrap;gap:5px}.lv4-tagrow button{border:0;background:rgba(255,255,255,.28);padding:6px 8px;border-radius:999px;font-size:8px;color:rgba(48,41,36,.66)}.lv4-actions{display:grid;grid-template-columns:38px 1fr;gap:6px;margin-top:14px}.lv4-actions button,.lv4-actions a{height:38px;border:0;border-radius:999px;background:rgba(255,255,255,.42);color:#302a26;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:5px;font-size:9px;font-weight:700}.lv4-actions a{background:rgba(44,38,34,.88);color:#fff}.lv4-actions svg{width:13px}.lv4-actions .active{background:#e4ff9f}.lv4-actions .try{grid-column:1/-1}.lv4-pop{width:100%;margin-top:8px;border:0;background:transparent;color:rgba(42,36,32,.55);height:34px;display:flex;align-items:center;justify-content:center;gap:5px;font-size:9px}.lv4-pop svg{width:12px}
+
+.lv4-radial{position:fixed;z-index:90;width:1px;height:1px}.lv4-radial button{position:absolute;width:92px;height:34px;border:1px solid rgba(255,255,255,.45);border-radius:999px;background:rgba(250,247,243,.58);backdrop-filter:blur(16px);font-size:8px;color:rgba(42,36,32,.74);box-shadow:0 10px 28px rgba(43,32,24,.09)}.lv4-radial button:nth-child(1){transform:translate(-46px,-86px)}.lv4-radial button:nth-child(2){transform:translate(54px,-48px)}.lv4-radial button:nth-child(3){transform:translate(-146px,-48px)}.lv4-radial button:nth-child(4){transform:translate(-46px,42px)}.lv4-radial .center{width:34px;height:34px;transform:translate(-17px,-17px);border-radius:50%;display:grid;place-items:center}.lv4-radial .center svg{width:13px}
+
+@keyframes lv4float{from{margin-top:-4px}to{margin-top:6px}}@keyframes lv4panel{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:none}}
+
+@media(max-width:760px){
+  .lv4-search{left:54px;right:12px;opacity:.045}.lv4-search:focus-within{opacity:1}.lv4-rail{width:58px;opacity:.04}.lv4-rail:focus-within{opacity:1}.lv4-source-tabs{bottom:10px;max-width:82vw;overflow:auto;opacity:.18}.lv4-detail{left:10px;right:10px;top:auto;bottom:10px;width:auto;height:58vh;border-radius:25px}.lv4-detail>img{height:42%;border-radius:25px 25px 16px 16px}.lv4-intent span{font-size:34px;max-width:330px}.lv4-zoomhint{display:none}
 }
 
-.search-float input::selection{background:rgba(217,255,122,.58)}
-.search-float svg{opacity:.48!important;filter:drop-shadow(0 1px 8px rgba(255,255,255,.9))}
-
-/* No visible search "bar" or pill button. The text is the interface. */
-.search-float button{
-  width:34px!important;
-  height:34px!important;
-  overflow:hidden!important;
-  padding:0!important;
-  border:0!important;
-  background:transparent!important;
-  color:rgba(45,40,35,.72)!important;
-  font-size:0!important;
-  opacity:.28!important;
-}
-.search-float button::after{
-  content:'↵';
-  font-size:18px;
-  font-weight:500;
-}
-.search-float:hover button,
-.search-float:focus-within button{opacity:.64!important}
-
-/* Left navigation: invisible edge zone. Moving to the left edge reveals controls. */
-.float-rail{
-  left:0!important;
-  top:0!important;
-  bottom:0!important;
-  width:74px!important;
-  padding:18px 9px!important;
-  border:0!important;
-  border-radius:0!important;
-  background:transparent!important;
-  backdrop-filter:none!important;
-  -webkit-backdrop-filter:none!important;
-  box-shadow:none!important;
-  opacity:0!important;
-  transform:translateX(-8px)!important;
-  transition:opacity .22s ease,transform .28s ease!important;
-  pointer-events:auto!important;
-}
-.float-rail:hover,
-.float-rail:focus-within{
-  opacity:1!important;
-  transform:translateX(0)!important;
-}
-
-/* Keep the Vita-like bubble language, but remove the visible sidebar container. */
-.logo-orb,
-.rail-orb{
-  border:1px solid rgba(255,255,255,.5)!important;
-  background:rgba(255,255,255,.15)!important;
-  backdrop-filter:blur(12px)!important;
-  -webkit-backdrop-filter:blur(12px)!important;
-  box-shadow:0 7px 24px rgba(47,35,27,.08), inset 0 1px 0 rgba(255,255,255,.45)!important;
-  transition:transform .2s ease,background .2s ease,opacity .2s ease!important;
-}
-.logo-orb:hover,
-.rail-orb:hover{
-  transform:scale(1.09)!important;
-  background:rgba(255,255,255,.34)!important;
-}
-
-/* Supporting chrome should not compete with the bubble world. */
-.category-corner,
-.profile-tools,
-.drop-anything{
-  opacity:.12!important;
-  transition:opacity .22s ease!important;
-}
-.category-corner:hover,
-.category-corner:focus-within,
-.profile-tools:hover,
-.profile-tools:focus-within,
-.drop-anything:hover,
-.drop-anything:focus-visible{opacity:.9!important}
-
-/* Bottom controls remain discoverable but recess visually. */
-.journey-dock,
-.refine-orb{
-  opacity:.18!important;
-  transition:opacity .22s ease!important;
-}
-.journey-dock:hover,
-.journey-dock:focus-within,
-.refine-orb:hover,
-.refine-orb:focus-visible{opacity:1!important}
-
-/* Product detail remains in-world rather than feeling like a separate page. */
-.product-panel{
-  width:min(340px,38vw)!important;
-  top:14px!important;
-  right:14px!important;
-  bottom:14px!important;
-  border:1px solid rgba(255,255,255,.24)!important;
-  border-radius:28px!important;
-  background:linear-gradient(180deg,rgba(248,244,239,.34),rgba(248,244,239,.16))!important;
-  backdrop-filter:blur(22px) saturate(.9)!important;
-  -webkit-backdrop-filter:blur(22px) saturate(.9)!important;
-  box-shadow:0 18px 60px rgba(48,31,19,.08)!important;
-  overflow:hidden!important;
-}
-.product-panel.open{transform:translateX(0)!important}
-.product-hero{border-radius:28px 28px 18px 18px!important}
-
-/* Touch devices cannot hover: preserve the same hidden-chrome idea while keeping it reachable. */
-@media (hover:none){
-  .search-float{
-    right:18px!important;
-    left:68px!important;
-    opacity:.06!important;
-  }
-  .search-float:focus-within{opacity:1!important}
-  .float-rail{opacity:.06!important}
-  .float-rail:focus-within{opacity:1!important}
-  .category-corner,.profile-tools,.drop-anything,.journey-dock,.refine-orb{opacity:.16!important}
-}
+@media(hover:none){.lv4-search{opacity:.04}.lv4-rail{opacity:.04}.lv4-source-tabs{opacity:.16}.lv4-search:focus-within,.lv4-rail:focus-within{opacity:1}}
