@@ -244,7 +244,7 @@ export default function LuminaWorld() {
     setQuery(nextQuery); setSubmittedQuery(nextQuery); setDirection(""); setSelected(null);
     setAnchors([]); setPinned([]); setCrumbs([]); setAvoid([]);
     setActiveRefine((REFINE[next] || REFINE.default).flatMap(g=>g.options).slice(0,4));
-    setTaste((REFINE[next]] || REFINE.default).flatMap(g=>g.options).slice(0,3));
+    setTaste((REFINE[next] || REFINE.default).flatMap(g=>g.options).slice(0,3));
     window.history.replaceState(null,"",`#${next}`);
   }
 
