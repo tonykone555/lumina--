@@ -1,0 +1,153 @@
+/* Lumina @ spatial chrome — invisible until the user reaches for it */
+
+/* Top search: the hit-area remains available, but the chrome disappears. */
+.search-float{
+  top:0!important;
+  left:84px!important;
+  right:300px!important;
+  height:76px!important;
+  padding:12px 18px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  opacity:0!important;
+  transition:opacity .22s ease, transform .28s ease!important;
+  transform:translateY(-7px)!important;
+  pointer-events:auto!important;
+}
+
+.search-float:hover,
+.search-float:focus-within{
+  opacity:1!important;
+  transform:translateY(0)!important;
+}
+
+.search-float input{
+  color:rgba(39,34,30,.94)!important;
+  font-size:15px!important;
+  font-weight:520!important;
+  letter-spacing:-.015em!important;
+  text-shadow:0 1px 18px rgba(255,255,255,.95)!important;
+  background:transparent!important;
+}
+
+.search-float input::selection{background:rgba(217,255,122,.58)}
+.search-float svg{opacity:.48!important;filter:drop-shadow(0 1px 8px rgba(255,255,255,.9))}
+
+/* No visible search "bar" or pill button. The text is the interface. */
+.search-float button{
+  width:34px!important;
+  height:34px!important;
+  overflow:hidden!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:rgba(45,40,35,.72)!important;
+  font-size:0!important;
+  opacity:.28!important;
+}
+.search-float button::after{
+  content:'↵';
+  font-size:18px;
+  font-weight:500;
+}
+.search-float:hover button,
+.search-float:focus-within button{opacity:.64!important}
+
+/* Left navigation: invisible edge zone. Moving to the left edge reveals controls. */
+.float-rail{
+  left:0!important;
+  top:0!important;
+  bottom:0!important;
+  width:74px!important;
+  padding:18px 9px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  box-shadow:none!important;
+  opacity:0!important;
+  transform:translateX(-8px)!important;
+  transition:opacity .22s ease,transform .28s ease!important;
+  pointer-events:auto!important;
+}
+.float-rail:hover,
+.float-rail:focus-within{
+  opacity:1!important;
+  transform:translateX(0)!important;
+}
+
+/* Keep the Vita-like bubble language, but remove the visible sidebar container. */
+.logo-orb,
+.rail-orb{
+  border:1px solid rgba(255,255,255,.5)!important;
+  background:rgba(255,255,255,.15)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+  box-shadow:0 7px 24px rgba(47,35,27,.08), inset 0 1px 0 rgba(255,255,255,.45)!important;
+  transition:transform .2s ease,background .2s ease,opacity .2s ease!important;
+}
+.logo-orb:hover,
+.rail-orb:hover{
+  transform:scale(1.09)!important;
+  background:rgba(255,255,255,.34)!important;
+}
+
+/* Supporting chrome should not compete with the bubble world. */
+.category-corner,
+.profile-tools,
+.drop-anything{
+  opacity:.12!important;
+  transition:opacity .22s ease!important;
+}
+.category-corner:hover,
+.category-corner:focus-within,
+.profile-tools:hover,
+.profile-tools:focus-within,
+.drop-anything:hover,
+.drop-anything:focus-visible{opacity:.9!important}
+
+/* Bottom controls remain discoverable but recess visually. */
+.journey-dock,
+.refine-orb{
+  opacity:.18!important;
+  transition:opacity .22s ease!important;
+}
+.journey-dock:hover,
+.journey-dock:focus-within,
+.refine-orb:hover,
+.refine-orb:focus-visible{opacity:1!important}
+
+/* Product detail remains in-world rather than feeling like a separate page. */
+.product-panel{
+  width:min(340px,38vw)!important;
+  top:14px!important;
+  right:14px!important;
+  bottom:14px!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  border-radius:28px!important;
+  background:linear-gradient(180deg,rgba(248,244,239,.34),rgba(248,244,239,.16))!important;
+  backdrop-filter:blur(22px) saturate(.9)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(.9)!important;
+  box-shadow:0 18px 60px rgba(48,31,19,.08)!important;
+  overflow:hidden!important;
+}
+.product-panel.open{transform:translateX(0)!important}
+.product-hero{border-radius:28px 28px 18px 18px!important}
+
+/* Touch devices cannot hover: preserve the same hidden-chrome idea while keeping it reachable. */
+@media (hover:none){
+  .search-float{
+    right:18px!important;
+    left:68px!important;
+    opacity:.06!important;
+  }
+  .search-float:focus-within{opacity:1!important}
+  .float-rail{opacity:.06!important}
+  .float-rail:focus-within{opacity:1!important}
+  .category-corner,.profile-tools,.drop-anything,.journey-dock,.refine-orb{opacity:.16!important}
+}
