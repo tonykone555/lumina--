@@ -1,0 +1,145 @@
+een":"amber"}">${esc(S.settings.email_provider||"disconnected")}</span></div>
+  </div></article></section>`;
+}
+
+function drawerHtml(){
+  const m=S.merchants.find(x=>x.id===S.drawerMerchant); if(!m)return"";
+  const score=scoreMap()[m.id], contacts=S.contacts.filter(c=>c.merchant_id===m.id), programs=S.programs.filter(p=>p.merchant_id===m.id), outs=S.outreach.filter(o=>o.merchant_id===m.id), ev=S.events.filter(e=>e.merchant_id===m.id).slice(0,15);
+  const scores=[["Lumina",score?.lumina_fit],["Fitting",score?.fitting_room_fit],["UGC",score?.ugc_opportunity],["AI Commerce",score?.ai_commerce_score]];
+  let body="";
+  if(S.drawerTab==="snapshot") body=`<div class="score-grid">${scores.map(x=>`<div class="score-box"><b>${x[1]??"—"}</b><span>${x[0]}</span></div>`).join("")}</div><div class="finding"><b>Lifecycle</b><p>${esc(m.lifecycle_stage)} · priority ${m.priority||0}</p></div><div class="finding"><b>Store</b><p>${esc(m.website_url||m.domain||"No URL recorded")} · ${esc(m.platform||"Unknown platform")} · ${esc(m.category||"Unclassified")}</p></div><div class="finding"><b>Revenue opportunity</b><p>${m.monthly_revenue_estimate?euro(m.monthly_revenue_estimate)+" estimated monthly store revenue recorded.":"No merchant revenue estimate recorded yet."}</p></div><div class="hero-actions" style="margin-top:15px"><button class="primary" data-analyze="${m.id}">${icon("sparkles")} Analyze</button><button class="secondary" data-generate="${m.id}">${icon("mail-plus")} Generate outreach</button></div>`;
+  if(S.drawerTab==="intelligence") body=score?`<div class="score-grid">${[["Lumina @",score.lumina_at_fit],["Partnership",score.partnership_opportunity],["Contactability",score.contactability],["Monetization",score.monetization_potential]].map(x=>`<div class="score-box"><b>${x[1]??"—"}</b><span>${x[0]}</span></div>`).join("")}</div>${(score.evidence?.findings||[]).map(f=>`<div class="finding"><b>Finding</b><p>${esc(f)}</p></div>`).join("")}`:empty("brain-circuit","Not analyzed yet","Run analysis to generate evidence-backed scores.",`<button class="primary" data-analyze="${m.id}">Analyze merchant</button>`);
+  if(S.drawerTab==="reach") body=`<div class="card-head"><div><h3>Contacts</h3><small>${contacts.length} routes</small></div><button class="text-link" data-action="add-contact" data-merchant-id="${m.id}">+ Contact</button></div>${contacts.length?contacts.map(c=>`<div class="contact-row"><div class="activity-icon">${icon(c.channel==="email"?"mail":c.channel==="instagram"?"instagram":"contact")}</div><div class="contact-main"><b>${esc(c.full_name||c.role||c.channel)}</b><span>${esc(c.value)} · ${c.verified?"verified":"unverified"}</span></div></div>`).join(""):empty("contact","No contacts yet","Add a public business contact, then generate outreach.")}<div class="card-head" style="margin-top:18px"><div><h3>Outreach</h3><small>${outs.length} messages</small></div></div>${outs.length?outs.map(o=>`<div class="finding"><b>${esc(o.subject||"Draft")}</b><p>${esc(o.personalized_observation||"")}</p><p><span class="pill">${esc(o.status)}</span></p></div>`).join(""):""}`;
+  if(S.drawerTab==="activity") body=ev.length?`<div class="activity">${ev.map(a=>`<div class="activity-item"><div class="activity-icon">${icon(eventIcon(a.event_type))}</div><div class="activity-main"><b>${esc(a.event_type.replaceAll("_"," "))}</b><span>${fmtDate(a.created_at)}</span></div></div>`).join("")}</div>`:empty("activity","No activity yet","Analysis, outreach and relationship changes will create a timeline.");
+  return `<button class="drawer-close" data-action="close-drawer">×</button><div class="eyebrow">Merchant 360</div><h2>${esc(m.name)}</h2><div class="drawer-sub">${esc(m.domain||m.website_url||"No domain")} · ${esc(m.category||"Unclassified")} · ${esc(m.country||"Unknown country")}</div><div class="drawer-tabs">${[["snapshot","Snapshot"],["intelligence","Intelligence"],["reach","Reach"],["activity","Activity"]].map(x=>`<button class="${S.drawerTab===x[0]?"active":""}" data-drawer-tab="${x[0]}">${x[1]}</button>`).join("")}</div>${body}`;
+}
+function modalShell(){return `<div class="modal-wrap" id="modalWrap"><div class="modal" id="modal"></div></div>`}
+function aiShell(){return `<div class="ai-wrap" id="aiWrap"><section class="ai-box"><div class="ai-head"><div class="ai-title"><span class="ai-orb">${icon("sparkles")}</span><div><b>View AI</b><span>Command the merchant network</span></div></div><button class="modal-close" data-action="close-ai">×</button></div><div class="ai-thread" id="aiThread"><div class="msg bot">Try: “Find fashion merchants not contacted”, “Show Shopify brands”, or “Which merchants can make revenue fastest?”</div></div><form class="ai-compose" id="aiForm"><input id="aiInput" placeholder="Ask Lumina View anything…"><button>↗</button></form></section></div>`}
+
+function bindApp(){
+  document.querySelectorAll("[data-page]").forEach(el=>el.onclick=()=>{S.page=el.dataset.page;S.drawerMerchant=null;renderApp()});
+  document.querySelectorAll("[data-merchant]").forEach(el=>el.onclick=()=>{S.drawerMerchant=el.dataset.merchant;S.drawerTab="snapshot";renderApp()});
+  document.querySelectorAll("[data-drawer-tab]").forEach(el=>el.onclick=()=>{S.drawerTab=el.dataset.drawerTab;document.getElementById("merchantDrawer").innerHTML=drawerHtml();bindDrawerOnly();refreshIcons()});
+  document.querySelectorAll("[data-action]").forEach(el=>el.onclick=()=>handleAction(el.dataset.action,el));
+  document.querySelectorAll("[data-analyze]").forEach(el=>el.onclick=()=>analyzeMerchant(el.dataset.analyze));
+  document.querySelectorAll("[data-generate]").forEach(el=>el.onclick=()=>generateOutreach(el.dataset.generate));
+  document.querySelectorAll("[data-approve]").forEach(el=>el.onclick=()=>approveOutreach(el.dataset.approve));
+  document.querySelectorAll("[data-send]").forEach(el=>el.onclick=()=>sendOutreach(el.dataset.send));
+  document.querySelectorAll("[data-continue-run]").forEach(el=>el.onclick=()=>continueShopifyRun(el.dataset.continueRun));
+  document.querySelectorAll("[data-copy]").forEach(el=>el.onclick=async()=>{await navigator.clipboard.writeText(el.dataset.copy);toast("Booking link copied.","good")});
+  document.querySelectorAll("[data-outreach-view]").forEach(el=>el.onclick=()=>showOutreach(el.dataset.outreachView));
+  const gs=document.getElementById("globalSearch"); if(gs){gs.onkeydown=e=>{if(e.key==="Enter")globalSearch(gs.value)}}
+  const aiForm=document.getElementById("aiForm"); if(aiForm)aiForm.onsubmit=askAI;
+}
+function bindDrawerOnly(){
+  document.querySelectorAll("[data-drawer-tab]").forEach(el=>el.onclick=()=>{S.drawerTab=el.dataset.drawerTab;document.getElementById("merchantDrawer").innerHTML=drawerHtml();bindDrawerOnly();refreshIcons()});
+  document.querySelectorAll("[data-action]").forEach(el=>el.onclick=()=>handleAction(el.dataset.action,el));
+  document.querySelectorAll("[data-analyze]").forEach(el=>el.onclick=()=>analyzeMerchant(el.dataset.analyze));
+  document.querySelectorAll("[data-generate]").forEach(el=>el.onclick=()=>generateOutreach(el.dataset.generate));
+}
+async function handleAction(action,el){
+  if(action==="signout") return sb.auth.signOut();
+  if(action==="refresh"){toast("Refreshing…");await loadAll();renderApp();toast("View is up to date.","good");return}
+  if(action==="close-drawer"){S.drawerMerchant=null;renderApp();return}
+  if(action==="open-ai"){document.getElementById("aiWrap").classList.add("open");refreshIcons();return}
+  if(action==="close-ai"){document.getElementById("aiWrap").classList.remove("open");return}
+  if(action==="add-merchant")return openAddMerchant();
+  if(action==="import-csv")return openImport();
+  if(action==="shopify-search"){document.getElementById("shopifyQuery")?.focus();return}
+  if(action==="run-shopify-search")return runShopifySearch();
+  if(action==="queue-discovery")return queueDiscovery();
+  if(action==="analyze-unscored")return analyzeUnscored();
+  if(action==="save-settings")return saveSettings();
+  if(action==="add-contact")return openAddContact(el.dataset.merchantId);
+}
+function modal(html){const w=document.getElementById("modalWrap"),m=document.getElementById("modal");m.innerHTML=html;w.classList.add("open");refreshIcons();m.querySelectorAll("[data-modal-close]").forEach(x=>x.onclick=closeModal)}
+function closeModal(){document.getElementById("modalWrap")?.classList.remove("open")}
+function openAddMerchant(){
+  modal(`<div class="modal-head"><div><div class="eyebrow">Discover</div><h3>Add merchant</h3></div><button class="modal-close" data-modal-close>×</button></div><form id="merchantForm"><div class="form-grid">
+    <div class="field"><label>Brand name</label><input name="name" required></div><div class="field"><label>Domain</label><input name="domain" placeholder="brand.com"></div>
+    <div class="field"><label>Category</label><input name="category" placeholder="Fashion"></div><div class="field"><label>Platform</label><select name="platform"><option value="">Unknown</option><option>Shopify</option><option>WooCommerce</option><option>TikTok Shop</option><option>BigCommerce</option><option>Direct</option></select></div>
+    <div class="field"><label>Country</label><input name="country" placeholder="UK"></div><div class="field"><label>Instagram</label><input name="instagram_url" placeholder="https://instagram.com/…"></div>
+    <div class="field fullfield"><label>TikTok</label><input name="tiktok_url" placeholder="https://tiktok.com/@…"></div>
+  </div><div class="modal-actions"><button type="button" class="secondary" data-modal-close>Cancel</button><button class="primary">Add merchant</button></div></form>`);
+  document.getElementById("merchantForm").onsubmit=async e=>{e.preventDefault();const fd=new FormData(e.target),p=Object.fromEntries(fd.entries());try{const r=await edge("create_merchant",p);closeModal();await reload("merchants");await reload("events");renderApp();toast(r.duplicate?"Merchant already existed.":"Merchant added.","good")}catch(err){toast(err.message,"bad")}};
+}
+function openImport(){
+  modal(`<div class="modal-head"><div><div class="eyebrow">Discover</div><h3>Import merchants</h3></div><button class="modal-close" data-modal-close>×</button></div><p style="font-size:12px;color:#858892;line-height:1.6">Upload a CSV. View recognizes common columns like name/business name, domain/website, category, country and platform. Existing domains are skipped.</p><div class="field"><label>CSV file</label><input id="csvFile" type="file" accept=".csv,text/csv"></div><div class="modal-actions"><button class="secondary" data-modal-close>Cancel</button><button class="primary" id="runImport">Import</button></div>`);
+  document.getElementById("runImport").onclick=importCsv;
+}
+function normDomain(v){try{return String(v||"").trim().replace(/^https?:\/\//i,"").replace(/^www\./i,"").split("/")[0].toLowerCase()}catch{return""}}
+async function importCsv(){
+  const file=document.getElementById("csvFile").files[0]; if(!file)return toast("Choose a CSV first.","bad");
+  const parsed=Papa.parse(await file.text(),{header:true,skipEmptyLines:true,transformHeader:h=>h.trim().toLowerCase()});
+  const existing=new Set(S.merchants.map(m=>(m.domain||"").toLowerCase()));
+  const get=(r,keys)=>{for(const k of keys)if(r[k])return r[k];return""};
+  const rows=parsed.data.map(r=>{const website=get(r,["domain","website","website url","url","store","store url"]),domain=normDomain(website);return{name:get(r,["name","brand","business name","company","store name"])||domain,domain:domain||null,website_url:domain?`https://${domain}`:null,category:get(r,["category","niche","vertical"])||null,country:get(r,["country","location"])||null,platform:get(r,["platform","ecommerce platform"])||null,instagram_url:get(r,["instagram","instagram url","ig","instagram handle"])||null,tiktok_url:get(r,["tiktok","tiktok url"])||null,lifecycle_stage:"discovered"}}).filter(x=>x.name&&!existing.has((x.domain||"").toLowerCase()));
+  if(!rows.length)return toast("No new merchants found.","bad");
+  const {error}=await sb.from("view_merchants").upsert(rows,{onConflict:"domain",ignoreDuplicates:true});
+  if(error)return toast(error.message,"bad");
+  closeModal();await reload("merchants");renderApp();toast(`${rows.length} merchants imported.`,"good");
+}
+async function runShopifySearch(){
+  const query=document.getElementById("shopifyQuery")?.value.trim();
+  const country=document.getElementById("shopifyCountry")?.value||null;
+  const requested_limit=Number(document.getElementById("shopifyLimit")?.value||250);
+  if(!query)return toast("Describe the kind of merchants you want to find.","bad");
+  toast("Searching Shopify Global Catalog…");
+  try{
+    const {data,error}=await sb.functions.invoke("shopify-catalog-discovery",{body:{query,country,requested_limit,max_pages:5}});
+    if(error)throw error;if(data?.error)throw new Error(data.error);
+    await Promise.all([reload("discoveryRuns"),reload("merchants"),reload("products"),reload("events")]);
+    renderApp();
+    toast(`Found ${data.merchants_seen||0} unique merchants from ${data.products_seen||0} products.`,"good");
+  }catch(err){toast(err.message||"Shopify discovery failed","bad")}
+}
+async function continueShopifyRun(run_id){
+  toast("Continuing Shopify search…");
+  try{
+    const {data,error}=await sb.functions.invoke("shopify-catalog-discovery",{body:{run_id,max_pages:5}});
+    if(error)throw error;if(data?.error)throw new Error(data.error);
+    await Promise.all([reload("discoveryRuns"),reload("merchants"),reload("products"),reload("events")]);
+    renderApp();toast(`Discovery now has ${data.merchants_seen||0} merchants.`,"good");
+  }catch(err){toast(err.message||"Could not continue discovery","bad")}
+}
+async function queueDiscovery(){
+  const {error}=await sb.from("view_jobs").insert({job_type:"DISCOVER_MERCHANTS",target_type:"workspace",status:"queued",priority:50,payload:{daily_target:Number(S.settings.discovery_daily_target||2000),requested_from:"view_app"}});
+  if(error)return toast(error.message,"bad");await reload("jobs");renderApp();toast("Discovery job queued. Connector workers will process it when enabled.","good");
+}
+async function analyzeMerchant(id){
+  toast("Analyzing merchant…");try{await edge("analyze_merchant",{merchant_id:id});await Promise.all([reload("scores"),reload("merchants"),reload("events")]);renderApp();toast("Intelligence updated.","good")}catch(err){toast(err.message,"bad")}
+}
+async function analyzeUnscored(){
+  const missing=S.merchants.filter(m=>!scoreMap()[m.id]).slice(0,25); if(!missing.length)return toast("Everything currently loaded is analyzed.","good");
+  toast(`Analyzing ${missing.length} merchants…`);
+  for(const m of missing){try{await edge("analyze_merchant",{merchant_id:m.id})}catch(e){console.warn(e)}}
+  await Promise.all([reload("scores"),reload("merchants"),reload("events")]);renderApp();toast("Batch analysis finished.","good");
+}
+async function generateOutreach(id){
+  try{const r=await edge("generate_outreach",{merchant_id:id});await Promise.all([reload("outreach"),reload("merchants"),reload("events")]);S.page="reach";S.drawerMerchant=null;renderApp();toast("Personalized outreach draft created.","good")}catch(err){toast(err.message,"bad")}
+}
+async function approveOutreach(id){
+  try{await edge("approve_outreach",{outreach_id:id});await reload("outreach");renderApp();toast("Outreach approved.","good")}catch(err){toast(err.message,"bad")}
+}
+async function sendOutreach(id){
+  try{await edge("send_outreach",{outreach_id:id});await Promise.all([reload("outreach"),reload("merchants"),reload("events")]);renderApp();toast("Email sent.","good")}catch(err){const msg=err.message==="email_provider_not_connected"?"Email delivery is not connected yet. Open Settings → Outreach delivery.":err.message;toast(msg,"bad")}
+}
+function showOutreach(id){
+  const o=S.outreach.find(x=>x.id===id),m=S.merchants.find(x=>x.id===o?.merchant_id);if(!o)return;
+  modal(`<div class="modal-head"><div><div class="eyebrow">${esc(o.status)}</div><h3>${esc(m?.name||"Outreach")}</h3></div><button class="modal-close" data-modal-close>×</button></div><div class="finding"><b>Subject</b><p>${esc(o.subject||"")}</p></div><div class="finding"><b>Personalized observation</b><p>${esc(o.personalized_observation||"")}</p></div><div class="finding"><b>Message</b><p style="white-space:pre-wrap">${esc(o.body||"")}</p></div><div class="finding"><b>Booking URL</b><p>${esc(o.booking_url||"—")}</p></div><div class="modal-actions">${o.status==="draft"?`<button class="primary" id="modalApprove">Approve</button>`:""}<button class="secondary" data-modal-close>Close</button></div>`);
+  const b=document.getElementById("modalApprove");if(b)b.onclick=async()=>{closeModal();await approveOutreach(id)};
+}
+function openAddContact(merchantId){
+  modal(`<div class="modal-head"><div><div class="eyebrow">Merchant 360</div><h3>Add contact route</h3></div><button class="modal-close" data-modal-close>×</button></div><form id="contactForm"><div class="form-grid"><div class="field"><label>Name</label><input name="full_name"></div><div class="field"><label>Role</label><input name="role" placeholder="Founder"></div><div class="field"><label>Channel</label><select name="channel"><option value="email">Email</option><option value="instagram">Instagram</option><option value="linkedin">LinkedIn</option><option value="contact_form">Contact form</option><option value="affiliate_application">Affiliate application</option></select></div><div class="field"><label>Value / address</label><input name="value" required></div></div><div class="modal-actions"><button type="button" class="secondary" data-modal-close>Cancel</button><button class="primary">Save contact</button></div></form>`);
+  document.getElementById("contactForm").onsubmit=async e=>{e.preventDefault();const p=Object.fromEntries(new FormData(e.target).entries());const {error}=await sb.from("view_contacts").insert({...p,merchant_id:merchantId,is_primary:true});if(error)return toast(error.message,"bad");closeModal();await reload("contacts");renderApp();toast("Contact route added.","good")};
+}
+async function saveSettings(){
+  const value={...S.settings,demo_url:document.getElementById("setDemo")?.value.trim()||null,booking_base_url:document.getElementById("setBooking")?.value.trim()||"https://luminalive.netlify.app/",discovery_daily_target:Number(document.getElementById("setDiscovery")?.value||2000),outreach_daily_target:Number(document.getElementById("setOutreach")?.value||500),email_provider:document.getElementById("setProvider")?.value||"disconnected"};
+  const {error}=await sb.from("view_settings").upsert({key:"workspace",value,updated_at:new Date().toISOString()});if(error)return toast(error.message,"bad");S.settings=value;renderApp();toast("Settings saved.","good")
+}
+async function askAI(e){
+  e.preventDefault();const inp=document.getElementById("aiInput"),q=inp.value.trim();if(!q)return;const thread=document.getElementById("aiThread");thread.innerHTML+=`<div class="msg user">${esc(q)}</div>`;inp.value="";thread.scrollTop=thread.scrollHeight;
+  try{const r=await edge("view_ai",{query:q});thread.innerHTML+=`<div class="msg bot">${esc(r.answer)}${r.items?.length?`<div style="margin-top:9px">${r.items.slice(0,8).map(m=>`<button class="secondary" style="margin:3px 4px 0 0;padding:7px 9px" data-ai-merchant="${m.id}">${esc(m.name)}</button>`).join("")}</div>`:""}</div>`;thread.querySelectorAll("[data-ai-merchant]").forEach(b=>b.onclick=()=>{document.getElementById("aiWrap").classList.remove("open");S.drawerMerchant=b.dataset.aiMerchant;S.drawerTab="snapshot";renderApp()});refreshIcons();thread.scrollTop=thread.scrollHeight}catch(err){thread.innerHTML+=`<div class="msg bot">I couldn't run that command: ${esc(err.message)}</div>`}
+}
+function globalSearch(q){
+  q=q.trim().toLowerCase();if(!q)return;const m=S.merchants.find(x=>[x.name,x.domain,x.category,x.platform].some(v=>String(v||"").toLowerCase().includes(q)));if(m){S.drawerMerchant=m.id;S.drawerTab="snapshot";renderApp();return}
