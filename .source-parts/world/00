@@ -1,0 +1,96 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Search, SlidersHorizontal, X, AtSign, Pin, Sparkles, Minus, Plus, RotateCcw, Heart, Compass, Home, Image as ImageIcon, Link2, Ban, GripVertical, ExternalLink, ScanFace, Bookmark, Clock3, CircleHelp } from "lucide-react";
+
+type Product = {
+  id: string;
+  title: string;
+  brand: string;
+  price: number | null;
+  currency?: string;
+  image: string;
+  url?: string;
+  tags?: string[];
+  x?: number;
+  y?: number;
+};
+
+type Anchor = { id: string; label: string; x: number; y: number; kind: "tag" | "intent" | "blend" };
+type Snapshot = { label: string; query: string; direction: string; taste: string[]; avoid: string[] };
+
+type RefineGroup = { name: string; options: string[] };
+
+const REFINE: Record<string, RefineGroup[]> = {
+  fashion: [
+    { name: "Silhouette", options: ["Slip", "Maxi", "Midi", "Mini", "A-line", "Wrap", "Bodycon"] },
+    { name: "Material", options: ["Satin", "Linen", "Cotton", "Velvet", "Knit", "Mesh"] },
+    { name: "Style", options: ["Minimal", "Elegant", "Romantic", "Statement", "Casual"] },
+    { name: "Occasion", options: ["Wedding guest", "Dinner", "Party", "Holiday", "Work"] },
+    { name: "Fit", options: ["Fitted", "Relaxed", "Oversized"] },
+    { name: "Price", options: ["Under €75", "€75–150", "€150–300", "Premium"] },
+  ],
+  fitness: [
+    { name: "Training", options: ["Strength", "Running", "Mobility", "Recovery", "Home gym"] },
+    { name: "Performance", options: ["Breathable", "Supportive", "Lightweight", "Durable"] },
+    { name: "Fit", options: ["Fitted", "Relaxed", "Compression"] },
+    { name: "Price", options: ["Under €50", "Under €80", "€80–150", "Premium"] },
+  ],
+  hair: [
+    { name: "Goal", options: ["Fuller-looking", "Scalp care", "Repair", "Hydration", "Volume"] },
+    { name: "Routine", options: ["Daily", "Wash day", "Weekly treatment", "Complete set"] },
+    { name: "Feel", options: ["Non-greasy", "Lightweight", "Fragrance-free", "Natural"] },
+    { name: "Price", options: ["Under €30", "Under €50", "Premium"] },
+  ],
+  skin: [
+    { name: "Concern", options: ["Uneven tone", "Blemishes", "Sensitive skin", "Barrier repair", "Hydration"] },
+    { name: "Product", options: ["Serum", "Cleanser", "Moisturizer", "Treatment", "SPF"] },
+    { name: "Formula", options: ["Fragrance-free", "Gentle", "Niacinamide", "Ceramides"] },
+    { name: "Price", options: ["Under €30", "Under €50", "Premium"] },
+  ],
+  smile: [
+    { name: "Goal", options: ["Whitening", "Enamel care", "Fresh breath", "Everyday care"] },
+    { name: "Sensitivity", options: ["Gentle", "Sensitive teeth", "Peroxide-free"] },
+    { name: "Format", options: ["Strips", "Pen", "Toothpaste", "Electric brush", "Complete kit"] },
+    { name: "Price", options: ["Under €30", "Under €50", "Premium"] },
+  ],
+  home: [
+    { name: "Style", options: ["Warm minimal", "Scandinavian", "Natural", "Statement"] },
+    { name: "Material", options: ["Wood", "Linen", "Bouclé", "Stone", "Metal"] },
+    { name: "Room", options: ["Living room", "Bedroom", "Dining", "Small space"] },
+  ],
+  tech: [
+    { name: "Use", options: ["Work", "Travel", "Creative", "Gaming", "Everyday"] },
+    { name: "Priority", options: ["Battery life", "Compact", "Performance", "Easy setup"] },
+    { name: "Price", options: ["Under €100", "Under €500", "Premium"] },
+  ],
+  coffee: [
+    { name: "Format", options: ["Espresso", "Automatic", "Capsule", "Manual", "Bean-to-cup"] },
+    { name: "Priority", options: ["Milk frother", "Built-in grinder", "Compact", "Easy clean"] },
+    { name: "Price", options: ["Under €150", "€150–300", "€300–600", "Premium"] },
+  ],
+  default: [
+    { name: "Style", options: ["Minimal", "Premium", "Everyday", "Statement", "Classic"] },
+    { name: "Price", options: ["Budget", "Mid-range", "Premium"] },
+    { name: "Use", options: ["Everyday", "Occasion", "Gift", "Performance"] },
+  ],
+};
+
+const SCENE: Record<string, { a: string; b: string; c: string; image: string; query: string }> = {
+  fashion: { a: "#eee9e2", b: "#d8c9ba", c: "#78695c", image:"https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2200&q=88", query:"Summer dresses for a Mediterranean wedding under €180" },
+  fitness: { a: "#e7ebe6", b: "#b8c4b7", c: "#526258", image:"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=2200&q=88", query:"Best gym shorts for bodybuilding under €80" },
+  hair: { a: "#eee8df", b: "#cdbca8", c: "#766757", image:"https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=2200&q=88", query:"A non-greasy routine for fuller-looking hair" },
+  skin: { a: "#f1e9e7", b: "#d8c5c1", c: "#85726f", image:"https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=2200&q=88", query:"Skincare for acne marks and uneven tone, sensitive skin" },
+  smile: { a: "#edf2f1", b: "#c7d9da", c: "#687c7e", image:"https://images.unsplash.com/photo-1606811971618-4486d14f3f99?auto=format&fit=crop&w=2200&q=88", query:"A gentle at-home routine for a brighter smile" },
+  home: { a: "#ece9e1", b: "#c8bcae", c: "#756c62", image:"https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=2200&q=88", query:"A warm minimal sofa for a small living room" },
+  tech: { a: "#e8edf0", b: "#afbac2", c: "#5d6c78", image:"https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=2200&q=88", query:"Lightweight headphones for focused work" },
+  coffee: { a: "#eee5dc", b: "#c4a98f", c: "#6e5540", image:"https://images.unsplash.com/photo-1445116572660-236099ec97a0?auto=format&fit=crop&w=2200&q=88", query:"Compact espresso machine with a milk frother" },
+  outdoor: { a: "#e7ebe4", b: "#b5c0ad", c: "#52614d", image:"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=2200&q=88", query:"Lightweight gear for a weekend hike" },
+  kitchen: { a: "#eeeae2", b: "#c9bdac", c: "#756957", image:"https://images.unsplash.com/photo-1556912167-f556f1f39fdf?auto=format&fit=crop&w=2200&q=88", query:"Beautiful tools for everyday cooking" },
+  pet: { a: "#ecebe5", b: "#c7c3b6", c: "#706c61", image:"https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=2200&q=88", query:"Comfortable essentials for my dog" },
+  travel: { a: "#e9ece9", b: "#bec8c4", c: "#5c6c68", image:"https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=2200&q=88", query:"Lightweight essentials for a city break" },
+  kids: { a: "#f0ebe4", b: "#d8c8b6", c: "#82705e", image:"https://images.unsplash.com/photo-1560785496-3c9d27877182?auto=format&fit=crop&w=2200&q=88", query:"Thoughtful products for children" },
+  retail: { a: "#ecebe7", b: "#c7c8c2", c: "#686e68", image:"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=2200&q=88", query:"A world shaped around what you mean" },
+};
+
+const NICHES = ["fashion", "fitness", "hair"
