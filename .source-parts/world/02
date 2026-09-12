@@ -1,0 +1,125 @@
+] || REFINE.default).flatMap(g=>g.options).slice(0,3));
+    window.history.replaceState(null,"",`#${next}`);
+  }
+
+  function togglePin(p: Product) {
+    setPinned(list => list.some(x => x.id === p.id) ? list.filter(x => x.id !== p.id) : [...list, p].slice(-3));
+  }
+
+  async function blend() {
+    if (pinned.length < 2) return;
+    const blendTags = [...new Set(pinned.flatMap(p => p.tags || []))].slice(0, 5);
+    const label = blendTags.length ? blendTags.join(" + ") : pinned.map(p => p.title).join(" + ");
+    setAnchors(a => [...a, { id: `blend-${Date.now()}`, label, x: 1380, y: 980, kind: "blend" }]);
+    await explore(label);
+  }
+
+  async function applyAt() {
+    const text = atText.trim();
+    if (!text || !selected) return;
+    const neg = /\b(no|not|avoid|without|hate|don't|do not)\b/i.test(text);
+    if (neg) setAvoid(v => [...new Set([...v, text])].slice(-8));
+    else setTaste(v => [...new Set([...v, text])].slice(-8));
+    setAtText("");
+    setAtOpen(false);
+    await explore(`${selected.title}: ${text}`);
+  }
+
+  function dropTagAtViewport(tag: string, clientX: number, clientY: number) {
+    const rect = worldRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const stageX = (clientX - rect.left - rect.width / 2 - pan.x) / zoom;
+    const stageY = (clientY - rect.top - rect.height / 2 - pan.y) / zoom;
+    setAnchors(a => [...a, { id: `tag-${Date.now()}`, label: tag, x: stageX, y: stageY, kind: "tag" } as Anchor].slice(-10));
+    setTaste(t => [...new Set([...t, tag])].slice(-8));
+    setDirection(tag);
+    fetchProducts({ direction: tag });
+  }
+
+  const majorBubbles = useMemo(() => {
+    const picked = [...new Set([...activeRefine, ...taste.slice(-3)])].filter(Boolean).slice(0, 8);
+    return picked.length ? picked : groups.flatMap(g => g.options).slice(0, 7);
+  }, [activeRefine, taste, groups]);
+
+  const zoomLabel = zoom < 0.7 ? "Worlds" : zoom < 1.08 ? "Categories + products" : zoom < 1.45 ? "Product neighborhood" : "Similarity universe";
+
+  return (
+    <main className="lumina-shell" style={{ "--scene-a": scene.a, "--scene-b": scene.b, "--scene-c": scene.c, "--scene-image": `url(${scene.image})` } as React.CSSProperties}>
+      <div className="scene-layer"><div className="scene-photo"/><div className="scene-haze"/><div className="scene-floor"/></div>
+
+      <aside className="float-rail">
+        <button className="logo-orb" aria-label="Lumina home"><strong>Lumina <i>@</i></strong><small>See a brighter you</small></button>
+        <div className="rail-nav">
+          <button className="rail-orb active" aria-label="Discover"><Home /><span>Discover</span></button>
+          <button className="rail-orb" aria-label="For you"><Heart /><span>For You</span></button>
+          <button className="rail-orb" aria-label="Categories"><Compass /><span>Categories</span></button>
+          <button className="rail-orb" onClick={() => setDropOpen(true)}><ScanFace/><span>Try On</span></button>
+          <button className="rail-orb" aria-label="Saved"><Bookmark /><span>Saved</span></button>
+        </div>
+        <div className="rail-bottom"><b><Sparkles/>{cat[0].toUpperCase()+cat.slice(1)}</b><span>{cat in SCENE ? (SCENE[cat].query.split(" under")[0]) : submittedQuery}</span></div>
+      </aside>
+
+      <div className="category-corner">
+        <label><Sparkles aria-hidden="true"/><select aria-label="Choose a category" value={cat} onChange={e=>switchNiche(e.target.value)}>{Object.keys(SCENE).map(n=><option key={n} value={n}>{n === "retail" ? "Explore all" : n[0].toUpperCase()+n.slice(1)}</option>)}</select></label>
+        <span>Discover a world around you.</span>
+      </div>
+
+      <div className="profile-tools"><button aria-label="Reset world" onClick={() => { setPan({x:-1200,y:-820}); setZoom(.88); }}><RotateCcw/></button><button aria-label="Help"><CircleHelp/></button><span>J</span></div>
+
+      <header className="search-float">
+        <Search />
+        <input value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && submitSearch()} />
+        <button onClick={submitSearch}>Explore</button>
+      </header>
+
+      <button className="drop-anything" onClick={() => setDropOpen(true)}><Sparkles /> Drop anything</button>
+
+      <section
+        ref={worldRef}
+        className="semantic-world"
+        onPointerDown={e => {
+          if ((e.target as HTMLElement).closest("button,.product-orb,.semantic-anchor")) return;
+          panRef.current = { dragging: true, px: e.clientX - pan.x, py: e.clientY - pan.y };
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={e => {
+          if (!panRef.current.dragging) return;
+          setPan({ x: e.clientX - panRef.current.px, y: e.clientY - panRef.current.py });
+        }}
+        onPointerUp={() => {
+          panRef.current.dragging = false;
+          if (cursor && (zoom > 1.15 || Math.hypot(pan.x + 1200, pan.y + 820) > 520)) fetchProducts({ append: true });
+        }}
+        onWheel={e => {
+          e.preventDefault();
+          const next = Math.min(1.9, Math.max(.5, zoom * (e.deltaY < 0 ? 1.075 : .93)));
+          setZoom(next);
+          if (cursor && next > 1.25) fetchProducts({ append: true });
+        }}
+        onDragOver={e => draggingTag && e.preventDefault()}
+        onDrop={e => {
+          const tag = e.dataTransfer.getData("lumina/tag") || draggingTag;
+          if (tag) dropTagAtViewport(tag, e.clientX, e.clientY);
+          setDraggingTag(null);
+        }}
+      >
+        <div className="world-stage" style={{ transform: `translate(${pan.x}px,${pan.y}px) scale(${zoom})` }}>
+          <div className="world-origin">
+            <span>{semanticTitle}</span>
+            <small>{submittedQuery}</small>
+          </div>
+
+          {majorBubbles.map((label, i) => {
+            const a = (i / Math.max(majorBubbles.length,1)) * Math.PI * 2 - .7;
+            const r = 245 + (i % 2) * 60;
+            return <button key={`${label}-${i}`} className="semantic-anchor intent-anchor" style={{ left:1300+Math.cos(a)*r, top:900+Math.sin(a)*r }} onClick={() => explore(label)}>{label}</button>;
+          })}
+
+          {anchors.map(a => <button key={a.id} className={`semantic-anchor user-anchor ${a.kind}`} style={{left:a.x,top:a.y}} onClick={() => explore(a.label)}><GripVertical />{a.label}</button>)}
+
+          {products.map((p, i) => {
+            const magnetic = hovered && hovered !== p.id && selected ? ((p.tags||[]).some(t => (selected.tags||[]).includes(t)) ? " magnetic" : "") : "";
+            return <button key={`${p.id}-${i}`} className={`product-orb${selected?.id===p.id?" selected":""}${pinned.some(x=>x.id===p.id)?" pinned":""}${magnetic}`} style={{left:p.x??1300,top:p.y??900}} onClick={() => { setSelected(p); setAtOpen(false); }} onMouseEnter={()=>setHovered(p.id)} onMouseLeave={()=>setHovered(null)}>
+              <img src={p.image} alt="" />
+              {price(p) && <span className="orb-price">{price(p)}</span>}
+       
