@@ -1,0 +1,37 @@
+/* Scene-first controls: retain hit areas without visible enclosing chrome. */
+.logo-orb, .rail-orb { font-family: inherit; }
+.rail-orb span { font-size: 14px; font-weight: 500; }
+.category-corner { position: absolute; z-index: 39; right: 24px; bottom: 18px; color: white; text-shadow: 0 1px 8px rgba(0,0,0,.75); }
+.category-corner label { display: flex; align-items: center; gap: 8px; }
+.category-corner svg { width: 18px; height: 18px; }
+.category-corner select { max-width: 175px; min-height: 38px; padding: 5px 5px; border: 0; background: transparent; color: inherit; font: 500 14px inherit; cursor: pointer; text-shadow: inherit; }
+.category-corner option { color: #243029; background: #f5f7f3; text-shadow: none; }
+.category-corner > span { display: block; font-size: 12px; opacity: .8; }
+.drop-anything { right: auto; left: 228px; bottom: 105px; }
+.rail-bottom { visibility: hidden; }
+@media(max-width:760px) {
+  .rail-orb { flex-direction: column; gap: 3px; height: 54px; }
+  .rail-orb span { display: block; font-size: 9px; white-space: nowrap; }
+  .category-corner { right: 12px; bottom: 96px; }
+  .category-corner > span { display: none; }
+}
+.float-rail { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; }
+.rail-orb, .rail-orb.active, .rail-orb:hover { background: transparent; border: 0; border-radius: 0; box-shadow: none; }
+.rail-orb { opacity: .75; text-shadow: 0 1px 8px rgba(0,0,0,.5); }
+.rail-orb.active, .rail-orb:hover { opacity: 1; }
+.rail-orb.active span { text-decoration: underline; text-underline-offset: 7px; }
+.niche-switcher, .journey-dock, .taste-strip, .catalog-pill, .zoom-pill, .pin-shelf { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; }
+.niche-switcher button, .niche-switcher button.active, .taste-strip button, .crumb-trail button { background: rgba(250,252,248,.16); border: 0; box-shadow: none; }
+.niche-switcher button.active { background: rgba(250,252,248,.34); }
+.search-float { background: rgba(250,252,248,.24); border: 0; box-shadow: none; backdrop-filter: blur(5px); }
+.refine-orb, .refine-orb i, .drop-anything { background: rgba(250,252,248,.2); border: 0; box-shadow: none; color: #263229; }
+.refine-orb small { color: #506056; }
+.profile-tools button { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; }
+.product-panel { background: rgba(250,252,248,.16); border: 0; border-radius: 0; box-shadow: none; backdrop-filter: blur(8px); }
+.product-hero { display: block; object-fit: contain; object-position: center; border-radius: 0; padding: 16px 38px; background: transparent; }
+.product-orb img { object-fit: contain; object-position: center; border-radius: 0; mix-blend-mode: normal; width: 70%; height: 70%; margin: 15%; }
+.pin-shelf img { object-fit: contain; border-radius: 0; border: 0; }
+.product-tags button, .quick-branches button, .try-action, .panel-close { border: 0; background: rgba(250,252,248,.24); box-shadow: none; }
+.product-info { background: transparent; text-shadow: 0 1px 5px rgba(255,255,255,.65); }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid #577c60; outline-offset: 4px; }
+@media(max-width:760px) { .float-rail, .niche-switcher, .taste-strip { background: transparent; } .product-panel { border-radius: 0; background: rgba(250,252,248,.22); } }
