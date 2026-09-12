@@ -45,6 +45,7 @@ function sourceKind(p:Product){
   if(s.includes("etsy")) return "Independent";
   return "Retail";
 }
+function distance(a:{x:number;y:number},b:{x:number;y:number}){return Math.hypot(a.x-b.x,a.y-b.y)}
 
 export default function LuminaWorld(){
   const [query,setQuery]=useState(SCENES.fashion.query);
@@ -60,9 +61,15 @@ export default function LuminaWorld(){
   const [hidden,setHidden]=useState<Set<string>>(new Set());
   const [liked,setLiked]=useState<Set<string>>(new Set());
   const [sourceFilter,setSourceFilter]=useState("Top picks");
+  const [mobileNav,setMobileNav]=useState(false);
+  const [mobileSources,setMobileSources]=useState(false);
+  const [detailDrag,setDetailDrag]=useState(0);
   const worldRef=useRef<HTMLDivElement>(null);
-  const panRef=useRef({drag:false,px:0,py:0});
+  const panRef=useRef({drag:false,px:0,py:0,startX:0,startY:0,edge:"" as ""|"left"|"right"});
   const holdRef=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const pointersRef=useRef(new Map<number,{x:number;y:number}>());
+  const pinchRef=useRef<{distance:number;zoom:number}|null>(null);
+  const detailSwipeRef=useRef<{x:number;y:number}|null>(null);
   const cat=category(submitted);
   const scene=SCENES[cat]||SCENES.retail;
 
@@ -100,6 +107,11 @@ export default function LuminaWorld(){
   function submit(){const q=query.trim()||"Show me something worth discovering";setSubmitted(q);setFocus("");setSelected(null);setHidden(new Set());setPan({x:-1300,y:-900});setZoom(.88)}
   function explore(label:string){setFocus(label);setSelected(null);fetchProducts(label);setZoom(Math.max(zoom,1.02))}
   function selectProduct(p:Product){setSelected(p);setRadial(null);setZoom(z=>Math.max(z,1.18))}
+  function nextProduct(direction=1){
+    if(!selected||visible.length<2)return;
+    const i=visible.findIndex(p=>p.id===selected.id); const next=visible[(i+direction+visible.length)%visible.length];
+    setSelected(next);
+  }
   function popNext(){
     if(!selected||visible.length<2)return;
     const i=visible.findIndex(p=>p.id===selected.id); const next=visible[(i+1)%visible.length];
@@ -112,16 +124,65 @@ export default function LuminaWorld(){
   function endHold(){if(holdRef.current){clearTimeout(holdRef.current);holdRef.current=null}}
   function refineAround(label:string){setRadial(null);explore(label)}
 
+  function worldPointerDown(e:React.PointerEvent<HTMLElement>){
+    pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointersRef.current.size===2){
+      const pts=[...pointersRef.current.values()];
+      pinchRef.current={distance:distance(pts[0],pts[1]),zoom};
+      panRef.current.drag=false;
+      return;
+    }
+    if((e.target as HTMLElement).closest("button,input,a,.lv4-product,.lv4-textbubble,.lv4-detail"))return;
+    const edge=e.clientX<28?"left":e.clientX>window.innerWidth-28?"right":"";
+    panRef.current={drag:true,px:e.clientX-pan.x,py:e.clientY-pan.y,startX:e.clientX,startY:e.clientY,edge};
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+
+  function worldPointerMove(e:React.PointerEvent<HTMLElement>){
+    if(pointersRef.current.has(e.pointerId)) pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pointersRef.current.size===2&&pinchRef.current){
+      const pts=[...pointersRef.current.values()];
+      const d=distance(pts[0],pts[1]);
+      const next=pinchRef.current.zoom*(d/pinchRef.current.distance);
+      setZoom(Math.min(1.85,Math.max(.48,next)));
+      return;
+    }
+    if(panRef.current.drag)setPan({x:e.clientX-panRef.current.px,y:e.clientY-panRef.current.py});
+  }
+
+  function worldPointerUp(e:React.PointerEvent<HTMLElement>){
+    pointersRef.current.delete(e.pointerId);
+    if(pointersRef.current.size<2)pinchRef.current=null;
+    const swipeX=e.clientX-panRef.current.startX;
+    if(panRef.current.edge==="left"&&swipeX>52)setMobileNav(true);
+    if(panRef.current.edge==="right"&&swipeX<-52)setMobileSources(true);
+    panRef.current.drag=false;
+  }
+
+  function detailPointerDown(e:React.PointerEvent){detailSwipeRef.current={x:e.clientX,y:e.clientY};setDetailDrag(0)}
+  function detailPointerMove(e:React.PointerEvent){if(detailSwipeRef.current)setDetailDrag(e.clientX-detailSwipeRef.current.x)}
+  function detailPointerUp(e:React.PointerEvent){
+    if(!detailSwipeRef.current)return;
+    const dx=e.clientX-detailSwipeRef.current.x; const dy=e.clientY-detailSwipeRef.current.y;
+    if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)) nextProduct(dx<0?1:-1);
+    else if(dy>85)setSelected(null);
+    setDetailDrag(0);detailSwipeRef.current=null;
+  }
+
   return <main className="lv4-shell" style={{"--a":scene.a,"--b":scene.b,"--c":scene.c,"--scene":`url(${scene.image})`} as React.CSSProperties}>
     <div className="lv4-scene"/>
 
-    <aside className="lv4-rail" aria-label="Lumina navigation">
-      <button className="lv4-logo">L@</button>
-      <button><Home/><span>Discover</span></button>
-      <button><Compass/><span>Worlds</span></button>
-      <button><ScanFace/><span>Try on</span></button>
-      <button><Bookmark/><span>Saved</span></button>
-      <button onClick={()=>{setPan({x:-1300,y:-900});setZoom(.88)}}><RotateCcw/><span>Reset</span></button>
+    <button className="lv4-mobile-top-hotspot" aria-label="Search" onClick={()=>document.querySelector<HTMLInputElement>(".lv4-search input")?.focus()}/>
+    <button className="lv4-mobile-left-hotspot" aria-label="Open navigation" onClick={()=>setMobileNav(true)}/>
+    <button className="lv4-mobile-right-hotspot" aria-label="Open product sources" onClick={()=>setMobileSources(true)}/>
+
+    <aside className={`lv4-rail ${mobileNav?"mobile-open":""}`} aria-label="Lumina navigation">
+      <button className="lv4-logo" onClick={()=>setMobileNav(false)}>L@</button>
+      <button onClick={()=>setMobileNav(false)}><Home/><span>Discover</span></button>
+      <button onClick={()=>{setZoom(.56);setMobileNav(false)}}><Compass/><span>Worlds</span></button>
+      <button onClick={()=>setMobileNav(false)}><ScanFace/><span>Try on</span></button>
+      <button onClick={()=>setMobileNav(false)}><Bookmark/><span>Saved</span></button>
+      <button onClick={()=>{setPan({x:-1300,y:-900});setZoom(.88);setMobileNav(false)}}><RotateCcw/><span>Reset</span></button>
     </aside>
 
     <header className="lv4-search">
@@ -130,20 +191,18 @@ export default function LuminaWorld(){
       <button onClick={submit}>↵</button>
     </header>
 
-    <section className="lv4-source-tabs" aria-label="Product source filter">
-      {["Top picks","Retail","Marketplace","Independent"].map(x=><button key={x} className={sourceFilter===x?"active":""} onClick={()=>setSourceFilter(x)}>{x}</button>)}
+    <section className={`lv4-source-tabs ${mobileSources?"mobile-open":""}`} aria-label="Product source filter">
+      {["Top picks","Retail","Marketplace","Independent"].map(x=><button key={x} className={sourceFilter===x?"active":""} onClick={()=>{setSourceFilter(x);setMobileSources(false)}}>{x}</button>)}
     </section>
 
     <section
       ref={worldRef}
       className={`lv4-world level-${semanticLevel}`}
-      onPointerDown={e=>{
-        if((e.target as HTMLElement).closest("button,input,a,.lv4-product,.lv4-textbubble,.lv4-detail"))return;
-        panRef.current={drag:true,px:e.clientX-pan.x,py:e.clientY-pan.y};
-        (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
-      }}
-      onPointerMove={e=>{if(panRef.current.drag)setPan({x:e.clientX-panRef.current.px,y:e.clientY-panRef.current.py})}}
-      onPointerUp={()=>panRef.current.drag=false}
+      onPointerDown={worldPointerDown}
+      onPointerMove={worldPointerMove}
+      onPointerUp={worldPointerUp}
+      onPointerCancel={worldPointerUp}
+      onDoubleClick={()=>{setPan({x:-1300,y:-900});setZoom(.88)}}
       onWheel={e=>{e.preventDefault();setZoom(z=>Math.min(1.85,Math.max(.48,z*(e.deltaY<0?1.075:.93))))}}
     >
       <div className="lv4-stage" style={{transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}>
@@ -180,7 +239,8 @@ export default function LuminaWorld(){
 
     <div className="lv4-zoomhint">{semanticLevel}<span>{Math.round(zoom*100)}%</span></div>
 
-    {selected&&<aside className="lv4-detail">
+    {selected&&<aside className="lv4-detail" style={{"--detail-drag":`${detailDrag}px`} as React.CSSProperties} onPointerDown={detailPointerDown} onPointerMove={detailPointerMove} onPointerUp={detailPointerUp} onPointerCancel={detailPointerUp}>
+      <div className="lv4-mobile-grabber"/>
       <button className="lv4-close" onClick={()=>setSelected(null)}><X/></button>
       <img src={selected.image} alt={selected.title}/>
       <div className="lv4-detailcopy">
