@@ -34,6 +34,12 @@ const NICHE_FALLBACK: Record<string, typeof FASHION> = {
   ]
 };
 
+const AMAZON_DOMAINS: Record<string, string> = {
+  US:"amazon.com", GB:"amazon.co.uk", UK:"amazon.co.uk", FR:"amazon.fr", DE:"amazon.de",
+  ES:"amazon.es", IT:"amazon.it", CA:"amazon.ca", AU:"amazon.com.au", NL:"amazon.nl",
+  SE:"amazon.se", PL:"amazon.pl", BE:"amazon.com.be"
+};
+
 function fallbackFor(query:string){
   const q=query.toLowerCase();
   if(/gym|fitness|shorts|running|training|recovery/.test(q)) return NICHE_FALLBACK.fitness;
@@ -43,19 +49,126 @@ function fallbackFor(query:string){
   return FASHION;
 }
 
-export async function GET(req: NextRequest) {
-  const search = req.nextUrl.searchParams;
-  const base = (search.get("q") || "black dress for a wedding under 150").slice(0,300);
-  const direction = (search.get("direction") || "").slice(0,100);
-  const cursor = search.get("cursor") || undefined;
-  const country = (search.get("country") || "FR").toUpperCase().slice(0,2);
-  const query = direction ? `${base}, ${direction}` : base;
-  const payload = {jsonrpc:"2.0",method:"tools/call",id:1,params:{name:"search_catalog",arguments:{meta:{"ucp-agent":{profile:"https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json"}},catalog:{query,filters:{available:true,ships_to:{country}},context:{address_country:country,intent:query},pagination:{limit:14,...(cursor?{cursor}:{})}}}}};
-  try {
-    const response = await fetch("https://catalog.shopify.com/api/ucp/mcp", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
-    const raw:any = await response.json(); const content = raw?.result?.structuredContent;
-    if (!response.ok || !content?.products) throw new Error("Catalog unavailable");
-    const products = content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price;return{id:p.id,title:p.title,brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:p?.media?.find((m:any)=>m.type==="image")?.url||p?.media?.[0]?.url||"",url:p.url||p?.variants?.[0]?.seller?.url||"#",tags:[...new Set((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))].slice(0,6)}}).filter((p:any)=>p.image);
-    return NextResponse.json({source:"shopify-global-catalog",query,products,pagination:content.pagination||{}},{headers:{"Cache-Control":"s-maxage=45, stale-while-revalidate=300"}});
-  } catch (error) { return NextResponse.json({source:"fallback",query,products:fallbackFor(query),pagination:{has_next_page:false}}); }
+function amazonPrice(r:any){
+  const raw=r?.price?.value ?? r?.price?.raw ?? r?.prices?.[0]?.value ?? null;
+  if(typeof raw==="number") return raw;
+  if(typeof raw==="string"){
+    const parsed=Number.parseFloat(raw.replace(/[^0-9,.-]/g,"").replace(",","."));
+    return Number.isFinite(parsed)?parsed:null;
+  }
+  return null;
+}
+
+function amazonCurrency(r:any,domain:string){
+  return r?.price?.currency || r?.currency || (domain==="amazon.co.uk"?"GBP":domain==="amazon.com"?"USD":domain==="amazon.ca"?"CAD":domain==="amazon.com.au"?"AUD":"EUR");
+}
+
+function amazonImage(r:any){
+  return r?.image || r?.main_image?.link || r?.images?.[0]?.link || r?.thumbnail || "";
+}
+
+function productKey(p:any){
+  return `${String(p.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${String(p.brand||"").toLowerCase()}`;
+}
+
+function mergeProducts(shopify:any[],amazon:any[]){
+  const seen=new Set<string>();
+  const merged:any[]=[];
+  const max=Math.max(shopify.length,amazon.length);
+  for(let i=0;i<max;i++){
+    for(const p of [shopify[i],amazon[i]]){
+      if(!p) continue;
+      const key=productKey(p);
+      if(!key || seen.has(key)) continue;
+      seen.add(key);
+      merged.push(p);
+      if(merged.length>=20) return merged;
+    }
+  }
+  return merged;
+}
+
+async function fetchAmazon(query:string,country:string){
+  const apiKey=process.env.RAINFOREST_API_KEY;
+  if(!apiKey) return [];
+  const domain=AMAZON_DOMAINS[country] || "amazon.com";
+  const params=new URLSearchParams({
+    api_key:apiKey,
+    type:"search",
+    amazon_domain:domain,
+    search_term:query,
+    number_of_results:"10",
+    exclude_sponsored:"true"
+  });
+  const response=await fetch(`https://api.rainforestapi.com/request?${params.toString()}`,{headers:{Accept:"application/json"},next:{revalidate:60}});
+  if(!response.ok) throw new Error(`Rainforest ${response.status}`);
+  const raw:any=await response.json();
+  return (Array.isArray(raw?.search_results)?raw.search_results:[])
+    .map((r:any)=>({
+      id:`amazon-${r.asin}`,
+      title:r.title||"Amazon product",
+      brand:r.brand||r?.manufacturer||"Amazon",
+      price:amazonPrice(r),
+      currency:amazonCurrency(r,domain),
+      image:amazonImage(r),
+      url:r?.link||r?.url||(r?.asin?`https://${domain}/dp/${r.asin}`:"#"),
+      tags:["Amazon",...(r?.is_prime?["Prime"]:[]),...(typeof r?.rating==="number"?[`${r.rating}★`]:[])].slice(0,6),
+      source:"amazon-rainforest",
+      asin:r.asin
+    }))
+    .filter((p:any)=>p.id&&p.image);
+}
+
+async function fetchShopify(query:string,country:string,cursor?:string){
+  const payload={jsonrpc:"2.0",method:"tools/call",id:1,params:{name:"search_catalog",arguments:{meta:{"ucp-agent":{profile:"https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json"}},catalog:{query,filters:{available:true,ships_to:{country}},context:{address_country:country,intent:query},pagination:{limit:14,...(cursor?{cursor}:{})}}}}};
+  const response=await fetch("https://catalog.shopify.com/api/ucp/mcp",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  const raw:any=await response.json();
+  const content=raw?.result?.structuredContent;
+  if(!response.ok || !content?.products) throw new Error("Catalog unavailable");
+  const products=content.products.map((p:any)=>{
+    const price=p?.price_range?.min||p?.variants?.[0]?.price;
+    return {
+      id:p.id,
+      title:p.title,
+      brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",
+      price:price?Number(price.amount)/100:null,
+      currency:price?.currency||"USD",
+      image:p?.media?.find((m:any)=>m.type==="image")?.url||p?.media?.[0]?.url||"",
+      url:p.url||p?.variants?.[0]?.seller?.url||"#",
+      tags:[...new Set((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))].slice(0,6),
+      source:"shopify-global-catalog"
+    };
+  }).filter((p:any)=>p.image);
+  return {products,pagination:content.pagination||{}};
+}
+
+export async function GET(req:NextRequest){
+  const search=req.nextUrl.searchParams;
+  const base=(search.get("q")||"black dress for a wedding under 150").slice(0,300);
+  const direction=(search.get("direction")||"").slice(0,100);
+  const cursor=search.get("cursor")||undefined;
+  const country=(search.get("country")||"FR").toUpperCase().slice(0,2);
+  const query=direction?`${base}, ${direction}`:base;
+
+  const [shopifyResult,amazonResult]=await Promise.allSettled([
+    fetchShopify(query,country,cursor),
+    cursor?Promise.resolve([]):fetchAmazon(query,country)
+  ]);
+
+  const shopify=shopifyResult.status==="fulfilled"?shopifyResult.value:{products:[],pagination:{}};
+  const amazon=amazonResult.status==="fulfilled"?amazonResult.value:[];
+  const products=mergeProducts(shopify.products,amazon);
+
+  if(products.length){
+    const sources=[...(shopify.products.length?["shopify-global-catalog"]:[]),...(amazon.length?["amazon-rainforest"]:[])];
+    return NextResponse.json({
+      source:shopify.products.length?"shopify-global-catalog":"amazon-rainforest",
+      sources,
+      query,
+      products,
+      pagination:shopify.pagination||{}
+    },{headers:{"Cache-Control":"s-maxage=45, stale-while-revalidate=300"}});
+  }
+
+  return NextResponse.json({source:"fallback",sources:["fallback"],query,products:fallbackFor(query),pagination:{has_next_page:false}});
 }
