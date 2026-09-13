@@ -14,10 +14,11 @@ type FeedItem={
   installment_eligible?:boolean; free_delivery_evidence?:boolean;
 };
 
-const sections=["Best Value","Under €25","Pay in 4","Watches","Tech","Fitness","Style","Beauty","Home","Free Delivery"];
+const sections=["Best Value","Under €25","Pay in 4","Jewelry","Accessories","Bags","Phone Accessories","Watches","Tech","Fitness","Style","Beauty","Home","Free Delivery"];
 const fallback:Deal[]=[
-  {id:"preview-watch",title:"Minimal Steel Watch",brand:"YNOT preview",price:39,currency:"EUR",image:"https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=700&q=82",url:"#",section:"Watches",sections:["Best Value","Watches","Under €25"],badge:"Preview",note:"Preview product while live offers load.",installments:4},
-  {id:"preview-speaker",title:"Mini Wireless Speaker",brand:"YNOT preview",price:24,currency:"EUR",image:"https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=700&q=82",url:"#",section:"Tech",sections:["Best Value","Under €25","Tech"],badge:"Preview",note:"Preview product while live offers load."}
+  {id:"preview-jewelry",title:"Minimal Chain Necklace",brand:"YNOT preview",price:19,currency:"EUR",image:"https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=700&q=82",url:"#",section:"Jewelry",sections:["Best Value","Jewelry","Under €25"],badge:"Preview",note:"Preview product while live Shopify offers load."},
+  {id:"preview-watch",title:"Minimal Steel Watch",brand:"YNOT preview",price:39,currency:"EUR",image:"https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=700&q=82",url:"#",section:"Watches",sections:["Best Value","Watches"],badge:"Preview",note:"Preview product while live Shopify offers load."},
+  {id:"preview-phone",title:"Magnetic Phone Stand",brand:"YNOT preview",price:18,currency:"EUR",image:"https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=700&q=82",url:"#",section:"Phone Accessories",sections:["Best Value","Phone Accessories","Under €25"],badge:"Preview",note:"Preview product while live Shopify offers load."}
 ];
 
 function money(v:number,currency="EUR"){try{return new Intl.NumberFormat("en-IE",{style:"currency",currency,maximumFractionDigits:2}).format(v)}catch{return `${v.toFixed(2)} ${currency}`}}
@@ -46,7 +47,7 @@ export default function YnotDrawer(){
     return()=>{alive=false};
   },[]);
 
-  const grouped=useMemo(()=>sections.map(section=>({section,items:deals.filter(d=>section==="Best Value"?d.sections.includes("Best Value")||true:d.sections.includes(section)||d.section===section)})).filter(g=>g.items.length),[deals]);
+  const grouped=useMemo(()=>sections.map(section=>({section,items:deals.filter(d=>section==="Best Value"?true:d.sections.includes(section)||d.section===section)})).filter(g=>g.items.length),[deals]);
   const searched=useMemo(()=>query.trim()?deals.filter(d=>`${d.title} ${d.brand||""} ${d.section} ${d.badge}`.toLowerCase().includes(query.toLowerCase())):null,[query,deals]);
 
   function jump(section:string){setActive(section);const el=document.getElementById(`ynot-${section.replaceAll(" ","-").replace("€","").toLowerCase()}`);el?.scrollIntoView({behavior:"smooth",block:"start"})}
@@ -60,7 +61,7 @@ export default function YnotDrawer(){
     <div className={`ynot-backdrop ${open?"open":""}`} onClick={()=>setOpen(false)} />
     <aside className={`ynot-drawer ${open?"open":""}`} aria-hidden={!open}>
       <div className="ynot-head">
-        <div><small>LUMINA DEAL WORLD</small><h2>YNOT</h2><p>Products automatically sorted by value, price and category.</p></div>
+        <div><small>LUMINA DEAL WORLD</small><h2>YNOT</h2><p>Cheap, attractive Shopify finds automatically sorted by value and category.</p></div>
         <button className="ynot-close" onClick={()=>setOpen(false)}><X/></button>
       </div>
 
@@ -83,7 +84,7 @@ export default function YnotDrawer(){
         <div className="ynot-selected-copy"><small>{selected.badge}{selected.score?` · ${selected.score}/100`:""}</small><h3>{selected.title}</h3><strong>{money(selected.price,selected.currency)}</strong>{selected.installments&&<span>{money(selected.price/selected.installments,selected.currency)} × {selected.installments}</span>}<p>{selected.note}</p></div>
         <button className="ynot-shop" onClick={openDeal} disabled={selected.url==="#"}><ShoppingBag/><span>Open deal</span></button>
       </div>
-      <div className="ynot-foot"><Sparkles/><span>{loading?"Loading live YNOT offers…":live?"Live product feed · automatically classified and scored":"Live feed unavailable · showing preview products"}</span></div>
+      <div className="ynot-foot"><Sparkles/><span>{loading?"Loading live YNOT offers…":live?"Live Shopify product feed · automatically classified and scored":"Live feed unavailable · showing preview products"}</span></div>
     </aside>
   </>
 }
