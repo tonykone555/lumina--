@@ -1,0 +1,24 @@
+import { NextRequest, NextResponse } from "next/server";
+
+const AMAZON_DOMAINS: Record<string,string>={US:"amazon.com",GB:"amazon.co.uk",UK:"amazon.co.uk",FR:"amazon.fr",DE:"amazon.de",ES:"amazon.es",IT:"amazon.it",CA:"amazon.ca",AU:"amazon.com.au",BE:"amazon.com.be"};
+const QUERIES=[
+  ["cheap useful gadgets under 25","Tech"],["phone accessories under 25","Phone Accessories"],["pet accessories under 30","Pets"],
+  ["home gadgets under 35","Home"],["kitchen gadgets under 30","Kitchen"],["beauty tools under 30","Beauty & Hair"],
+  ["hair styling accessories under 30","Beauty & Hair"],["fitness accessories under 30","Fitness"],["car accessories under 30","Car"],
+  ["travel accessories under 30","Travel"],["desk accessories under 35","Home"],["jewelry accessories under 25","Jewelry"]
+] as const;
+
+function priceOf(r:any){const raw=r?.price?.value??r?.price?.raw??r?.prices?.[0]?.value??null;if(typeof raw==="number")return raw;if(typeof raw==="string"){const n=Number.parseFloat(raw.replace(/[^0-9,.-]/g,"").replace(",","."));return Number.isFinite(n)?n:null}return null}
+function imageOf(r:any){return r?.image||r?.main_image?.link||r?.images?.[0]?.link||r?.thumbnail||""}
+function ratingOf(r:any){return typeof r?.rating==="number"?r.rating:null}
+function reviewCountOf(r:any){return Number(r?.ratings_total??r?.reviews_total??r?.rating_count??0)||0}
+function score(price:number|null,rating:number|null,reviews:number){let s=52;if(price!=null){if(price<=20)s+=24;else if(price<=35)s+=18;else if(price<=60)s+=10;}if(rating!=null){if(rating>=4.6)s+=12;else if(rating>=4.3)s+=8;}if(reviews>=5000)s+=10;else if(reviews>=1000)s+=7;else if(reviews>=200)s+=4;return Math.min(99,s)}
+
+async function searchAmazon(q:string,section:string,domain:string){
+ const apiKey=process.env.RAINFOREST_API_KEY;if(!apiKey)return [];
+ const params=new URLSearchParams({api_key:apiKey,type:"search",amazon_domain:domain,search_term:q,number_of_results:"16",exclude_sponsored:"true"});
+ const r=await fetch(`https://api.rainforestapi.com/request?${params}`,{headers:{Accept:"application/json"},next:{revalidate:900}});if(!r.ok)return [];
+ const raw:any=await r.json();return (Array.isArray(raw?.search_results)?raw.search_results:[]).map((x:any)=>{const price=priceOf(x),rating=ratingOf(x),reviews=reviewCountOf(x);return{id:`amazon-${x.asin}`,title:x.title||"Amazon product",brand:x.brand||x.manufacturer||"Amazon",price,currency:domain==="amazon.co.uk"?"GBP":domain==="amazon.com"?"USD":domain==="amazon.ca"?"CAD":domain==="amazon.com.au"?"AUD":"EUR",image:imageOf(x),url:x.link||x.url||(x.asin?`https://${domain}/dp/${x.asin}`:"#"),section,sections:[section,"Best Value",...(price!=null&&price<=25?["Under €25"]:[])],badge:price!=null&&price<=25?"Under €25":"Amazon value",score:score(price,rating,reviews),rating,reviews,source:"amazon-rainforest"}}).filter((x:any)=>x.price!=null&&x.price<=80&&x.image&&x.url!=="#");
+}
+
+export async function GET(req:NextRequest){const country=(req.nextUrl.searchParams.get("country")||"FR").toUpperCase();const domain=AMAZON_DOMAINS[country]||"amazon.fr";const settled=await Promise.allSettled(QUERIES.map(([q,s])=>searchAmazon(q,s,domain)));const all=settled.flatMap(x=>x.status==="fulfilled"?x.value:[]);const seen=new Set<string>();const items=all.filter((x:any)=>{if(seen.has(x.id))return false;seen.add(x.id);return true}).sort((a:any,b:any)=>b.score-a.score).slice(0,100);return NextResponse.json({items,source:"amazon-rainforest",country},{headers:{"Cache-Control":"s-maxage=900, stale-while-revalidate=3600"}})}
