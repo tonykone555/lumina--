@@ -1,8 +1,8 @@
 "use client";
 
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
-import { Html, MeshTransmissionMaterial, OrbitControls, RoundedBox } from "@react-three/drei";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Html, MeshTransmissionMaterial, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import gsap from "gsap";
 import { Heart, Search, ShoppingBag, Sparkles, X } from "lucide-react";
@@ -10,173 +10,18 @@ import { Heart, Search, ShoppingBag, Sparkles, X } from "lucide-react";
 type Product={id:string;title:string;brand:string;price:number|null;currency?:string;image:string;url?:string;tags?:string[];source?:string};
 type CatalogPage={products?:Product[]};
 type Category={key:string;label:string;query:string;subtitle:string;accent:string};
-
 type Vec3=[number,number,number];
 
-const CATEGORIES:Category[]=[
-  {key:"fashion",label:"Fashion",query:"beautiful fashion dresses shoes accessories",subtitle:"Clothing · shoes · accessories",accent:"#e9d5c8"},
-  {key:"fitness",label:"Fitness",query:"fitness gear activewear recovery training accessories",subtitle:"Training · recovery · activewear",accent:"#cfe0d2"},
-  {key:"beauty",label:"Beauty",query:"beauty skincare self care products",subtitle:"Skin · care · beauty",accent:"#ead5de"},
-  {key:"hair",label:"Hair",query:"hair care styling tools scalp products",subtitle:"Care · styling · tools",accent:"#e4d6c8"},
-  {key:"home",label:"Home",query:"premium home furniture lighting decor",subtitle:"Furniture · lighting · decor",accent:"#d8d0c0"},
-  {key:"tech",label:"Tech",query:"useful tech gadgets audio phone accessories",subtitle:"Gadgets · audio · mobile",accent:"#ced9e6"},
-  {key:"discover",label:"Discover",query:"interesting trending products worth discovering",subtitle:"Trending · value · unexpected",accent:"#d8d7ce"}
-];
-
-const TAGS:Record<string,string[]>={
-  fashion:["Dresses","Shoes","Accessories","Minimal","Under €100","New"],
-  fitness:["Strength","Workout Gear","Activewear","Recovery","Under €80","Top Rated"],
-  beauty:["Skincare","Tools","Sensitive","Glow","Under €50","Top Rated"],
-  hair:["Styling","Scalp","Repair","Volume","Tools","Under €50"],
-  home:["Lighting","Furniture","Decor","Smart Home","Storage","Under €100"],
-  tech:["Phone","Audio","Desk","Smart","Under €50","Top Rated"],
-  discover:["Trending","Best Value","New","Popular","Under €50","Unexpected"]
-};
-
+const CATEGORIES:Category[]=[{key:"fashion",label:"Fashion",query:"beautiful fashion dresses shoes accessories",subtitle:"Clothing · shoes · accessories",accent:"#e9d5c8"},{key:"fitness",label:"Fitness",query:"fitness gear activewear recovery training accessories",subtitle:"Training · recovery · activewear",accent:"#cfe0d2"},{key:"beauty",label:"Beauty",query:"beauty skincare self care products",subtitle:"Skin · care · beauty",accent:"#ead5de"},{key:"hair",label:"Hair",query:"hair care styling tools scalp products",subtitle:"Care · styling · tools",accent:"#e4d6c8"},{key:"home",label:"Home",query:"premium home furniture lighting decor",subtitle:"Furniture · lighting · decor",accent:"#d8d0c0"},{key:"tech",label:"Tech",query:"useful tech gadgets audio phone accessories",subtitle:"Gadgets · audio · mobile",accent:"#ced9e6"},{key:"discover",label:"Discover",query:"interesting trending products worth discovering",subtitle:"Trending · value · unexpected",accent:"#d8d7ce"}];
+const TAGS:Record<string,string[]>={fashion:["Dresses","Shoes","Accessories","Minimal","Under €100","New"],fitness:["Strength","Workout Gear","Activewear","Recovery","Under €80","Top Rated"],beauty:["Skincare","Tools","Sensitive","Glow","Under €50","Top Rated"],hair:["Styling","Scalp","Repair","Volume","Tools","Under €50"],home:["Lighting","Furniture","Decor","Smart Home","Storage","Under €100"],tech:["Phone","Audio","Desk","Smart","Under €50","Top Rated"],discover:["Trending","Best Value","New","Popular","Under €50","Unexpected"]};
 function money(p:Product){if(p.price==null)return"";try{return new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"EUR",maximumFractionDigits:0}).format(p.price)}catch{return String(p.price)}}
 function hash(s:string){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return Math.abs(h)}
 function dedupe(list:Product[]){const seen=new Set<string>();return list.filter(p=>{const k=p.id||`${p.title}|${p.brand}`;if(seen.has(k))return false;seen.add(k);return true})}
-
-function categoryPosition(i:number,total:number):Vec3{
-  const a=i/total*Math.PI*2-Math.PI/2;
-  return [Math.cos(a)*5.1,Math.sin(a)*3.1,(i%2?-.35:.35)];
-}
-
-function productPositions(count:number):Vec3[]{
-  const out:Vec3[]=[];
-  for(let i=0;i<count;i++){
-    const ring=Math.floor(i/8);
-    const slot=i%8;
-    const radius=2.45+ring*1.65;
-    const a=slot/8*Math.PI*2+(ring%2)*.34;
-    out.push([Math.cos(a)*radius,Math.sin(a)*radius*.68,(i%3-.9)*.34]);
-  }
-  return out;
-}
-
-function CameraRig({mode}:{mode:"categories"|"products"}){
-  const {camera}=useThree();
-  const first=useRef(true);
-  useEffect(()=>{
-    const target=mode==="categories"?{x:0,y:0,z:13.5}:{x:0,y:0,z:9.2};
-    if(first.current){camera.position.set(target.x,target.y,target.z);first.current=false;return}
-    gsap.to(camera.position,{...target,duration:.75,ease:"power3.out",onUpdate:()=>camera.updateProjectionMatrix()});
-  },[mode,camera]);
-  return null;
-}
-
-function GlassSphere({position,size=1.8,accent,label,subtitle,onClick}:{position:Vec3;size?:number;accent:string;label:string;subtitle?:string;onClick:()=>void}){
-  const ref=useRef<THREE.Mesh>(null);
-  const seed=useMemo(()=>hash(label)%1000,[label]);
-  useFrame(({clock})=>{if(ref.current)ref.current.position.y=position[1]+Math.sin(clock.elapsedTime*.55+seed)*.08});
-  return <group position={position}>
-    <mesh ref={ref} onClick={onClick} onPointerOver={e=>{e.stopPropagation();document.body.style.cursor="pointer"}} onPointerOut={()=>document.body.style.cursor="default"}>
-      <sphereGeometry args={[size,48,48]}/>
-      <MeshTransmissionMaterial transmission={1} thickness={.68} roughness={.12} chromaticAberration={.035} anisotropy={.12} ior={1.18} distortion={.12} distortionScale={.18} temporalDistortion={.04} color={accent} transparent opacity={.78}/>
-    </mesh>
-    <mesh position={[-size*.28,size*.34,size*.82]} rotation={[0,0,-.25]}>
-      <sphereGeometry args={[size*.26,24,24]}/>
-      <meshBasicMaterial color="#ffffff" transparent opacity={.18}/>
-    </mesh>
-    <Html center transform distanceFactor={9} style={{pointerEvents:"none"}}>
-      <div className="r3f-bubble-label"><b>{label}</b>{subtitle&&<span>{subtitle}</span>}</div>
-    </Html>
-  </group>
-}
-
-function ProductImage({url}:{url:string}){
-  const texture=useLoader(THREE.TextureLoader,url);
-  texture.colorSpace=THREE.SRGBColorSpace;
-  return <mesh position={[0,0,.28]}>
-    <planeGeometry args={[1.32,1.32]}/>
-    <meshBasicMaterial map={texture} transparent toneMapped={false}/>
-  </mesh>
-}
-
-function ProductSphere({product,position,onSelect}:{product:Product;position:Vec3;onSelect:(p:Product)=>void}){
-  const size=1.08+(hash(product.id)%18)/100;
-  return <group position={position}>
-    <mesh onClick={e=>{e.stopPropagation();onSelect(product)}} onPointerOver={e=>{e.stopPropagation();document.body.style.cursor="pointer"}} onPointerOut={()=>document.body.style.cursor="default"}>
-      <sphereGeometry args={[size,40,40]}/>
-      <MeshTransmissionMaterial transmission={1} thickness={.42} roughness={.08} chromaticAberration={.028} ior={1.16} distortion={.08} distortionScale={.12} color="#e7efe9" transparent opacity={.72}/>
-    </mesh>
-    <Suspense fallback={null}><ProductImage url={product.image}/></Suspense>
-    <mesh position={[-.28,.36,.88]}><sphereGeometry args={[.22,18,18]}/><meshBasicMaterial color="#fff" transparent opacity={.22}/></mesh>
-    <Html position={[.78,-.72,.62]} center transform distanceFactor={8} style={{pointerEvents:"none"}}><div className="r3f-price">{money(product)}</div></Html>
-  </group>
-}
-
-function TagSphere({label,index,onClick}:{label:string;index:number;onClick:()=>void}){
-  const a=index/6*Math.PI*2-.52;
-  const p:Vec3=[Math.cos(a)*3.25,Math.sin(a)*2.1,.1];
-  return <GlassSphere position={p} size={.86} accent="#e2ece3" label={label} onClick={onClick}/>;
-}
-
-function Scene({mode,category,products,onCategory,onTag,onProduct}:{mode:"categories"|"products";category:Category|null;products:Product[];onCategory:(c:Category)=>void;onTag:(t:string)=>void;onProduct:(p:Product)=>void}){
-  const positions=useMemo(()=>productPositions(Math.min(products.length,32)),[products.length]);
-  return <>
-    <CameraRig mode={mode}/>
-    <ambientLight intensity={1.2}/>
-    <directionalLight position={[5,7,9]} intensity={3.3} color="#ffffff"/>
-    <pointLight position={[-5,-2,5]} intensity={1.6} color="#cfe7da"/>
-    {mode==="categories"&&CATEGORIES.map((c,i)=><GlassSphere key={c.key} position={categoryPosition(i,CATEGORIES.length)} size={1.32} accent={c.accent} label={c.label} subtitle={c.subtitle} onClick={()=>onCategory(c)}/>) }
-    {mode==="products"&&category&&<>
-      <GlassSphere position={[0,0,-.3]} size={1.35} accent={category.accent} label={category.label} subtitle="Tap a tag or product" onClick={()=>{}}/>
-      {(TAGS[category.key]||[]).map((t,i)=><TagSphere key={t} label={t} index={i} onClick={()=>onTag(t)}/>) }
-      {products.slice(0,32).map((p,i)=><ProductSphere key={p.id} product={p} position={positions[i]} onSelect={onProduct}/>) }
-    </>}
-    <OrbitControls enableDamping dampingFactor={.08} enablePan={mode==="products"} enableRotate={false} minDistance={6.8} maxDistance={16} zoomSpeed={.7} panSpeed={.8}/>
-  </>
-}
-
-export default function LuminaThreeWorld(){
-  const [mode,setMode]=useState<"categories"|"products">("categories");
-  const [category,setCategory]=useState<Category|null>(null);
-  const [products,setProducts]=useState<Product[]>([]);
-  const [selected,setSelected]=useState<Product|null>(null);
-  const [query,setQuery]=useState("");
-  const [loading,setLoading]=useState(false);
-  const [liked,setLiked]=useState<Set<string>>(new Set());
-  const [focus,setFocus]=useState("");
-
-  async function loadProducts(base:string,direction=""){
-    setLoading(true);
-    try{
-      const params=new URLSearchParams({q:base});if(direction)params.set("direction",direction);
-      const r=await fetch(`/api/catalog?${params}`);const data:CatalogPage=await r.json();
-      setProducts(dedupe(data.products||[]).filter(p=>p.image).slice(0,40));
-    }finally{setLoading(false)}
-  }
-
-  function chooseCategory(c:Category){setCategory(c);setMode("products");setFocus("");setSelected(null);void loadProducts(c.query)}
-  function search(){const q=query.trim();if(!q)return;const c={key:"discover",label:"Search",query:q,subtitle:q,accent:"#d8d7ce"};setCategory(c);setMode("products");setFocus("");setSelected(null);void loadProducts(q)}
-  function exploreTag(tag:string){if(!category)return;setFocus(tag);setSelected(null);void loadProducts(category.query,tag)}
-
-  const bg=category?.key==="fitness"?"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=2200&q=88":category?.key==="home"?"https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=2200&q=88":category?.key==="beauty"?"https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=2200&q=88":"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=2200&q=88";
-
-  return <main className="r3f-shell" style={{"--r3f-bg":`url(${bg})`} as React.CSSProperties}>
-    <div className="r3f-photo-bg"/>
-    <header className="r3f-search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==="Enter"&&search()} placeholder="Search anything — product, style, price…"/><button onClick={search}>↵</button></header>
-    <button className="r3f-worlds" onClick={()=>{setMode("categories");setCategory(null);setProducts([]);setSelected(null)}}>Worlds</button>
-    <div className="r3f-canvas-wrap"><Canvas dpr={[1,1.6]} gl={{antialias:true,alpha:true,powerPreference:"high-performance"}} camera={{position:[0,0,13.5],fov:42}}><Suspense fallback={null}><Scene mode={mode} category={category} products={products} onCategory={chooseCategory} onTag={exploreTag} onProduct={setSelected}/></Suspense></Canvas></div>
-    <div className="r3f-status">{mode==="categories"?"Choose a world":loading?"Finding products…":focus?`${category?.label} · ${focus}`:category?.label||"Explore"}</div>
-
-    {selected&&<div className="r3f-product-backdrop" onClick={()=>setSelected(null)}/>} 
-    {selected&&<aside className="r3f-product-card">
-      <button className="r3f-close" onClick={()=>setSelected(null)}><X/></button>
-      <div className="r3f-product-media"><img src={selected.image} alt={selected.title}/></div>
-      <div className="r3f-product-copy">
-        <span className="r3f-brand">{selected.brand||"Independent store"}</span>
-        <span className="r3f-source">{selected.source||"Store"}</span>
-        <h2>{selected.title}</h2>
-        <strong>{money(selected)}</strong>
-        <div className="r3f-tags">{(selected.tags||[]).slice(0,5).map(t=><button key={t} onClick={()=>exploreTag(t)}>{t}</button>)}</div>
-        <div className="r3f-actions">
-          <button className={liked.has(selected.id)?"liked":""} onClick={()=>setLiked(s=>{const n=new Set(s);n.has(selected.id)?n.delete(selected.id):n.add(selected.id);return n})}><Heart/>Save</button>
-          <a href={selected.url||"#"} target="_blank" rel="noreferrer"><ShoppingBag/>Shop now</a>
-          {category?.key==="fashion"&&<button className="r3f-try"><Sparkles/>Try on</button>}
-        </div>
-      </div>
-    </aside>}
-  </main>
-}
+function categoryPosition(i:number,total:number):Vec3{const a=i/total*Math.PI*2-Math.PI/2;return [Math.cos(a)*5.1,Math.sin(a)*3.1,(i%2?-.35:.35)]}
+function productPositions(count:number):Vec3[]{const out:Vec3[]=[];for(let i=0;i<count;i++){const ring=Math.floor(i/8),slot=i%8,radius=2.45+ring*1.65,a=slot/8*Math.PI*2+(ring%2)*.34;out.push([Math.cos(a)*radius,Math.sin(a)*radius*.68,(i%3-.9)*.34])}return out}
+function CameraRig({mode}:{mode:"categories"|"products"}){const {camera}=useThree();const first=useRef(true);useEffect(()=>{const target=mode==="categories"?{x:0,y:0,z:13.5}:{x:0,y:0,z:9.2};if(first.current){camera.position.set(target.x,target.y,target.z);first.current=false;return}gsap.to(camera.position,{...target,duration:.75,ease:"power3.out",onUpdate:()=>camera.updateProjectionMatrix()})},[mode,camera]);return null}
+function GlassSphere({position,size=1.8,accent,label,subtitle,onClick}:{position:Vec3;size?:number;accent:string;label:string;subtitle?:string;onClick:()=>void}){const ref=useRef<THREE.Mesh>(null);const seed=useMemo(()=>hash(label)%1000,[label]);useFrame(({clock})=>{if(ref.current)ref.current.position.y=position[1]+Math.sin(clock.elapsedTime*.55+seed)*.08});return <group position={position}><mesh ref={ref} onClick={onClick}><sphereGeometry args={[size,48,48]}/><MeshTransmissionMaterial transmission={1} thickness={.68} roughness={.12} chromaticAberration={.035} anisotropy={.12} ior={1.18} distortion={.12} distortionScale={.18} temporalDistortion={.04} color={accent} transparent opacity={.78}/></mesh><mesh position={[-size*.28,size*.34,size*.82]}><sphereGeometry args={[size*.26,24,24]}/><meshBasicMaterial color="#fff" transparent opacity={.18}/></mesh><Html center transform distanceFactor={9} style={{pointerEvents:"none"}}><div className="r3f-bubble-label"><b>{label}</b>{subtitle&&<span>{subtitle}</span>}</div></Html></group>}
+function ProductSphere({product,position,onSelect}:{product:Product;position:Vec3;onSelect:(p:Product)=>void}){const size=1.08+(hash(product.id)%18)/100;return <group position={position}><mesh onClick={e=>{e.stopPropagation();onSelect(product)}}><sphereGeometry args={[size,40,40]}/><MeshTransmissionMaterial transmission={1} thickness={.42} roughness={.08} chromaticAberration={.028} ior={1.16} distortion={.08} distortionScale={.12} color="#e7efe9" transparent opacity={.72}/></mesh><Html center transform position={[0,0,.58]} distanceFactor={8.4} style={{pointerEvents:"none"}}><div className="r3f-product-orb-image"><img src={product.image} alt=""/></div></Html><mesh position={[-.28,.36,.88]}><sphereGeometry args={[.22,18,18]}/><meshBasicMaterial color="#fff" transparent opacity={.22}/></mesh><Html position={[.78,-.72,.62]} center transform distanceFactor={8} style={{pointerEvents:"none"}}><div className="r3f-price">{money(product)}</div></Html></group>}
+function TagSphere({label,index,onClick}:{label:string;index:number;onClick:()=>void}){const a=index/6*Math.PI*2-.52;const p:Vec3=[Math.cos(a)*3.25,Math.sin(a)*2.1,.1];return <GlassSphere position={p} size={.86} accent="#e2ece3" label={label} onClick={onClick}/>}
+function Scene({mode,category,products,onCategory,onTag,onProduct}:{mode:"categories"|"products";category:Category|null;products:Product[];onCategory:(c:Category)=>void;onTag:(t:string)=>void;onProduct:(p:Product)=>void}){const positions=useMemo(()=>productPositions(Math.min(products.length,32)),[products.length]);return <><CameraRig mode={mode}/><ambientLight intensity={1.2}/><directionalLight position={[5,7,9]} intensity={3.3}/><pointLight position={[-5,-2,5]} intensity={1.6} color="#cfe7da"/>{mode==="categories"&&CATEGORIES.map((c,i)=><GlassSphere key={c.key} position={categoryPosition(i,CATEGORIES.length)} size={1.32} accent={c.accent} label={c.label} subtitle={c.subtitle} onClick={()=>onCategory(c)}/>)}{mode==="products"&&category&&<><GlassSphere position={[0,0,-.3]} size={1.35} accent={category.accent} label={category.label} subtitle="Tap a tag or product" onClick={()=>{}}/>{(TAGS[category.key]||[]).map((t,i)=><TagSphere key={t} label={t} index={i} onClick={()=>onTag(t)}/>)}{products.slice(0,32).map((p,i)=><ProductSphere key={p.id} product={p} position={positions[i]} onSelect={onProduct}/>)}</>}<OrbitControls enableDamping dampingFactor={.08} enablePan={mode==="products"} enableRotate={false} minDistance={6.8} maxDistance={16} zoomSpeed={.7} panSpeed={.8}/></>}
+export default function LuminaThreeWorld(){const [mode,setMode]=useState<"categories"|"products">("categories"),[category,setCategory]=useState<Category|null>(null),[products,setProducts]=useState<Product[]>([]),[selected,setSelected]=useState<Product|null>(null),[query,setQuery]=useState(""),[loading,setLoading]=useState(false),[liked,setLiked]=useState<Set<string>>(new Set()),[focus,setFocus]=useState("");async function loadProducts(base:string,direction=""){setLoading(true);try{const params=new URLSearchParams({q:base});if(direction)params.set("direction",direction);const r=await fetch(`/api/catalog?${params}`);const data:CatalogPage=await r.json();setProducts(dedupe(data.products||[]).filter(p=>p.image).slice(0,40))}finally{setLoading(false)}}function chooseCategory(c:Category){setCategory(c);setMode("products");setFocus("");setSelected(null);void loadProducts(c.query)}function search(){const q=query.trim();if(!q)return;const c={key:"discover",label:"Search",query:q,subtitle:q,accent:"#d8d7ce"};setCategory(c);setMode("products");setFocus("");setSelected(null);void loadProducts(q)}function exploreTag(tag:string){if(!category)return;setFocus(tag);setSelected(null);void loadProducts(category.query,tag)}const bg=category?.key==="fitness"?"https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=2200&q=88":category?.key==="home"?"https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=2200&q=88":category?.key==="beauty"?"https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=2200&q=88":"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=2200&q=88";return <main className="r3f-shell" style={{"--r3f-bg":`url(${bg})`} as React.CSSProperties}><div className="r3f-photo-bg"/><header className="r3f-search"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==="Enter"&&search()} placeholder="Search anything — product, style, price…"/><button onClick={search}>↵</button></header><button className="r3f-worlds" onClick={()=>{setMode("categories");setCategory(null);setProducts([]);setSelected(null)}}>Worlds</button><div className="r3f-canvas-wrap"><Canvas dpr={[1,1.6]} gl={{antialias:true,alpha:true,powerPreference:"high-performance"}} camera={{position:[0,0,13.5],fov:42}}><Suspense fallback={null}><Scene mode={mode} category={category} products={products} onCategory={chooseCategory} onTag={exploreTag} onProduct={setSelected}/></Suspense></Canvas></div><div className="r3f-status">{mode==="categories"?"Choose a world":loading?"Finding products…":focus?`${category?.label} · ${focus}`:category?.label||"Explore"}</div>{selected&&<div className="r3f-product-backdrop" onClick={()=>setSelected(null)}/>} {selected&&<aside className="r3f-product-card"><button className="r3f-close" onClick={()=>setSelected(null)}><X/></button><div className="r3f-product-media"><img src={selected.image} alt={selected.title}/></div><div className="r3f-product-copy"><span className="r3f-brand">{selected.brand||"Independent store"}</span><span className="r3f-source">{selected.source||"Store"}</span><h2>{selected.title}</h2><strong>{money(selected)}</strong><div className="r3f-tags">{(selected.tags||[]).slice(0,5).map(t=><button key={t} onClick={()=>exploreTag(t)}>{t}</button>)}</div><div className="r3f-actions"><button className={liked.has(selected.id)?"liked":""} onClick={()=>setLiked(s=>{const n=new Set(s);n.has(selected.id)?n.delete(selected.id):n.add(selected.id);return n})}><Heart/>Save</button><a href={selected.url||"#"} target="_blank" rel="noreferrer"><ShoppingBag/>Shop now</a>{category?.key==="fashion"&&<button className="r3f-try"><Sparkles/>Try on</button>}</div></div></aside>}</main>}
