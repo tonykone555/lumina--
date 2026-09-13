@@ -3,7 +3,7 @@ import { checkoutMode } from "@/lib/commerce/checkout";
 
 export const runtime="nodejs";
 
-type Product={id:string;title:string;brand:string;price:number|null;currency?:string;image:string;url?:string;tags?:string[];source?:string;[key:string]:unknown};
+type Product={id:string;title:string;brand:string;price:number|null;currency?:string;image:string;url?:string;tags?:string[];source?:string;variants?:unknown[];[key:string]:unknown};
 type PriceIntent={min?:number;max?:number;currency?:string;explicitCurrency:boolean};
 type LuminaSource="all"|"shopify"|"amazon";
 
@@ -90,7 +90,7 @@ async function fetchShopify(query:string,country:string,cursor?:string){
  const response=await fetch("https://catalog.shopify.com/api/ucp/mcp",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
  const raw:any=await response.json();const content=raw?.result?.structuredContent;
  if(!response.ok||!content?.products)throw new Error("Catalog unavailable");
- const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price;return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:p?.media?.find((m:any)=>m.type==="image")?.url||p?.media?.[0]?.url||"",url:p.url||p?.variants?.[0]?.seller?.url||"#",tags:[...new Set<string>((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))].slice(0,6),source:"shopify-global-catalog"}}));
+ const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price;const variants=(p?.variants||[]).map((v:any)=>{const vp=v?.price||price;return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:v?.image?.url||v?.media?.[0]?.url||p?.media?.find((m:any)=>m.type==="image")?.url||p?.media?.[0]?.url||"",url:v.url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"}}).filter((v:any)=>v.id);return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:p?.media?.find((m:any)=>m.type==="image")?.url||p?.media?.[0]?.url||"",url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,tags:[...new Set<string>((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))].slice(0,6),source:"shopify-global-catalog"}}));
  return{products,pagination:normalizeShopifyPagination(content.pagination||{})};
 }
 
