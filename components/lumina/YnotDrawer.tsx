@@ -302,7 +302,7 @@ export default function YnotDrawer() {
             </div>
             <button className="ynot-shop" onClick={openDeal} disabled={selected.url === "#"}>
               <ShoppingBag />
-              <span>Open deal</span>
+              <span>Checkout</span>
             </button>
           </div>
         )}
