@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, Search, ShoppingBag, Sparkles, X } from "lucide-react";
+import { ChevronRight, Search, ShoppingBag, X } from "lucide-react";
 
 type Deal = {
   id: string;
@@ -52,7 +52,7 @@ type AmazonItem = {
   source: string;
 };
 
-const sections = ["Best Value", "Under €25", "Pay in 4", "Selling Fast", "Fast Delivery", "Jewelry", "Accessories", "Bags", "Phone Accessories", "Watches", "Tech", "Pets", "Home", "Kitchen", "Beauty & Hair", "Fitness", "Car", "Travel", "Free Delivery"];
+const sections = ["Best Value", "Amazon", "Under €25", "Pay in 4", "Selling Fast", "Fast Delivery", "Jewelry", "Accessories", "Bags", "Phone Accessories", "Watches", "Tech", "Pets", "Home", "Kitchen", "Beauty & Hair", "Fitness", "Car", "Travel", "Free Delivery"];
 const fallback: Deal[] = [
   {
     id: "preview-jewelry",
@@ -155,7 +155,7 @@ export default function YnotDrawer() {
     [deals, setDeals] = useState<Deal[]>(fallback),
     [selected, setSelected] = useState<Deal | null>(null),
     [query, setQuery] = useState(""),
-    [loading, setLoading] = useState(true),
+    [, setLoading] = useState(true),
     [loadingMore, setLoadingMore] = useState(false),
     [live, setLive] = useState(false),
     [exhausted, setExhausted] = useState<Set<string>>(new Set());
@@ -309,10 +309,6 @@ export default function YnotDrawer() {
             </button>
           </div>
         )}
-        <div className="ynot-foot">
-          <Sparkles />
-          <span>{loading ? "Loading live YNOT offers…" : live ? "Live Shopify + Amazon + marketplace feed" : "Live feed unavailable · showing preview products"}</span>
-        </div>
       </aside>
     </>
   );

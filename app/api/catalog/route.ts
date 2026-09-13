@@ -62,10 +62,10 @@ function parsePriceIntent(text:string,country:string):PriceIntent{
 }
 function stripPriceLanguage(text:string){return text.replace(/(?:between|from)\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*\d+(?:[.,]\d+)?\s*(?:and|to|[-–])\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*\d+(?:[.,]\d+)?/ig," ").replace(/(?:under|below|less\s+than|up\s+to|max(?:imum)?|no\s+more\s+than|over|above|more\s+than|at\s+least|min(?:imum)?)\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*\d+(?:[.,]\d+)?/ig," ").replace(/\s+/g," ").replace(/^[,\s]+|[,\s]+$/g,"").trim()}
 function applyPriceIntent(products:Product[],intent:PriceIntent){if(intent.min==null&&intent.max==null)return products;return products.filter(p=>{if(p.price==null)return false;if(intent.explicitCurrency&&p.currency&&p.currency!==intent.currency)return false;if(intent.min!=null&&p.price<intent.min)return false;if(intent.max!=null&&p.price>intent.max)return false;return true})}
-function usable(products:Product[]){return products.filter(p=>Boolean(p.id&&p.title&&p.image&&p.url&&p.url!=="#"&&p.price!=null))}
+function usable(products:Product[]){return products.filter(p=>Boolean(p.id&&p.title&&p.image&&p.url&&p.url!=="#"))}
 function productKey(p:Product){return `${String(p.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${String(p.brand||"").toLowerCase()}`}
 function dedupeProducts(products:Product[]){const seen=new Set<string>();return products.filter(p=>{const key=productKey(p);if(!key||seen.has(key))return false;seen.add(key);return true})}
-function groupedProducts(shopify:Product[],amazon:Product[]){return dedupeProducts([...shopify,...amazon]).slice(0,64)}
+function groupedProducts(shopify:Product[],amazon:Product[]){return dedupeProducts([...shopify,...amazon])}
 function nextShopifyCursor(p:any){const candidates=[p?.cursor,p?.next_cursor,p?.nextCursor,p?.end_cursor,p?.endCursor,p?.after,p?.pageInfo?.endCursor,p?.page_info?.end_cursor];const found=candidates.find(v=>typeof v==="string"&&v.length);return found||""}
 function normalizeShopifyPagination(p:any){const next=nextShopifyCursor(p);const has=Boolean(p?.has_next_page??p?.hasNextPage??p?.pageInfo?.hasNextPage??p?.page_info?.has_next_page??next);return{...(p||{}),next_cursor:next||null,has_next_page:has}}
 function amazonPrice(r:any){const raw=r?.price?.value??r?.price?.raw??r?.prices?.[0]?.value??null;if(typeof raw==="number")return raw;if(typeof raw==="string"){const parsed=Number.parseFloat(raw.replace(/[^0-9,.-]/g,"").replace(",","."));return Number.isFinite(parsed)?parsed:null}return null}
@@ -75,7 +75,7 @@ function amazonImage(r:any){return r?.image||r?.main_image?.link||r?.images?.[0]
 async function fetchAmazon(query:string,country:string,page=0){
  const apiKey=process.env.RAINFOREST_API_KEY;if(!apiKey)return[];
  const domain=AMAZON_DOMAINS[country]||"amazon.fr";
- const params=new URLSearchParams({api_key:apiKey,type:"search",amazon_domain:domain,search_term:stripPriceLanguage(query)||query,number_of_results:"24",exclude_sponsored:"true"});
+ const params=new URLSearchParams({api_key:apiKey,type:"search",amazon_domain:domain,search_term:stripPriceLanguage(query)||query,number_of_results:"48",exclude_sponsored:"true"});
  if(page>0)params.set("page",String(page+1));
  const response=await fetch(`https://api.rainforestapi.com/request?${params}`,{headers:{Accept:"application/json"},next:{revalidate:60}});
  if(!response.ok)throw new Error(`Rainforest ${response.status}`);

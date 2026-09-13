@@ -10,7 +10,7 @@ type Category={key:string;label:string;query:string;subtitle:string};
 type MarketMode="lumina"|"ebay";
 type LuminaSource="all"|"shopify"|"amazon";
 
-const WORLD_W=200000,WORLD_H=200000,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2,ZONE_STEP=1160;
+const WORLD_W=200000,WORLD_H=200000,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2,ZONE_STEP=1480,PRODUCTS_PER_ZONE=54;
 const START_ZOOM=.56;
 const SHOPIFY_WARM_TARGET=90,SHOPIFY_WARM_ATTEMPTS=8;
 const DISCOVERY_WAVES=["more like this","new arrivals","best value","more premium","same shape","top rated","unexpected picks","editor picks","alternative styles","hidden gems","popular choices","fresh finds"];
@@ -49,9 +49,8 @@ function sourceShort(p:Product){const source=productSource(p);if(source==="amazo
 function sourceName(source:LuminaSource){return source==="all"?"All sources":source==="amazon"?"Amazon":"Shopify"}
 function zoneCenter(zone:number,offsetX=0){
  if(zone<=0)return{x:WORLD_CX+offsetX,y:WORLD_CY};
- const spokes=6,layer=Math.floor((zone-1)/spokes)+1,spoke=(zone-1)%spokes;
- const angle=-Math.PI/2+spoke*(Math.PI*2/spokes)+layer*(Math.PI/36);
- const radius=ZONE_STEP*layer;
+ const angle=zone*2.399963229728653;
+ const radius=ZONE_STEP*Math.sqrt(zone);
  return{x:WORLD_CX+offsetX+Math.cos(angle)*radius,y:WORLD_CY+Math.sin(angle)*radius};
 }
 
@@ -70,10 +69,12 @@ function protectedBubbleZones(){
 const PROTECTED_BUBBLES=protectedBubbleZones();
 function keepClearOfBigBubbles(x:number,y:number,seed:number){let px=x,py=y;for(let pass=0;pass<4;pass++){for(const z of PROTECTED_BUBBLES){let dx=px-z.x,dy=py-z.y,d=Math.hypot(dx,dy);if(d>=z.r)continue;if(d<1){const a=(seed%360)*Math.PI/180;dx=Math.cos(a);dy=Math.sin(a);d=1}const extra=18+(seed%24),scale=(z.r+extra)/d;px=z.x+dx*scale;py=z.y+dy*scale}}return{x:px,y:py}}
 function placeProduct(p:Product,index:number,fresh=false,offsetX=0){
- const zone=Math.floor(index/18),local=index%18,center=zoneCenter(zone,offsetX);
- const ringIndex=Math.floor(local/6),spoke=local%6;
- const ring=230+ringIndex*180;
- const angle=-Math.PI/2+spoke*(Math.PI/3)+ringIndex*(Math.PI/18);
+ const zone=Math.floor(index/PRODUCTS_PER_ZONE),local=index%PRODUCTS_PER_ZONE,center=zoneCenter(zone,offsetX);
+ const ringIndex=local<12?0:local<30?1:2;
+ const ringStart=ringIndex===0?0:ringIndex===1?12:30;
+ const ringCapacity=ringIndex===0?12:ringIndex===1?18:24;
+ const ring=330+ringIndex*170;
+ const angle=-Math.PI/2+(local-ringStart)*(Math.PI*2/ringCapacity)+ringIndex*(Math.PI/36);
  const rawX=center.x+Math.cos(angle)*ring,rawY=center.y+Math.sin(angle)*ring,safe={x:rawX,y:rawY};
  return{...p,title:cleanTitle(p.title),zone,fresh,x:safe.x,y:safe.y};
 }
@@ -146,12 +147,12 @@ export default function LuminaWorld(){
 
  const labels=useMemo(()=>{const fromProducts=products.flatMap(p=>p.tags||[]).filter(Boolean);return[...new Set([focus,...scene.labels,...fromProducts])].filter(Boolean).slice(0,12)},[products,focus,scene.labels]);
  const level=zoom<.68?"worlds":zoom<1?"themes":zoom<1.36?"products":"details";
- const zoneCount=Math.max(1,Math.ceil(products.length/18));
+ const zoneCount=Math.max(1,Math.ceil(products.length/PRODUCTS_PER_ZONE));
  useEffect(()=>{if(level==="details"&&products.length)expandWorld()},[level]); // eslint-disable-line react-hooks/exhaustive-deps
  useEffect(()=>{if(!submitted||market!=="lumina"||luminaSource!=="shopify"||products.length>=SHOPIFY_WARM_TARGET||loadingRef.current||shopifyWarmAttemptsRef.current>=SHOPIFY_WARM_ATTEMPTS)return;shopifyWarmAttemptsRef.current+=1;const t=window.setTimeout(()=>expandWorld(),480);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length,shopifyFetchSerial,loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
  function pointerDown(e:React.PointerEvent<HTMLElement>){pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2){const p=[...pointersRef.current.values()];pinchRef.current={distance:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),zoom};dragRef.current.drag=false;return}if((e.target as HTMLElement).closest("button,input,a,.lv4-detail,.lv4-source-picker"))return;dragRef.current={drag:true,px:e.clientX-pan.x,py:e.clientY-pan.y,lastX:e.clientX,lastY:e.clientY,startX:e.clientX,startY:e.clientY};(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)}
- function pointerMove(e:React.PointerEvent<HTMLElement>){if(pointersRef.current.has(e.pointerId))pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2&&pinchRef.current){const p=[...pointersRef.current.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),next=Math.min(2.1,Math.max(.38,pinchRef.current.zoom*(d/pinchRef.current.distance)));setZoom(next);if(next>pinchRef.current.zoom*1.05)expandWorld();return}if(dragRef.current.drag){setPan({x:e.clientX-dragRef.current.px,y:e.clientY-dragRef.current.py});if(Math.hypot(e.clientX-dragRef.current.startX,e.clientY-dragRef.current.startY)>240)expandWorld()}}
+ function pointerMove(e:React.PointerEvent<HTMLElement>){if(pointersRef.current.has(e.pointerId))pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2&&pinchRef.current){const p=[...pointersRef.current.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),next=Math.min(2.1,Math.max(.38,pinchRef.current.zoom*(d/pinchRef.current.distance)));setZoom(next);if(next>pinchRef.current.zoom*1.05)expandWorld();return}if(dragRef.current.drag){const next={x:e.clientX-dragRef.current.px,y:e.clientY-dragRef.current.py};if(!submitted){const home={x:-WORLD_CX*zoom,y:-WORLD_CY*zoom};next.x=Math.max(home.x-1100,Math.min(home.x+1100,next.x));next.y=Math.max(home.y-900,Math.min(home.y+900,next.y))}setPan(next);if(Math.hypot(e.clientX-dragRef.current.startX,e.clientY-dragRef.current.startY)>240)expandWorld()}}
  function pointerUp(e:React.PointerEvent<HTMLElement>){pointersRef.current.delete(e.pointerId);if(pointersRef.current.size<2)pinchRef.current=null;dragRef.current.drag=false}
 
  const searchPlaceholder=market==="ebay"?"Search eBay Marketplace — product, style, price…":luminaSource==="amazon"?"Search Amazon — product, style, price…":luminaSource==="shopify"?"Search Shopify stores — product, style, price…":"Search LuminaMarket — Shopify + Amazon…";
@@ -170,7 +171,7 @@ export default function LuminaWorld(){
     {level!=="worlds"&&<button className="lv4-intent" style={{left:WORLD_CX,top:WORLD_CY}} onClick={()=>{setZoom(z=>Math.min(1.65,z+.2));expandWorld()}}><span>{focus||CATEGORIES.find(c=>c.key===categoryKey)?.label}</span><small>{marketError|| (loading?"Finding products…":`${market==="lumina"?sourceName(luminaSource):"eBay"} · ${products.length} products · ${zoneCount} zones${loadingMore?" · more arriving":""}`)}</small></button>}
     {level!=="worlds"&&market==="lumina"&&luminaSource==="all"&&products.length>0&&<><button className="lv4-source-anchor shopify" style={{left:WORLD_CX-980,top:WORLD_CY-720}} onClick={()=>changeLuminaSource("shopify")}><b>Shopify</b><span>Independent stores</span></button><button className="lv4-source-anchor amazon" style={{left:WORLD_CX+980,top:WORLD_CY-720}} onClick={()=>changeLuminaSource("amazon")}><b>Amazon</b><span>Marketplace catalog</span></button></>}
     {level!=="worlds"&&labels.map((label,i)=>{const ring=390+Math.floor(i/6)*210,a=(i%6)/6*Math.PI*2-.52,x=WORLD_CX+Math.cos(a)*ring,y=WORLD_CY+Math.sin(a)*(ring*.66);return <button key={`${label}-${i}`} className={`lv4-textbubble ${focus===label?"active":""}`} style={{left:x,top:y}} onClick={()=>branch(label)}>{label}</button>})}
-    {level!=="worlds"&&Array.from({length:Math.max(0,zoneCount-1)},(_,i)=>{const zone=i+1,center=zoneCenter(zone,market==="lumina"&&luminaSource==="all"?(zone%2?-980:980):0),start=zone*18+1,end=Math.min(products.length,(zone+1)*18);return <div key={`zone-${zone}`} className="lv4-zone-annotation" style={{left:center.x,top:center.y}}><small>{focus||CATEGORIES.find(c=>c.key===categoryKey)?.label||"Discover"}</small><b>Explore further</b><span>{start}–{end} · {market==="lumina"?sourceName(luminaSource):"eBay"}</span></div>})}
+    {level!=="worlds"&&Array.from({length:Math.max(0,zoneCount-1)},(_,i)=>{const zone=i+1,center=zoneCenter(zone,market==="lumina"&&luminaSource==="all"?(zone%2?-980:980):0),start=zone*PRODUCTS_PER_ZONE+1,end=Math.min(products.length,(zone+1)*PRODUCTS_PER_ZONE);return <div key={`zone-${zone}`} className="lv4-zone-annotation" style={{left:center.x,top:center.y}}><small>{focus||CATEGORIES.find(c=>c.key===categoryKey)?.label||"Discover"}</small><b>Explore further</b><span>{start}–{end} · {market==="lumina"?sourceName(luminaSource):"eBay"}</span></div>})}
     {level!=="worlds"&&products.map(p=>{const size=productSize(p),showMeta=level==="details";return <button key={p.id} className={`lv4-product source-${productSource(p)} ${p.fresh?"lv4-new-product":""}`} style={{left:p.x,top:p.y,"--s":`${size}px`} as React.CSSProperties} onClick={()=>setSelected(p)}><span className="lv4-vita-gloss"/><img src={p.image} alt=""/>{p.price!=null&&<span className="lv4-price">{money(p)}</span>}{showMeta&&<span className="lv4-orbmeta"><small className="lv4-orb-source">{sourceShort(p)}</small><b>{cleanTitle(p.title)}</b><em>{p.brand}</em></span>}</button>})}
    </div>
   </section>
