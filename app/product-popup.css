@@ -1,0 +1,241 @@
+/* Product focus card — restore the rich premium shopping popup. */
+.lv4-detail-backdrop{
+  background:rgba(7,6,5,.26)!important;
+  backdrop-filter:blur(14px) saturate(.96)!important;
+  -webkit-backdrop-filter:blur(14px) saturate(.96)!important;
+}
+
+.lv4-detail{
+  width:min(880px,calc(100vw - 36px))!important;
+  height:min(560px,calc(100dvh - 48px))!important;
+  max-height:none!important;
+  padding:18px!important;
+  display:grid!important;
+  grid-template-columns:minmax(360px,54%) minmax(260px,46%)!important;
+  gap:24px!important;
+  align-items:stretch!important;
+  border:1px solid rgba(255,255,255,.48)!important;
+  border-radius:38px!important;
+  background:
+    radial-gradient(circle at 16% 8%,rgba(255,255,255,.34),transparent 34%),
+    linear-gradient(145deg,rgba(225,235,227,.60),rgba(166,181,170,.34))!important;
+  backdrop-filter:blur(34px) saturate(1.2)!important;
+  -webkit-backdrop-filter:blur(34px) saturate(1.2)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.72),
+    inset 0 -1px 0 rgba(255,255,255,.10),
+    0 42px 130px rgba(4,3,3,.45)!important;
+  overflow:hidden!important;
+}
+
+.lv4-detail::before{
+  content:"";
+  position:absolute;
+  left:7%;top:3%;width:38%;height:11%;
+  border-radius:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.28),transparent);
+  filter:blur(8px);
+  pointer-events:none;
+}
+
+.lv4-detail>img{
+  width:100%!important;
+  height:100%!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  border-radius:28px!important;
+  margin:0!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.06))!important;
+  border:1px solid rgba(255,255,255,.48)!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.38),
+    inset 0 -18px 42px rgba(34,45,37,.05),
+    0 18px 48px rgba(16,13,11,.12)!important;
+}
+
+.lv4-detailcopy{
+  position:relative;
+  min-width:0;
+  padding:18px 10px 12px 0!important;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  text-align:left!important;
+  text-shadow:none!important;
+}
+
+.lv4-product-brand{
+  display:block!important;
+  color:#fff!important;
+  font:760 13px/1.15 Inter,ui-sans-serif,sans-serif!important;
+  letter-spacing:-.02em!important;
+  text-transform:none!important;
+  margin:0!important;
+}
+
+.lv4-product-source{
+  display:block!important;
+  margin-top:6px!important;
+  color:rgba(255,255,255,.58)!important;
+  font:700 9px/1 Inter,ui-sans-serif,sans-serif!important;
+  letter-spacing:.13em!important;
+  text-transform:uppercase!important;
+}
+
+.lv4-detailcopy h2{
+  margin:15px 0 10px!important;
+  color:#fff!important;
+  font:780 clamp(28px,3.7vw,42px)/1 Inter,ui-sans-serif,sans-serif!important;
+  letter-spacing:-.052em!important;
+  text-shadow:0 2px 18px rgba(0,0,0,.16)!important;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+.lv4-detailcopy strong{
+  display:block!important;
+  margin-top:5px!important;
+  color:#fff!important;
+  font:850 30px/1 Inter,ui-sans-serif,sans-serif!important;
+  letter-spacing:-.045em!important;
+  text-shadow:0 2px 16px rgba(0,0,0,.15)!important;
+}
+.lv4-detailcopy strong::before{
+  content:"PRICE";
+  display:block;
+  margin-bottom:6px;
+  color:rgba(255,255,255,.52);
+  font:750 8px/1 Inter,ui-sans-serif,sans-serif;
+  letter-spacing:.14em;
+}
+
+.lv4-tagrow{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  justify-content:flex-start!important;
+  gap:7px!important;
+  margin-top:18px!important;
+}
+.lv4-tagrow button{
+  min-height:32px!important;
+  padding:0 11px!important;
+  border:1px solid rgba(255,255,255,.34)!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.12)!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+  color:rgba(255,255,255,.90)!important;
+  font:700 9px/1 Inter,ui-sans-serif,sans-serif!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.26)!important;
+}
+
+.lv4-actions{
+  display:grid!important;
+  grid-template-columns:auto 1fr!important;
+  gap:9px!important;
+  margin-top:22px!important;
+  justify-content:stretch!important;
+}
+.lv4-actions button,
+.lv4-actions a{
+  height:48px!important;
+  border-radius:16px!important;
+  border:1px solid rgba(255,255,255,.32)!important;
+  font:760 11px/1 Inter,ui-sans-serif,sans-serif!important;
+  text-decoration:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important;
+}
+
+/* Save button */
+.lv4-actions button:first-child{
+  min-width:92px!important;
+  padding:0 14px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:7px!important;
+  background:rgba(255,255,255,.13)!important;
+  color:#fff!important;
+}
+.lv4-actions button:first-child::after{content:"Save";font-size:10px;font-weight:760}
+.lv4-actions button:first-child svg{width:16px!important}
+.lv4-actions button:first-child.active{background:rgba(235,255,202,.22)!important}
+
+/* Primary shopping CTA. Keep the real link but surface it as Shop now. */
+.lv4-actions a{
+  padding:0 18px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  background:rgba(24,29,25,.88)!important;
+  color:#fff!important;
+  font-size:0!important;
+}
+.lv4-actions a::before{content:"Shop now";font:820 12px/1 Inter,ui-sans-serif,sans-serif!important}
+.lv4-actions a svg{width:15px!important;height:15px!important}
+
+/* Try-on sits below the primary shop row when available. */
+.lv4-actions .try{
+  grid-column:1 / -1!important;
+  width:100%!important;
+  padding:0 16px!important;
+  background:rgba(255,255,255,.17)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.36)!important;
+}
+.lv4-actions .try svg{width:15px!important}
+
+.lv4-close{
+  right:16px!important;
+  top:16px!important;
+  width:38px!important;
+  height:38px!important;
+  border:1px solid rgba(255,255,255,.38)!important;
+  background:rgba(20,24,21,.58)!important;
+  backdrop-filter:blur(12px)!important;
+  -webkit-backdrop-filter:blur(12px)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 8px 22px rgba(0,0,0,.16)!important;
+}
+
+@media(max-width:760px){
+  .lv4-detail{
+    width:calc(100vw - 18px)!important;
+    height:auto!important;
+    max-height:92dvh!important;
+    padding:12px 12px 15px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    gap:0!important;
+    border-radius:30px!important;
+  }
+  .lv4-detail>img{
+    width:100%!important;
+    height:min(42dvh,340px)!important;
+    min-height:240px!important;
+    object-fit:contain!important;
+    border-radius:23px!important;
+  }
+  .lv4-detailcopy{padding:13px 5px 2px!important;justify-content:flex-start!important}
+  .lv4-product-brand{font-size:11px!important}
+  .lv4-product-source{font-size:7px!important;margin-top:4px!important}
+  .lv4-detailcopy h2{
+    margin:8px 0 7px!important;
+    font-size:24px!important;
+    line-height:1.02!important;
+    -webkit-line-clamp:2;
+  }
+  .lv4-detailcopy strong{font-size:23px!important;margin-top:2px!important}
+  .lv4-detailcopy strong::before{font-size:7px!important;margin-bottom:4px!important}
+  .lv4-tagrow{margin-top:11px!important;gap:5px!important}
+  .lv4-tagrow button{min-height:28px!important;padding:0 9px!important;font-size:8px!important}
+  .lv4-actions{margin-top:13px!important;gap:7px!important;grid-template-columns:86px 1fr!important}
+  .lv4-actions button,.lv4-actions a{height:42px!important;border-radius:14px!important}
+  .lv4-actions button:first-child{min-width:0!important;padding:0 9px!important}
+  .lv4-actions a::before{font-size:11px!important}
+  .lv4-actions .try{height:40px!important}
+  .lv4-close{right:18px!important;top:18px!important;width:36px!important;height:36px!important}
+}
