@@ -37,7 +37,24 @@ function cleanTitle(s:string){return String(s||"").replace(/[\u{1F300}-\u{1FAFF}
 function dedupe(list:Product[]){const seen=new Set<string>();return list.filter(p=>{const k=p.id||`${p.title}|${p.brand}`;if(seen.has(k))return false;seen.add(k);return true})}
 function sourceKind(p:Product){const s=(p.source||"").toLowerCase();if(s.includes("ebay"))return"eBay Marketplace";if(s.includes("amazon")||s.includes("shopify"))return"LuminaMarket";return"Store"}
 function zoneCenter(zone:number){if(zone<=0)return{x:WORLD_CX,y:WORLD_CY};const golden=2.399963229728653;const radius=ZONE_STEP*Math.sqrt(zone)*1.08;const angle=zone*golden;return{x:WORLD_CX+Math.cos(angle)*radius,y:WORLD_CY+Math.sin(angle)*radius}}
-function placeProduct(p:Product,index:number,fresh=false){const zone=Math.floor(index/18),local=index%18,h=hash(p.id||`${p.title}-${index}`),center=zoneCenter(zone),ring=230+(local%3)*165+(h%52),angle=(local/18)*Math.PI*2+(h%45)/100;return{...p,title:cleanTitle(p.title),zone,fresh,x:center.x+Math.cos(angle)*ring,y:center.y+Math.sin(angle)*(ring*.72)}}
+
+// Keep the large navigation/category bubbles as protected spatial zones. Product orbs are
+// physically pushed away from these areas instead of merely being layered underneath them.
+function protectedBubbleZones(){
+ const zones:{x:number;y:number;r:number}[]=[{x:WORLD_CX,y:WORLD_CY,r:300}];
+ for(let i=0;i<12;i++){
+  const ring=390+Math.floor(i/6)*210,a=(i%6)/6*Math.PI*2-.52;
+  zones.push({x:WORLD_CX+Math.cos(a)*ring,y:WORLD_CY+Math.sin(a)*(ring*.66),r:215});
+ }
+ for(let i=0;i<CATEGORIES.length;i++){
+  const a=i/CATEGORIES.length*Math.PI*2-.55;
+  zones.push({x:WORLD_CX+Math.cos(a)*780,y:WORLD_CY+Math.sin(a)*500,r:285});
+ }
+ return zones;
+}
+const PROTECTED_BUBBLES=protectedBubbleZones();
+function keepClearOfBigBubbles(x:number,y:number,seed:number){let px=x,py=y;for(let pass=0;pass<4;pass++){for(const z of PROTECTED_BUBBLES){let dx=px-z.x,dy=py-z.y,d=Math.hypot(dx,dy);if(d>=z.r)continue;if(d<1){const a=(seed%360)*Math.PI/180;dx=Math.cos(a);dy=Math.sin(a);d=1}const extra=18+(seed%24),scale=(z.r+extra)/d;px=z.x+dx*scale;py=z.y+dy*scale}}return{x:px,y:py}}
+function placeProduct(p:Product,index:number,fresh=false){const zone=Math.floor(index/18),local=index%18,h=hash(p.id||`${p.title}-${index}`),center=zoneCenter(zone),ring=230+(local%3)*165+(h%52),angle=(local/18)*Math.PI*2+(h%45)/100;const rawX=center.x+Math.cos(angle)*ring,rawY=center.y+Math.sin(angle)*(ring*.72),safe=keepClearOfBigBubbles(rawX,rawY,h);return{...p,title:cleanTitle(p.title),zone,fresh,x:safe.x,y:safe.y}}
 
 export default function LuminaWorld(){
  const [query,setQuery]=useState("");
