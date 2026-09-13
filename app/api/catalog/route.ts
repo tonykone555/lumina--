@@ -66,7 +66,7 @@ function usable(products:Product[]){return products.filter(p=>Boolean(p.id&&p.ti
 function productKey(p:Product){return `${String(p.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${String(p.brand||"").toLowerCase()}`}
 function dedupeProducts(products:Product[]){const seen=new Set<string>();return products.filter(p=>{const key=productKey(p);if(!key||seen.has(key))return false;seen.add(key);return true})}
 function groupedProducts(shopify:Product[],amazon:Product[]){return dedupeProducts([...shopify,...amazon]).slice(0,64)}
-function nextShopifyCursor(p:any){const candidates=[p?.next_cursor,p?.nextCursor,p?.end_cursor,p?.endCursor,p?.after,p?.pageInfo?.endCursor,p?.page_info?.end_cursor];const found=candidates.find(v=>typeof v==="string"&&v.length);return found||""}
+function nextShopifyCursor(p:any){const candidates=[p?.cursor,p?.next_cursor,p?.nextCursor,p?.end_cursor,p?.endCursor,p?.after,p?.pageInfo?.endCursor,p?.page_info?.end_cursor];const found=candidates.find(v=>typeof v==="string"&&v.length);return found||""}
 function normalizeShopifyPagination(p:any){const next=nextShopifyCursor(p);const has=Boolean(p?.has_next_page??p?.hasNextPage??p?.pageInfo?.hasNextPage??p?.page_info?.has_next_page??next);return{...(p||{}),next_cursor:next||null,has_next_page:has}}
 function amazonPrice(r:any){const raw=r?.price?.value??r?.price?.raw??r?.prices?.[0]?.value??null;if(typeof raw==="number")return raw;if(typeof raw==="string"){const parsed=Number.parseFloat(raw.replace(/[^0-9,.-]/g,"").replace(",","."));return Number.isFinite(parsed)?parsed:null}return null}
 function amazonCurrency(r:any,domain:string){return r?.price?.currency||r?.currency||(domain==="amazon.co.uk"?"GBP":domain==="amazon.com"?"USD":domain==="amazon.ca"?"CAD":domain==="amazon.com.au"?"AUD":"EUR")}
@@ -85,7 +85,7 @@ async function fetchAmazon(query:string,country:string,page=0){
 
 async function fetchShopify(query:string,country:string,cursor?:string){
  const clean=stripPriceLanguage(query)||query;
- const payload={jsonrpc:"2.0",method:"tools/call",id:1,params:{name:"search_catalog",arguments:{meta:{"ucp-agent":{profile:"https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json"}},catalog:{query:clean,filters:{available:true,ships_to:{country}},context:{address_country:country,intent:query},pagination:{limit:36,...(cursor?{cursor}:{})}}}}};
+ const payload={jsonrpc:"2.0",method:"tools/call",id:1,params:{name:"search_catalog",arguments:{meta:{"ucp-agent":{profile:"https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json"}},catalog:{query:clean,filters:{available:true,ships_to:{country}},context:{address_country:country,intent:query},pagination:{limit:50,...(cursor?{cursor}:{})}}}}};
  const response=await fetch("https://catalog.shopify.com/api/ucp/mcp",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
  const raw:any=await response.json();const content=raw?.result?.structuredContent;
  if(!response.ok||!content?.products)throw new Error("Catalog unavailable");

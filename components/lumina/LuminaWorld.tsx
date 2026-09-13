@@ -12,6 +12,7 @@ type LuminaSource="all"|"shopify"|"amazon";
 
 const WORLD_W=200000,WORLD_H=200000,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2,ZONE_STEP=1480;
 const START_ZOOM=.56;
+const SHOPIFY_WARM_TARGET=90,SHOPIFY_WARM_ATTEMPTS=8;
 const DISCOVERY_WAVES=["more like this","new arrivals","best value","more premium","same shape","top rated","unexpected picks","editor picks","alternative styles","hidden gems","popular choices","fresh finds"];
 const SOURCE_OPTIONS:{key:LuminaSource;label:string;note:string}[]=[
  {key:"shopify",label:"Shopify",note:"Independent stores"},
@@ -83,7 +84,8 @@ export default function LuminaWorld(){
  const pointersRef=useRef(new Map<number,{x:number;y:number}>());
  const pinchRef=useRef<{distance:number;zoom:number}|null>(null);
  const dragRef=useRef({drag:false,px:0,py:0,lastX:0,lastY:0,startX:0,startY:0});
- const loadingRef=useRef(false),waveRef=useRef(0),lastExpandRef=useRef(0),replaceRequestRef=useRef(0),shopifyCursorRef=useRef("");
+ const loadingRef=useRef(false),waveRef=useRef(0),lastExpandRef=useRef(0),replaceRequestRef=useRef(0),shopifyCursorRef=useRef(""),shopifyPageDirectionRef=useRef(""),shopifyWarmAttemptsRef=useRef(0);
+ const [shopifyFetchSerial,setShopifyFetchSerial]=useState(0);
  const scene=SCENES[categoryKey]||SCENES.retail;
 
  const fetchProducts=useCallback(async(base:string,direction="",append=false,marketOverride:MarketMode=market,page=0,sourceOverride:LuminaSource=luminaSource)=>{
@@ -101,9 +103,13 @@ export default function LuminaWorld(){
    if(!append&&requestId!==replaceRequestRef.current)return;
    if(data.error&&!incoming.length)setMarketError(data.error);
    const nextCursor=data.pagination?.next_cursor;
-   if(marketOverride==="lumina"&&sourceOverride!=="amazon")shopifyCursorRef.current=typeof nextCursor==="string"?nextCursor:"";
+   if(marketOverride==="lumina"&&sourceOverride!=="amazon"){
+    shopifyCursorRef.current=typeof nextCursor==="string"?nextCursor:"";
+    shopifyPageDirectionRef.current=shopifyCursorRef.current?direction:"";
+   }
    const splitSources=marketOverride==="lumina"&&sourceOverride==="all";
    setProducts(prev=>{if(!append)return layoutProducts(incoming,Number.POSITIVE_INFINITY,splitSources);const merged=dedupe([...prev,...incoming]);return layoutProducts(merged,prev.length,splitSources)});
+   if(append&&marketOverride==="lumina"&&sourceOverride==="shopify")setShopifyFetchSerial(v=>v+1);
   }catch{
    if(!append&&requestId!==replaceRequestRef.current)return;
    setMarketError(marketOverride==="ebay"?"eBay Marketplace is temporarily unavailable":"LuminaMarket is temporarily unavailable");
@@ -113,12 +119,12 @@ export default function LuminaWorld(){
  },[scene.query,market,luminaSource]);
 
  function centerWorld(z:number){setZoom(z);setPan({x:-WORLD_CX*z,y:-WORLD_CY*z})}
- function resetPaging(){waveRef.current=0;shopifyCursorRef.current=""}
+ function resetPaging(){waveRef.current=0;shopifyCursorRef.current="";shopifyPageDirectionRef.current="";shopifyWarmAttemptsRef.current=0}
  function chooseCategory(key:string){const c=CATEGORIES.find(x=>x.key===key)||CATEGORIES[CATEGORIES.length-1];setCategoryKey(c.key);setSubmitted(c.query);setQuery("");setFocus("");setSelected(null);setProducts([]);setMarketError("");resetPaging();centerWorld(.93);void fetchProducts(c.query,"",false,market,0,luminaSource)}
  function submit(){const q=query.trim();if(!q)return;setSubmitted(q);setFocus("");setSelected(null);setCategoryKey("retail");setProducts([]);setMarketError("");resetPaging();centerWorld(.95);void fetchProducts(q,"",false,market,0,luminaSource)}
  function branch(direction:string){if(!submitted&&!scene.query)return;setFocus(direction);setSelected(null);setZoom(z=>Math.max(1.08,z));resetPaging();void fetchProducts(submitted||scene.query,direction,true,market,0,luminaSource)}
  function resetWorld(){replaceRequestRef.current++;setSubmitted("");setQuery("");setFocus("");setSelected(null);setProducts([]);setMarketError("");resetPaging();loadingRef.current=false;centerWorld(START_ZOOM)}
- function expandWorld(){if(!submitted||loadingRef.current)return;const now=Date.now();if(now-lastExpandRef.current<650)return;lastExpandRef.current=now;const page=waveRef.current+1;waveRef.current=page;const hasNativePaging=market==="ebay"||luminaSource==="amazon"||Boolean(shopifyCursorRef.current);const cue=focus||(hasNativePaging?"":DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length]);void fetchProducts(submitted,cue,true,market,page,luminaSource)}
+ function expandWorld(){if(!submitted||loadingRef.current)return;const now=Date.now();if(now-lastExpandRef.current<650)return;lastExpandRef.current=now;const page=waveRef.current+1;waveRef.current=page;const hasShopifyCursor=market==="lumina"&&luminaSource!=="amazon"&&Boolean(shopifyCursorRef.current);const hasNativePaging=market==="ebay"||luminaSource==="amazon"||hasShopifyCursor;const discovery=DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length];const cue=hasShopifyCursor?shopifyPageDirectionRef.current:hasNativePaging?focus:[focus,discovery].filter(Boolean).join(", ");void fetchProducts(submitted,cue,true,market,page,luminaSource)}
  function changeMarket(next:MarketMode){if(next===market)return;setMarket(next);setSourceOpen(false);setSelected(null);setProducts([]);setMarketError("");resetPaging();if(submitted)void fetchProducts(submitted,focus,false,next,0,luminaSource)}
  function changeLuminaSource(next:LuminaSource){setSourceOpen(false);if(next===luminaSource)return;setLuminaSource(next);setSelected(null);setProducts([]);setMarketError("");resetPaging();if(submitted)void fetchProducts(submitted,focus,false,"lumina",0,next)}
 
@@ -126,7 +132,7 @@ export default function LuminaWorld(){
  const level=zoom<.68?"worlds":zoom<1?"themes":zoom<1.36?"products":"details";
  const zoneCount=Math.max(1,Math.ceil(products.length/18));
  useEffect(()=>{if(level==="details"&&products.length)expandWorld()},[level]); // eslint-disable-line react-hooks/exhaustive-deps
- useEffect(()=>{if(!submitted||market!=="lumina"||luminaSource!=="shopify"||!products.length||products.length>=55||loadingRef.current)return;const t=window.setTimeout(()=>expandWorld(),480);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length]); // eslint-disable-line react-hooks/exhaustive-deps
+ useEffect(()=>{if(!submitted||market!=="lumina"||luminaSource!=="shopify"||products.length>=SHOPIFY_WARM_TARGET||loadingRef.current||shopifyWarmAttemptsRef.current>=SHOPIFY_WARM_ATTEMPTS)return;shopifyWarmAttemptsRef.current+=1;const t=window.setTimeout(()=>expandWorld(),480);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length,shopifyFetchSerial,loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
  function pointerDown(e:React.PointerEvent<HTMLElement>){pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2){const p=[...pointersRef.current.values()];pinchRef.current={distance:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),zoom};dragRef.current.drag=false;return}if((e.target as HTMLElement).closest("button,input,a,.lv4-detail,.lv4-source-picker"))return;dragRef.current={drag:true,px:e.clientX-pan.x,py:e.clientY-pan.y,lastX:e.clientX,lastY:e.clientY,startX:e.clientX,startY:e.clientY};(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)}
  function pointerMove(e:React.PointerEvent<HTMLElement>){if(pointersRef.current.has(e.pointerId))pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2&&pinchRef.current){const p=[...pointersRef.current.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),next=Math.min(2.1,Math.max(.38,pinchRef.current.zoom*(d/pinchRef.current.distance)));setZoom(next);if(next>pinchRef.current.zoom*1.05)expandWorld();return}if(dragRef.current.drag){setPan({x:e.clientX-dragRef.current.px,y:e.clientY-dragRef.current.py});if(Math.hypot(e.clientX-dragRef.current.startX,e.clientY-dragRef.current.startY)>240)expandWorld()}}
