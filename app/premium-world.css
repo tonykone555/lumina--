@@ -50,3 +50,12 @@
  .lv4-textbubble{width:112px;height:112px;padding:15px;font-size:11px}.lv4-product{--s:112px}.lv4-price{font-size:10px;padding:6px 8px}
  .lv4-detail{width:calc(100vw - 18px);max-height:calc(100dvh - 20px);padding:12px 12px 14px;border-radius:30px}.lv4-detail>img{height:min(42dvh,330px);border-radius:23px}.lv4-detailcopy{padding:13px 6px 0}.lv4-detailcopy h2{font-size:23px;margin:7px 0 7px}.lv4-detailcopy strong{font-size:20px}.lv4-tagrow{margin-top:10px;gap:5px}.lv4-tagrow button{font-size:8px;padding:6px 8px}.lv4-actions{margin-top:11px;gap:5px}.lv4-actions button,.lv4-actions a{height:34px;padding:0 8px;font-size:9px}.lv4-close{right:20px;top:20px;width:36px;height:36px}
 }
+
+/* Crisp world hierarchy: clearer scene separation and lower-blur glass materials. */
+.lv4-scene{filter:saturate(1.08) contrast(1.12) brightness(.82);background:linear-gradient(140deg,color-mix(in srgb,var(--a) 18%,transparent),color-mix(in srgb,var(--b) 14%,rgba(19,16,14,.25)) 48%,color-mix(in srgb,var(--c) 26%,rgba(8,7,6,.32))),radial-gradient(circle at 50% 40%,rgba(255,255,255,.10),transparent 36%),var(--scene) center/cover no-repeat}
+.lv4-scene:before{background:linear-gradient(120deg,rgba(8,7,6,.24),transparent 31%,rgba(255,255,255,.025) 56%,rgba(8,7,6,.22)),radial-gradient(circle at 50% 45%,transparent 39%,rgba(8,7,6,.34) 100%)}
+.lv4-world-title small{opacity:.78}.lv4-world-title span{opacity:.82}
+.lv4-category-bubble{border-color:rgba(255,255,255,.76);background:radial-gradient(circle at 29% 20%,rgba(255,255,255,.76),rgba(231,239,231,.24) 34%,rgba(174,191,177,.12) 62%,rgba(22,19,17,.14) 100%);backdrop-filter:blur(10px) saturate(1.16);-webkit-backdrop-filter:blur(10px) saturate(1.16);box-shadow:inset -14px -17px 28px rgba(20,16,13,.15),inset 10px 12px 22px rgba(255,255,255,.50),0 20px 48px rgba(8,6,5,.22);color:#15120f}
+.lv4-category-bubble span{width:74%;margin-top:9px;color:rgba(21,18,15,.62);opacity:1}
+.lv4-intent,.lv4-textbubble{backdrop-filter:blur(9px) saturate(1.15);-webkit-backdrop-filter:blur(9px) saturate(1.15);border-color:rgba(255,255,255,.68);color:#171411}
+.lv4-product{backdrop-filter:blur(7px) saturate(1.18);-webkit-backdrop-filter:blur(7px) saturate(1.18);box-shadow:inset -15px -18px 29px rgba(20,15,12,.21),inset 11px 13px 22px rgba(255,255,255,.49),0 20px 48px rgba(5,4,3,.28)}
