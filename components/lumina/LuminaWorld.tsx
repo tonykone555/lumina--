@@ -10,8 +10,8 @@ type Category={key:string;label:string;query:string;subtitle:string};
 
 const WORLD_W=12000,WORLD_H=7200,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2;
 const START_ZOOM=.48;
-const CHIP_COLORS=["#efb991","#afd5c8","#bed0ef","#e7b8cf","#e6d18a","#c6dda4","#cfbfe8","#efb1a9"];
 const DISCOVERY_WAVES=["popular right now","new arrivals","best value","premium finds","unexpected picks","top rated","new brands","editor picks"];
+const FAMILY_ORDER=["Fashion","Shoes","Accessories","Beauty","Tech","Home","Fitness","Discover"];
 const CATEGORIES:Category[]=[
  {key:"fashion",label:"Fashion",query:"Beautiful fashion, dresses, shoes and accessories",subtitle:"Clothing · shoes · accessories"},
  {key:"fitness",label:"Fitness",query:"Fitness gear, activewear, recovery and training accessories",subtitle:"Training · recovery · activewear"},
@@ -36,7 +36,8 @@ function hash(s:string){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCod
 function dedupe(list:Product[]){const seen=new Set<string>();return list.filter(p=>{const k=p.id||`${p.title}|${p.brand}`;if(seen.has(k))return false;seen.add(k);return true})}
 function sourceKind(p:Product){const s=(p.source||"").toLowerCase();if(s.includes("amazon")||s.includes("shopify"))return"Retail";if(s.includes("ebay")||s.includes("aliexpress"))return"Marketplace";return"Store"}
 function productFamily(p:Product){const s=`${p.title} ${(p.tags||[]).join(" ")}`.toLowerCase();if(/dress|skirt|gown|shirt|top|jean|jacket/.test(s))return"Fashion";if(/shoe|sneaker|trainer|boot/.test(s))return"Shoes";if(/bag|wallet|jewel|ring|necklace|bracelet|watch|sunglass/.test(s))return"Accessories";if(/serum|skin|cream|hair|shampoo|beauty|makeup/.test(s))return"Beauty";if(/phone|speaker|keyboard|charger|tech|headphone|earbud/.test(s))return"Tech";if(/lamp|chair|sofa|table|decor|kitchen|home/.test(s))return"Home";if(/fitness|gym|training|recovery|running/.test(s))return"Fitness";return"Discover"}
-function placeProduct(p:Product,index:number,fresh=false){const family=productFamily(p),h=hash(p.id||`${p.title}-${index}`),group=hash(family)%7;const groupAngle=group/7*Math.PI*2-.55;const groupCenter={x:WORLD_CX+Math.cos(groupAngle)*740,y:WORLD_CY+Math.sin(groupAngle)*430};const local=index%12,ring=120+Math.floor(local/4)*105+(h%22),angle=(local%4)/4*Math.PI*2+(h%35)/100;return{...p,family,fresh,x:groupCenter.x+Math.cos(angle)*ring,y:groupCenter.y+Math.sin(angle)*(ring*.74)}}
+function familyCenter(family:string){const i=Math.max(0,FAMILY_ORDER.indexOf(family)),a=i/FAMILY_ORDER.length*Math.PI*2-.6;return{x:WORLD_CX+Math.cos(a)*1180,y:WORLD_CY+Math.sin(a)*720}}
+function layoutProducts(list:Product[],freshStart=Number.POSITIVE_INFINITY){const counts:Record<string,number>={};return list.map((p,index)=>{const family=productFamily(p),n=counts[family]||0;counts[family]=n+1;const center=familyCenter(family),ring=Math.floor(n/8),slot=n%8,radius=220+ring*205,angle=slot/8*Math.PI*2+(ring%2)*.34;return{...p,family,fresh:index>=freshStart,x:center.x+Math.cos(angle)*radius,y:center.y+Math.sin(angle)*(radius*.78)}})}
 
 export default function LuminaWorld(){
  const [query,setQuery]=useState("");
@@ -59,7 +60,7 @@ export default function LuminaWorld(){
 
  const fetchProducts=useCallback(async(base:string,direction="",append=false)=>{
   if(loadingRef.current)return;loadingRef.current=true;append?setLoadingMore(true):setLoading(true);
-  try{const params=new URLSearchParams({q:base||scene.query});if(direction)params.set("direction",direction);const r=await fetch(`/api/catalog?${params}`);const data:CatalogPage=await r.json();const incoming=dedupe(data.products||[]);setProducts(prev=>{const start=append?prev.length:0;const placed=incoming.map((p,i)=>placeProduct(p,start+i,append));return append?dedupe([...prev,...placed]):placed})}catch{}finally{loadingRef.current=false;setLoading(false);setLoadingMore(false)}
+  try{const params=new URLSearchParams({q:base||scene.query});if(direction)params.set("direction",direction);const r=await fetch(`/api/catalog?${params}`);const data:CatalogPage=await r.json();const incoming=dedupe(data.products||[]);setProducts(prev=>{if(!append)return layoutProducts(incoming);const merged=dedupe([...prev,...incoming]);return layoutProducts(merged,prev.length)})}catch{}finally{loadingRef.current=false;setLoading(false);setLoadingMore(false)}
  },[scene.query]);
 
  const chooseCategory=(key:string)=>{const c=CATEGORIES.find(x=>x.key===key)||CATEGORIES[CATEGORIES.length-1];setCategoryKey(c.key);setSubmitted(c.query);setQuery("");setFocus("");setSelected(null);setProducts([]);setZoom(.82);setPan({x:-WORLD_CX*.82,y:-WORLD_CY*.82});waveRef.current=0;void fetchProducts(c.query)};
@@ -69,7 +70,7 @@ export default function LuminaWorld(){
  const loadWave=()=>{if(loadingRef.current||!submitted)return;const cue=DISCOVERY_WAVES[waveRef.current++%DISCOVERY_WAVES.length];void fetchProducts(submitted,focus?`${focus}, ${cue}`:cue,true)};
 
  useEffect(()=>()=>{if(inertiaRef.current)cancelAnimationFrame(inertiaRef.current)},[]);
- const labels=useMemo(()=>{const fromProducts=products.flatMap(p=>p.tags||[]).filter(Boolean);const families=products.map(productFamily);return[...new Set([focus,...scene.labels,...families,...fromProducts])].filter(Boolean).slice(0,14)},[products,focus,scene.labels]);
+ const labels=useMemo(()=>{const fromProducts=products.flatMap(p=>p.tags||[]).filter(Boolean);const families=products.map(productFamily);return[...new Set([focus,...scene.labels,...families,...fromProducts])].filter(Boolean).slice(0,12)},[products,focus,scene.labels]);
  const level=zoom<.66?"worlds":zoom<1?"themes":zoom<1.34?"products":"details";
 
  function startInertia(){let vx=dragRef.current.vx*15,vy=dragRef.current.vy*15;if(Math.hypot(vx,vy)<1)return;let last=performance.now();const tick=(now:number)=>{const dt=Math.min(32,now-last);last=now;const decay=Math.pow(.9,dt/16);vx*=decay;vy*=decay;setPan(p=>({x:p.x+vx*dt/16,y:p.y+vy*dt/16}));if(Math.hypot(vx,vy)>.16)inertiaRef.current=requestAnimationFrame(tick)};inertiaRef.current=requestAnimationFrame(tick)}
@@ -92,13 +93,13 @@ export default function LuminaWorld(){
 
     {level!=="worlds"&&<button className="lv4-intent" style={{left:WORLD_CX,top:WORLD_CY}} onClick={()=>setZoom(z=>Math.min(1.45,z+.18))}><span>{focus||CATEGORIES.find(c=>c.key===categoryKey)?.label}</span><small>{loading?"Finding products…":`${products.length} products${loadingMore?" · more arriving":""}`}</small></button>}
 
-    {level!=="worlds"&&labels.map((label,i)=>{const ring=330+Math.floor(i/7)*145,a=(i%7)/7*Math.PI*2-.6,x=WORLD_CX+Math.cos(a)*ring,y=WORLD_CY+Math.sin(a)*(ring*.62);return <button key={`${label}-${i}`} className={`lv4-textbubble ${focus===label?"active":""}`} style={{left:x,top:y,"--chip":CHIP_COLORS[hash(label)%CHIP_COLORS.length]} as React.CSSProperties} onClick={()=>explore(label)}>{label}</button>})}
+    {level!=="worlds"&&labels.map((label,i)=>{const ring=390+Math.floor(i/6)*190,a=(i%6)/6*Math.PI*2-.52,x=WORLD_CX+Math.cos(a)*ring,y=WORLD_CY+Math.sin(a)*(ring*.64);return <button key={`${label}-${i}`} className={`lv4-textbubble ${focus===label?"active":""}`} style={{left:x,top:y}} onClick={()=>explore(label)}>{label}</button>})}
 
-    {level!=="worlds"&&products.map(p=>{const size=96+(hash(p.id)%52),showMeta=level==="details";return <button key={p.id} className={`lv4-product ${p.fresh?"lv4-new-product":""}`} style={{left:p.x,top:p.y,"--s":`${size}px`} as React.CSSProperties} onClick={()=>setSelected(p)}><span className="lv4-vita-gloss"/><img src={p.image} alt=""/>{p.price!=null&&<span className="lv4-price">{money(p)}</span>}{showMeta&&<span className="lv4-orbmeta"><b>{p.title}</b><em>{p.brand}</em></span>}</button>})}
+    {level!=="worlds"&&products.map(p=>{const size=116+(hash(p.id)%30),showMeta=level==="details";return <button key={p.id} className={`lv4-product ${p.fresh?"lv4-new-product":""}`} style={{left:p.x,top:p.y,"--s":`${size}px`} as React.CSSProperties} onClick={()=>setSelected(p)}><span className="lv4-vita-gloss"/><img src={p.image} alt=""/>{p.price!=null&&<span className="lv4-price">{money(p)}</span>}{showMeta&&<span className="lv4-orbmeta"><b>{p.title}</b><em>{p.brand}</em></span>}</button>})}
    </div>
   </section>
 
   {selected&&<div className="lv4-detail-backdrop" onClick={()=>setSelected(null)}/>} 
-  {selected&&<aside className="lv4-detail"><button className="lv4-close" onClick={()=>setSelected(null)}><X/></button><img src={selected.image} alt={selected.title}/><div className="lv4-detailcopy"><small>{sourceKind(selected)} · {selected.brand}</small><h2>{selected.title}</h2><strong>{money(selected)}</strong><div className="lv4-tagrow">{(selected.tags||[]).slice(0,4).map(t=><button key={t} onClick={()=>explore(t)}>{t}</button>)}</div><div className="lv4-actions"><button className={liked.has(selected.id)?"active":""} onClick={()=>setLiked(s=>{const n=new Set(s);n.has(selected.id)?n.delete(selected.id):n.add(selected.id);return n})}><Heart/></button><a href={selected.url||"#"} target="_blank" rel="noreferrer">View product <ExternalLink/></a>{categoryKey==="fashion"&&<button className="try"><Sparkles/> Try on</button>}</div></div></aside>}
+  {selected&&<aside className="lv4-detail"><button className="lv4-close" onClick={()=>setSelected(null)}><X/></button><img src={selected.image} alt={selected.title}/><div className="lv4-detailcopy"><small className="lv4-product-brand">{selected.brand||"Independent store"}</small><span className="lv4-product-source">{sourceKind(selected)}</span><h2>{selected.title}</h2><strong>{money(selected)}</strong><div className="lv4-tagrow">{(selected.tags||[]).slice(0,4).map(t=><button key={t} onClick={()=>explore(t)}>{t}</button>)}</div><div className="lv4-actions"><button className={liked.has(selected.id)?"active":""} onClick={()=>setLiked(s=>{const n=new Set(s);n.has(selected.id)?n.delete(selected.id):n.add(selected.id);return n})}><Heart/></button><a href={selected.url||"#"} target="_blank" rel="noreferrer">View product <ExternalLink/></a>{categoryKey==="fashion"&&<button className="try"><Sparkles/> Try on</button>}</div></div></aside>}
  </main>
 }
