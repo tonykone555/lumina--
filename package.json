@@ -1,5 +1,5 @@
 {
-  "name":"lumina-at-stage3-fixed",
+  "name":"ynot-spatial-shopping",
   "version":"0.4.3",
   "private":true,
   "scripts":{"predev":"node scripts/reconstruct.mjs","dev":"next dev","prebuild":"node scripts/reconstruct.mjs","build":"next build","start":"next start"},

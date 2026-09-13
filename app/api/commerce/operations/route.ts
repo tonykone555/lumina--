@@ -7,11 +7,11 @@ export async function POST(req:NextRequest){
     if(body.action==='price-protection'){
       const credit=priceProtectionCredit(Number(body.originalPrice),Number(body.currentPrice),Number(body.thresholdPct??.05));
       const wallet:Wallet=body.wallet||{balance:0,credits:[]};
-      return NextResponse.json({credit,wallet:creditWallet(wallet,credit,'Lumina price protection')});
+      return NextResponse.json({credit,wallet:creditWallet(wallet,credit,'YNOT price protection')});
     }
     if(body.action==='wallet-credit'){
       const wallet:Wallet=body.wallet||{balance:0,credits:[]};
-      return NextResponse.json({wallet:creditWallet(wallet,Number(body.amount||0),String(body.reason||'Lumina credit'))});
+      return NextResponse.json({wallet:creditWallet(wallet,Number(body.amount||0),String(body.reason||'YNOT credit'))});
     }
     if(body.action==='replacement-score'){
       const original:SourceQuote=body.original;

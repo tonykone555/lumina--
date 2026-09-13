@@ -233,7 +233,7 @@ export default function YnotDrawer() {
       <aside className={`ynot-drawer ${open ? "open" : ""}`} aria-hidden={!open}>
         <div className="ynot-head">
           <div>
-            <small>LUMINA DEAL WORLD</small>
+            <small>YNOT DEAL WORLD</small>
             <h2>YNOT</h2>
             <p>Shopify, Amazon and marketplace products ranked by value and opportunity.</p>
           </div>

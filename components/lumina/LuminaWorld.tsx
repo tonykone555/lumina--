@@ -44,7 +44,7 @@ function productSize(_p:Product){return 132}
 function cleanTitle(s:string){return String(s||"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,"").replace(/\s{2,}/g," ").replace(/^\s*[|·—–-]+\s*|\s*[|·—–-]+\s*$/g,"").trim()}
 function dedupe(list:Product[]){const seen=new Set<string>();return list.filter(p=>{const k=p.id||`${p.title}|${p.brand}`;if(seen.has(k))return false;seen.add(k);return true})}
 function productSource(p:Product){const s=(p.source||"").toLowerCase();if(s.includes("amazon"))return"amazon";if(s.includes("shopify"))return"shopify";if(s.includes("ebay"))return"ebay";return"store"}
-function sourceKind(p:Product){const source=productSource(p);if(source==="ebay")return"eBay Marketplace";if(source==="amazon")return"Amazon · LuminaMarket";if(source==="shopify")return"Shopify · LuminaMarket";return"Store"}
+function sourceKind(p:Product){const source=productSource(p);if(source==="ebay")return"eBay Marketplace";if(source==="amazon")return"Amazon · YNOT";if(source==="shopify")return"Shopify · YNOT";return"Store"}
 function sourceShort(p:Product){const source=productSource(p);if(source==="amazon")return"Amazon";if(source==="shopify")return"Shopify";if(source==="ebay")return"eBay";return"Store"}
 function sourceName(source:LuminaSource){return source==="all"?"All sources":source==="amazon"?"Amazon":"Shopify"}
 function zoneCenter(zone:number,offsetX=0){
@@ -134,7 +134,7 @@ export default function LuminaWorld(){
    if(append&&marketOverride==="lumina"&&sourceOverride==="shopify")setShopifyFetchSerial(v=>v+1);
   }catch{
    if(!append&&requestId!==replaceRequestRef.current)return;
-   setMarketError(marketOverride==="ebay"?"eBay Marketplace is temporarily unavailable":"LuminaMarket is temporarily unavailable");
+   setMarketError(marketOverride==="ebay"?"eBay Marketplace is temporarily unavailable":"YNOT is temporarily unavailable");
   }finally{
    if(append||requestId===replaceRequestRef.current){loadingRef.current=false;setLoading(false);setLoadingMore(false)}
   }
@@ -165,12 +165,12 @@ export default function LuminaWorld(){
  function pointerUp(e:React.PointerEvent<HTMLElement>){pointersRef.current.delete(e.pointerId);if(pointersRef.current.size<2)pinchRef.current=null;dragRef.current.drag=false}
  function wheelZoom(e:React.WheelEvent<HTMLElement>){e.preventDefault();const inward=e.deltaY<0,current=wheelTargetRef.current?.zoom??zoom;wheelTargetRef.current={x:e.clientX,y:e.clientY,zoom:Math.min(2.8,Math.max(.38,current*(inward?1.075:.94)))};if(wheelFrameRef.current!=null)return;wheelFrameRef.current=window.requestAnimationFrame(()=>{const target=wheelTargetRef.current;wheelFrameRef.current=null;wheelTargetRef.current=null;if(target)zoomAround(target.x,target.y,target.zoom)})}
 
- const searchPlaceholder=market==="ebay"?"Search eBay Marketplace — product, style, price…":luminaSource==="amazon"?"Search Amazon — product, style, price…":luminaSource==="shopify"?"Search Shopify stores — product, style, price…":"Search LuminaMarket — Shopify + Amazon…";
+ const searchPlaceholder=market==="ebay"?"Search eBay Marketplace — product, style, price…":luminaSource==="amazon"?"Search Amazon — product, style, price…":luminaSource==="shopify"?"Search Shopify stores — product, style, price…":"Search YNOT — Shopify + Amazon…";
  return <main className={`lv4-shell market-${market}`} style={{"--a":scene.a,"--b":scene.b,"--c":scene.c,"--scene":`url(${scene.image})`} as React.CSSProperties}>
   <div className="lv4-scene"/>
-  <aside className={`lv4-rail ${mobileNav?"mobile-open":""}`}><button className="lv4-logo" onClick={()=>setMobileNav(false)}>L@</button><button onClick={resetWorld}><Home/><span>Discover</span></button><button onClick={()=>centerWorld(START_ZOOM)}><Compass/><span>Worlds</span></button><button><ScanFace/><span>Try on</span></button><button><Bookmark/><span>Saved</span></button><button onClick={resetWorld}><RotateCcw/><span>Reset</span></button></aside>
+  <aside className={`lv4-rail ${mobileNav?"mobile-open":""}`}><button className="lv4-logo" onClick={()=>setMobileNav(false)} aria-label="YNOT home">Y</button><button onClick={resetWorld}><Home/><span>Discover</span></button><button onClick={()=>centerWorld(START_ZOOM)}><Compass/><span>Worlds</span></button><button><ScanFace/><span>Try on</span></button><button><Bookmark/><span>Saved</span></button><button onClick={resetWorld}><RotateCcw/><span>Reset</span></button></aside>
   <header className="lv4-search lv4-search-visible"><Search/><input value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} placeholder={searchPlaceholder}/><button onClick={submit}>↵</button></header>
-  <div className="lv4-market-toggle"><button className={market==="lumina"?"active":""} onClick={()=>changeMarket("lumina")}><b>LuminaMarket</b><span>{market==="lumina"?sourceName(luminaSource):"Curated stores"}</span></button><button className={market==="ebay"?"active ebay":"ebay"} onClick={()=>changeMarket("ebay")}><b>eBay</b><span>Marketplace</span></button></div>
+  <div className="lv4-market-toggle"><button className={market==="lumina"?"active":""} onClick={()=>changeMarket("lumina")}><b>YNOT</b><span>{market==="lumina"?sourceName(luminaSource):"Curated stores"}</span></button><button className={market==="ebay"?"active ebay":"ebay"} onClick={()=>changeMarket("ebay")}><b>eBay</b><span>Marketplace</span></button></div>
   {market==="lumina"&&<div className={`lv4-source-picker ${sourceOpen?"open":""}`}><button className="lv4-source-trigger" onClick={()=>setSourceOpen(v=>!v)} aria-expanded={sourceOpen}><span>Catalog source</span><b>{sourceName(luminaSource)}</b><ChevronDown/></button>{sourceOpen&&<div className="lv4-source-menu">{SOURCE_OPTIONS.map(option=><button key={option.key} className={luminaSource===option.key?"active":""} onClick={()=>changeLuminaSource(option.key)}><b>{option.label}</b><span>{option.note}</span></button>)}</div>}</div>}
   <button className="lv4-mobile-menu" aria-label="Open navigation" onClick={()=>setMobileNav(v=>!v)}>@</button>
 

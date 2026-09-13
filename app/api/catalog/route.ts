@@ -138,12 +138,12 @@ export async function GET(req:NextRequest){
 
  if(luminaSource==="shopify"){
   try{const result=await fetchShopify(query,country,cursor);const products=applyPriceIntent(result.products,priceIntent);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products,pagination:result.pagination,error:products.length?undefined:"No Shopify products found for this search yet."},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
-  catch(error){console.error("Shopify catalog error",error);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Shopify catalog is temporarily unavailable."},{status:200})}
+  catch(error){console.error("Shopify catalog error",error);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Shopify products are temporarily unavailable in YNOT."},{status:200})}
  }
 
  if(luminaSource==="amazon"){
   try{const amazon=applyPriceIntent(await fetchAmazon(query,country,page),priceIntent);return NextResponse.json({source:"amazon-rainforest",sources:["amazon-rainforest"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products:amazon,pagination:{has_next_page:amazon.length>=20},error:amazon.length?undefined:"No Amazon products found for this search yet."},{headers:{"Cache-Control":"s-maxage=30, stale-while-revalidate=150"}})}
-  catch(error){console.error("Amazon catalog error",error);return NextResponse.json({source:"amazon-rainforest",sources:["amazon-rainforest"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Amazon catalog is temporarily unavailable."},{status:200})}
+  catch(error){console.error("Amazon catalog error",error);return NextResponse.json({source:"amazon-rainforest",sources:["amazon-rainforest"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Amazon products are temporarily unavailable in YNOT."},{status:200})}
  }
 
  const [shopifyResult,amazonResult]=await Promise.allSettled([fetchShopify(query,country,cursor),fetchAmazon(query,country,page)]);
@@ -155,5 +155,5 @@ export async function GET(req:NextRequest){
  if(products.length){return NextResponse.json({source:"lumina-multi-source",sources:[...(shopifyProducts.length?["shopify-global-catalog"]:[]),...(amazonProducts.length?["amazon-rainforest"]:[])],market:"lumina",luminaSource:"all",query,filters:{price:priceIntent},products,pagination:{...shopify.pagination,amazon_has_next_page:amazon.length>=20}},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
 
  const fallback=applyPriceIntent(fallbackFor(query).map(p=>({...p,title:cleanTitle(p.title)})),priceIntent);
- return NextResponse.json({source:"fallback",sources:["fallback"],market:"lumina",luminaSource:"all",query,filters:{price:priceIntent},products:fallback,pagination:{has_next_page:false},error:"Live LuminaMarket sources returned no products for this search."});
+ return NextResponse.json({source:"fallback",sources:["fallback"],market:"lumina",luminaSource:"all",query,filters:{price:priceIntent},products:fallback,pagination:{has_next_page:false},error:"Live YNOT sources returned no products for this search."});
 }

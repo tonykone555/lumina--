@@ -1,4 +1,4 @@
-/* Lumina @ world map navigator */
+/* YNOT world map navigator */
 .lv4-stage-map{transform-origin:0 0}
 .lv4-zone-title{position:absolute;transform:translate(-50%,-50%);border:0;background:transparent;color:rgba(43,36,31,.22);font:700 9px/1 Inter,sans-serif;letter-spacing:.24em;cursor:pointer;transition:opacity .2s,transform .2s}.lv4-zone-title:hover{color:rgba(43,36,31,.58);transform:translate(-50%,-50%) scale(1.08)}
 .lv4-map-button{position:absolute;z-index:58;right:18px;top:18px;width:42px;height:42px;border:0;border-radius:50%;background:rgba(255,255,255,.18);backdrop-filter:blur(12px);box-shadow:0 8px 26px rgba(45,34,26,.06);display:grid;place-items:center;color:rgba(42,36,32,.62);cursor:pointer;transition:transform .2s,background .2s}.lv4-map-button:hover{transform:scale(1.08);background:rgba(255,255,255,.36)}.lv4-map-button svg{width:16px}.lv4-map-button span{position:absolute;right:50px;opacity:0;pointer-events:none;font-size:9px;letter-spacing:.06em;text-transform:uppercase}.lv4-map-button:hover span{opacity:.55}
