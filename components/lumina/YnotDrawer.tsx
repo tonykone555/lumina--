@@ -51,6 +51,7 @@ type AmazonItem = {
   reviews?: number;
   source: string;
 };
+type CatalogItem={id:string;title:string;brand?:string;price:number|null;currency?:string;image:string;url?:string;tags?:string[];source?:string};
 
 const sections = ["Best Value", "Amazon", "Under €25", "Pay in 4", "Selling Fast", "Fast Delivery", "Jewelry", "Accessories", "Bags", "Phone Accessories", "Watches", "Tech", "Pets", "Home", "Kitchen", "Beauty & Hair", "Fitness", "Car", "Travel", "Free Delivery"];
 const fallback: Deal[] = [
@@ -134,6 +135,11 @@ function amazonToDeal(item: AmazonItem): Deal {
     source: item.source,
   };
 }
+function catalogToDeal(item:CatalogItem):Deal|null{
+  if(item.price==null||!item.image||!item.url||item.url==="#")return null;
+  const tags=(item.tags||[]).filter(Boolean),under25=item.price<=25;
+  return{id:item.id,title:item.title,brand:item.brand,price:item.price,currency:item.currency||"EUR",image:item.image,url:item.url,section:"Search results",sections:["Best Value",...(under25?["Under €25"]:[]),...tags],badge:under25?"Under €25":"Live result",note:`${sourceLabel(item.source)} · live catalogue result`,source:item.source};
+}
 function sourceLabel(source?: string) {
   const value = (source || "").toLowerCase();
   if (value.includes("amazon")) return "Amazon";
@@ -156,12 +162,15 @@ export default function YnotDrawer() {
     [deals, setDeals] = useState<Deal[]>(fallback),
     [selected, setSelected] = useState<Deal | null>(null),
     [query, setQuery] = useState(""),
+    [searchResults,setSearchResults]=useState<Deal[]>([]),
+    [searching,setSearching]=useState(false),
     [, setLoading] = useState(true),
     [loadingMore, setLoadingMore] = useState(false),
     [live, setLive] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const pageBySectionRef = useRef<Record<string, number>>({});
   const loadingMoreRef = useRef(false);
+  const searchRequestRef=useRef(0),searchPageRef=useRef(0),searchCursorRef=useRef(""),searchLoadingRef=useRef(false);
   useEffect(() => {
     let alive = true;
     Promise.allSettled([fetch("https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed").then((r) => r.json()), fetch("/api/ynot-amazon?country=FR").then((r) => r.json())])
@@ -181,7 +190,9 @@ export default function YnotDrawer() {
     };
   }, []);
   const activeDeals = useMemo(() => deals.filter((d) => active === "Best Value" || d.sections.includes(active) || d.section === active).slice(0, 1000), [deals, active]);
-  const searched = useMemo(() => (query.trim() ? deals.filter((d) => `${d.title} ${d.brand || ""} ${d.section} ${d.badge} ${d.source || ""}`.toLowerCase().includes(query.toLowerCase())) : null), [query, deals]);
+  const searched = useMemo(() => query.trim()?dedupe([...searchResults,...deals.filter((d) => `${d.title} ${d.brand || ""} ${d.section} ${d.badge} ${d.source || ""}`.toLowerCase().includes(query.toLowerCase()))]):null,[query,deals,searchResults]);
+  async function searchCatalogue(term:string,append=false){const clean=term.trim();if(clean.length<2||(append&&searchLoadingRef.current))return;const request=append?searchRequestRef.current:++searchRequestRef.current;if(!append){searchPageRef.current=0;searchCursorRef.current="";setSearchResults([])}searchLoadingRef.current=true;setSearching(true);try{const params=new URLSearchParams({q:clean,market:"lumina",source:"all",page:String(searchPageRef.current)});if(searchCursorRef.current)params.set("cursor",searchCursorRef.current);const response=await fetch(`/api/catalog?${params}`),data=await response.json();if(request!==searchRequestRef.current)return;const incoming=(data.products||[]).map(catalogToDeal).filter(Boolean) as Deal[];setSearchResults(previous=>dedupe(append?[...previous,...incoming]:incoming));searchPageRef.current+=1;searchCursorRef.current=typeof data.pagination?.next_cursor==="string"?data.pagination.next_cursor:""}finally{if(request===searchRequestRef.current){searchLoadingRef.current=false;setSearching(false)}}}
+  useEffect(()=>{const clean=query.trim();if(clean.length<2){searchRequestRef.current++;setSearchResults([]);setSearching(false);return}const timer=window.setTimeout(()=>void searchCatalogue(clean),320);return()=>window.clearTimeout(timer)},[query]); // eslint-disable-line react-hooks/exhaustive-deps
   function chooseSection(section: string) {
     setActive(section);
     setSelected(null);
@@ -252,18 +263,19 @@ export default function YnotDrawer() {
               </button>
             ))}
         </nav>
-        <div className="ynot-body" ref={bodyRef} onScroll={(event) => {const element=event.currentTarget;if(element.scrollHeight-element.scrollTop-element.clientHeight<480)void loadMore()}}>
+        <div className="ynot-body" ref={bodyRef} onScroll={(event) => {const element=event.currentTarget;if(element.scrollHeight-element.scrollTop-element.clientHeight<480){if(query.trim().length>=2)void searchCatalogue(query,true);else void loadMore()}}}>
           {searched ? (
             <section className="ynot-section">
               <div className="ynot-section-title">
                 <span>Search results</span>
-                <small>{searched.length} finds</small>
+                <small>{searching?"Searching live catalogues…":`${searched.length} finds`}</small>
               </div>
               <div className="ynot-grid">
                 {searched.map((d) => (
                   <DealOrb key={d.id} deal={d} active={selected?.id === d.id} onSelect={setSelected} />
                 ))}
               </div>
+              {query.trim().length>=2&&<button className="ynot-load-more" onClick={()=>void searchCatalogue(query,true)} disabled={searching}>{searching?"Searching Shopify + Amazon…":"Load more search results"}</button>}
             </section>
           ) : (
               <section className="ynot-section" key={active}>
