@@ -156,8 +156,13 @@ export default function YnotDrawer() {
     [selected, setSelected] = useState<Deal | null>(null),
     [query, setQuery] = useState(""),
     [loading, setLoading] = useState(true),
-    [live, setLive] = useState(false);
+    [loadingMore, setLoadingMore] = useState(false),
+    [live, setLive] = useState(false),
+    [exhausted, setExhausted] = useState<Set<string>>(new Set());
   const bodyRef = useRef<HTMLDivElement>(null);
+  const pageBySectionRef = useRef<Record<string, number>>({});
+  const emptyPagesBySectionRef = useRef<Record<string, number>>({});
+  const loadingMoreRef = useRef(false);
   useEffect(() => {
     let alive = true;
     Promise.allSettled([fetch("https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed").then((r) => r.json()), fetch("/api/ynot-amazon?country=FR").then((r) => r.json())])
@@ -176,21 +181,46 @@ export default function YnotDrawer() {
       alive = false;
     };
   }, []);
-  const grouped = useMemo(
-    () =>
-      sections
-        .map((section) => ({
-          section,
-          items: deals.filter((d) => (section === "Best Value" ? true : d.sections.includes(section) || d.section === section)),
-        }))
-        .filter((g) => g.items.length),
-    [deals],
-  );
+  const activeDeals = useMemo(() => deals.filter((d) => active === "Best Value" || d.sections.includes(active) || d.section === active).slice(0, 1000), [deals, active]);
   const searched = useMemo(() => (query.trim() ? deals.filter((d) => `${d.title} ${d.brand || ""} ${d.section} ${d.badge} ${d.source || ""}`.toLowerCase().includes(query.toLowerCase())) : null), [query, deals]);
-  function jump(section: string) {
+  function chooseSection(section: string) {
     setActive(section);
-    document.getElementById(`ynot-${section.replaceAll(" ", "-").replace("€", "").toLowerCase()}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setSelected(null);
+    bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
+  async function loadMore(section = active) {
+    if (loadingMoreRef.current || exhausted.has(section)) return;
+    const currentCount = deals.filter((d) => section === "Best Value" || d.sections.includes(section) || d.section === section).length;
+    if (currentCount >= 1000) return setExhausted((previous) => new Set(previous).add(section));
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    const page = (pageBySectionRef.current[section] || 0) + 1;
+    try {
+      const params = new URLSearchParams({ country: "FR", page: String(page), section });
+      const feedParams = new URLSearchParams({ limit: "250", offset: String(page * 250), section });
+      const results = await Promise.allSettled([fetch(`https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed?${feedParams}`).then((r) => r.json()), fetch(`/api/ynot-amazon?${params}`).then((r) => r.json())]);
+      const feed = results[0].status === "fulfilled" ? ((results[0].value?.items || []).map(toDeal).filter(Boolean) as Deal[]) : [];
+      const amazon = results[1].status === "fulfilled" ? (results[1].value?.items || []).map(amazonToDeal) : [];
+      const amazonHasMore = results[1].status === "fulfilled" && results[1].value?.pagination?.has_more !== false;
+      const known = new Set(deals.map((deal) => deal.id));
+      const fresh = dedupe([...feed, ...amazon]).filter((deal) => !known.has(deal.id) && (section === "Best Value" || deal.sections.includes(section) || deal.section === section));
+      pageBySectionRef.current[section] = page;
+      if (fresh.length) {
+        emptyPagesBySectionRef.current[section] = 0;
+        setDeals((previous) => dedupe([...previous, ...fresh]));
+      } else {
+        const misses = (emptyPagesBySectionRef.current[section] || 0) + 1;
+        emptyPagesBySectionRef.current[section] = misses;
+        if (misses >= 2 || !amazonHasMore) setExhausted((previous) => new Set(previous).add(section));
+      }
+    } finally {
+      loadingMoreRef.current = false;
+      setLoadingMore(false);
+    }
+  }
+  useEffect(() => {
+    if (open && !query.trim() && activeDeals.length < 24 && !exhausted.has(active)) void loadMore(active);
+  }, [open, active]); // eslint-disable-line react-hooks/exhaustive-deps
   function openDeal() {
     if (selected?.url && selected.url !== "#") window.open(selected.url, "_blank", "noopener,noreferrer");
   }
@@ -218,15 +248,13 @@ export default function YnotDrawer() {
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search YNOT" />
         </label>
         <nav className="ynot-dock" aria-label="YNOT sections">
-          {sections
-            .filter((s) => s === "Best Value" || deals.some((d) => d.sections.includes(s) || d.section === s))
-            .map((s) => (
-              <button key={s} className={active === s ? "active" : ""} onClick={() => jump(s)}>
+          {sections.map((s) => (
+              <button key={s} className={active === s ? "active" : ""} onClick={() => chooseSection(s)}>
                 <span>{s}</span>
               </button>
             ))}
         </nav>
-        <div className="ynot-body" ref={bodyRef}>
+        <div className="ynot-body" ref={bodyRef} onScroll={(event) => {const element=event.currentTarget;if(element.scrollHeight-element.scrollTop-element.clientHeight<480)void loadMore()}}>
           {searched ? (
             <section className="ynot-section">
               <div className="ynot-section-title">
@@ -240,19 +268,19 @@ export default function YnotDrawer() {
               </div>
             </section>
           ) : (
-            grouped.map((group) => (
-              <section className="ynot-section" key={group.section} id={`ynot-${group.section.replaceAll(" ", "-").replace("€", "").toLowerCase()}`}>
+              <section className="ynot-section" key={active}>
                 <div className="ynot-section-title">
-                  <span>{group.section}</span>
-                  <small>{group.items.length} finds</small>
+                  <span>{active}</span>
+                  <small>{activeDeals.length} finds</small>
                 </div>
                 <div className="ynot-grid">
-                  {group.items.map((d) => (
-                    <DealOrb key={`${group.section}-${d.id}`} deal={d} active={selected?.id === d.id} onSelect={setSelected} />
+                  {activeDeals.map((d) => (
+                    <DealOrb key={`${active}-${d.id}`} deal={d} active={selected?.id === d.id} onSelect={setSelected} />
                   ))}
                 </div>
+                {!exhausted.has(active)&&activeDeals.length<1000&&<button className="ynot-load-more" onClick={()=>void loadMore()} disabled={loadingMore}>{loadingMore?"Loading more…":"Load more products"}</button>}
+                {exhausted.has(active)&&<div className="ynot-feed-end">All currently available {active.toLowerCase()} products are shown.</div>}
               </section>
-            ))
           )}
         </div>
         {selected && (
