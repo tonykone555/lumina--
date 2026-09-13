@@ -10,7 +10,7 @@ type Category={key:string;label:string;query:string;subtitle:string};
 type MarketMode="lumina"|"ebay";
 type LuminaSource="all"|"shopify"|"amazon";
 
-const WORLD_W=200000,WORLD_H=200000,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2,ZONE_STEP=1480;
+const WORLD_W=200000,WORLD_H=200000,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2,ZONE_STEP=1160;
 const START_ZOOM=.56;
 const SHOPIFY_WARM_TARGET=90,SHOPIFY_WARM_ATTEMPTS=8;
 const DISCOVERY_WAVES=["more like this","new arrivals","best value","more premium","same shape","top rated","unexpected picks","editor picks","alternative styles","hidden gems","popular choices","fresh finds"];
@@ -40,14 +40,20 @@ const SCENES:Record<string,Scene>={
 
 function money(p:Product){if(p.price==null)return"";try{return new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"EUR",maximumFractionDigits:0}).format(p.price)}catch{return String(p.price)}}
 function hash(s:string){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return Math.abs(h)}
-function productSize(p:Product){return 116+(hash(p.id)%42)}
+function productSize(_p:Product){return 132}
 function cleanTitle(s:string){return String(s||"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,"").replace(/\s{2,}/g," ").replace(/^\s*[|·—–-]+\s*|\s*[|·—–-]+\s*$/g,"").trim()}
 function dedupe(list:Product[]){const seen=new Set<string>();return list.filter(p=>{const k=p.id||`${p.title}|${p.brand}`;if(seen.has(k))return false;seen.add(k);return true})}
 function productSource(p:Product){const s=(p.source||"").toLowerCase();if(s.includes("amazon"))return"amazon";if(s.includes("shopify"))return"shopify";if(s.includes("ebay"))return"ebay";return"store"}
 function sourceKind(p:Product){const source=productSource(p);if(source==="ebay")return"eBay Marketplace";if(source==="amazon")return"Amazon · LuminaMarket";if(source==="shopify")return"Shopify · LuminaMarket";return"Store"}
 function sourceShort(p:Product){const source=productSource(p);if(source==="amazon")return"Amazon";if(source==="shopify")return"Shopify";if(source==="ebay")return"eBay";return"Store"}
 function sourceName(source:LuminaSource){return source==="all"?"All sources":source==="amazon"?"Amazon":"Shopify"}
-function zoneCenter(zone:number,offsetX=0){if(zone<=0)return{x:WORLD_CX+offsetX,y:WORLD_CY};const golden=2.399963229728653;const radius=ZONE_STEP*Math.sqrt(zone)*1.08;const angle=zone*golden;return{x:WORLD_CX+offsetX+Math.cos(angle)*radius,y:WORLD_CY+Math.sin(angle)*radius}}
+function zoneCenter(zone:number,offsetX=0){
+ if(zone<=0)return{x:WORLD_CX+offsetX,y:WORLD_CY};
+ const spokes=6,layer=Math.floor((zone-1)/spokes)+1,spoke=(zone-1)%spokes;
+ const angle=-Math.PI/2+spoke*(Math.PI*2/spokes)+layer*(Math.PI/36);
+ const radius=ZONE_STEP*layer;
+ return{x:WORLD_CX+offsetX+Math.cos(angle)*radius,y:WORLD_CY+Math.sin(angle)*radius};
+}
 
 function protectedBubbleZones(){
  const zones:{x:number;y:number;r:number}[]=[{x:WORLD_CX,y:WORLD_CY,r:300}];
@@ -63,7 +69,14 @@ function protectedBubbleZones(){
 }
 const PROTECTED_BUBBLES=protectedBubbleZones();
 function keepClearOfBigBubbles(x:number,y:number,seed:number){let px=x,py=y;for(let pass=0;pass<4;pass++){for(const z of PROTECTED_BUBBLES){let dx=px-z.x,dy=py-z.y,d=Math.hypot(dx,dy);if(d>=z.r)continue;if(d<1){const a=(seed%360)*Math.PI/180;dx=Math.cos(a);dy=Math.sin(a);d=1}const extra=18+(seed%24),scale=(z.r+extra)/d;px=z.x+dx*scale;py=z.y+dy*scale}}return{x:px,y:py}}
-function placeProduct(p:Product,index:number,fresh=false,offsetX=0){const zone=Math.floor(index/18),local=index%18,h=hash(p.id||`${p.title}-${index}`),center=zoneCenter(zone,offsetX),ring=230+(local%3)*165+(h%52),angle=(local/18)*Math.PI*2+(h%45)/100;const rawX=center.x+Math.cos(angle)*ring,rawY=center.y+Math.sin(angle)*(ring*.72),safe=keepClearOfBigBubbles(rawX,rawY,h);return{...p,title:cleanTitle(p.title),zone,fresh,x:safe.x,y:safe.y}}
+function placeProduct(p:Product,index:number,fresh=false,offsetX=0){
+ const zone=Math.floor(index/18),local=index%18,center=zoneCenter(zone,offsetX);
+ const ringIndex=Math.floor(local/6),spoke=local%6;
+ const ring=230+ringIndex*180;
+ const angle=-Math.PI/2+spoke*(Math.PI/3)+ringIndex*(Math.PI/18);
+ const rawX=center.x+Math.cos(angle)*ring,rawY=center.y+Math.sin(angle)*ring,safe={x:rawX,y:rawY};
+ return{...p,title:cleanTitle(p.title),zone,fresh,x:safe.x,y:safe.y};
+}
 function clearOfProducts(candidate:Product,placed:Product[]){const x=candidate.x||0,y=candidate.y||0,r=productSize(candidate)/2;return placed.every(other=>Math.hypot(x-(other.x||0),y-(other.y||0))>=r+productSize(other)/2+18)}
 function settleProduct(candidate:Product,placed:Product[]){if(clearOfProducts(candidate,placed))return candidate;const baseX=candidate.x||0,baseY=candidate.y||0,seed=hash(candidate.id||candidate.title),golden=2.399963229728653;for(let attempt=1;attempt<=220;attempt++){const distance=24*Math.sqrt(attempt),angle=seed*.0174533+attempt*golden,safe=keepClearOfBigBubbles(baseX+Math.cos(angle)*distance,baseY+Math.sin(angle)*distance,seed+attempt);const next={...candidate,x:safe.x,y:safe.y};if(clearOfProducts(next,placed))return next}return candidate}
 function layoutProducts(list:Product[],freshFrom=Number.POSITIVE_INFINITY,splitSources=false){let shopifyIndex=0,amazonIndex=0,otherIndex=0;const placed:Product[]=[];for(let i=0;i<list.length;i++){const p=list[i],source=productSource(p);let local=i,offset=0;if(splitSources){if(source==="shopify"){local=shopifyIndex++;offset=-980}else if(source==="amazon"){local=amazonIndex++;offset=980}else{local=otherIndex++}}placed.push(settleProduct(placeProduct(p,local,i>=freshFrom,offset),placed))}return placed}
@@ -157,6 +170,7 @@ export default function LuminaWorld(){
     {level!=="worlds"&&<button className="lv4-intent" style={{left:WORLD_CX,top:WORLD_CY}} onClick={()=>{setZoom(z=>Math.min(1.65,z+.2));expandWorld()}}><span>{focus||CATEGORIES.find(c=>c.key===categoryKey)?.label}</span><small>{marketError|| (loading?"Finding products…":`${market==="lumina"?sourceName(luminaSource):"eBay"} · ${products.length} products · ${zoneCount} zones${loadingMore?" · more arriving":""}`)}</small></button>}
     {level!=="worlds"&&market==="lumina"&&luminaSource==="all"&&products.length>0&&<><button className="lv4-source-anchor shopify" style={{left:WORLD_CX-980,top:WORLD_CY-720}} onClick={()=>changeLuminaSource("shopify")}><b>Shopify</b><span>Independent stores</span></button><button className="lv4-source-anchor amazon" style={{left:WORLD_CX+980,top:WORLD_CY-720}} onClick={()=>changeLuminaSource("amazon")}><b>Amazon</b><span>Marketplace catalog</span></button></>}
     {level!=="worlds"&&labels.map((label,i)=>{const ring=390+Math.floor(i/6)*210,a=(i%6)/6*Math.PI*2-.52,x=WORLD_CX+Math.cos(a)*ring,y=WORLD_CY+Math.sin(a)*(ring*.66);return <button key={`${label}-${i}`} className={`lv4-textbubble ${focus===label?"active":""}`} style={{left:x,top:y}} onClick={()=>branch(label)}>{label}</button>})}
+    {level!=="worlds"&&Array.from({length:Math.max(0,zoneCount-1)},(_,i)=>{const zone=i+1,center=zoneCenter(zone,market==="lumina"&&luminaSource==="all"?(zone%2?-980:980):0),start=zone*18+1,end=Math.min(products.length,(zone+1)*18);return <div key={`zone-${zone}`} className="lv4-zone-annotation" style={{left:center.x,top:center.y}}><small>{focus||CATEGORIES.find(c=>c.key===categoryKey)?.label||"Discover"}</small><b>Explore further</b><span>{start}–{end} · {market==="lumina"?sourceName(luminaSource):"eBay"}</span></div>})}
     {level!=="worlds"&&products.map(p=>{const size=productSize(p),showMeta=level==="details";return <button key={p.id} className={`lv4-product source-${productSource(p)} ${p.fresh?"lv4-new-product":""}`} style={{left:p.x,top:p.y,"--s":`${size}px`} as React.CSSProperties} onClick={()=>setSelected(p)}><span className="lv4-vita-gloss"/><img src={p.image} alt=""/>{p.price!=null&&<span className="lv4-price">{money(p)}</span>}{showMeta&&<span className="lv4-orbmeta"><small className="lv4-orb-source">{sourceShort(p)}</small><b>{cleanTitle(p.title)}</b><em>{p.brand}</em></span>}</button>})}
    </div>
   </section>
