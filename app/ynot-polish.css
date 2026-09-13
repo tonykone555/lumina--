@@ -1,16 +1,21 @@
-/* Crisp native deal rails: the image is the only framed visual surface. */
-.ynot-drawer{background:linear-gradient(160deg,rgba(242,239,234,.88),rgba(214,207,198,.78));border-color:rgba(255,255,255,.58);box-shadow:0 24px 72px rgba(35,28,20,.22)}
-.ynot-head{padding-bottom:12px}.ynot-head h2{font-size:40px}.ynot-head p{max-width:390px;line-height:1.4}
-.ynot-section{padding:18px 0 12px}.ynot-grid{gap:14px 12px}
-.ynot-orb{padding:0;border:0;border-radius:18px;background:transparent;box-shadow:none;overflow:hidden}
-.ynot-orb:hover,.ynot-orb.active{transform:translateY(-2px);background:rgba(255,255,255,.18);box-shadow:none}
-.ynot-orb-img{aspect-ratio:4/5;border-radius:16px;border:1px solid rgba(255,255,255,.64);background:transparent}
+/* Tinted glass YNOT catalog with compact, circular product presentation. */
+.ynot-drawer{width:min(760px,calc(100vw - 36px));background:linear-gradient(150deg,rgba(226,218,208,.78),rgba(193,184,172,.66));border:1px solid rgba(255,255,255,.62);backdrop-filter:blur(24px) saturate(1.12);-webkit-backdrop-filter:blur(24px) saturate(1.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.58),0 24px 72px rgba(35,28,20,.22)}
+.ynot-head{padding:22px 24px 12px}.ynot-head h2{font-size:40px}.ynot-head p{max-width:460px;line-height:1.4}.ynot-close{position:relative;z-index:4;flex:0 0 auto;background:rgba(255,255,255,.30);border-color:rgba(255,255,255,.54)}
+.ynot-search{margin:0 22px 10px;background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.58);border-radius:16px}
+.ynot-dock{margin:0 18px 8px;display:grid;grid-auto-flow:column;grid-template-rows:repeat(2,34px);grid-auto-columns:max-content;gap:7px;overflow-x:auto;padding:5px 4px 11px}
+.ynot-dock button{height:34px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.48);color:#403830;box-shadow:inset 0 1px 0 rgba(255,255,255,.30)}
+.ynot-dock button.active{background:rgba(46,40,35,.86);border-color:rgba(46,40,35,.72);color:#fff;transform:none}
+.ynot-body{padding:0 18px 74px}.ynot-section{padding:17px 0 12px}.ynot-section-title{margin-bottom:11px}
+.ynot-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px 12px}
+.ynot-orb{min-width:0;padding:8px;border:1px solid rgba(255,255,255,.42);border-radius:22px;background:rgba(255,255,255,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.28);overflow:hidden}
+.ynot-orb:hover,.ynot-orb.active{transform:translateY(-2px);background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.68);box-shadow:0 10px 24px rgba(38,30,23,.08),inset 0 1px 0 rgba(255,255,255,.38)}
+.ynot-orb-img{display:block;width:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,.68);background:rgba(255,255,255,.16)}
 .ynot-orb-img img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
-.ynot-orb-copy{grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;padding:10px 5px 6px}
-.ynot-orb-copy b{grid-column:1/-1;font-size:12px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ynot-orb-copy em{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:8px;letter-spacing:.02em}
-.ynot-orb-copy strong{font-size:13px;text-align:right}
-.ynot-selected{border-color:rgba(255,255,255,.62);background:rgba(245,242,237,.88);border-radius:20px;box-shadow:0 14px 36px rgba(42,34,27,.13)}
-.ynot-selected>img{aspect-ratio:1/1;height:auto;object-fit:cover;border-radius:14px}
-.ynot-selected-copy h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.15}.ynot-selected-copy strong{font-size:19px}
-.ynot-shop{border-radius:13px;box-shadow:none}
+.ynot-orb-copy{grid-template-columns:minmax(0,1fr) auto;gap:5px 7px;padding:9px 3px 3px}
+.ynot-orb-copy b{grid-column:1/-1;font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ynot-orb-copy em{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:7.5px;letter-spacing:.02em}.ynot-orb-copy strong{font-size:12px;text-align:right}
+.ynot-selected{left:18px;right:18px;bottom:42px;min-height:126px;grid-template-columns:90px minmax(0,1fr) auto;padding:12px 48px 12px 12px;border:1px solid rgba(255,255,255,.70);border-radius:24px;background:linear-gradient(145deg,rgba(247,243,237,.82),rgba(225,216,205,.72));backdrop-filter:blur(22px) saturate(1.08);-webkit-backdrop-filter:blur(22px) saturate(1.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.62),0 14px 38px rgba(42,34,27,.16)}
+.ynot-selected>img{width:90px;height:90px;aspect-ratio:1/1;object-fit:cover;border-radius:50%;border:1px solid rgba(255,255,255,.66)}
+.ynot-selected-copy h3{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.15}.ynot-selected-copy strong{font-size:19px}.ynot-selected-copy p{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ynot-selected-close{position:absolute;right:10px;top:10px;width:30px;height:30px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.58);border-radius:50%;background:rgba(255,255,255,.30);color:#302a24;cursor:pointer}.ynot-selected-close svg{width:14px;height:14px}
+.ynot-shop{border-radius:14px;box-shadow:none}.ynot-foot{bottom:14px}
+@media(max-width:640px){.ynot-drawer{inset:8px;width:auto}.ynot-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 7px}.ynot-orb{padding:5px;border-radius:16px}.ynot-orb-copy{display:flex;flex-direction:column;gap:4px;padding:7px 2px 2px}.ynot-orb-copy b{width:100%;font-size:9px}.ynot-orb-copy em{width:100%;font-size:6.5px}.ynot-orb-copy strong{font-size:10px;text-align:left}.ynot-selected{grid-template-columns:72px minmax(0,1fr);padding:10px 42px 10px 10px}.ynot-selected>img{width:72px;height:72px}.ynot-shop{grid-column:1/-1;flex-direction:row}.ynot-selected-copy p{display:none}}
