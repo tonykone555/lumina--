@@ -38,8 +38,6 @@ function dedupe(list:Product[]){const seen=new Set<string>();return list.filter(
 function sourceKind(p:Product){const s=(p.source||"").toLowerCase();if(s.includes("ebay"))return"eBay Marketplace";if(s.includes("amazon")||s.includes("shopify"))return"LuminaMarket";return"Store"}
 function zoneCenter(zone:number){if(zone<=0)return{x:WORLD_CX,y:WORLD_CY};const golden=2.399963229728653;const radius=ZONE_STEP*Math.sqrt(zone)*1.08;const angle=zone*golden;return{x:WORLD_CX+Math.cos(angle)*radius,y:WORLD_CY+Math.sin(angle)*radius}}
 
-// Keep the large navigation/category bubbles as protected spatial zones. Product orbs are
-// physically pushed away from these areas instead of merely being layered underneath them.
 function protectedBubbleZones(){
  const zones:{x:number;y:number;r:number}[]=[{x:WORLD_CX,y:WORLD_CY,r:300}];
  for(let i=0;i<12;i++){
@@ -73,27 +71,34 @@ export default function LuminaWorld(){
  const pointersRef=useRef(new Map<number,{x:number;y:number}>());
  const pinchRef=useRef<{distance:number;zoom:number}|null>(null);
  const dragRef=useRef({drag:false,px:0,py:0,lastX:0,lastY:0,startX:0,startY:0});
- const loadingRef=useRef(false),waveRef=useRef(0),lastExpandRef=useRef(0);
+ const loadingRef=useRef(false),waveRef=useRef(0),lastExpandRef=useRef(0),replaceRequestRef=useRef(0);
  const scene=SCENES[categoryKey]||SCENES.retail;
 
  const fetchProducts=useCallback(async(base:string,direction="",append=false,marketOverride:MarketMode=market,page=0)=>{
-  if(loadingRef.current)return;loadingRef.current=true;append?setLoadingMore(true):setLoading(true);setMarketError("");
+  if(append&&loadingRef.current)return;
+  const requestId=append?0:++replaceRequestRef.current;
+  loadingRef.current=true;append?setLoadingMore(true):setLoading(true);setMarketError("");
   try{
    const params=new URLSearchParams({q:base||scene.query,market:marketOverride,page:String(Math.max(0,page))});if(direction)params.set("direction",direction);
    const r=await fetch(`/api/catalog?${params}`);const data:CatalogPage=await r.json();const incoming=dedupe((data.products||[]).map(p=>({...p,title:cleanTitle(p.title)})));
+   if(!append&&requestId!==replaceRequestRef.current)return;
    if(data.error)setMarketError(data.error);
    setProducts(prev=>{if(!append)return incoming.map((p,i)=>placeProduct(p,i));const merged=dedupe([...prev,...incoming]);return merged.map((p,i)=>placeProduct(p,i,i>=prev.length))});
-  }catch{setMarketError(marketOverride==="ebay"?"eBay Marketplace is temporarily unavailable":"LuminaMarket is temporarily unavailable")}
-  finally{loadingRef.current=false;setLoading(false);setLoadingMore(false)}
+  }catch{
+   if(!append&&requestId!==replaceRequestRef.current)return;
+   setMarketError(marketOverride==="ebay"?"eBay Marketplace is temporarily unavailable":"LuminaMarket is temporarily unavailable");
+  }finally{
+   if(append||requestId===replaceRequestRef.current){loadingRef.current=false;setLoading(false);setLoadingMore(false)}
+  }
  },[scene.query,market]);
 
  function centerWorld(z:number){setZoom(z);setPan({x:-WORLD_CX*z,y:-WORLD_CY*z})}
- function chooseCategory(key:string){const c=CATEGORIES.find(x=>x.key===key)||CATEGORIES[CATEGORIES.length-1];setCategoryKey(c.key);setSubmitted(c.query);setQuery("");setFocus("");setSelected(null);setProducts([]);waveRef.current=0;centerWorld(.93);void fetchProducts(c.query)}
- function submit(){const q=query.trim();if(!q)return;setSubmitted(q);setFocus("");setSelected(null);setCategoryKey("retail");waveRef.current=0;centerWorld(.95);void fetchProducts(q)}
+ function chooseCategory(key:string){const c=CATEGORIES.find(x=>x.key===key)||CATEGORIES[CATEGORIES.length-1];setCategoryKey(c.key);setSubmitted(c.query);setQuery("");setFocus("");setSelected(null);setProducts([]);setMarketError("");waveRef.current=0;centerWorld(.93);void fetchProducts(c.query,"",false,market,0)}
+ function submit(){const q=query.trim();if(!q)return;setSubmitted(q);setFocus("");setSelected(null);setCategoryKey("retail");setProducts([]);setMarketError("");waveRef.current=0;centerWorld(.95);void fetchProducts(q,"",false,market,0)}
  function branch(direction:string){if(!submitted&&!scene.query)return;setFocus(direction);setSelected(null);setZoom(z=>Math.max(1.08,z));waveRef.current=0;void fetchProducts(submitted||scene.query,direction,true,market,0)}
- function resetWorld(){setSubmitted("");setQuery("");setFocus("");setSelected(null);setProducts([]);setMarketError("");waveRef.current=0;centerWorld(START_ZOOM)}
+ function resetWorld(){replaceRequestRef.current++;setSubmitted("");setQuery("");setFocus("");setSelected(null);setProducts([]);setMarketError("");waveRef.current=0;loadingRef.current=false;centerWorld(START_ZOOM)}
  function expandWorld(){if(!submitted||loadingRef.current)return;const now=Date.now();if(now-lastExpandRef.current<650)return;lastExpandRef.current=now;const page=waveRef.current+1;waveRef.current=page;const cue=focus||DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length];void fetchProducts(submitted,cue,true,market,page)}
- function changeMarket(next:MarketMode){if(next===market)return;setMarket(next);setSelected(null);setMarketError("");waveRef.current=0;if(submitted)void fetchProducts(submitted,focus,false,next,0)}
+ function changeMarket(next:MarketMode){if(next===market)return;setMarket(next);setSelected(null);setProducts([]);setMarketError("");waveRef.current=0;if(submitted)void fetchProducts(submitted,focus,false,next,0)}
 
  const labels=useMemo(()=>{const fromProducts=products.flatMap(p=>p.tags||[]).filter(Boolean);return[...new Set([focus,...scene.labels,...fromProducts])].filter(Boolean).slice(0,12)},[products,focus,scene.labels]);
  const level=zoom<.68?"worlds":zoom<1?"themes":zoom<1.36?"products":"details";
