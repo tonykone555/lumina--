@@ -11,6 +11,7 @@
 .ynot-orb:hover,.ynot-orb.active{transform:translateY(-2px);background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.68);box-shadow:0 10px 24px rgba(38,30,23,.08),inset 0 1px 0 rgba(255,255,255,.38)}
 .ynot-orb-img{display:block;width:100%;aspect-ratio:1/1;border-radius:50%;overflow:hidden;border:1px solid rgba(255,255,255,.68);background:rgba(255,255,255,.16)}
 .ynot-orb-img img{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+.ynot-orb-img{background:transparent}.ynot-orb-img img{transform:scale(1.015)}
 .ynot-orb-copy{grid-template-columns:minmax(0,1fr) auto;gap:5px 7px;padding:9px 3px 3px}
 .ynot-orb-copy b{grid-column:1/-1;font-size:11px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ynot-orb-copy em{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:7.5px;letter-spacing:.02em}.ynot-orb-copy strong{font-size:12px;text-align:right}
 .ynot-selected{left:18px;right:18px;bottom:42px;min-height:126px;grid-template-columns:90px minmax(0,1fr) auto;padding:12px 48px 12px 12px;border:1px solid rgba(255,255,255,.70);border-radius:24px;background:linear-gradient(145deg,rgba(247,243,237,.82),rgba(225,216,205,.72));backdrop-filter:blur(22px) saturate(1.08);-webkit-backdrop-filter:blur(22px) saturate(1.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.62),0 14px 38px rgba(42,34,27,.16)}

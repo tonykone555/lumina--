@@ -196,14 +196,14 @@ export default function YnotDrawer() {
     const page = (pageBySectionRef.current[section] || 0) + 1;
     try {
       const params = new URLSearchParams({ country: "FR", page: String(page), section });
-      const feedParams = new URLSearchParams({ limit: "250", offset: String(page * 250), section });
+      const feedParams = new URLSearchParams({ limit: "250", offset: String(currentCount), section });
       const results = await Promise.allSettled([fetch(`https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed?${feedParams}`).then((r) => r.json()), fetch(`/api/ynot-amazon?${params}`).then((r) => r.json())]);
       const feed = results[0].status === "fulfilled" ? ((results[0].value?.items || []).map(toDeal).filter(Boolean) as Deal[]) : [];
       const amazon = results[1].status === "fulfilled" ? (results[1].value?.items || []).map(amazonToDeal) : [];
       const known = new Set(deals.map((deal) => deal.id));
       const fresh = dedupe([...feed, ...amazon]).filter((deal) => !known.has(deal.id) && (section === "Best Value" || deal.sections.includes(section) || deal.section === section));
+      pageBySectionRef.current[section] = page;
       if (fresh.length) {
-        pageBySectionRef.current[section] = page;
         setDeals((previous) => dedupe([...previous, ...fresh]));
       }
     } finally {
@@ -214,6 +214,11 @@ export default function YnotDrawer() {
   useEffect(() => {
     if (open && !query.trim() && activeDeals.length < 24) void loadMore(active);
   }, [open, active]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!open || query.trim() || activeDeals.length >= 1000 || loadingMore) return;
+    const body=bodyRef.current;
+    if (body&&body.scrollHeight-body.scrollTop-body.clientHeight<520) void loadMore(active);
+  }, [open,active,activeDeals.length,loadingMore,query]); // eslint-disable-line react-hooks/exhaustive-deps
   function openDeal() {
     if (selected?.url && selected.url !== "#") window.open(selected.url, "_blank", "noopener,noreferrer");
   }

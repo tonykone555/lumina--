@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Search, X, Heart, ExternalLink, Sparkles, RotateCcw, Compass, Home, Bookmark, ScanFace, ChevronDown } from "lucide-react";
+import { Search, X, Heart, ExternalLink, Sparkles, RotateCcw, Compass, Home, Bookmark, ScanFace, ChevronDown, SlidersHorizontal } from "lucide-react";
 
 type Product={id:string;title:string;brand:string;price:number|null;currency?:string;image:string;url?:string;tags?:string[];source?:string;x?:number;y?:number;zone?:number;fresh?:boolean};
 type CatalogPage={products?:Product[];source?:string;sources?:string[];pagination?:Record<string,unknown>;market?:"lumina"|"ebay";luminaSource?:"all"|"shopify"|"amazon";error?:string};
@@ -81,6 +81,7 @@ function placeProduct(p:Product,index:number,fresh=false,offsetX=0){
 function clearOfProducts(candidate:Product,placed:Product[]){const x=candidate.x||0,y=candidate.y||0,r=productSize(candidate)/2;return placed.every(other=>Math.hypot(x-(other.x||0),y-(other.y||0))>=r+productSize(other)/2+18)}
 function settleProduct(candidate:Product,placed:Product[]){if(clearOfProducts(candidate,placed))return candidate;const baseX=candidate.x||0,baseY=candidate.y||0,seed=hash(candidate.id||candidate.title),golden=2.399963229728653;for(let attempt=1;attempt<=220;attempt++){const distance=24*Math.sqrt(attempt),angle=seed*.0174533+attempt*golden,safe=keepClearOfBigBubbles(baseX+Math.cos(angle)*distance,baseY+Math.sin(angle)*distance,seed+attempt);const next={...candidate,x:safe.x,y:safe.y};if(clearOfProducts(next,placed))return next}return candidate}
 function layoutProducts(list:Product[],freshFrom=Number.POSITIVE_INFINITY,splitSources=false){let shopifyIndex=0,amazonIndex=0,otherIndex=0;const placed:Product[]=[];for(let i=0;i<list.length;i++){const p=list[i],source=productSource(p);let local=i,offset=0;if(splitSources){if(source==="shopify"){local=shopifyIndex++;offset=-980}else if(source==="amazon"){local=amazonIndex++;offset=980}else{local=otherIndex++}}placed.push(settleProduct(placeProduct(p,local,i>=freshFrom,offset),placed))}return placed}
+function appendProductLayout(previous:Product[],incoming:Product[],splitSources=false){const known=new Set(previous.map(p=>p.id||`${p.title}|${p.brand}`)),placed=[...previous];let shopifyIndex=previous.filter(p=>productSource(p)==="shopify").length,amazonIndex=previous.filter(p=>productSource(p)==="amazon").length,otherIndex=previous.length-shopifyIndex-amazonIndex;for(const p of incoming){const key=p.id||`${p.title}|${p.brand}`;if(known.has(key))continue;known.add(key);const source=productSource(p);let local=placed.length,offset=0;if(splitSources){if(source==="shopify"){local=shopifyIndex++;offset=-980}else if(source==="amazon"){local=amazonIndex++;offset=980}else{local=otherIndex++}}placed.push(settleProduct(placeProduct(p,local,true,offset),placed))}return placed}
 
 export default function LuminaWorld(){
  const [query,setQuery]=useState("");
@@ -98,12 +99,14 @@ export default function LuminaWorld(){
  const [market,setMarket]=useState<MarketMode>("lumina");
  const [luminaSource,setLuminaSource]=useState<LuminaSource>("shopify");
  const [sourceOpen,setSourceOpen]=useState(false);
+ const [refineOpen,setRefineOpen]=useState(false);
  const [marketError,setMarketError]=useState("");
  const pointersRef=useRef(new Map<number,{x:number;y:number}>());
  const pinchRef=useRef<{distance:number;zoom:number;stageX:number;stageY:number}|null>(null);
  const dragRef=useRef({drag:false,px:0,py:0,lastX:0,lastY:0,startX:0,startY:0});
  const loadingRef=useRef(false),waveRef=useRef(0),lastExpandRef=useRef(0),replaceRequestRef=useRef(0),shopifyCursorRef=useRef(""),shopifyPageDirectionRef=useRef("");
  const deepProductRef=useRef("");
+ const wheelFrameRef=useRef<number|null>(null),wheelTargetRef=useRef<{x:number;y:number;zoom:number}|null>(null);
  const [shopifyFetchSerial,setShopifyFetchSerial]=useState(0);
  const scene=SCENES[categoryKey]||SCENES.retail;
 
@@ -127,7 +130,7 @@ export default function LuminaWorld(){
     shopifyPageDirectionRef.current=shopifyCursorRef.current?direction:"";
    }
    const splitSources=marketOverride==="lumina"&&sourceOverride==="all";
-   setProducts(prev=>{if(!append)return layoutProducts(incoming,Number.POSITIVE_INFINITY,splitSources);const merged=dedupe([...prev,...incoming]);return layoutProducts(merged,prev.length,splitSources)});
+   setProducts(prev=>append?appendProductLayout(prev,incoming,splitSources):layoutProducts(incoming,Number.POSITIVE_INFINITY,splitSources));
    if(append&&marketOverride==="lumina"&&sourceOverride==="shopify")setShopifyFetchSerial(v=>v+1);
   }catch{
    if(!append&&requestId!==replaceRequestRef.current)return;
@@ -153,12 +156,14 @@ export default function LuminaWorld(){
  const level=zoom<.68?"worlds":zoom<1?"themes":zoom<1.36?"products":"details";
  const displayLevel=products.length?level:"worlds";
  const zoneCount=Math.max(1,Math.ceil(products.length/PRODUCTS_PER_ZONE));
- useEffect(()=>{if(level==="details"&&products.length)hovered?exploreProduct(hovered):expandWorld()},[level]); // eslint-disable-line react-hooks/exhaustive-deps
+ useEffect(()=>{if(level!=="details"||!products.length)return;const related=selected||hovered;if(related)exploreProduct(related);else expandWorld()},[level]); // eslint-disable-line react-hooks/exhaustive-deps
+ useEffect(()=>()=>{if(wheelFrameRef.current!=null)window.cancelAnimationFrame(wheelFrameRef.current)},[]);
  useEffect(()=>{if(!submitted||market!=="lumina"||luminaSource!=="shopify"||products.length>=SHOPIFY_WARM_TARGET||loadingRef.current||!shopifyCursorRef.current)return;const t=window.setTimeout(()=>expandWorld(),360);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length,shopifyFetchSerial,loading]); // eslint-disable-line react-hooks/exhaustive-deps
 
  function pointerDown(e:React.PointerEvent<HTMLElement>){pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2){const p=[...pointersRef.current.values()],midX=(p[0].x+p[1].x)/2,midY=(p[0].y+p[1].y)/2;pinchRef.current={distance:Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),zoom,stageX:(midX-pan.x)/zoom,stageY:(midY-pan.y)/zoom};dragRef.current.drag=false;return}if((e.target as HTMLElement).closest("button,input,a,.lv4-detail,.lv4-source-picker"))return;dragRef.current={drag:true,px:e.clientX-pan.x,py:e.clientY-pan.y,lastX:e.clientX,lastY:e.clientY,startX:e.clientX,startY:e.clientY};(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)}
- function pointerMove(e:React.PointerEvent<HTMLElement>){if(pointersRef.current.has(e.pointerId))pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2&&pinchRef.current){const p=[...pointersRef.current.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),midX=(p[0].x+p[1].x)/2,midY=(p[0].y+p[1].y)/2,next=Math.min(2.8,Math.max(.38,pinchRef.current.zoom*(d/pinchRef.current.distance)));setZoom(next);setPan({x:midX-pinchRef.current.stageX*next,y:midY-pinchRef.current.stageY*next});if(next>pinchRef.current.zoom*1.08){hovered?exploreProduct(hovered):expandWorld()}return}if(dragRef.current.drag){const next={x:e.clientX-dragRef.current.px,y:e.clientY-dragRef.current.py};if(!submitted){const home={x:-WORLD_CX*zoom,y:-WORLD_CY*zoom};next.x=Math.max(home.x-1100,Math.min(home.x+1100,next.x));next.y=Math.max(home.y-900,Math.min(home.y+900,next.y))}setPan(next);if(Math.hypot(e.clientX-dragRef.current.startX,e.clientY-dragRef.current.startY)>220)expandWorld()}}
+ function pointerMove(e:React.PointerEvent<HTMLElement>){if(pointersRef.current.has(e.pointerId))pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2&&pinchRef.current){const p=[...pointersRef.current.values()],d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y),midX=(p[0].x+p[1].x)/2,midY=(p[0].y+p[1].y)/2,next=Math.min(2.8,Math.max(.38,pinchRef.current.zoom*(d/pinchRef.current.distance)));setZoom(next);setPan({x:midX-pinchRef.current.stageX*next,y:midY-pinchRef.current.stageY*next});return}if(dragRef.current.drag){const next={x:e.clientX-dragRef.current.px,y:e.clientY-dragRef.current.py};if(!submitted){const home={x:-WORLD_CX*zoom,y:-WORLD_CY*zoom};next.x=Math.max(home.x-1100,Math.min(home.x+1100,next.x));next.y=Math.max(home.y-900,Math.min(home.y+900,next.y))}setPan(next);if(Math.hypot(e.clientX-dragRef.current.startX,e.clientY-dragRef.current.startY)>220)expandWorld()}}
  function pointerUp(e:React.PointerEvent<HTMLElement>){pointersRef.current.delete(e.pointerId);if(pointersRef.current.size<2)pinchRef.current=null;dragRef.current.drag=false}
+ function wheelZoom(e:React.WheelEvent<HTMLElement>){e.preventDefault();const inward=e.deltaY<0,current=wheelTargetRef.current?.zoom??zoom;wheelTargetRef.current={x:e.clientX,y:e.clientY,zoom:Math.min(2.8,Math.max(.38,current*(inward?1.075:.94)))};if(wheelFrameRef.current!=null)return;wheelFrameRef.current=window.requestAnimationFrame(()=>{const target=wheelTargetRef.current;wheelFrameRef.current=null;wheelTargetRef.current=null;if(target)zoomAround(target.x,target.y,target.zoom)})}
 
  const searchPlaceholder=market==="ebay"?"Search eBay Marketplace — product, style, price…":luminaSource==="amazon"?"Search Amazon — product, style, price…":luminaSource==="shopify"?"Search Shopify stores — product, style, price…":"Search LuminaMarket — Shopify + Amazon…";
  return <main className={`lv4-shell market-${market}`} style={{"--a":scene.a,"--b":scene.b,"--c":scene.c,"--scene":`url(${scene.image})`} as React.CSSProperties}>
@@ -170,7 +175,7 @@ export default function LuminaWorld(){
   <button className="lv4-mobile-menu" aria-label="Open navigation" onClick={()=>setMobileNav(v=>!v)}>@</button>
 
   {(loading||marketError)&&!products.length&&<div className={`lv4-category-status ${marketError?"error":""}`}><b>{loading?"Opening category…":"Category unavailable"}</b><span>{marketError||"Finding live products"}</span>{marketError&&<button onClick={()=>void fetchProducts(submitted||scene.query,focus,false,market,0,luminaSource)}>Try again</button>}</div>}
-  <section className={`lv4-world level-${displayLevel}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} onWheel={e=>{e.preventDefault();const inward=e.deltaY<0,next=Math.min(2.8,Math.max(.38,zoom*(inward?1.09:.925)));zoomAround(e.clientX,e.clientY,next);if(inward){hovered?exploreProduct(hovered):expandWorld()}}}>
+  <section className={`lv4-world level-${displayLevel}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} onWheel={wheelZoom}>
    <div className="lv4-stage" style={{width:WORLD_W,height:WORLD_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}>
     {displayLevel==="worlds"&&<><div className="lv4-world-title" style={{left:WORLD_CX,top:WORLD_CY}}><small>{market==="ebay"?"EXPLORE EBAY":`EXPLORE ${sourceName(luminaSource).toUpperCase()}`}</small><strong>{submitted?"Choose another world":"Choose a world"}</strong><span>{loading?"Opening your selection…":"or search for anything above"}</span></div>{CATEGORIES.map((c,i)=>{const a=i/CATEGORIES.length*Math.PI*2-Math.PI/2,x=WORLD_CX+Math.cos(a)*800,y=WORLD_CY+Math.sin(a)*800;return <button key={c.key} className={`lv4-category-bubble cat-${c.key}`} style={{left:x,top:y}} onClick={()=>chooseCategory(c.key)}><b>{c.label}</b><span>{c.subtitle}</span></button>})}</>}
 
@@ -181,6 +186,9 @@ export default function LuminaWorld(){
     {displayLevel!=="worlds"&&products.map(p=>{const size=productSize(p),showMeta=displayLevel==="details",isHovered=hovered?.id===p.id;return <button key={p.id} className={`lv4-product source-${productSource(p)} ${p.fresh?"lv4-new-product":""} ${isHovered?"is-hovered":""}`} style={{left:p.x,top:p.y,"--s":`${size}px`} as React.CSSProperties} onPointerEnter={()=>setHovered(p)} onPointerLeave={()=>setHovered(h=>h?.id===p.id?null:h)} onPointerDown={()=>setHovered(p)} onFocus={()=>setHovered(p)} onBlur={()=>setHovered(h=>h?.id===p.id?null:h)} onClick={()=>setSelected(p)}><span className="lv4-vita-gloss"/><img src={p.image} alt=""/><span className="lv4-product-tooltip"><b>{cleanTitle(p.title)}</b><small>{sourceShort(p)}{p.brand?` · ${p.brand}`:""}</small></span>{p.price!=null&&<span className="lv4-price">{money(p)}</span>}{showMeta&&<span className="lv4-orbmeta"><small className="lv4-orb-source">{sourceShort(p)}</small><b>{cleanTitle(p.title)}</b><em>{p.brand}</em></span>}</button>})}
    </div>
   </section>
+
+  <button className={`lv4-refine ${refineOpen?"active":""}`} onClick={()=>setRefineOpen(v=>!v)} aria-expanded={refineOpen} aria-controls="lv4-refine-tags"><SlidersHorizontal/><span>Fine tune</span><b>∨</b></button>
+  {refineOpen&&<div className="lv4-refine-panel" id="lv4-refine-tags"><small>Explore by tag</small><div>{labels.map(label=><button key={label} className={focus===label?"active":""} onClick={()=>{setRefineOpen(false);branch(label)}}>{label}</button>)}</div></div>}
 
   {selected&&<aside className="lv4-detail"><button className="lv4-close" onClick={()=>setSelected(null)}><X/></button><img src={selected.image} alt={cleanTitle(selected.title)}/><div className="lv4-detailcopy"><small className="lv4-product-brand">{selected.brand||"Independent store"}</small><span className={`lv4-product-source ${selected.source?.includes("ebay")?"ebay":""}`}>{sourceKind(selected)}</span><h2>{cleanTitle(selected.title)}</h2><strong>{money(selected)}</strong><div className="lv4-actions"><a href={selected.url||"#"} target="_blank" rel="noreferrer">{selected.source?.includes("ebay")?"View on eBay":"View at store"} <ExternalLink/></a><button className={liked.has(selected.id)?"active":""} onClick={()=>setLiked(s=>{const n=new Set(s);n.has(selected.id)?n.delete(selected.id):n.add(selected.id);return n})}><Heart/></button>{categoryKey==="fashion"&&<button className="try"><Sparkles/> Try on</button>}</div><div className="lv4-direction-row"><button onClick={()=>branch("More like this")}>More like this</button><button onClick={()=>branch("Cheaper")}>Cheaper</button><button onClick={()=>branch("More premium")}>More premium</button><button onClick={()=>branch("Same shape")}>Same shape</button></div><div className="lv4-tagrow">{(selected.tags||[]).slice(0,5).map(t=><button key={t} onClick={()=>branch(t)}>{t}</button>)}</div></div></aside>}
  </main>
