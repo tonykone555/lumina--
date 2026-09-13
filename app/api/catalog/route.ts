@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkoutMode } from "@/lib/commerce/checkout";
 
 export const runtime="nodejs";
 
@@ -62,7 +63,7 @@ function parsePriceIntent(text:string,country:string):PriceIntent{
 }
 function stripPriceLanguage(text:string){return text.replace(/(?:between|from)\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*\d+(?:[.,]\d+)?\s*(?:and|to|[-–])\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*\d+(?:[.,]\d+)?/ig," ").replace(/(?:under|below|less\s+than|up\s+to|max(?:imum)?|no\s+more\s+than|over|above|more\s+than|at\s+least|min(?:imum)?)\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*\d+(?:[.,]\d+)?/ig," ").replace(/\s+/g," ").replace(/^[,\s]+|[,\s]+$/g,"").trim()}
 function applyPriceIntent(products:Product[],intent:PriceIntent){if(intent.min==null&&intent.max==null)return products;return products.filter(p=>{if(p.price==null)return false;if(intent.explicitCurrency&&p.currency&&p.currency!==intent.currency)return false;if(intent.min!=null&&p.price<intent.min)return false;if(intent.max!=null&&p.price>intent.max)return false;return true})}
-function usable(products:Product[]){return products.filter(p=>Boolean(p.id&&p.title&&p.image&&p.url&&p.url!=="#"))}
+function usable(products:Product[]){return products.filter(p=>Boolean(p.id&&p.title&&p.image&&p.url&&p.url!=="#")).map(p=>({...p,checkout:checkoutMode(p)}))}
 function productKey(p:Product){return `${String(p.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${String(p.brand||"").toLowerCase()}`}
 function dedupeProducts(products:Product[]){const seen=new Set<string>();return products.filter(p=>{const key=productKey(p);if(!key||seen.has(key))return false;seen.add(key);return true})}
 function groupedProducts(shopify:Product[],amazon:Product[]){return dedupeProducts([...shopify,...amazon])}

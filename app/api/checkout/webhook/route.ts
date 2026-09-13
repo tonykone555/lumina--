@@ -1,0 +1,3 @@
+import Stripe from "stripe";
+export const runtime="nodejs";
+export async function POST(req:Request){const key=process.env.STRIPE_RESTRICTED_KEY,secret=process.env.STRIPE_WEBHOOK_SECRET;if(!key||!secret)return new Response("Not configured",{status:503});try{const stripe=new Stripe(key,{apiVersion:"2026-07-29.dahlia"});const event=stripe.webhooks.constructEvent(await req.text(),req.headers.get("stripe-signature")||"",secret);if(event.type==="checkout.session.completed")console.info("YNOT paid order awaiting supplier fulfillment",event.data.object.id);return Response.json({received:true})}catch{return new Response("Invalid signature",{status:400})}}
