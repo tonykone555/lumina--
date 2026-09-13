@@ -99,6 +99,7 @@ function normalizeSections(item: FeedItem) {
 function toDeal(item: FeedItem): Deal | null {
   if (item.price == null || !item.image_url || !item.product_url) return null;
   const ss = normalizeSections(item);
+  if (item.source.toLowerCase().includes("amazon") && !ss.includes("Amazon")) ss.push("Amazon");
   return {
     id: `${item.source}:${item.source_product_id}`,
     title: item.title,
@@ -157,11 +158,9 @@ export default function YnotDrawer() {
     [query, setQuery] = useState(""),
     [, setLoading] = useState(true),
     [loadingMore, setLoadingMore] = useState(false),
-    [live, setLive] = useState(false),
-    [exhausted, setExhausted] = useState<Set<string>>(new Set());
+    [live, setLive] = useState(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const pageBySectionRef = useRef<Record<string, number>>({});
-  const emptyPagesBySectionRef = useRef<Record<string, number>>({});
   const loadingMoreRef = useRef(false);
   useEffect(() => {
     let alive = true;
@@ -189,9 +188,9 @@ export default function YnotDrawer() {
     bodyRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
   async function loadMore(section = active) {
-    if (loadingMoreRef.current || exhausted.has(section)) return;
+    if (loadingMoreRef.current) return;
     const currentCount = deals.filter((d) => section === "Best Value" || d.sections.includes(section) || d.section === section).length;
-    if (currentCount >= 1000) return setExhausted((previous) => new Set(previous).add(section));
+    if (currentCount >= 1000) return;
     loadingMoreRef.current = true;
     setLoadingMore(true);
     const page = (pageBySectionRef.current[section] || 0) + 1;
@@ -201,17 +200,11 @@ export default function YnotDrawer() {
       const results = await Promise.allSettled([fetch(`https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed?${feedParams}`).then((r) => r.json()), fetch(`/api/ynot-amazon?${params}`).then((r) => r.json())]);
       const feed = results[0].status === "fulfilled" ? ((results[0].value?.items || []).map(toDeal).filter(Boolean) as Deal[]) : [];
       const amazon = results[1].status === "fulfilled" ? (results[1].value?.items || []).map(amazonToDeal) : [];
-      const amazonHasMore = results[1].status === "fulfilled" && results[1].value?.pagination?.has_more !== false;
       const known = new Set(deals.map((deal) => deal.id));
       const fresh = dedupe([...feed, ...amazon]).filter((deal) => !known.has(deal.id) && (section === "Best Value" || deal.sections.includes(section) || deal.section === section));
-      pageBySectionRef.current[section] = page;
       if (fresh.length) {
-        emptyPagesBySectionRef.current[section] = 0;
+        pageBySectionRef.current[section] = page;
         setDeals((previous) => dedupe([...previous, ...fresh]));
-      } else {
-        const misses = (emptyPagesBySectionRef.current[section] || 0) + 1;
-        emptyPagesBySectionRef.current[section] = misses;
-        if (misses >= 2 || !amazonHasMore) setExhausted((previous) => new Set(previous).add(section));
       }
     } finally {
       loadingMoreRef.current = false;
@@ -219,7 +212,7 @@ export default function YnotDrawer() {
     }
   }
   useEffect(() => {
-    if (open && !query.trim() && activeDeals.length < 24 && !exhausted.has(active)) void loadMore(active);
+    if (open && !query.trim() && activeDeals.length < 24) void loadMore(active);
   }, [open, active]); // eslint-disable-line react-hooks/exhaustive-deps
   function openDeal() {
     if (selected?.url && selected.url !== "#") window.open(selected.url, "_blank", "noopener,noreferrer");
@@ -278,8 +271,7 @@ export default function YnotDrawer() {
                     <DealOrb key={`${active}-${d.id}`} deal={d} active={selected?.id === d.id} onSelect={setSelected} />
                   ))}
                 </div>
-                {!exhausted.has(active)&&activeDeals.length<1000&&<button className="ynot-load-more" onClick={()=>void loadMore()} disabled={loadingMore}>{loadingMore?"Loading more…":"Load more products"}</button>}
-                {exhausted.has(active)&&<div className="ynot-feed-end">All currently available {active.toLowerCase()} products are shown.</div>}
+                {activeDeals.length<1000&&<button className="ynot-load-more" onClick={()=>void loadMore()} disabled={loadingMore}>{loadingMore?"Loading more…":"Load more products"}</button>}
               </section>
           )}
         </div>

@@ -16,7 +16,7 @@ function score(price:number|null,rating:number|null,reviews:number){let s=52;if(
 
 async function searchAmazon(q:string,section:string,domain:string,page=0){
  const apiKey=process.env.RAINFOREST_API_KEY;if(!apiKey)return [];
- const params=new URLSearchParams({api_key:apiKey,type:"search",amazon_domain:domain,search_term:q,number_of_results:"48",exclude_sponsored:"true"});
+ const params=new URLSearchParams({api_key:apiKey,type:"search",amazon_domain:domain,search_term:q,number_of_results:"16",exclude_sponsored:"true"});
  if(page>0)params.set("page",String(page+1));
  const r=await fetch(`https://api.rainforestapi.com/request?${params}`,{headers:{Accept:"application/json"},next:{revalidate:900}});if(!r.ok)return [];
  const raw:any=await r.json();return (Array.isArray(raw?.search_results)?raw.search_results:[]).map((x:any)=>{const price=priceOf(x),rating=ratingOf(x),reviews=reviewCountOf(x);return{id:`amazon-${x.asin}`,title:x.title||"Amazon product",brand:x.brand||x.manufacturer||"Amazon",price,currency:domain==="amazon.co.uk"?"GBP":domain==="amazon.com"?"USD":domain==="amazon.ca"?"CAD":domain==="amazon.com.au"?"AUD":"EUR",image:imageOf(x),url:x.link||x.url||(x.asin?`https://${domain}/dp/${x.asin}`:"#"),section,sections:[section,"Best Value","Amazon",...(q.includes("accessories")?["Accessories"]:[]),...(price!=null&&price<=25?["Under €25"]:[])],badge:price!=null&&price<=25?"Under €25":"Amazon value",score:score(price,rating,reviews),rating,reviews,source:"amazon-rainforest"}}).filter((x:any)=>x.price!=null&&x.image&&x.url!=="#");
