@@ -1,6 +1,6 @@
-import LuminaThreeWorld from "@/components/lumina/LuminaThreeWorld";
+import LuminaWorld from "@/components/lumina/LuminaWorld";
 import YnotDrawer from "@/components/lumina/YnotDrawer";
 
 export default function Home() {
-  return <><LuminaThreeWorld/><YnotDrawer/></>;
+  return <><LuminaWorld/><YnotDrawer/></>;
 }
