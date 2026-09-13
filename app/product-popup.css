@@ -9,6 +9,22 @@
   box-shadow:inset 0 1px 0 rgba(255,255,255,.62),inset 0 -1px 0 rgba(255,255,255,.10),0 30px 90px rgba(28,20,15,.22)!important;
   animation:lv4SideIn .22s cubic-bezier(.2,.84,.24,1) both!important;
 }
+
+/* Compact native side-sheet hierarchy with one full-bleed media frame. */
+.lv4-detail{background:linear-gradient(145deg,rgba(244,241,236,.24),rgba(215,208,199,.13))!important;backdrop-filter:blur(22px) saturate(1.08)!important;-webkit-backdrop-filter:blur(22px) saturate(1.08)!important;border-color:rgba(255,255,255,.54)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.58),0 24px 72px rgba(28,20,15,.19)!important}
+.lv4-detail>img{border-radius:24px!important;border:1px solid rgba(255,255,255,.58)!important;box-shadow:0 12px 30px rgba(46,33,24,.09)!important;background:transparent!important}
+.lv4-detailcopy{padding:15px 7px 6px!important}
+.lv4-product-brand{font-size:10px!important;letter-spacing:.11em!important;color:rgba(25,22,19,.78)!important}
+.lv4-product-source{margin-top:5px!important;font-size:8px!important;color:rgba(25,22,19,.52)!important}
+.lv4-detailcopy h2{margin:10px 0 8px!important;font-size:clamp(21px,2.3vw,30px)!important;line-height:1.08!important;-webkit-line-clamp:3!important}
+.lv4-detailcopy strong{font-size:24px!important}
+.lv4-actions{margin-top:17px!important;grid-template-columns:1fr 46px!important}
+.lv4-actions a,.lv4-actions button{height:44px!important;border-radius:13px!important;border-color:rgba(255,255,255,.46)!important;background:rgba(255,255,255,.12)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.28)!important}
+.lv4-actions .try{background:rgba(32,28,25,.72)!important;border-color:rgba(255,255,255,.18)!important}
+.lv4-direction-row{gap:7px!important;margin-top:12px!important}
+.lv4-direction-row button{min-height:38px!important;border-radius:12px!important;background:rgba(255,255,255,.11)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.25)!important}
+.lv4-tagrow{margin-top:10px!important}.lv4-tagrow button{min-height:28px!important;border-radius:11px!important;background:rgba(255,255,255,.09)!important}
+.lv4-close{width:42px!important;height:42px!important;border-radius:13px!important;background:rgba(255,255,255,.20)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 6px 16px rgba(50,35,25,.08)!important}
 .lv4-detail:before{content:"";position:absolute;left:7%;top:1.5%;width:46%;height:7%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.30),transparent);filter:blur(7px);pointer-events:none}
 @keyframes lv4SideIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 
