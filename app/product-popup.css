@@ -1,241 +1,47 @@
-/* Product focus card — restore the rich premium shopping popup. */
-.lv4-detail-backdrop{
-  background:rgba(7,6,5,.26)!important;
-  backdrop-filter:blur(14px) saturate(.96)!important;
-  -webkit-backdrop-filter:blur(14px) saturate(.96)!important;
-}
-
+/* Stage 3 product focus — transparent glass side sheet, world remains visible behind it. */
 .lv4-detail{
-  width:min(880px,calc(100vw - 36px))!important;
-  height:min(560px,calc(100dvh - 48px))!important;
-  max-height:none!important;
-  padding:18px!important;
-  display:grid!important;
-  grid-template-columns:minmax(360px,54%) minmax(260px,46%)!important;
-  gap:24px!important;
-  align-items:stretch!important;
-  border:1px solid rgba(255,255,255,.48)!important;
-  border-radius:38px!important;
-  background:
-    radial-gradient(circle at 16% 8%,rgba(255,255,255,.34),transparent 34%),
-    linear-gradient(145deg,rgba(225,235,227,.60),rgba(166,181,170,.34))!important;
-  backdrop-filter:blur(34px) saturate(1.2)!important;
-  -webkit-backdrop-filter:blur(34px) saturate(1.2)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.72),
-    inset 0 -1px 0 rgba(255,255,255,.10),
-    0 42px 130px rgba(4,3,3,.45)!important;
-  overflow:hidden!important;
+  position:fixed!important;z-index:80!important;right:18px!important;left:auto!important;top:18px!important;bottom:18px!important;
+  transform:none!important;width:min(470px,calc(100vw - 36px))!important;height:auto!important;max-height:none!important;
+  padding:14px!important;display:flex!important;flex-direction:column!important;gap:0!important;overflow:auto!important;
+  border:1px solid rgba(255,255,255,.58)!important;border-radius:38px!important;
+  background:linear-gradient(145deg,rgba(244,238,229,.48),rgba(214,202,188,.26))!important;
+  backdrop-filter:blur(34px) saturate(1.16)!important;-webkit-backdrop-filter:blur(34px) saturate(1.16)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.80),inset 0 -1px 0 rgba(255,255,255,.16),0 34px 100px rgba(28,20,15,.26)!important;
+  animation:lv4SideIn .24s cubic-bezier(.2,.84,.24,1) both!important;
 }
+.lv4-detail:before{content:"";position:absolute;left:7%;top:1.5%;width:46%;height:8%;border-radius:50%;background:linear-gradient(180deg,rgba(255,255,255,.42),transparent);filter:blur(7px);pointer-events:none}
+@keyframes lv4SideIn{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}
 
-.lv4-detail::before{
-  content:"";
-  position:absolute;
-  left:7%;top:3%;width:38%;height:11%;
-  border-radius:50%;
-  background:linear-gradient(180deg,rgba(255,255,255,.28),transparent);
-  filter:blur(8px);
-  pointer-events:none;
-}
+.lv4-detail>img{width:100%!important;height:min(48dvh,440px)!important;min-height:280px!important;object-fit:contain!important;margin:0!important;border-radius:29px!important;background:rgba(245,246,243,.72)!important;border:1px solid rgba(255,255,255,.72)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 18px 46px rgba(46,33,24,.10)!important}
+.lv4-detailcopy{padding:18px 8px 6px!important;text-align:left!important;text-shadow:none!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important}
+.lv4-product-brand{display:block!important;color:rgba(49,40,34,.72)!important;font:760 12px/1 Inter,ui-sans-serif,sans-serif!important;letter-spacing:.16em!important;text-transform:uppercase!important}
+.lv4-product-source{display:block!important;margin-top:6px!important;color:rgba(49,40,34,.48)!important;font:700 8px/1 Inter,ui-sans-serif,sans-serif!important;letter-spacing:.12em!important;text-transform:uppercase!important}
+.lv4-product-source.ebay{color:rgba(41,77,139,.78)!important}
+.lv4-detailcopy h2{margin:15px 0 10px!important;color:#2a231e!important;font:680 clamp(30px,3.3vw,46px)/.98 Georgia,"Times New Roman",serif!important;font-style:italic!important;letter-spacing:-.04em!important;text-shadow:none!important;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.lv4-detailcopy strong{display:block!important;margin:0!important;color:#2b241f!important;font:840 28px/1 Inter,ui-sans-serif,sans-serif!important;letter-spacing:-.04em!important;text-shadow:none!important}
+.lv4-detailcopy strong:before{display:none!important}
 
-.lv4-detail>img{
-  width:100%!important;
-  height:100%!important;
-  max-height:none!important;
-  object-fit:contain!important;
-  border-radius:28px!important;
-  margin:0!important;
-  background:linear-gradient(145deg,rgba(255,255,255,.24),rgba(255,255,255,.06))!important;
-  border:1px solid rgba(255,255,255,.48)!important;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.38),
-    inset 0 -18px 42px rgba(34,45,37,.05),
-    0 18px 48px rgba(16,13,11,.12)!important;
-}
+.lv4-actions{display:grid!important;grid-template-columns:1fr 54px!important;gap:9px!important;margin-top:24px!important;align-items:center!important}
+.lv4-actions a,.lv4-actions button{height:52px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.76)!important;background:rgba(255,255,255,.32)!important;color:#3b332d!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.74)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;text-decoration:none!important;font:760 12px/1 Inter,ui-sans-serif,sans-serif!important}
+.lv4-actions a{display:flex!important;align-items:center!important;justify-content:flex-start!important;padding:0 18px!important;gap:9px!important}
+.lv4-actions a svg{width:16px!important}.lv4-actions>button:not(.try){display:grid!important;place-items:center!important;padding:0!important}.lv4-actions>button:not(.try) svg{width:18px!important}.lv4-actions>button.active{background:rgba(255,255,255,.60)!important}
+.lv4-actions .try{grid-column:1/-1!important;width:100%!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;background:rgba(55,48,42,.80)!important;color:#fff!important;border-color:rgba(255,255,255,.30)!important}
 
-.lv4-detailcopy{
-  position:relative;
-  min-width:0;
-  padding:18px 10px 12px 0!important;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  text-align:left!important;
-  text-shadow:none!important;
-}
+.lv4-direction-row{display:flex!important;flex-wrap:wrap!important;gap:8px!important;margin-top:18px!important}
+.lv4-direction-row button{min-height:38px!important;padding:0 15px!important;border:1px solid rgba(255,255,255,.72)!important;border-radius:999px!important;background:rgba(255,255,255,.46)!important;color:#302923!important;font:650 11px/1 Inter,ui-sans-serif,sans-serif!important;cursor:pointer!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.70)!important;transition:transform .14s ease,background .14s ease!important}
+.lv4-direction-row button:hover{transform:translateY(-1px);background:rgba(255,255,255,.66)!important}
+.lv4-tagrow{display:flex!important;flex-wrap:wrap!important;justify-content:flex-start!important;gap:6px!important;margin-top:13px!important}
+.lv4-tagrow button{min-height:30px!important;padding:0 11px!important;border:1px solid rgba(255,255,255,.52)!important;border-radius:999px!important;background:rgba(255,255,255,.20)!important;color:rgba(47,40,35,.78)!important;font:650 9px/1 Inter,ui-sans-serif,sans-serif!important}
 
-.lv4-product-brand{
-  display:block!important;
-  color:#fff!important;
-  font:760 13px/1.15 Inter,ui-sans-serif,sans-serif!important;
-  letter-spacing:-.02em!important;
-  text-transform:none!important;
-  margin:0!important;
-}
-
-.lv4-product-source{
-  display:block!important;
-  margin-top:6px!important;
-  color:rgba(255,255,255,.58)!important;
-  font:700 9px/1 Inter,ui-sans-serif,sans-serif!important;
-  letter-spacing:.13em!important;
-  text-transform:uppercase!important;
-}
-
-.lv4-detailcopy h2{
-  margin:15px 0 10px!important;
-  color:#fff!important;
-  font:780 clamp(28px,3.7vw,42px)/1 Inter,ui-sans-serif,sans-serif!important;
-  letter-spacing:-.052em!important;
-  text-shadow:0 2px 18px rgba(0,0,0,.16)!important;
-  display:-webkit-box;
-  -webkit-line-clamp:3;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-}
-
-.lv4-detailcopy strong{
-  display:block!important;
-  margin-top:5px!important;
-  color:#fff!important;
-  font:850 30px/1 Inter,ui-sans-serif,sans-serif!important;
-  letter-spacing:-.045em!important;
-  text-shadow:0 2px 16px rgba(0,0,0,.15)!important;
-}
-.lv4-detailcopy strong::before{
-  content:"PRICE";
-  display:block;
-  margin-bottom:6px;
-  color:rgba(255,255,255,.52);
-  font:750 8px/1 Inter,ui-sans-serif,sans-serif;
-  letter-spacing:.14em;
-}
-
-.lv4-tagrow{
-  display:flex!important;
-  flex-wrap:wrap!important;
-  justify-content:flex-start!important;
-  gap:7px!important;
-  margin-top:18px!important;
-}
-.lv4-tagrow button{
-  min-height:32px!important;
-  padding:0 11px!important;
-  border:1px solid rgba(255,255,255,.34)!important;
-  border-radius:999px!important;
-  background:rgba(255,255,255,.12)!important;
-  backdrop-filter:blur(10px)!important;
-  -webkit-backdrop-filter:blur(10px)!important;
-  color:rgba(255,255,255,.90)!important;
-  font:700 9px/1 Inter,ui-sans-serif,sans-serif!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.26)!important;
-}
-
-.lv4-actions{
-  display:grid!important;
-  grid-template-columns:auto 1fr!important;
-  gap:9px!important;
-  margin-top:22px!important;
-  justify-content:stretch!important;
-}
-.lv4-actions button,
-.lv4-actions a{
-  height:48px!important;
-  border-radius:16px!important;
-  border:1px solid rgba(255,255,255,.32)!important;
-  font:760 11px/1 Inter,ui-sans-serif,sans-serif!important;
-  text-decoration:none!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.18)!important;
-}
-
-/* Save button */
-.lv4-actions button:first-child{
-  min-width:92px!important;
-  padding:0 14px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:7px!important;
-  background:rgba(255,255,255,.13)!important;
-  color:#fff!important;
-}
-.lv4-actions button:first-child::after{content:"Save";font-size:10px;font-weight:760}
-.lv4-actions button:first-child svg{width:16px!important}
-.lv4-actions button:first-child.active{background:rgba(235,255,202,.22)!important}
-
-/* Primary shopping CTA. Keep the real link but surface it as Shop now. */
-.lv4-actions a{
-  padding:0 18px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:8px!important;
-  background:rgba(24,29,25,.88)!important;
-  color:#fff!important;
-  font-size:0!important;
-}
-.lv4-actions a::before{content:"Shop now";font:820 12px/1 Inter,ui-sans-serif,sans-serif!important}
-.lv4-actions a svg{width:15px!important;height:15px!important}
-
-/* Try-on sits below the primary shop row when available. */
-.lv4-actions .try{
-  grid-column:1 / -1!important;
-  width:100%!important;
-  padding:0 16px!important;
-  background:rgba(255,255,255,.17)!important;
-  color:#fff!important;
-  border-color:rgba(255,255,255,.36)!important;
-}
-.lv4-actions .try svg{width:15px!important}
-
-.lv4-close{
-  right:16px!important;
-  top:16px!important;
-  width:38px!important;
-  height:38px!important;
-  border:1px solid rgba(255,255,255,.38)!important;
-  background:rgba(20,24,21,.58)!important;
-  backdrop-filter:blur(12px)!important;
-  -webkit-backdrop-filter:blur(12px)!important;
-  color:#fff!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 8px 22px rgba(0,0,0,.16)!important;
-}
+.lv4-close{position:absolute!important;right:20px!important;top:20px!important;width:50px!important;height:50px!important;border:1px solid rgba(255,255,255,.78)!important;border-radius:50%!important;background:rgba(255,255,255,.56)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;color:#2d2723!important;display:grid!important;place-items:center!important;z-index:4!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.82),0 10px 30px rgba(50,35,25,.12)!important}.lv4-close svg{width:21px!important}
 
 @media(max-width:760px){
-  .lv4-detail{
-    width:calc(100vw - 18px)!important;
-    height:auto!important;
-    max-height:92dvh!important;
-    padding:12px 12px 15px!important;
-    display:flex!important;
-    flex-direction:column!important;
-    gap:0!important;
-    border-radius:30px!important;
-  }
-  .lv4-detail>img{
-    width:100%!important;
-    height:min(42dvh,340px)!important;
-    min-height:240px!important;
-    object-fit:contain!important;
-    border-radius:23px!important;
-  }
-  .lv4-detailcopy{padding:13px 5px 2px!important;justify-content:flex-start!important}
-  .lv4-product-brand{font-size:11px!important}
-  .lv4-product-source{font-size:7px!important;margin-top:4px!important}
-  .lv4-detailcopy h2{
-    margin:8px 0 7px!important;
-    font-size:24px!important;
-    line-height:1.02!important;
-    -webkit-line-clamp:2;
-  }
-  .lv4-detailcopy strong{font-size:23px!important;margin-top:2px!important}
-  .lv4-detailcopy strong::before{font-size:7px!important;margin-bottom:4px!important}
-  .lv4-tagrow{margin-top:11px!important;gap:5px!important}
-  .lv4-tagrow button{min-height:28px!important;padding:0 9px!important;font-size:8px!important}
-  .lv4-actions{margin-top:13px!important;gap:7px!important;grid-template-columns:86px 1fr!important}
-  .lv4-actions button,.lv4-actions a{height:42px!important;border-radius:14px!important}
-  .lv4-actions button:first-child{min-width:0!important;padding:0 9px!important}
-  .lv4-actions a::before{font-size:11px!important}
-  .lv4-actions .try{height:40px!important}
-  .lv4-close{right:18px!important;top:18px!important;width:36px!important;height:36px!important}
+ .lv4-detail{right:8px!important;left:8px!important;top:8px!important;bottom:8px!important;width:auto!important;border-radius:30px!important;padding:10px!important}
+ .lv4-detail>img{height:min(46dvh,390px)!important;min-height:250px!important;border-radius:24px!important}
+ .lv4-detailcopy{padding:14px 7px 4px!important}.lv4-product-brand{font-size:10px!important}.lv4-product-source{font-size:7px!important}
+ .lv4-detailcopy h2{font-size:29px!important;margin:10px 0 8px!important;-webkit-line-clamp:3}.lv4-detailcopy strong{font-size:24px!important}
+ .lv4-actions{margin-top:15px!important;grid-template-columns:1fr 48px!important}.lv4-actions a,.lv4-actions button{height:46px!important}
+ .lv4-direction-row{margin-top:13px!important;gap:6px!important}.lv4-direction-row button{min-height:34px!important;padding:0 12px!important;font-size:10px!important}
+ .lv4-tagrow{margin-top:10px!important}.lv4-tagrow button{min-height:28px!important;font-size:8px!important}
+ .lv4-close{right:16px!important;top:16px!important;width:44px!important;height:44px!important}
 }
