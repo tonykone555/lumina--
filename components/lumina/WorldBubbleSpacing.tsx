@@ -2,59 +2,96 @@
 
 import {useEffect,useRef} from "react";
 
-const WORLD_CX=100000, WORLD_CY=100000, ZONE_STEP=1320, PRODUCTS_PER_ZONE=32;
-const PITCH=260;
+const WORLD_CX=100000, WORLD_CY=100000, PRODUCTS_PER_ZONE=32;
+const PITCH=218;
+const PRODUCT_SIZE=126;
+const CLEARANCE=24;
 
 type Axial={q:number;r:number};
+type Point={x:number;y:number};
 
-function zoneCenter(zone:number,offsetX=0){
- if(zone<=0)return{x:WORLD_CX+offsetX,y:WORLD_CY};
- const angle=zone*2.399963229728653;
- const radius=ZONE_STEP*Math.sqrt(zone);
- return{x:WORLD_CX+offsetX+Math.cos(angle)*radius,y:WORLD_CY+Math.sin(angle)*radius};
-}
+const HEX_DIRS:Axial[]=[{q:1,r:0},{q:0,r:1},{q:-1,r:1},{q:-1,r:0},{q:0,r:-1},{q:1,r:-1}];
 
 function hexRing(radius:number):Axial[]{
  if(radius<=0)return[{q:0,r:0}];
- const dirs:Axial[]=[{q:1,r:0},{q:0,r:1},{q:-1,r:1},{q:-1,r:0},{q:0,r:-1},{q:1,r:-1}];
  let q=-radius,r=0;const out:Axial[]=[];
- for(const d of dirs){for(let i=0;i<radius;i++){out.push({q,r});q+=d.q;r+=d.r}}
+ for(const d of HEX_DIRS){for(let i=0;i<radius;i++){out.push({q,r});q+=d.q;r+=d.r}}
  return out;
 }
 
-function evenPick<T>(items:T[],count:number){
- if(count>=items.length)return items;
- const out:T[]=[];for(let i=0;i<count;i++)out.push(items[Math.floor(i*items.length/count)]);
- return out;
-}
-
-const SLOTS:Axial[]=[
- ...evenPick(hexRing(2),8),
- ...evenPick(hexRing(3),12),
- ...evenPick(hexRing(4),12),
-];
-
-function toPoint(axial:Axial){
+function toPoint(axial:Axial):Point{
  return{x:PITCH*(axial.q+axial.r/2),y:PITCH*(Math.sqrt(3)/2)*axial.r};
+}
+
+function protectedZones(){
+ const zones:{x:number;y:number;r:number}[]=[{x:WORLD_CX,y:WORLD_CY,r:210}];
+ for(let i=0;i<6;i++){
+  const a=i/6*Math.PI*2-.52;
+  zones.push({x:WORLD_CX+Math.cos(a)*3.25*132,y:WORLD_CY+Math.sin(a)*2.10*132,r:168});
+ }
+ return zones;
+}
+const PROTECTED=protectedZones();
+
+function allowed(point:Point){
+ const x=WORLD_CX+point.x,y=WORLD_CY+point.y,r=PRODUCT_SIZE/2+CLEARANCE;
+ return PROTECTED.every(zone=>Math.hypot(x-zone.x,y-zone.y)>=zone.r+r);
+}
+
+function buildSlots(count:number){
+ const slots:Point[]=[];
+ // Start just outside the intent/tag ring, then continue as one uninterrupted
+ // honeycomb. Every accepted neighbor uses the same pitch, so new zones do not
+ // introduce different gaps or source-dependent offsets.
+ for(let ring=2;slots.length<count&&ring<180;ring++){
+  for(const axial of hexRing(ring)){
+   const point=toPoint(axial);
+   if(allowed(point))slots.push(point);
+   if(slots.length>=count)break;
+  }
+ }
+ return slots;
+}
+
+function centroid(items:HTMLElement[]):Point|null{
+ if(!items.length)return null;
+ let x=0,y=0,n=0;
+ for(const el of items){const left=Number.parseFloat(el.style.left),top=Number.parseFloat(el.style.top);if(!Number.isFinite(left)||!Number.isFinite(top))continue;x+=left;y+=top;n++}
+ return n?{x:x/n,y:y/n}:null;
+}
+
+function normalizeZoneChrome(products:HTMLElement[]){
+ const zoneCount=Math.ceil(products.length/PRODUCTS_PER_ZONE);
+ const centers:Point[]=[];
+ for(let zone=0;zone<zoneCount;zone++){
+  const center=centroid(products.slice(zone*PRODUCTS_PER_ZONE,(zone+1)*PRODUCTS_PER_ZONE));
+  if(center)centers.push(center);
+ }
+ const annotations=[...document.querySelectorAll<HTMLElement>(".lv4-zone-annotation")];
+ const connectors=[...document.querySelectorAll<HTMLElement>(".lv4-zone-connector")];
+ const clusters=[...document.querySelectorAll<HTMLElement>(".lv4-zone-detail-cluster")];
+ for(let zone=1;zone<centers.length;zone++){
+  const current=centers[zone],previous=centers[zone-1];
+  const annotation=annotations[zone-1];if(annotation){annotation.style.left=`${current.x}px`;annotation.style.top=`${current.y}px`}
+  const connector=connectors[zone-1];if(connector){const dx=current.x-previous.x,dy=current.y-previous.y;connector.style.left=`${previous.x}px`;connector.style.top=`${previous.y}px`;connector.style.width=`${Math.hypot(dx,dy)}px`;connector.style.transform=`rotate(${Math.atan2(dy,dx)}rad)`}
+  const cluster=clusters[zone-1];if(cluster){cluster.style.left=`${(previous.x+current.x)/2}px`;cluster.style.top=`${(previous.y+current.y)/2}px`}
+ }
 }
 
 function normalizeWorld(){
  const products=[...document.querySelectorAll<HTMLElement>(".lv4-product")];
  if(!products.length)return;
- const split=Boolean(document.querySelector(".lv4-source-anchor.shopify,.lv4-source-anchor.amazon"));
- let shopifyIndex=0,amazonIndex=0,otherIndex=0;
+ const slots=buildSlots(products.length);
  products.forEach((el,index)=>{
-  let local=index,offset=0;
-  if(split){
-   if(el.classList.contains("source-shopify")){local=shopifyIndex++;offset=-980}
-   else if(el.classList.contains("source-amazon")){local=amazonIndex++;offset=980}
-   else local=otherIndex++;
-  }
-  const zone=Math.floor(local/PRODUCTS_PER_ZONE),slot=local%PRODUCTS_PER_ZONE,center=zoneCenter(zone,offset),p=toPoint(SLOTS[slot]);
-  const left=center.x+p.x,top=center.y+p.y;
-  if(el.dataset.equalSpacingLeft!==String(left)){el.style.left=`${left}px`;el.dataset.equalSpacingLeft=String(left)}
-  if(el.dataset.equalSpacingTop!==String(top)){el.style.top=`${top}px`;el.dataset.equalSpacingTop=String(top)}
+  const point=slots[index];if(!point)return;
+  const left=WORLD_CX+point.x,top=WORLD_CY+point.y;
+  el.style.left=`${left}px`;
+  el.style.top=`${top}px`;
+  el.style.setProperty("--s",`${PRODUCT_SIZE}px`);
+  el.dataset.equalSpacingLeft=String(left);
+  el.dataset.equalSpacingTop=String(top);
  });
+ normalizeZoneChrome(products);
 }
 
 function hideImageCountText(){
