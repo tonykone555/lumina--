@@ -13,7 +13,7 @@ type MarketMode="lumina"|"ebay";
 type LuminaSource="all"|"shopify"|"amazon";
 
 const WORLD_W=200000,WORLD_H=200000,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2,ZONE_STEP=1320,PRODUCTS_PER_ZONE=32,PRODUCTS_PER_RING=8,RING_UNIT=132;
-const START_ZOOM=.34;
+const START_ZOOM=.22;
 const MIN_ZOOM=.015;
 const SHOPIFY_WARM_TARGET=180;
 const DISCOVERY_WAVES=["more like this","new arrivals","best value","more premium","same shape","top rated","unexpected picks","editor picks","alternative styles","hidden gems","popular choices","fresh finds"];
