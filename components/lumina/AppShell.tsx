@@ -1,6 +1,6 @@
 "use client";
 
-import {FormEvent,useEffect,useState} from "react";
+import {FormEvent,useEffect,useMemo,useState} from "react";
 import {ChevronDown,Search} from "lucide-react";
 import LuminaWorld from "./LuminaWorld";
 import YnotDrawer from "./YnotDrawer";
@@ -20,6 +20,8 @@ export default function AppShell(){
  const [sourceOpen,setSourceOpen]=useState(false);
  const [bottomQuery,setBottomQuery]=useState("");
  const [chromeHidden,setChromeHidden]=useState(false);
+ const [selectedTags,setSelectedTags]=useState<string[]>([]);
+ const effectiveQuery=useMemo(()=>[bottomQuery.trim(),...selectedTags].filter(Boolean).join(" ").replace(/\s+/g," ").trim(),[bottomQuery,selectedTags]);
 
  useEffect(()=>{
   const selector=[".lv4-detail",".lv4-detail-backdrop",".ynot-selected",".ynot-story",".ynot-cart",".ynot-drawer.open",".discover-profile-backdrop",".ynot-notebook-shell"].join(",");
@@ -28,6 +30,12 @@ export default function AppShell(){
   const observer=new MutationObserver(sync);
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class"]});
   return()=>observer.disconnect();
+ },[]);
+
+ useEffect(()=>{
+  const onTags=(event:Event)=>{const detail=(event as CustomEvent<{tags?:string[]}>).detail;setSelectedTags(Array.isArray(detail?.tags)?detail.tags:[])};
+  window.addEventListener("shop:tags-changed",onTags as EventListener);
+  return()=>window.removeEventListener("shop:tags-changed",onTags as EventListener);
  },[]);
 
  function openYnot(){document.querySelector<HTMLButtonElement>(".ynot-peek")?.click()}
@@ -45,9 +53,16 @@ export default function AppShell(){
   });
  }
  function submitBottomSearch(e:FormEvent){
-  e.preventDefault();const clean=bottomQuery.trim();if(clean.length<2)return;
-  if(mode==="discover"){window.dispatchEvent(new CustomEvent("discover:search",{detail:clean}));return}
-  const input=document.querySelector<HTMLInputElement>(".lv4-search input");if(!input)return;setReactInput(input,clean);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".lv4-search button")?.click());
+  e.preventDefault();
+  if(mode==="discover"){
+   const clean=bottomQuery.trim();if(clean.length<2)return;
+   window.dispatchEvent(new CustomEvent("discover:search",{detail:clean}));return;
+  }
+  const clean=effectiveQuery;if(clean.length<2)return;
+  const input=document.querySelector<HTMLInputElement>(".lv4-search input");if(!input)return;
+  setReactInput(input,clean);
+  window.dispatchEvent(new CustomEvent("shop:tag-search",{detail:{query:clean,tags:selectedTags}}));
+  requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".lv4-search button")?.click());
  }
  return <div className={`ynot-app-shell ${chromeHidden?"chrome-hidden":""}`}>
   <nav className="ynot-top-mode" aria-label="Main experience">
@@ -59,7 +74,7 @@ export default function AppShell(){
    <div className="ynot-view-source"><button className="ynot-source-trigger-clean" onClick={()=>setSourceOpen(v=>!v)}>{source}<ChevronDown/></button>{sourceOpen&&<div className="ynot-source-list">{(["Shopify","Amazon","eBay"] as Source[]).map(option=><button key={option} className={source===option?"active":""} onClick={()=>switchSource(option)}>{option}</button>)}</div>}</div>
   </div>}
   {mode==="discover"?<DiscoveryUniverse/>:<><LuminaWorld/><SubcategoryNavigator/></>}
-  <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
+  <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":selectedTags.length?`Search within ${selectedTags.join(" + ")}`:"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
   <YnotDrawer/>
   <YnotIntentBridge/>
   <SavedNotebook/>
