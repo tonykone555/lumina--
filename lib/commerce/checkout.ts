@@ -3,7 +3,7 @@ import { buildQuote, type SourceQuote } from "./engine";
 
 export type CheckoutProduct={id:string;variantId?:string;title:string;brand?:string;price:number;currency:string;image?:string;url:string;source?:string;category?:string;variants?:unknown[]};
 export type Region={country:string;postalCode?:string};
-export type ShippingQuote={amount:number;currency:string;country:string;source:"live"|"configured"|"owned"};
+export type ShippingQuote={amount:number;currency:string;country:string;source:"live"|"configured"|"owned"|"operator"};
 
 type ShippingEndpoint={url:string;token?:string};
 const domains=()=>String(process.env.YNOT_APPROVED_SUPPLIER_DOMAINS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
@@ -13,6 +13,26 @@ export function checkoutMode(p:{id?:string;url?:string;source?:string}){
   if(p.source==="ynot-inventory"&&p.id&&ownedInventory()[p.id])return{mode:"ynot" as const,reason:"YNOT inventory"};
   if(p.source?.includes("shopify")&&p.url&&approvedSupplier(p.url))return{mode:"ynot" as const,reason:"Approved supplier"};
   return{mode:"merchant" as const,reason:"Marketplace checkout"};
+}
+export function manualProcurementEnabled(){return process.env.YNOT_MANUAL_PROCUREMENT_ENABLED==="true"}
+function publicMerchantUrl(raw:string){
+ const url=new URL(raw);if(url.protocol!=="https:")throw new Error("INVALID_SUPPLIER_URL");
+ const host=url.hostname.toLowerCase();
+ if(host==="localhost"||host.endsWith(".localhost")||host==="0.0.0.0"||host==="::1"||/^127\./.test(host)||/^10\./.test(host)||/^192\.168\./.test(host)||/^169\.254\./.test(host)||/^172\.(1[6-9]|2\d|3[01])\./.test(host))throw new Error("INVALID_SUPPLIER_URL");
+ url.username="";url.password="";return url.toString();
+}
+export function manualProcurementProduct(input:CheckoutProduct):CheckoutProduct{
+ const price=Number(input.price),currency=String(input.currency||"").trim().toUpperCase(),title=String(input.title||"").trim();
+ if(!input.id||!title||title.length>240||!Number.isFinite(price)||price<=0||price>100_000||!/^[A-Z]{3}$/.test(currency))throw new Error("INVALID_PRODUCT");
+ return{...input,id:String(input.id).slice(0,200),variantId:input.variantId?String(input.variantId).slice(0,200):undefined,title,brand:input.brand?String(input.brand).slice(0,160):undefined,price:Math.round(price*100)/100,currency,image:input.image?publicMerchantUrl(String(input.image)):undefined,url:publicMerchantUrl(String(input.url)),source:String(input.source||"merchant").slice(0,80),category:input.category?String(input.category).slice(0,80):undefined};
+}
+function manualShippingTable(){try{return JSON.parse(process.env.YNOT_MANUAL_SHIPPING_JSON||"{}")}catch{return{}}}
+export function manualShippingFor(p:CheckoutProduct,region:Region):ShippingQuote{
+ const country=String(region?.country||"").toUpperCase();if(!country)throw new Error("REGION_REQUIRED");
+ const table=manualShippingTable(),entry=domainEntry<any>(table,p.url),raw=entry?.[country]??entry?.default??table?.[country]??table?.default??0;
+ const amount=Number(typeof raw==="object"?raw?.amount:raw),currency=String(typeof raw==="object"?raw?.currency||p.currency:p.currency).toUpperCase();
+ if(!Number.isFinite(amount)||amount<0)throw new Error("SHIPPING_NOT_AVAILABLE_FOR_REGION");
+ return{amount:Math.round(amount*100)/100,currency,country,source:"operator"};
 }
 function hostFor(url:string){try{return new URL(url).hostname.toLowerCase()}catch{return""}}
 function shippingTable(){try{return JSON.parse(process.env.YNOT_SUPPLIER_SHIPPING_JSON||"{}")}catch{return{}}}

@@ -17,6 +17,7 @@ import WorldCompass from "./WorldCompass";
 import WorldSaveBridge from "./WorldSaveBridge";
 import CircleDrawer from "./CircleDrawer";
 import ProfilePanel from "./ProfilePanel";
+import CheckoutStatus from "./CheckoutStatus";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -100,5 +101,6 @@ export default function AppShell(){
   <ProfilePanel/>
   <WorldVisualPolish/>
   <WorldBubbleSpacing/>
+  <CheckoutStatus/>
  </div>;
 }

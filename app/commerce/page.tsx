@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import OperatorOrders from "@/components/lumina/OperatorOrders";
 
 type DemoQuote={
   riskAdjustedCost:number; luminaPrice:number; grossContribution:number; marginPct:number;
@@ -20,9 +21,10 @@ export default function CommercePage(){
 
   return <main style={{minHeight:"100vh",background:"#f1ede7",color:"#27231f",fontFamily:"Inter,system-ui,sans-serif",padding:"28px"}}>
     <div style={{maxWidth:1180,margin:"0 auto"}}>
+      <OperatorOrders/>
       <p style={{fontSize:11,letterSpacing:".14em",textTransform:"uppercase",opacity:.55}}>YNOT / Commerce Control</p>
       <h1 style={{fontFamily:"Georgia,serif",fontStyle:"italic",fontWeight:500,fontSize:"clamp(36px,6vw,68px)",lineHeight:.95,margin:"10px 0 14px"}}>Retail routing, margin and growth engine.</h1>
-      <p style={{maxWidth:780,opacity:.65,lineHeight:1.55}}>A working operations surface for the commercial layer underneath the bubble world. Real payment and retailer purchasing stay disabled until verified provider credentials, legal setup and live source checks are connected.</p>
+      <p style={{maxWidth:780,opacity:.65,lineHeight:1.55}}>The commercial layer underneath the bubble world. Customer funds remain authorized while supplier orders wait for private owner confirmation.</p>
 
       <section style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:12,marginTop:24}}>
         <Metric label="YNOT price" value={quote?eur(quote.luminaPrice):"…"} sub="Dynamic risk-adjusted pricing"/>
