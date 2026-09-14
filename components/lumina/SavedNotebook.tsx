@@ -23,7 +23,7 @@ export default function SavedNotebook(){
     <div className="ynot-notebook-grid">
       {(visible||[]).map(item=><button key={item.id} className="ynot-save-orb" aria-label={item.title} onClick={()=>window.dispatchEvent(new CustomEvent("ynot:open-story",{detail:item}))}>
         <span className="ynot-save-orb-gloss"/>
-        <img loading="lazy" src={item.cutout||`/api/cutout?src=${encodeURIComponent(item.image)}`} alt="" onError={e=>{(e.currentTarget as HTMLImageElement).src=item.image}}/>
+        <img loading="lazy" src={item.image} alt=""/>
       </button>)}
     </div>
     <div className="ynot-notebook-dots" aria-hidden="true">{pages.map((_,i)=><i key={i} className={i===page?"active":""}/>)}</div>
