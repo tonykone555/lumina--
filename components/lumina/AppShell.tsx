@@ -10,6 +10,7 @@ import SavedNotebook from "./SavedNotebook";
 import DiscoveryUniverse from "./DiscoveryUniverse";
 import ProductCardEnhancer from "./ProductCardEnhancer";
 import ProductDetailHydrator from "./ProductDetailHydrator";
+import ProductCardSync from "./ProductCardSync";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -87,5 +88,6 @@ export default function AppShell(){
   <SavedNotebook/>
   <ProductCardEnhancer/>
   <ProductDetailHydrator/>
+  <ProductCardSync/>
  </div>;
 }
