@@ -2,6 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Search, X, Heart, ExternalLink, Sparkles, RotateCcw, Compass, Home, Bookmark, ScanFace, ChevronDown, SlidersHorizontal, ShoppingBag, Users } from "lucide-react";
+import VoiceSearchOrb from "./VoiceSearchOrb";
 
 type Variant={id:string;label:string;price:number|null;currency?:string;image?:string;url?:string;available:boolean};
 type Product={id:string;variantId?:string;title:string;brand:string;price:number|null;currency?:string;image:string;images?:string[];url?:string;tags?:string[];source?:string;variants?:Variant[];description?:string;supplierPrice?:number;retailPrice?:number;pricingMode?:string;checkout?:{mode:"ynot"|"merchant";reason:string};x?:number;y?:number;z?:number;zone?:number;fresh?:boolean;contextual?:boolean};
@@ -12,7 +13,7 @@ type MarketMode="lumina"|"ebay";
 type LuminaSource="all"|"shopify"|"amazon";
 
 const WORLD_W=200000,WORLD_H=200000,WORLD_CX=WORLD_W/2,WORLD_CY=WORLD_H/2,ZONE_STEP=1320,PRODUCTS_PER_ZONE=32,PRODUCTS_PER_RING=8,RING_UNIT=132;
-const START_ZOOM=.56;
+const START_ZOOM=.34;
 const MIN_ZOOM=.015;
 const SHOPIFY_WARM_TARGET=180;
 const DISCOVERY_WAVES=["more like this","new arrivals","best value","more premium","same shape","top rated","unexpected picks","editor picks","alternative styles","hidden gems","popular choices","fresh finds"];
@@ -195,7 +196,7 @@ export default function LuminaWorld(){
   {(loading||marketError)&&!products.length&&<div className={`lv4-category-status ${marketError?"error":""}`}><b>{loading?"Opening category…":"Category unavailable"}</b><span>{marketError||"Finding live products"}</span>{marketError&&<button onClick={()=>void fetchProducts(submitted||scene.query,focus,false,market,0,luminaSource)}>Try again</button>}</div>}
   <section className={`lv4-world level-${displayLevel}`} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} onWheel={wheelZoom}>
    <div className="lv4-stage" style={{width:WORLD_W,height:WORLD_H,transform:`translate(${pan.x}px,${pan.y}px) scale(${zoom})`}}>
-    {displayLevel==="worlds"&&<><div className="lv4-world-title" style={{left:WORLD_CX,top:WORLD_CY}}><small>{market==="ebay"?"EXPLORE EBAY":`EXPLORE ${sourceName(luminaSource).toUpperCase()}`}</small><strong>{submitted?"Choose another world":"Choose a world"}</strong><span>{loading?"Opening your selection…":"or search for anything above"}</span></div>{CATEGORIES.map((c,i)=>{const a=i/CATEGORIES.length*Math.PI*2-Math.PI/2,x=WORLD_CX+Math.cos(a)*800,y=WORLD_CY+Math.sin(a)*800;return <button key={c.key} className={`lv4-category-bubble cat-${c.key}`} style={{left:x,top:y}} onClick={()=>chooseCategory(c.key)}><b>{c.label}</b><span>{c.subtitle}</span></button>})}</>}
+    {displayLevel==="worlds"&&<><VoiceSearchOrb left={WORLD_CX} top={WORLD_CY}/>{CATEGORIES.map((c,i)=>{const a=i/CATEGORIES.length*Math.PI*2-Math.PI/2,x=WORLD_CX+Math.cos(a)*800,y=WORLD_CY+Math.sin(a)*800;return <button key={c.key} className={`lv4-category-bubble cat-${c.key}`} style={{left:x,top:y}} onClick={()=>chooseCategory(c.key)}><b>{c.label}</b><span>{c.subtitle}</span></button>})}</>}
 
     {displayLevel!=="worlds"&&<button className="lv4-intent" style={{left:WORLD_CX,top:WORLD_CY}} onClick={()=>{setZoom(z=>Math.min(1.65,z+.2));expandWorld()}}><span>{focus||CATEGORIES.find(c=>c.key===categoryKey)?.label}</span><small>{marketError|| (loading?"Finding products…":`${market==="lumina"?sourceName(luminaSource):"eBay"} · ${products.length} products · ${zoneCount} zones${loadingMore?" · more arriving":""}`)}</small></button>}
     {displayLevel!=="worlds"&&market==="lumina"&&luminaSource==="all"&&products.length>0&&<><button className="lv4-source-anchor shopify" style={{left:WORLD_CX-980,top:WORLD_CY-720}} onClick={()=>changeLuminaSource("shopify")}><b>Shopify</b><span>Independent stores</span></button><button className="lv4-source-anchor amazon" style={{left:WORLD_CX+980,top:WORLD_CY-720}} onClick={()=>changeLuminaSource("amazon")}><b>Amazon</b><span>Marketplace catalog</span></button></>}
