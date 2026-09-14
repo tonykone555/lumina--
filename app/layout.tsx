@@ -11,5 +11,6 @@ import "./deep-explore.css";
 import "./commerce-polish.css";
 import "./subcategory-nav.css";
 import "./ynot-story-saves.css";
+import "./discovery.css";
 export const metadata={title:"YNOT — Spatial Shopping",description:"Explore products through an endless spatial shopping world"};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
