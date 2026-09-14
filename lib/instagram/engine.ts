@@ -1,0 +1,93 @@
+import {keywordSearch,relatedSearch} from "./apify";
+import {getOrCreateSearch,instagramStoreEnabled,loadProfilesForSearch,persistBatch} from "./store";
+import type {DiscoveryEdge,DiscoveryProfile,DiscoveryRequest,DiscoveryResponse,InstagramProfile} from "./types";
+
+function normalizeQuery(value:string){return value.trim().toLowerCase().replace(/\s+/g," ")}
+function cleanKeyword(value:string){return value.trim().replace(/\s+/g," ").slice(0,100)}
+
+export function deriveKeywordVariants(query:string,learned:string[]=[]){
+ const q=cleanKeyword(query);const tokens=q.toLowerCase().split(/\s+/).filter(Boolean);
+ const generic=new Set(["find","me","some","the","a","an","instagram","accounts","account","profiles","profile"]);
+ const core=tokens.filter(t=>!generic.has(t)).join(" ");
+ return [...new Set([q,...learned.map(cleanKeyword),core&&`${core} brand`,core&&`${core} label`,core&&`${core} store`,core&&`independent ${core}`].filter(Boolean))].slice(0,10) as string[];
+}
+
+function profileKey(p:InstagramProfile){return p.username.toLowerCase()}
+function baseScore(p:InstagramProfile){
+ const rank=p.rank&&p.rank>0?Math.max(0,25-Math.min(25,p.rank)):8;
+ return 20+rank+(p.profilePictureUrl?4:0)+(p.website?5:0)+(p.isBusiness?4:0);
+}
+
+function mergeProfile(current:DiscoveryProfile|undefined,next:InstagramProfile,parent?:string,depth=0):DiscoveryProfile{
+ const parents=new Set(current?.parentUsernames||[]);if(parent)parents.add(parent.toLowerCase());
+ const shared=parents.size;
+ return {
+  ...(current||{}),...next,
+  id:next.id||current?.id||next.username,
+  username:next.username.toLowerCase(),
+  fullName:next.fullName||current?.fullName,
+  profileUrl:next.profileUrl||current?.profileUrl,
+  profilePictureUrl:next.profilePictureUrl||current?.profilePictureUrl,
+  followers:next.followers??current?.followers??null,
+  following:next.following??current?.following??null,
+  postsCount:next.postsCount??current?.postsCount??null,
+  biography:next.biography??current?.biography??null,
+  website:next.website??current?.website??null,
+  category:next.category??current?.category??null,
+  isPrivate:next.isPrivate??current?.isPrivate??null,
+  isVerified:next.isVerified??current?.isVerified??null,
+  isBusiness:next.isBusiness??current?.isBusiness??null,
+  publicEmail:next.publicEmail??current?.publicEmail??null,
+  publicPhone:next.publicPhone??current?.publicPhone??null,
+  source:current?.source==="keyword"?"keyword":next.source,
+  sourceQuery:next.sourceQuery||current?.sourceQuery,
+  rank:next.rank??current?.rank??null,
+  parentUsernames:[...parents],
+  sharedParentCount:shared,
+  discoveryDepth:current?Math.min(current.discoveryDepth,depth):depth,
+  relevanceScore:Math.round(Math.max(current?.relevanceScore||0,baseScore(next))+shared*12+(depth===0?8:0))
+ };
+}
+
+export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<DiscoveryResponse>{
+ const query=cleanKeyword(input.query||"");if(query.length<2)throw new Error("A search query is required");
+ const target=Math.max(50,Math.min(1200,Number(input.target)||1000));
+ const keywordPages=Math.max(1,Math.min(10,Number(input.keywordPages)||10));
+ const relatedPerSeed=Math.max(5,Math.min(80,Number(input.relatedPerSeed)||80));
+ const seedExpansionLimit=Math.max(1,Math.min(100,Number(input.seedExpansionLimit)||18));
+ const keywords=deriveKeywordVariants(query,input.learnedKeywords||[]);
+ const state=await getOrCreateSearch(normalizeQuery(query),query,target,keywords);
+ const seenBefore=new Set(state.seen);const expanded=new Set(state.expanded);
+ const profiles=new Map<string,DiscoveryProfile>();const edges:DiscoveryEdge[]=[];
+
+ // Reuse cached results instantly when persistence exists.
+ if(instagramStoreEnabled())for(const p of await loadProfilesForSearch(state.searchId,target))profiles.set(profileKey(p),p);
+
+ // Keyword acquisition always excludes already-known profiles for this niche.
+ const keywordRows=await keywordSearch(keywords,keywordPages);
+ for(const p of keywordRows){const key=profileKey(p);const existing=profiles.get(key);profiles.set(key,mergeProfile(existing,p,undefined,0))}
+
+ // Expand only parents not expanded before. Prefer high-ranked keyword seeds, then cached high-score seeds.
+ const candidateParents=[...profiles.values()].filter(p=>!expanded.has(p.username)&&!p.isPrivate).sort((a,b)=>b.relevanceScore-a.relevanceScore).slice(0,seedExpansionLimit);
+ const parentNames=candidateParents.map(p=>p.username);
+ if(parentNames.length&&profiles.size<target){
+  const related=await relatedSearch(parentNames,relatedPerSeed);
+  edges.push(...related.edges);
+  const parentByChild=new Map<string,string[]>();
+  for(const edge of related.edges){const list=parentByChild.get(edge.childUsername)||[];list.push(edge.parentUsername);parentByChild.set(edge.childUsername,list)}
+  for(const p of related.profiles){
+   const parents=parentByChild.get(p.username)||[];let merged=profiles.get(profileKey(p));
+   if(!parents.length)merged=mergeProfile(merged,p,undefined,1);else for(const parent of parents)merged=mergeProfile(merged,p,parent,1);
+   profiles.set(profileKey(p),merged!);
+  }
+ }
+
+ // Rank convergent suggestions highest and stop at requested unique target.
+ const ranked=[...profiles.values()].sort((a,b)=>b.relevanceScore-a.relevanceScore||b.sharedParentCount-a.sharedParentCount||(a.rank??999)-(b.rank??999)).slice(0,target);
+ const chosen=new Set(ranked.map(p=>p.username));
+ const chosenEdges=edges.filter(e=>chosen.has(e.childUsername));
+ const newProfiles=ranked.filter(p=>!seenBefore.has(p.username));
+ await persistBatch(state.searchId,ranked,chosenEdges,parentNames);
+ const reusedCount=ranked.length-newProfiles.length;
+ return {searchId:state.searchId,query,target,uniqueCount:ranked.length,newCount:newProfiles.length,reusedCount,profiles:ranked,edges:chosenEdges,learnedKeywords:keywords,exhausted:ranked.length<target,persistence:instagramStoreEnabled()?"supabase":"none"};
+}
