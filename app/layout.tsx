@@ -20,5 +20,6 @@ import "./world-visual-polish.css";
 import "./ynot-left-rail.css";
 import "./world-compass.css";
 import "./ynot-side-tab.css";
+import "./ynot-circle.css";
 export const metadata={title:"YNOT — Spatial Shopping",description:"Explore products through an endless spatial shopping world"};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}

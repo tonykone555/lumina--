@@ -1,7 +1,7 @@
 "use client";
 
 import {useEffect,useState} from "react";
-import {Heart,ShoppingBag,Sparkles} from "lucide-react";
+import {Heart,ShoppingBag,Sparkles,Users} from "lucide-react";
 
 function readCount(key:string){try{const value=JSON.parse(localStorage.getItem(key)||"[]");return Array.isArray(value)?value.length:0}catch{return 0}}
 
@@ -11,9 +11,11 @@ export default function YnotSideTab(){
  function openYnot(){document.querySelector<HTMLButtonElement>(".ynot-peek")?.click()}
  function openSaved(){window.dispatchEvent(new Event("ynot:open-saves"))}
  function openBag(){openYnot();window.setTimeout(()=>document.querySelector<HTMLButtonElement>(".ynot-cart-trigger")?.click(),80)}
+ function openCircle(){window.dispatchEvent(new Event("ynot:open-circle"))}
  return <nav className="ynot-side-tab" aria-label="YNOT quick navigation">
   <button onClick={openYnot}><Sparkles/><span>Explore</span></button>
   <button onClick={openSaved}><Heart/><span>Saved</span>{saved>0&&<b>{saved}</b>}</button>
+  <button className="ynot-circle-tab" onClick={openCircle}><Users/><span>Circle</span></button>
   <button onClick={openBag}><ShoppingBag/><span>Bag</span>{bag>0&&<b>{bag}</b>}</button>
  </nav>
 }
