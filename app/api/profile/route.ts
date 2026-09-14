@@ -6,7 +6,7 @@ export const runtime="nodejs";
 const COOKIE="ynot-circle-id",base=()=>String(process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.SUPABASE_URL||"").replace(/\/$/,""),key=()=>String(process.env.SUPABASE_SERVICE_ROLE_KEY||"");
 async function db(path:string,init:RequestInit={}){if(!base()||!key())throw new Error("PROFILE_STORAGE_NOT_CONFIGURED");const r=await fetch(`${base()}/rest/v1/${path}`,{...init,headers:{apikey:key(),Authorization:`Bearer ${key()}`,"Content-Type":"application/json",Prefer:"return=representation",...(init.headers||{})},cache:"no-store"});const t=await r.text();if(!r.ok)throw new Error(t||"PROFILE_DATABASE_ERROR");return t?JSON.parse(t):null}
 function hashPin(pin:string,salt=crypto.randomBytes(16).toString("hex")){return`${salt}:${crypto.scryptSync(pin,salt,32).toString("hex")}`}
-function verifyPin(pin:string,stored:string){const [salt,want]=stored.split(":");if(!salt||!want)return false;const got=crypto.scryptSync(pin,salt,32),expected=Buffer.from(want,"hex");return got.length===expected.length&&crypto.timingSafeEqual(got,expected)}
+function verifyPin(pin:string,stored:string){const [salt,want]=stored.split(":");if(!salt||!want)return false;const got=Uint8Array.from(crypto.scryptSync(pin,salt,32)),expected=Uint8Array.from(Buffer.from(want,"hex"));return got.length===expected.length&&crypto.timingSafeEqual(got,expected)}
 function cleanName(value:unknown){const name=String(value||"").trim().replace(/\s+/g," ");if(name.length<2||name.length>30)throw new Error("NAME_MUST_BE_2_TO_30_CHARACTERS");return name}
 function cleanSaves(value:unknown){return Array.isArray(value)?value.slice(0,150):[]}
 function referralCode(){return crypto.randomBytes(4).toString("hex").toUpperCase()}
