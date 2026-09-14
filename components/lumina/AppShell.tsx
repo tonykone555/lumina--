@@ -9,6 +9,7 @@ import SubcategoryNavigator from "./SubcategoryNavigator";
 import SavedNotebook from "./SavedNotebook";
 import DiscoveryUniverse from "./DiscoveryUniverse";
 import ProductCardEnhancer from "./ProductCardEnhancer";
+import ProductDetailHydrator from "./ProductDetailHydrator";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -85,5 +86,6 @@ export default function AppShell(){
   <YnotIntentBridge/>
   <SavedNotebook/>
   <ProductCardEnhancer/>
+  <ProductDetailHydrator/>
  </div>;
 }
