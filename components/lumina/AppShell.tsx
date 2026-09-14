@@ -14,7 +14,6 @@ import ProductCardSync from "./ProductCardSync";
 import WorldVisualPolish from "./WorldVisualPolish";
 import WorldBubbleSpacing from "./WorldBubbleSpacing";
 import WorldCompass from "./WorldCompass";
-import YnotSideTab from "./YnotSideTab";
 import WorldSaveBridge from "./WorldSaveBridge";
 import CircleDrawer from "./CircleDrawer";
 
@@ -89,7 +88,6 @@ export default function AppShell(){
   </div>}
   {mode==="discover"?<DiscoveryUniverse/>:<><LuminaWorld/><SubcategoryNavigator/><WorldCompass/></>}
   <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
-  {mode==="shop"&&<YnotSideTab/>}
   <YnotDrawer/>
   <YnotIntentBridge/>
   <SavedNotebook/>

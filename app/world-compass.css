@@ -5,9 +5,9 @@
 .ynot-compass-tools svg{width:17px;height:17px;stroke-width:1.8}.ynot-far-button svg{width:15px;height:15px}
 .ynot-app-shell.chrome-hidden .ynot-compass-tools{opacity:0;pointer-events:none;transform:translateY(-8px)}
 
-/* Far mode uses the World's real pan/zoom state, so dragging remains available. */
-.lv4-shell.ynot-far-overview .lv4-product,.lv4-shell.ynot-far-overview .lv4-textbubble,.lv4-shell.ynot-far-overview .lv4-intent,.lv4-shell.ynot-far-overview .lv4-category-bubble{box-shadow:0 30px 70px rgba(0,0,0,.20)!important}
-.lv4-shell.ynot-far-overview .lv4-product-tooltip{opacity:1!important}
+/* Far mode uses the real pan/zoom state and avoids expensive all-bubble effects. */
+.lv4-shell.ynot-far-overview .lv4-product-tooltip{opacity:0!important;pointer-events:none!important}
+.lv4-shell.ynot-far-overview .lv4-product{box-shadow:0 8px 22px rgba(0,0,0,.12)!important}
 
 /* The backdrop supplies the translucent glass atmosphere. The compass itself stays frameless so only the category cards float above it. */
 .ynot-compass-backdrop{position:fixed;z-index:220;inset:0;padding:72px 18px 18px;display:grid;place-items:start center;background:rgba(10,9,8,.20);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:ynotCompassFade .18s ease both}

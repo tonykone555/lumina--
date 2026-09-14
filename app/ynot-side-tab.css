@@ -19,3 +19,7 @@
 .ynot-notebook{background:#050506!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important}.ynot-notebook-backdrop{background:rgba(0,0,0,.72)!important}.ynot-save-orb{background:#09090a!important;border-color:rgba(255,255,255,.16)!important}
 
 @media(max-width:760px){.ynot-side-tab{left:50%;top:auto;bottom:84px;transform:translateX(-50%);flex-direction:row;border-radius:18px;padding:6px}.ynot-side-tab button{width:58px;min-height:48px}.ynot-world-save{top:12px;right:12px}.ynot-selected .ynot-origin-dot{right:12px!important;bottom:12px!important}}
+
+/* Legacy quick dock is retired; Circle now lives in the reveal-on-hover World rail. */
+.ynot-side-tab{display:none!important}
+.lv4-rail .lv4-circle-link{display:grid}
