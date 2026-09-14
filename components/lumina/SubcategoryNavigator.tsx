@@ -94,40 +94,20 @@ export default function SubcategoryNavigator(){
   }catch(e){if((e as Error)?.name!=="AbortError"){setSuggestions(seeded.slice(0,10));setError("Keeping this branch open while results arrive…")}}finally{if(request===requestRef.current)setLoading(false)}
  },[root]);
 
- function toggleTag(label:string){
-  const exists=selectedTags.some(tag=>tag.toLowerCase()===label.toLowerCase());
-  const next=exists?selectedTags.filter(tag=>tag.toLowerCase()!==label.toLowerCase()):unique([...selectedTags,label]);
-  publishTags(next);
- }
+ function toggleTag(label:string){const exists=selectedTags.some(tag=>tag.toLowerCase()===label.toLowerCase());const next=exists?selectedTags.filter(tag=>tag.toLowerCase()!==label.toLowerCase()):unique([...selectedTags,label]);publishTags(next)}
  function choose(label:string){const next=[...path,label];setPath(next);setVisible(true);setSuggestions((BRANCHES[label.toLowerCase()]||GENERIC_DEEP).slice(0,10));void loadBranch(next)}
  function back(){if(path.length<=1){setPath([]);setSuggestions(ROOT_BRANCHES[root]||ROOT_BRANCHES.retail);return}const next=path.slice(0,-1);setPath(next);setSuggestions((BRANCHES[next[next.length-1].toLowerCase()]||ROOT_BRANCHES[root]||GENERIC_DEEP).slice(0,10));void loadBranch(next)}
 
- useEffect(()=>{
-  const capture=(event:MouseEvent)=>{
-   const target=event.target as HTMLElement|null;
-   const category=target?.closest(".lv4-category-bubble");
-   if(category){const key=rootKeyFromClass(category);setRoot(key);setPath([]);setSuggestions(ROOT_BRANCHES[key]||ROOT_BRANCHES.retail);setVisible(true);publishTags([]);return}
-   const branch=target?.closest(".lv4-textbubble,.lv4-zone-detail-cluster button") as HTMLElement|null;
-   if(!branch)return;
-   const label=cleanTag(branch.textContent||"");if(!label)return;
-   event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();
-   toggleTag(label);
-  };
-  document.addEventListener("click",capture,true);
-  return()=>{document.removeEventListener("click",capture,true);abortRef.current?.abort()};
- },[selectedTags,root,path,publishTags]);
-
+ useEffect(()=>{const capture=(event:MouseEvent)=>{const target=event.target as HTMLElement|null;const category=target?.closest(".lv4-category-bubble");if(category){const key=rootKeyFromClass(category);setRoot(key);setPath([]);setSuggestions(ROOT_BRANCHES[key]||ROOT_BRANCHES.retail);setVisible(true);publishTags([]);return}const branch=target?.closest(".lv4-textbubble,.lv4-zone-detail-cluster button") as HTMLElement|null;if(!branch)return;const label=cleanTag(branch.textContent||"");if(!label)return;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();toggleTag(label)};document.addEventListener("click",capture,true);return()=>{document.removeEventListener("click",capture,true);abortRef.current?.abort()}},[selectedTags,root,path,publishTags]);
  useEffect(()=>{publishTags(selectedTags)},[suggestions]);
-
  if(!visible)return null;
  return <div className="ynot-subcat" aria-live="polite">
   <div className="ynot-subcat-head">
    <button className="ynot-subcat-back" onClick={back} disabled={!path.length} aria-label="Previous category"><ChevronLeft/></button>
-   <div><small>{selectedTags.length?`${selectedTags.length} SELECTED`:path.length?`LEVEL ${path.length+1}`:"EXPLORE DEEPER"}</small><b>{selectedTags.length?selectedTags.join(" + "):path[path.length-1]||root}</b><span>{loading?"Finding related tags…":error||"Tap tags to combine them · double tap to go deeper"}</span></div>
+   <span className={`ynot-subcat-count ${selectedTags.length?"active":""}`}>{selectedTags.length||0}</span>
+   <div><small>{selectedTags.length?"COMBINED":path.length?`LEVEL ${path.length+1}`:"EXPLORE DEEPER"}</small><b>{selectedTags.length?selectedTags.join(" + "):path[path.length-1]||root}</b><span>{loading?"Finding related tags…":error||"Tap tags to combine them · double tap to go deeper"}</span></div>
    <Sparkles className={loading?"is-loading":""}/>
   </div>
-  <div className="ynot-subcat-bubbles">
-   {suggestions.map((label,index)=>{const active=selectedTags.some(tag=>tag.toLowerCase()===label.toLowerCase());return <button key={`${queryBase}-${label}-${index}`} className={active?"selected":""} aria-pressed={active} onClick={()=>toggleTag(label)} onDoubleClick={()=>choose(label)} style={{"--i":index} as React.CSSProperties}>{label}</button>})}
-  </div>
+  <div className="ynot-subcat-bubbles">{suggestions.map((label,index)=>{const active=selectedTags.some(tag=>tag.toLowerCase()===label.toLowerCase());return <button key={`${queryBase}-${label}-${index}`} className={active?"selected":""} aria-pressed={active} onClick={()=>toggleTag(label)} onDoubleClick={()=>choose(label)} style={{"--i":index} as React.CSSProperties}>{label}</button>})}</div>
  </div>;
 }
