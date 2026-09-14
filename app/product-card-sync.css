@@ -1,0 +1,32 @@
+/* Product card consistency fixes */
+.ynot-world-save{position:absolute;right:74px;top:18px;z-index:6;width:46px;height:46px;border-radius:16px;border:1px solid rgba(255,255,255,.48);background:rgba(255,255,255,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:grid;place-items:center;color:#2d2723;font:700 21px/1 ui-sans-serif;box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 8px 22px rgba(50,35,25,.09)}
+.ynot-world-save.active{background:rgba(38,32,28,.78);color:#fff}
+
+/* Keep the merchant dot away from save/close controls. */
+.ynot-selected .ynot-origin-dot{right:62px!important;bottom:13px!important;top:auto!important;left:auto!important}
+.ynot-story .ynot-origin-dot{right:122px!important;top:calc(18px + env(safe-area-inset-top))!important;bottom:auto!important;left:auto!important}
+.lv4-detail .ynot-origin-dot{position:absolute!important;right:126px!important;top:18px!important;bottom:auto!important;left:auto!important}
+
+/* Make YNOT's selected product use the same side-sheet language as World. */
+@media(min-width:761px){
+ .ynot-selected{position:fixed!important;z-index:120!important;right:18px!important;left:auto!important;top:18px!important;bottom:18px!important;width:min(470px,calc(100vw - 36px))!important;min-height:0!important;height:auto!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;padding:14px!important;overflow:auto!important;border:1px solid rgba(255,255,255,.48)!important;border-radius:36px!important;background:linear-gradient(145deg,rgba(244,241,236,.24),rgba(215,208,199,.13))!important;backdrop-filter:blur(22px) saturate(1.08)!important;-webkit-backdrop-filter:blur(22px) saturate(1.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.58),0 24px 72px rgba(28,20,15,.19)!important}
+ .ynot-selected>img{width:100%!important;height:auto!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:24px!important;border:1px solid rgba(255,255,255,.58)!important;margin:0!important}
+ .ynot-selected-copy{padding:15px 7px 6px!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important}
+ .ynot-selected-copy h3{margin:10px 0 8px!important;font:720 clamp(21px,2.3vw,30px)/1.08 Inter,ui-sans-serif,system-ui!important;letter-spacing:-.04em!important;-webkit-line-clamp:3!important}
+ .ynot-selected-copy strong{font-size:24px!important}
+ .ynot-selected-copy p{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;font-size:10px!important;line-height:1.45!important}
+ .ynot-selected .ynot-shop{width:100%!important;margin:16px 0 0!important;min-height:48px!important;border-radius:17px!important;display:flex!important;flex-direction:row!important;justify-content:center!important}
+ .ynot-selected-heart{right:74px!important;top:18px!important;bottom:auto!important;width:46px!important;height:46px!important;border-radius:16px!important}
+ .ynot-selected-close{right:18px!important;top:18px!important;width:46px!important;height:46px!important;border-radius:16px!important}
+ .ynot-selected .ynot-origin-dot{right:130px!important;top:18px!important;bottom:auto!important;width:18px!important;height:18px!important}
+ .ynot-variants{width:100%!important;display:flex!important;flex-wrap:wrap!important;overflow:visible!important;gap:6px!important;margin-top:12px!important}
+
+ /* Desktop tags are a true vertical scroll rail: no clipping. */
+ .ynot-workspace{grid-template-columns:144px minmax(0,1fr)!important;min-height:0!important}
+ .ynot-dock{height:100%!important;max-height:calc(100dvh - 180px)!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:7px!important;overflow-y:auto!important;overflow-x:hidden!important;padding:6px 8px 28px 0!important;scrollbar-width:thin!important;scrollbar-color:rgba(35,30,26,.28) transparent!important}
+ .ynot-dock::-webkit-scrollbar{display:block!important;width:5px!important}.ynot-dock::-webkit-scrollbar-thumb{background:rgba(35,30,26,.24)!important;border-radius:999px!important}
+ .ynot-dock button{width:100%!important;min-width:0!important;height:auto!important;min-height:38px!important;white-space:normal!important;line-height:1.15!important;overflow:visible!important;text-overflow:clip!important;flex:0 0 auto!important;padding:9px 11px!important}
+ .ynot-dock button span{display:block!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
+}
+
+@media(max-width:760px){.ynot-world-save{right:62px;top:14px;width:42px;height:42px;border-radius:14px}.lv4-detail .ynot-origin-dot{right:112px!important;top:14px!important}.ynot-selected .ynot-origin-dot{right:54px!important;bottom:12px!important}}
