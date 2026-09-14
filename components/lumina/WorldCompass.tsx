@@ -30,7 +30,7 @@ export default function WorldCompass():React.ReactElement{
  useEffect(()=>{const update=(event:Event)=>{const detail=(event as CustomEvent<CurrentMap>).detail;if(detail?.root&&Array.isArray(detail.suggestions))setCurrent(detail)};window.addEventListener("ynot:subcategories-changed",update as EventListener);return()=>window.removeEventListener("ynot:subcategories-changed",update as EventListener)},[]);
  function chooseWorld(group:WorldGroup){setOpen(false);setFar(false);openCategory(group.key)}
  function chooseSub(group:WorldGroup,label:string){setOpen(false);setFar(false);directSearch(group,label)}
- function toggleFar(){setOpen(false);setFar(v=>!v)}
+ function toggleFar(){setOpen(false);setFar(value=>{const next=!value;window.dispatchEvent(new CustomEvent("ynot:set-world-overview",{detail:{far:next}}));return next})}
  return <>
   <div className="ynot-compass-tools" aria-label="World navigation">
    <button className={`ynot-far-button ${far?"active":""}`} onClick={toggleFar} aria-label={far?"Return to normal world view":"Zoom out to world overview"}><Minus/><span>{far?"Near":"Far"}</span></button>
