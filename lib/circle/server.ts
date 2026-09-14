@@ -1,7 +1,7 @@
 import "server-only";
 import crypto from "node:crypto";
 
-export type CircleProfile={id:string;referral_code:string;parent_user_id:string|null;display_name:string|null;created_at:string};
+export type CircleProfile={id:string;referral_code:string;parent_user_id:string|null;display_name:string|null;avatar_data?:string|null;created_at:string};
 const base=()=>String(process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.SUPABASE_URL||"").replace(/\/$/,"");
 const key=()=>String(process.env.SUPABASE_SERVICE_ROLE_KEY||"");
 export function circleReady(){return Boolean(base()&&key())}
@@ -24,7 +24,7 @@ export async function dashboard(userId:string){
  await request("rpc/ynot_release_expired_reservations",{method:"POST",body:"{}"});
  const [profile,members,ledger]=await Promise.all([
   request(`ynot_users?id=eq.${encodeURIComponent(userId)}&select=*`),
-  request(`ynot_users?parent_user_id=eq.${encodeURIComponent(userId)}&select=id,display_name,created_at&order=created_at.desc&limit=60`),
+  request(`ynot_users?parent_user_id=eq.${encodeURIComponent(userId)}&select=id,display_name,avatar_data,created_at&order=created_at.desc&limit=60`),
   request(`credit_transactions?user_id=eq.${encodeURIComponent(userId)}&status=eq.settled&select=id,amount_cents,event_type,description,created_at,order_id&order=created_at.desc&limit=40`)
  ]);
  const transactions=ledger||[];const balanceCents=transactions.reduce((sum:number,row:{amount_cents:number})=>sum+Number(row.amount_cents||0),0);

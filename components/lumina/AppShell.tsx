@@ -16,6 +16,7 @@ import WorldBubbleSpacing from "./WorldBubbleSpacing";
 import WorldCompass from "./WorldCompass";
 import WorldSaveBridge from "./WorldSaveBridge";
 import CircleDrawer from "./CircleDrawer";
+import ProfilePanel from "./ProfilePanel";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -96,6 +97,7 @@ export default function AppShell(){
   <ProductCardSync/>
   <WorldSaveBridge/>
   <CircleDrawer/>
+  <ProfilePanel/>
   <WorldVisualPolish/>
   <WorldBubbleSpacing/>
  </div>;

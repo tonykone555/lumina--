@@ -26,3 +26,5 @@
 @keyframes ynotProofIn{from{opacity:0;transform:translateY(-3px)}to{opacity:1;transform:none}}
 @keyframes ynotFaceSwap{from{opacity:0;transform:translateX(-7px) scale(.72) rotate(-9deg)}to{opacity:1;transform:none}}
 @media(max-width:560px){.ynot-product-proof{margin-bottom:8px}.ynot-proof-faces i{width:23px;height:23px}.ynot-proof-copy,.ynot-proof-empty{font-size:8px}}
+
+.ynot-proof-faces i img{display:block;width:100%;height:100%;object-fit:cover;border-radius:inherit}
