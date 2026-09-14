@@ -15,6 +15,7 @@ import WorldVisualPolish from "./WorldVisualPolish";
 import WorldBubbleSpacing from "./WorldBubbleSpacing";
 import WorldCompass from "./WorldCompass";
 import YnotSideTab from "./YnotSideTab";
+import WorldSaveBridge from "./WorldSaveBridge";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -94,6 +95,7 @@ export default function AppShell(){
   <ProductCardEnhancer/>
   <ProductDetailHydrator/>
   <ProductCardSync/>
+  <WorldSaveBridge/>
   <WorldVisualPolish/>
   <WorldBubbleSpacing/>
  </div>;
