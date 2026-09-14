@@ -43,6 +43,7 @@ export type DiscoveryRequest={
   relatedPerSeed?:number;
   seedExpansionLimit?:number;
   learnedKeywords?:string[];
+  seedUsernames?:string[];
 };
 
 export type DiscoveryResponse={
