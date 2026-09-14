@@ -12,6 +12,7 @@ import ProductCardEnhancer from "./ProductCardEnhancer";
 import ProductDetailHydrator from "./ProductDetailHydrator";
 import ProductCardSync from "./ProductCardSync";
 import WorldVisualPolish from "./WorldVisualPolish";
+import WorldBubbleSpacing from "./WorldBubbleSpacing";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -91,5 +92,6 @@ export default function AppShell(){
   <ProductDetailHydrator/>
   <ProductCardSync/>
   <WorldVisualPolish/>
+  <WorldBubbleSpacing/>
  </div>;
 }
