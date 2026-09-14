@@ -1,4 +1,4 @@
-import type {DiscoveryEdge,DiscoveryProfile,InstagramProfile} from "./types";
+import type {DiscoveryEdge,DiscoveryProfile} from "./types";
 
 const base=()=>process.env.SUPABASE_URL?.replace(/\/$/,"")||"";
 const key=()=>process.env.SUPABASE_SERVICE_ROLE_KEY||"";
@@ -12,14 +12,24 @@ async function rest(path:string,init:RequestInit={}){
 }
 
 export async function getOrCreateSearch(normalizedQuery:string,originalQuery:string,target:number,learnedKeywords:string[]){
- if(!instagramStoreEnabled())return{searchId:crypto.randomUUID(),seen:new Set<string>(),expanded:new Set<string>(),learnedKeywords};
- const rows=await rest(`instagram_searches?normalized_query=eq.${encodeURIComponent(normalizedQuery)}&select=id,learned_keywords&limit=1`) as Array<{id:string;learned_keywords?:string[]}>;
+ if(!instagramStoreEnabled())return{searchId:crypto.randomUUID(),seen:new Set<string>(),expanded:new Set<string>(),learnedKeywords,searchedKeywords:new Set<string>()};
+ const rows=await rest(`instagram_searches?normalized_query=eq.${encodeURIComponent(normalizedQuery)}&select=id,learned_keywords,searched_keywords&limit=1`) as Array<{id:string;learned_keywords?:string[];searched_keywords?:string[]}>;
  let searchId=rows?.[0]?.id;
  const stored=Array.isArray(rows?.[0]?.learned_keywords)?rows[0].learned_keywords:[];
- if(!searchId){searchId=crypto.randomUUID();await rest("instagram_searches",{method:"POST",headers:{Prefer:"resolution=merge-duplicates"},body:JSON.stringify([{id:searchId,normalized_query:normalizedQuery,original_query:originalQuery,target_count:target,learned_keywords}])})}
- else await rest(`instagram_searches?id=eq.${searchId}`,{method:"PATCH",body:JSON.stringify({target_count:target,updated_at:new Date().toISOString(),learned_keywords:[...new Set([...stored,...learnedKeywords])].slice(0,50)})});
+ const searched=Array.isArray(rows?.[0]?.searched_keywords)?rows[0].searched_keywords:[];
+ const combined=[...new Set([...stored,...learnedKeywords])].slice(0,50);
+ if(!searchId){searchId=crypto.randomUUID();await rest("instagram_searches",{method:"POST",headers:{Prefer:"resolution=merge-duplicates"},body:JSON.stringify([{id:searchId,normalized_query:normalizedQuery,original_query:originalQuery,target_count:target,learned_keywords:combined,searched_keywords:[]}])})}
+ else await rest(`instagram_searches?id=eq.${searchId}`,{method:"PATCH",body:JSON.stringify({target_count:target,updated_at:new Date().toISOString(),learned_keywords:combined})});
  const memberships=await rest(`instagram_search_profiles?search_id=eq.${searchId}&select=username,expanded`) as Array<{username:string;expanded:boolean}>;
- return{searchId,seen:new Set((memberships||[]).map(x=>x.username.toLowerCase())),expanded:new Set((memberships||[]).filter(x=>x.expanded).map(x=>x.username.toLowerCase())),learnedKeywords:[...new Set([...stored,...learnedKeywords])]};
+ return{searchId,seen:new Set((memberships||[]).map(x=>x.username.toLowerCase())),expanded:new Set((memberships||[]).filter(x=>x.expanded).map(x=>x.username.toLowerCase())),learnedKeywords:combined,searchedKeywords:new Set(searched.map(x=>x.toLowerCase()))};
+}
+
+export async function markKeywordsSearched(searchId:string,keywords:string[]){
+ if(!instagramStoreEnabled()||!keywords.length)return;
+ const rows=await rest(`instagram_searches?id=eq.${searchId}&select=searched_keywords&limit=1`) as Array<{searched_keywords?:string[]}>;
+ const current=Array.isArray(rows?.[0]?.searched_keywords)?rows[0].searched_keywords:[];
+ const merged=[...new Set([...current,...keywords].map(x=>x.trim()).filter(Boolean))].slice(0,100);
+ await rest(`instagram_searches?id=eq.${searchId}`,{method:"PATCH",body:JSON.stringify({searched_keywords:merged,updated_at:new Date().toISOString()})});
 }
 
 export async function persistBatch(searchId:string,profiles:DiscoveryProfile[],edges:DiscoveryEdge[],expandedParents:string[]){
