@@ -30,3 +30,12 @@
 }
 
 @media(max-width:760px){.ynot-world-save{right:62px;top:14px;width:42px;height:42px;border-radius:14px}.lv4-detail .ynot-origin-dot{right:112px!important;top:14px!important}.ynot-selected .ynot-origin-dot{right:54px!important;bottom:12px!important}}
+
+/* The drawer opens with its compact preview; the full story remains a separate swipe-up view. */
+@media(min-width:761px){
+ .ynot-selected{position:absolute!important;z-index:120!important;left:158px!important;right:18px!important;top:auto!important;bottom:24px!important;width:auto!important;height:auto!important;min-height:132px!important;max-height:210px!important;display:grid!important;grid-template-columns:92px minmax(0,1fr) auto!important;align-items:center!important;gap:12px!important;padding:12px 58px 12px 12px!important;overflow:hidden!important;border-radius:24px!important}
+ .ynot-selected>img{width:92px!important;height:92px!important;aspect-ratio:1/1!important;object-fit:contain!important;border-radius:18px!important;margin:0!important;background:rgba(255,255,255,.12)!important}
+ .ynot-selected-copy{min-width:0!important;padding:0!important;display:block!important}.ynot-selected-copy h3{margin:5px 0 6px!important;font-size:15px!important;line-height:1.1!important;-webkit-line-clamp:2!important}.ynot-selected-copy strong{font-size:19px!important}.ynot-selected-copy p{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;font-size:9px!important;margin-top:6px!important}
+ .ynot-selected .ynot-shop{width:auto!important;min-width:112px!important;min-height:46px!important;margin:0!important;border-radius:15px!important;display:flex!important;flex-direction:row!important;justify-content:center!important}
+ .ynot-selected-heart{right:10px!important;top:auto!important;bottom:11px!important;width:42px!important;height:42px!important;border-radius:50%!important}.ynot-selected-close{right:10px!important;top:10px!important;width:31px!important;height:31px!important;border-radius:50%!important}.ynot-selected .ynot-origin-dot{right:58px!important;top:auto!important;bottom:26px!important;width:12px!important;height:12px!important}.ynot-variants{width:100%!important;display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;gap:5px!important;margin-top:7px!important}
+}

@@ -101,7 +101,7 @@ async function fetchShopify(query:string,country:string,cursor?:string){
 
 async function getEbayApplicationToken(){
  if(ebayTokenCache&&Date.now()<ebayTokenCache.expiresAt)return ebayTokenCache.token;
- const clientId=process.env.EBAY_CLIENT_ID,clientSecret=process.env.EBAY_CLIENT_SECRET;if(!clientId||!clientSecret)throw new Error("EBAY_CREDENTIALS_MISSING");
+ const clientId=process.env.EBAY_CLIENT_ID||process.env.EBAY_APP_ID,clientSecret=process.env.EBAY_CLIENT_SECRET||process.env.EBAY_CERT_ID;if(!clientId||!clientSecret)throw new Error("EBAY_CREDENTIALS_MISSING");
  const auth=Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
  const body=new URLSearchParams({grant_type:"client_credentials",scope:"https://api.ebay.com/oauth/api_scope"});
  const response=await fetch("https://api.ebay.com/identity/v1/oauth2/token",{method:"POST",headers:{Authorization:`Basic ${auth}`,"Content-Type":"application/x-www-form-urlencoded"},body:body.toString(),cache:"no-store"});
