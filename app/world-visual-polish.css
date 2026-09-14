@@ -1,23 +1,61 @@
-/* Final visual overrides for the restored layered World and product-card controls. */
-.lv4-actions{grid-template-columns:minmax(0,1fr) 52px!important;gap:8px!important;align-items:center!important}
+/* Final visual overrides: one hex lattice, stable product cards, shared World/YNOT glass. */
+
+/* Every navigational/product bubble uses the same physical footprint. */
+.lv4-category-bubble,.lv4-intent,.lv4-textbubble,.lv4-product{width:126px!important;height:126px!important;min-width:126px!important;min-height:126px!important;max-width:126px!important;max-height:126px!important}
+.lv4-zone-title,.lv4-zone-annotation,.lv4-zone-connector,.lv4-zone-detail-cluster{display:none!important}
+
+/* Keep all World card content inside the card instead of allowing stale/long content to push sideways. */
+.lv4-detail{box-sizing:border-box!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important}
+.lv4-detailcopy{width:100%!important;min-width:0!important;box-sizing:border-box!important;overflow:visible!important}
+.lv4-detailcopy h2,.lv4-detailcopy strong,.lv4-product-brand,.lv4-product-source{max-width:100%!important;overflow-wrap:anywhere!important}
+.lv4-actions{grid-template-columns:minmax(0,1fr) 52px!important;gap:8px!important;align-items:center!important;width:100%!important}
 .lv4-actions>button:first-child{height:52px!important;min-height:52px!important;border-radius:16px!important;background:rgba(255,255,255,.94)!important;color:#181512!important;border:1px solid rgba(255,255,255,.96)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 10px 28px rgba(23,18,14,.12)!important;font-weight:820!important;letter-spacing:.055em!important}
 .lv4-actions>button:first-child:hover{background:#fff!important;transform:translateY(-1px)!important}
-.lv4-actions .lv4-save-action{width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important;border-radius:16px!important;margin:0!important;display:grid!important;place-items:center!important}
+.lv4-actions .lv4-save-action{width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important;border-radius:16px!important;margin:0!important;display:grid!important;place-items:center!important;position:relative!important;z-index:2!important}
 .lv4-actions .lv4-save-action svg{width:18px!important;height:18px!important}
 
-/* One compact image slider beneath the hero image instead of a row of thumbnails. */
+/* Original-product dot is a separate control, never on top of Save. */
+.ynot-origin-dot{position:absolute!important;top:18px!important;right:76px!important;left:auto!important;bottom:auto!important;width:20px!important;height:20px!important;min-width:20px!important;min-height:20px!important;padding:0!important;margin:0!important;border-radius:50%!important;border:2px solid rgba(255,255,255,.9)!important;background:#fff!important;box-shadow:0 5px 18px rgba(0,0,0,.16)!important;z-index:12!important}
+.ynot-origin-dot:before,.ynot-origin-dot:after{display:none!important}
+
+/* One compact image slider beneath the hero image. */
 .ynot-mini-slider{position:relative!important;display:grid!important;grid-template-columns:34px 72px auto 34px!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:max-content!important;max-width:100%!important;min-height:76px!important;margin:9px auto 2px!important;padding:4px 7px!important;overflow:visible!important;border:1px solid rgba(255,255,255,.34)!important;border-radius:18px!important;background:rgba(255,255,255,.10)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.32)!important}
 .ynot-mini-slider .ynot-slide-thumb{display:none!important;grid-column:2!important;grid-row:1!important;width:72px!important;height:64px!important;min-width:72px!important;padding:2px!important;margin:0!important;border-radius:13px!important;overflow:hidden!important;background:transparent!important}
 .ynot-mini-slider .ynot-slide-thumb.is-current{display:block!important}
 .ynot-mini-slider .ynot-slide-thumb img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:11px!important}
 .ynot-mini-slider .ynot-slider-prev,.ynot-mini-slider .ynot-slider-next{position:static!important;width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;padding:0!important;border-radius:50%!important;border:1px solid rgba(255,255,255,.42)!important;background:rgba(255,255,255,.18)!important;color:#29231f!important;font:500 24px/1 ui-sans-serif,system-ui,sans-serif!important;display:grid!important;place-items:center!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)!important}
 .ynot-mini-slider .ynot-slider-prev{grid-column:1!important}.ynot-mini-slider .ynot-slider-next{grid-column:4!important}.ynot-mini-slider .ynot-slider-counter{grid-column:3!important;grid-row:1!important;min-width:42px!important;color:rgba(40,34,30,.62)!important;font:750 9px/1 ui-sans-serif,system-ui,sans-serif!important;letter-spacing:.04em!important;text-align:center!important}
+.ynot-rich-gallery,.ynot-loaded-gallery,.ynot-rich-variants,.ynot-loaded-variants{max-width:100%!important;box-sizing:border-box!important}
+.ynot-rich-variants,.ynot-loaded-variants{overflow-x:auto!important;overflow-y:hidden!important;display:flex!important;gap:7px!important;padding:9px 1px 3px!important;scrollbar-width:thin!important}
 
-@media(max-width:560px){
+/* YNOT selected product uses the same full glass-card language as World. */
+.ynot-selected{position:fixed!important;z-index:95!important;left:auto!important;right:18px!important;top:18px!important;bottom:18px!important;width:min(470px,calc(100vw - 36px))!important;height:auto!important;max-height:none!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;padding:14px!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;border:1px solid rgba(255,255,255,.52)!important;border-radius:36px!important;background:linear-gradient(145deg,rgba(244,241,236,.25),rgba(215,208,199,.14))!important;backdrop-filter:blur(24px) saturate(1.08)!important;-webkit-backdrop-filter:blur(24px) saturate(1.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.58),0 24px 72px rgba(28,20,15,.20)!important}
+.ynot-selected>img{width:100%!important;height:auto!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:26px!important;margin:0!important;flex:none!important}
+.ynot-selected-copy{width:100%!important;min-width:0!important;padding:15px 7px 6px!important;box-sizing:border-box!important}
+.ynot-selected-copy h3{font:720 clamp(25px,2.6vw,36px)/1.04 Inter,ui-sans-serif,system-ui,sans-serif!important;letter-spacing:-.04em!important;margin:10px 0 8px!important;-webkit-line-clamp:3!important;overflow-wrap:anywhere!important}
+.ynot-selected-copy strong{font-size:27px!important}
+.ynot-selected .ynot-shop{width:100%!important;min-height:52px!important;border-radius:16px!important;flex-direction:row!important;justify-content:center!important;margin-top:14px!important}
+.ynot-selected-close{right:18px!important;top:18px!important;width:46px!important;height:46px!important;border-radius:16px!important;z-index:15!important}
+
+/* Desktop section tags are a true vertical scroller; nothing is clipped. */
+@media(min-width:761px){
+ .ynot-workspace{min-height:0!important;overflow:hidden!important}
+ .ynot-dock{height:100%!important;max-height:calc(100dvh - 190px)!important;overflow-y:auto!important;overflow-x:visible!important;padding:8px 6px 24px 0!important;overscroll-behavior:contain!important;scrollbar-width:thin!important;mask-image:none!important;-webkit-mask-image:none!important}
+ .ynot-dock::-webkit-scrollbar{display:block!important;width:5px!important}
+ .ynot-dock::-webkit-scrollbar-thumb{background:rgba(40,34,30,.22)!important;border-radius:99px!important}
+ .ynot-dock button{width:100%!important;min-height:36px!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;flex:0 0 auto!important}
+}
+
+@media(max-width:760px){
+ .lv4-detail,.ynot-selected{left:8px!important;right:8px!important;top:8px!important;bottom:8px!important;width:auto!important;max-width:none!important;border-radius:29px!important;padding:10px!important;transform:none!important}
+ .lv4-detailcopy,.ynot-selected-copy{padding:14px 7px 4px!important}
  .lv4-actions{grid-template-columns:minmax(0,1fr) 48px!important;gap:7px!important}
  .lv4-actions>button:first-child,.lv4-actions .lv4-save-action{height:48px!important;min-height:48px!important;border-radius:14px!important}
  .lv4-actions .lv4-save-action{width:48px!important;min-width:48px!important}
+ .ynot-origin-dot{top:16px!important;right:72px!important}
  .ynot-mini-slider{grid-template-columns:32px 64px auto 32px!important;gap:7px!important;min-height:70px!important;border-radius:16px!important}
  .ynot-mini-slider .ynot-slide-thumb{width:64px!important;height:58px!important;min-width:64px!important}
  .ynot-mini-slider .ynot-slider-prev,.ynot-mini-slider .ynot-slider-next{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important}
+ .ynot-selected>img{border-radius:23px!important}
+ .ynot-selected .ynot-shop{min-height:48px!important}
 }
