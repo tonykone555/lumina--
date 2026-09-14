@@ -8,6 +8,7 @@ import YnotIntentBridge from "./YnotIntentBridge";
 import SubcategoryNavigator from "./SubcategoryNavigator";
 import SavedNotebook from "./SavedNotebook";
 import DiscoveryUniverse from "./DiscoveryUniverse";
+import ProductCardEnhancer from "./ProductCardEnhancer";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -33,10 +34,15 @@ export default function AppShell(){
  },[]);
 
  useEffect(()=>{
-  const onTags=(event:Event)=>{const detail=(event as CustomEvent<{tags?:string[]}>).detail;setSelectedTags(Array.isArray(detail?.tags)?detail.tags:[])};
+  const onTags=(event:Event)=>{
+   const detail=(event as CustomEvent<{tags?:string[]}>).detail;
+   const tags=Array.isArray(detail?.tags)?detail.tags:[];
+   setSelectedTags(tags);
+   if(mode==="shop")setBottomQuery(tags.join(" "));
+  };
   window.addEventListener("shop:tags-changed",onTags as EventListener);
   return()=>window.removeEventListener("shop:tags-changed",onTags as EventListener);
- },[]);
+ },[mode]);
 
  function openYnot(){document.querySelector<HTMLButtonElement>(".ynot-peek")?.click()}
  function switchSource(next:Source){
@@ -74,9 +80,10 @@ export default function AppShell(){
    <div className="ynot-view-source"><button className="ynot-source-trigger-clean" onClick={()=>setSourceOpen(v=>!v)}>{source}<ChevronDown/></button>{sourceOpen&&<div className="ynot-source-list">{(["Shopify","Amazon","eBay"] as Source[]).map(option=><button key={option} className={source===option?"active":""} onClick={()=>switchSource(option)}>{option}</button>)}</div>}</div>
   </div>}
   {mode==="discover"?<DiscoveryUniverse/>:<><LuminaWorld/><SubcategoryNavigator/></>}
-  <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":selectedTags.length?`Search within ${selectedTags.join(" + ")}`:"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
+  <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
   <YnotDrawer/>
   <YnotIntentBridge/>
   <SavedNotebook/>
+  <ProductCardEnhancer/>
  </div>;
 }
