@@ -26,6 +26,7 @@ export default function SubcategoryNavigator(){
  function choose(label:string){const next=[...path,label];setPath(next);setVisible(true);setSuggestions((BRANCHES[label.toLowerCase()]||GENERIC_DEEP).slice(0,10));void loadBranch(next)}
  useEffect(()=>{const capture=(event:MouseEvent)=>{const target=event.target as HTMLElement|null;const category=target?.closest(".lv4-category-bubble");if(category){const key=rootKeyFromClass(category);setRoot(key);setPath([]);setSuggestions(ROOT_BRANCHES[key]||ROOT_BRANCHES.retail);setVisible(true);publishTags([]);return}const branch=target?.closest(".lv4-textbubble,.lv4-zone-detail-cluster button") as HTMLElement|null;if(!branch)return;const label=cleanTag(branch.textContent||"");if(!label)return;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();toggleTag(label)};document.addEventListener("click",capture,true);return()=>{document.removeEventListener("click",capture,true);abortRef.current?.abort()}},[selectedTags,root,path,publishTags]);
  useEffect(()=>{publishTags(selectedTags)},[suggestions]);
+ useEffect(()=>{window.dispatchEvent(new CustomEvent("ynot:subcategories-changed",{detail:{root,path,suggestions,selectedTags}}))},[root,path,suggestions,selectedTags]);
  if(!visible)return null;
  return <div className="ynot-subcat" aria-live="polite">
   {selectedTags.length>0&&<div className="ynot-subcat-head ynot-subcat-head-minimal"><span className="ynot-subcat-count active">{selectedTags.length}</span><b>{selectedTags.join(" + ")}</b></div>}
