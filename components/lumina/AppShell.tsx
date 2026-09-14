@@ -11,6 +11,7 @@ import DiscoveryUniverse from "./DiscoveryUniverse";
 import ProductCardEnhancer from "./ProductCardEnhancer";
 import ProductDetailHydrator from "./ProductDetailHydrator";
 import ProductCardSync from "./ProductCardSync";
+import WorldVisualPolish from "./WorldVisualPolish";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -89,5 +90,6 @@ export default function AppShell(){
   <ProductCardEnhancer/>
   <ProductDetailHydrator/>
   <ProductCardSync/>
+  <WorldVisualPolish/>
  </div>;
 }
