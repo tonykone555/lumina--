@@ -1,4 +1,4 @@
-import {reverseOrder,settleOrder} from "@/lib/circle/server";
+import {releaseCredit,reverseOrder,settleOrder} from "@/lib/circle/server";
 import {notifyOperator,stripeClient} from "@/lib/commerce/stripe";
 
 export const runtime="nodejs";
@@ -22,7 +22,9 @@ export async function POST(req:Request){
    const session=await stripe.checkout.sessions.retrieve(event.data.object.id),m=session.metadata||{};
    if(m.ynotFlow!=="manual_procurement"&&m.buyerId)try{await settleOrder({buyerId:m.buyerId,orderId:session.id,subtotalCents:Number(m.subtotalCents||0),creditCents:Number(m.creditCents||0),checkoutRef:m.checkoutRef})}catch(error){console.error("YNOT Circle settlement requires intervention",session.id,error)}
   }
-  if(event.type==="charge.refunded"){const charge=event.data.object,intent=typeof charge.payment_intent==="string"?charge.payment_intent:charge.payment_intent?.id;if(intent){const sessions=await stripe.checkout.sessions.list({payment_intent:intent,limit:1}),session=sessions.data[0];if(session)try{await reverseOrder(session.id)}catch(error){console.error("YNOT Circle refund reversal requires intervention",session.id,error)}}}
+  if(event.type==="checkout.session.expired"){const session=event.data.object,m=session.metadata||{};if(m.ynotFlow==="manual_procurement"&&m.checkoutRef)try{await releaseCredit(m.checkoutRef)}catch(error){console.error("YNOT expired checkout credit release requires intervention",session.id,error)}}
+  if(event.type==="payment_intent.canceled"){const intent=event.data.object,m=intent.metadata||{};if(m.ynotFlow==="manual_procurement"&&m.checkoutRef)try{await releaseCredit(m.checkoutRef)}catch(error){console.error("YNOT canceled authorization credit release requires intervention",intent.id,error)}}
+  if(event.type==="charge.refunded"){const charge=event.data.object,intent=typeof charge.payment_intent==="string"?charge.payment_intent:charge.payment_intent?.id;if(intent){const sessions=await stripe.checkout.sessions.list({payment_intent:intent,limit:1}),session=sessions.data[0],m=session?.metadata||{};if(session&&m.buyerId&&m.checkoutRef)try{await reverseOrder(session.id)}catch(error){console.error("YNOT Circle refund reversal requires intervention",session.id,error)}}}
   return Response.json({received:true});
  }catch(error){console.error("YNOT Stripe webhook rejected",error instanceof Error?error.message:"unknown error");return new Response("Invalid signature",{status:400})}
 }
