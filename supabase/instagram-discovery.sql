@@ -29,9 +29,12 @@ create table if not exists public.instagram_searches (
   original_query text not null,
   target_count integer not null default 1000,
   learned_keywords jsonb not null default '[]'::jsonb,
+  searched_keywords jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.instagram_searches add column if not exists searched_keywords jsonb not null default '[]'::jsonb;
 
 create table if not exists public.instagram_search_profiles (
   search_id uuid not null references public.instagram_searches(id) on delete cascade,
