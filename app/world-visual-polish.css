@@ -1,0 +1,23 @@
+/* Final visual overrides for the restored layered World and product-card controls. */
+.lv4-actions{grid-template-columns:minmax(0,1fr) 52px!important;gap:8px!important;align-items:center!important}
+.lv4-actions>button:first-child{height:52px!important;min-height:52px!important;border-radius:16px!important;background:rgba(255,255,255,.94)!important;color:#181512!important;border:1px solid rgba(255,255,255,.96)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 10px 28px rgba(23,18,14,.12)!important;font-weight:820!important;letter-spacing:.055em!important}
+.lv4-actions>button:first-child:hover{background:#fff!important;transform:translateY(-1px)!important}
+.lv4-actions .lv4-save-action{width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important;border-radius:16px!important;margin:0!important;display:grid!important;place-items:center!important}
+.lv4-actions .lv4-save-action svg{width:18px!important;height:18px!important}
+
+/* One compact image slider beneath the hero image instead of a row of thumbnails. */
+.ynot-mini-slider{position:relative!important;display:grid!important;grid-template-columns:34px 72px auto 34px!important;align-items:center!important;justify-content:center!important;gap:8px!important;width:max-content!important;max-width:100%!important;min-height:76px!important;margin:9px auto 2px!important;padding:4px 7px!important;overflow:visible!important;border:1px solid rgba(255,255,255,.34)!important;border-radius:18px!important;background:rgba(255,255,255,.10)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.32)!important}
+.ynot-mini-slider .ynot-slide-thumb{display:none!important;grid-column:2!important;grid-row:1!important;width:72px!important;height:64px!important;min-width:72px!important;padding:2px!important;margin:0!important;border-radius:13px!important;overflow:hidden!important;background:transparent!important}
+.ynot-mini-slider .ynot-slide-thumb.is-current{display:block!important}
+.ynot-mini-slider .ynot-slide-thumb img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:11px!important}
+.ynot-mini-slider .ynot-slider-prev,.ynot-mini-slider .ynot-slider-next{position:static!important;width:34px!important;height:34px!important;min-width:34px!important;min-height:34px!important;padding:0!important;border-radius:50%!important;border:1px solid rgba(255,255,255,.42)!important;background:rgba(255,255,255,.18)!important;color:#29231f!important;font:500 24px/1 ui-sans-serif,system-ui,sans-serif!important;display:grid!important;place-items:center!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)!important}
+.ynot-mini-slider .ynot-slider-prev{grid-column:1!important}.ynot-mini-slider .ynot-slider-next{grid-column:4!important}.ynot-mini-slider .ynot-slider-counter{grid-column:3!important;grid-row:1!important;min-width:42px!important;color:rgba(40,34,30,.62)!important;font:750 9px/1 ui-sans-serif,system-ui,sans-serif!important;letter-spacing:.04em!important;text-align:center!important}
+
+@media(max-width:560px){
+ .lv4-actions{grid-template-columns:minmax(0,1fr) 48px!important;gap:7px!important}
+ .lv4-actions>button:first-child,.lv4-actions .lv4-save-action{height:48px!important;min-height:48px!important;border-radius:14px!important}
+ .lv4-actions .lv4-save-action{width:48px!important;min-width:48px!important}
+ .ynot-mini-slider{grid-template-columns:32px 64px auto 32px!important;gap:7px!important;min-height:70px!important;border-radius:16px!important}
+ .ynot-mini-slider .ynot-slide-thumb{width:64px!important;height:58px!important;min-width:64px!important}
+ .ynot-mini-slider .ynot-slider-prev,.ynot-mini-slider .ynot-slider-next{width:32px!important;height:32px!important;min-width:32px!important;min-height:32px!important}
+}
