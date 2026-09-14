@@ -3,8 +3,9 @@ import { buildQuote, type SourceQuote } from "./engine";
 
 export type CheckoutProduct={id:string;variantId?:string;title:string;brand?:string;price:number;currency:string;image?:string;url:string;source?:string;category?:string;variants?:unknown[]};
 export type Region={country:string;postalCode?:string};
-export type ShippingQuote={amount:number;currency:string;country:string;source:"configured"|"owned"};
+export type ShippingQuote={amount:number;currency:string;country:string;source:"live"|"configured"|"owned"};
 
+type ShippingEndpoint={url:string;token?:string};
 const domains=()=>String(process.env.YNOT_APPROVED_SUPPLIER_DOMAINS||"").split(",").map(x=>x.trim().toLowerCase()).filter(Boolean);
 function ownedInventory():Record<string,CheckoutProduct>{try{return JSON.parse(process.env.YNOT_OWNED_INVENTORY_JSON||"{}")}catch{return{}}}
 export function approvedSupplier(url:string){try{const h=new URL(url).hostname.toLowerCase();return domains().some(d=>h===d||h.endsWith(`.${d}`))}catch{return false}}
@@ -15,15 +16,23 @@ export function checkoutMode(p:{id?:string;url?:string;source?:string}){
 }
 function hostFor(url:string){try{return new URL(url).hostname.toLowerCase()}catch{return""}}
 function shippingTable(){try{return JSON.parse(process.env.YNOT_SUPPLIER_SHIPPING_JSON||"{}")}catch{return{}}}
+function shippingEndpoints():Record<string,ShippingEndpoint>{try{return JSON.parse(process.env.YNOT_SUPPLIER_SHIPPING_ENDPOINTS_JSON||"{}")}catch{return{}}}
+function domainEntry<T>(table:Record<string,T>,url:string){const host=hostFor(url);return Object.entries(table).find(([domain])=>host===domain||host.endsWith(`.${domain}`))?.[1]}
 export function shippingFor(p:CheckoutProduct,region:Region):ShippingQuote{
   const country=String(region?.country||"").toUpperCase();if(!country)throw new Error("REGION_REQUIRED");
   if(p.source==="ynot-inventory")return{amount:0,currency:p.currency,country,source:"owned"};
-  const host=hostFor(p.url),table=shippingTable();const entry=Object.entries(table).find(([domain])=>host===domain||host.endsWith(`.${domain}`))?.[1] as any;
-  if(entry==null)throw new Error("SHIPPING_NOT_VERIFIED");
+  const entry=domainEntry<any>(shippingTable(),p.url);if(entry==null)throw new Error("SHIPPING_NOT_VERIFIED");
   const raw=typeof entry==="number"?entry:entry?.[country]??entry?.default;
   const amount=Number(typeof raw==="object"?raw?.amount:raw);const currency=String(typeof raw==="object"?raw?.currency||p.currency:p.currency).toUpperCase();
   if(!Number.isFinite(amount)||amount<0)throw new Error("SHIPPING_NOT_AVAILABLE_FOR_REGION");
   return{amount:Math.round(amount*100)/100,currency,country,source:"configured"};
+}
+export async function resolveShipping(p:CheckoutProduct,region:Region):Promise<ShippingQuote>{
+  const country=String(region?.country||"").toUpperCase();if(!country)throw new Error("REGION_REQUIRED");
+  if(p.source==="ynot-inventory")return{amount:0,currency:p.currency,country,source:"owned"};
+  const endpoint=domainEntry(shippingEndpoints(),p.url);
+  if(endpoint?.url){const response=await fetch(endpoint.url,{method:"POST",headers:{"Content-Type":"application/json",...(endpoint.token?{Authorization:`Bearer ${endpoint.token}`}:{})},body:JSON.stringify({productId:p.id,variantId:p.variantId,url:p.url,country,postalCode:region.postalCode}),cache:"no-store",signal:AbortSignal.timeout(8000)});if(!response.ok)throw new Error("SHIPPING_QUOTE_FAILED");const data=await response.json();const amount=Number(data.amount);if(!Number.isFinite(amount)||amount<0||data.available===false)throw new Error("SHIPPING_NOT_AVAILABLE_FOR_REGION");return{amount:Math.round(amount*100)/100,currency:String(data.currency||p.currency).toUpperCase(),country,source:"live"}}
+  return shippingFor(p,region);
 }
 function flatten(v:any):any[]{return Array.isArray(v)?v.flatMap(flatten):v&&typeof v==="object"?[v,...Object.values(v).flatMap(flatten)]:[]}
 export async function revalidateProduct(input:CheckoutProduct):Promise<CheckoutProduct>{
