@@ -1,35 +1,31 @@
 "use client";
 
-import {useEffect} from "react";
+import {useEffect,useLayoutEffect,useRef,useState} from "react";
 
 const STOP=new Set(["the","and","for","with","from","this","that","your","live","product","products","store","shopify","amazon","ebay","ynot","best","value","view","available","option","options"]);
+type Product={id:string;variantId?:string;title:string;brand?:string;price:number|null;currency?:string;image?:string;url?:string;source?:string;category?:string;checkout?:{mode:string;reason?:string};[key:string]:unknown};
+type Verified={product:Product&{supplierPrice?:number;retailPrice?:number;sellableByLumina?:boolean};shipping?:{amount:number;currency:string;country:string};marginPct?:number;verified:boolean;state?:string};
+const COUNTRIES=[['FR','France'],['BE','Belgium'],['DE','Germany'],['ES','Spain'],['IT','Italy'],['NL','Netherlands'],['GB','United Kingdom'],['US','United States']] as const;
+const cache=new Map<string,Verified>();const pending=new Set<string>();let catalogProducts=new Map<string,Product>();
+function key(s:string){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
 function words(text:string){return String(text||"").toLowerCase().replace(/[^a-z0-9€$£\- ]/g," ").split(/\s+/).filter(w=>w.length>2&&!STOP.has(w))}
-function titleTags(root:Element){
- const title=(root.querySelector("h2,h3")?.textContent||"").trim();
- const body=(root.textContent||"").toLowerCase();
- const titleWords=words(title);
- const candidates:string[]=[];
- const existing=[...root.querySelectorAll<HTMLButtonElement>(".lv4-tagrow button")].map(b=>(b.textContent||"").trim()).filter(Boolean);
- candidates.push(...existing);
- const patterns=["minimal","premium","black","white","blue","red","green","beige","brown","pink","silver","gold","leather","cotton","linen","silk","wireless","portable","waterproof","running","activewear","dress","dresses","shoes","bag","bags","jewelry","skincare","hair","home","tech","fitness","accessories","vintage","organic","recycled","lightweight","casual"];
- for(const p of patterns)if(body.includes(p))candidates.push(p.replace(/^./,c=>c.toUpperCase()));
- candidates.push(...titleWords.slice(0,6).map(w=>w.replace(/^./,c=>c.toUpperCase())));
- const seen=new Set<string>();
- return candidates.filter(tag=>{const k=tag.toLowerCase();if(k.length<3||seen.has(k)||STOP.has(k))return false;seen.add(k);return true}).sort((a,b)=>{
-  const al=title.toLowerCase().includes(a.toLowerCase())?1:0,bl=title.toLowerCase().includes(b.toLowerCase())?1:0;
-  return bl-al||a.length-b.length;
- }).slice(0,6);
+function money(value:number,currency='EUR'){try{return new Intl.NumberFormat(undefined,{style:'currency',currency,maximumFractionDigits:2}).format(value)}catch{return`${value.toFixed(2)} ${currency}`}}
+function region(){try{return JSON.parse(localStorage.getItem('ynot-region')||'null') as {country:string}|null}catch{return null}}
+function titleTags(root:Element){const title=(root.querySelector("h2,h3")?.textContent||"").trim();const body=(root.textContent||"").toLowerCase();const titleWords=words(title);const candidates:string[]=[];const existing=[...root.querySelectorAll<HTMLButtonElement>(".lv4-tagrow button")].map(b=>(b.textContent||"").trim()).filter(Boolean);candidates.push(...existing);const patterns=["minimal","premium","black","white","blue","red","green","beige","brown","pink","silver","gold","leather","cotton","linen","silk","wireless","portable","waterproof","running","activewear","dress","dresses","shoes","bag","bags","jewelry","skincare","hair","home","tech","fitness","accessories","vintage","organic","recycled","lightweight","casual"];for(const p of patterns)if(body.includes(p))candidates.push(p.replace(/^./,c=>c.toUpperCase()));candidates.push(...titleWords.slice(0,6).map(w=>w.replace(/^./,c=>c.toUpperCase())));const seen=new Set<string>();return candidates.filter(tag=>{const k=tag.toLowerCase();if(k.length<3||seen.has(k)||STOP.has(k))return false;seen.add(k);return true}).sort((a,b)=>{const al=title.toLowerCase().includes(a.toLowerCase())?1:0,bl=title.toLowerCase().includes(b.toLowerCase())?1:0;return bl-al||a.length-b.length}).slice(0,6)}
+function buildRow(root:Element){let row=root.querySelector<HTMLElement>(".lv4-tagrow,.ynot-card-tags");if(!row){row=document.createElement("div");row.className="lv4-tagrow ynot-card-tags";const action=root.querySelector(".ynot-story-action,.lv4-direction-row");if(action?.parentElement)action.parentElement.insertBefore(row,action);else root.appendChild(row)}const tags=titleTags(root);if(!tags.length)return;row.innerHTML="";for(const tag of tags){const b=document.createElement("button");b.type="button";b.textContent=tag;b.addEventListener("click",()=>window.dispatchEvent(new CustomEvent("shop:quick-tag",{detail:tag})));row.appendChild(b)}}
+function addTick(root:Element){if(root.querySelector('.ynot-verified-tick'))return;const tick=document.createElement('span');tick.className='ynot-verified-tick';tick.title='YNOT Verified';tick.setAttribute('aria-label','YNOT Verified');tick.textContent='✓';const target=root.querySelector('.lv4-product-tooltip small,.lv4-product-brand,.ynot-orb-copy em,.ynot-selected-copy small,.ynot-story-copy small');target?.appendChild(tick)}
+function decorate(){
+ document.querySelectorAll('.lv4-product').forEach(card=>{const title=card.querySelector('.lv4-product-tooltip b')?.textContent||'';const v=cache.get(key(title));if(!v?.verified)return;addTick(card);const price=card.querySelector<HTMLElement>('.lv4-price');if(price&&v.product.retailPrice!=null)price.textContent=money(Number(v.product.retailPrice),String(v.product.currency||'EUR'));card.classList.add('ynot-verified-product')});
+ document.querySelectorAll('.lv4-detailcopy,.ynot-selected-copy,.ynot-story-copy').forEach(root=>{buildRow(root);const title=root.querySelector('h2,h3')?.textContent||'';const v=cache.get(key(title));if(!v?.verified)return;addTick(root);if(!root.querySelector('.ynot-shipping-hint')&&v.shipping){const s=document.createElement('small');s.className='ynot-shipping-hint';s.textContent=`Shipping to ${v.shipping.country}: ${money(v.shipping.amount,v.shipping.currency)} · rechecked before payment`;const action=root.querySelector('.lv4-actions,.ynot-shop,.ynot-story-action');action?.parentElement?.insertBefore(s,action)}});
+ document.querySelectorAll('.ynot-orb').forEach(card=>{const title=card.querySelector('.ynot-orb-copy b')?.textContent||'';const v=cache.get(key(title));if(v?.verified)addTick(card)});
 }
-function buildRow(root:Element){
- let row=root.querySelector<HTMLElement>(".lv4-tagrow,.ynot-card-tags");
- if(!row){row=document.createElement("div");row.className="lv4-tagrow ynot-card-tags";const action=root.querySelector(".ynot-story-action,.lv4-direction-row");if(action?.parentElement)action.parentElement.insertBefore(row,action);else root.appendChild(row)}
- const tags=titleTags(root);if(!tags.length)return;
- row.innerHTML="";
- for(const tag of tags){const b=document.createElement("button");b.type="button";b.textContent=tag;b.addEventListener("click",()=>window.dispatchEvent(new CustomEvent("shop:quick-tag",{detail:tag})));row.appendChild(b)}
-}
-function sync(){document.querySelectorAll(".lv4-detailcopy,.ynot-story-copy,.ynot-selected-copy").forEach(buildRow)}
+async function verifyProduct(product:Product){const k=key(product.title);if(!k||pending.has(k)||cache.has(k)||product.checkout?.mode!=="ynot")return;const r=region();if(!r)return;pending.add(k);try{const response=await fetch('/api/commerce/verify',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product,region:r})});const data=await response.json() as Verified;cache.set(k,data);decorate()}catch{}finally{pending.delete(k)}}
+function ingest(data:any){const list=Array.isArray(data?.products)?data.products:[];for(const p of list){if(!p?.title)continue;catalogProducts.set(key(p.title),p);if(p.checkout?.mode==='ynot')void verifyProduct(p)}}
 
 export default function ProductCardEnhancer(){
- useEffect(()=>{sync();const observer=new MutationObserver(sync);observer.observe(document.body,{subtree:true,childList:true});return()=>observer.disconnect()},[]);
- return null;
+ const [showRegion,setShowRegion]=useState(false);const patched=useRef(false);
+ useLayoutEffect(()=>{if(patched.current)return;patched.current=true;const native=window.fetch.bind(window);window.fetch=async(input:RequestInfo|URL,init?:RequestInit)=>{const url=typeof input==='string'?input:input instanceof URL?input.toString():input.url;let nextInit=init;if(url.includes('/api/checkout/quote')&&init?.body&&region()){try{const body=JSON.parse(String(init.body));nextInit={...init,body:JSON.stringify({...body,region:region()})}}catch{}}let response=await native(input,nextInit);if(url.includes('/api/catalog')){response.clone().json().then(ingest).catch(()=>{})}if(url.includes('/api/checkout/session')&&response.status===409){try{const data=await response.clone().json();if(data?.error==='PRICE_CHANGED_SIGNIFICANT'&&data?.customerMayContinue&&data?.repriceToken){const ok=window.confirm(`The supplier price increased ${data.changePct}%. The updated YNOT price is ${money(Number(data.freshPrice),String(data.currency||'EUR'))}. Continue with the updated price?`);if(ok)response=await native(input,{...init,body:JSON.stringify({token:data.repriceToken,acceptPriceChange:true})})}}catch{}}return response};return()=>{window.fetch=native}},[]);
+ useEffect(()=>{setShowRegion(!region());decorate();const observer=new MutationObserver(decorate);observer.observe(document.body,{subtree:true,childList:true});const onRegion=()=>{cache.clear();for(const p of catalogProducts.values())if(p.checkout?.mode==='ynot')void verifyProduct(p)};window.addEventListener('ynot:region-changed',onRegion);return()=>{observer.disconnect();window.removeEventListener('ynot:region-changed',onRegion)}},[]);
+ function choose(country:string){localStorage.setItem('ynot-region',JSON.stringify({country}));setShowRegion(false);window.dispatchEvent(new Event('ynot:region-changed'))}
+ return <>{showRegion&&<div className="ynot-region-backdrop"><section className="ynot-region-card"><small>SHOPPING REGION</small><h2>Where are we delivering?</h2><p>YNOT uses this to verify supplier availability and shipping before products receive the verified tick.</p><div>{COUNTRIES.map(([code,label])=><button key={code} onClick={()=>choose(code)}><b>{label}</b><span>{code}</span></button>)}</div></section></div>}</>;
 }
