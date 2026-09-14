@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 export const runtime="nodejs";
 
 type Variant={id?:string;label?:string;url?:string;available?:boolean;price?:number|null;currency?:string;image?:string};
-type Product={id?:string;variantId?:string;title?:string;brand?:string;url?:string;source?:string;variants?:Variant[];images?:string[];image?:string;currency?:string;description?:string};
+type Product={id?:string;variantId?:string;title?:string;brand?:string;url?:string;source?:string;variants?:Variant[];images?:string[];image?:string;currency?:string;description?:string;price?:number|null;supplierPrice?:number;retailPrice?:number;pricingMode?:string};
 function exactEnough(url?:string){if(!url)return false;try{const u=new URL(url);const p=u.pathname.replace(/\/+$/,'');if(u.protocol!=="https:"||p.length<=1)return false;return /\/products?\//i.test(p)||u.searchParams.has("variant")||/\/product\//i.test(p)}catch{return false}}
 function normalize(url?:string){if(!url)return'';try{const u=new URL(url);u.hash='';return u.toString()}catch{return''}}
 function bestLocal(product:Product){const variants=product.variants||[];const chosen=product.variantId?variants.find(v=>String(v.id||'')===String(product.variantId)):undefined;const candidates=[chosen?.url,...variants.filter(v=>v.available!==false).map(v=>v.url),product.url].map(normalize).filter(Boolean);return candidates.find(exactEnough)||''}
@@ -28,7 +28,8 @@ export async function POST(req:NextRequest){
   const exact=candidates.find(exactEnough)||candidates.find(u=>{try{return new URL(u).pathname.replace(/\/+$/,'').length>1}catch{return false}});
   if(!exact)return NextResponse.json({error:'EXACT_PRODUCT_URL_UNAVAILABLE'},{status:404});
   const gallery=[...new Set<string>([...media,...variants.map((v:any)=>v.image).filter(Boolean),product.image].filter(Boolean) as string[])].slice(0,12);
-  const description=stripHtml(match?.descriptionHtml||match?.description_html||match?.description||match?.body_html||product.description||'');
-  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title:String(match?.title||product.title||''),url:exact,image:gallery[0]||product.image,images:gallery,variants,description}});
+  const title=String(match?.title||product.title||'');
+  const description=stripHtml(match?.descriptionHtml||match?.description_html||match?.description||match?.body_html||product.description||`${title} from ${product.brand||'the original Shopify merchant'}. Full merchant details are available on the original product page.`);
+  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,variants,description,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail'}});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'PRODUCT_LINK_FAILED'},{status:400})}
 }
