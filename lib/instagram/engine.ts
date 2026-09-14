@@ -4,6 +4,7 @@ import type {DiscoveryEdge,DiscoveryProfile,DiscoveryRequest,DiscoveryResponse,I
 
 function normalizeQuery(value:string){return value.trim().toLowerCase().replace(/\s+/g," ")}
 function cleanKeyword(value:string){return value.trim().replace(/\s+/g," ").slice(0,100)}
+function cleanUsername(value:string){return value.replace(/^@/,"").trim().toLowerCase().replace(/[^a-z0-9._]/g,"").slice(0,40)}
 
 export function deriveKeywordVariants(query:string,learned:string[]=[]){
  const q=cleanKeyword(query);const tokens=q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -20,34 +21,46 @@ function mergeProfile(current:DiscoveryProfile|undefined,next:InstagramProfile,p
  return {...(current||{}),...next,id:next.id||current?.id||next.username,username:next.username.toLowerCase(),fullName:next.fullName||current?.fullName,profileUrl:next.profileUrl||current?.profileUrl,profilePictureUrl:next.profilePictureUrl||current?.profilePictureUrl,followers:next.followers??current?.followers??null,following:next.following??current?.following??null,postsCount:next.postsCount??current?.postsCount??null,biography:next.biography??current?.biography??null,website:next.website??current?.website??null,category:next.category??current?.category??null,isPrivate:next.isPrivate??current?.isPrivate??null,isVerified:next.isVerified??current?.isVerified??null,isBusiness:next.isBusiness??current?.isBusiness??null,publicEmail:next.publicEmail??current?.publicEmail??null,publicPhone:next.publicPhone??current?.publicPhone??null,source:current?.source==="keyword"?"keyword":next.source,sourceQuery:next.sourceQuery||current?.sourceQuery,rank:next.rank??current?.rank??null,parentUsernames:[...parents],sharedParentCount:shared,discoveryDepth:current?Math.min(current.discoveryDepth,depth):depth,relevanceScore:Math.round(Math.max(current?.relevanceScore||0,baseScore(next))+shared*12+(depth===0?8:0))};
 }
 
+function mergeRelated(profiles:Map<string,DiscoveryProfile>,edges:DiscoveryEdge[],rows:Awaited<ReturnType<typeof relatedSearch>>,depth=1){
+ edges.push(...rows.edges);
+ const parentByChild=new Map<string,string[]>();for(const edge of rows.edges){const list=parentByChild.get(edge.childUsername)||[];list.push(edge.parentUsername);parentByChild.set(edge.childUsername,list)}
+ for(const p of rows.profiles){const parents=parentByChild.get(p.username)||[];let merged=profiles.get(profileKey(p));if(!parents.length)merged=mergeProfile(merged,p,undefined,depth);else for(const parent of parents)merged=mergeProfile(merged,p,parent,depth);profiles.set(profileKey(p),merged!)}
+}
+
 export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<DiscoveryResponse>{
  const query=cleanKeyword(input.query||"");if(query.length<2)throw new Error("A search query is required");
- const target=Math.max(50,Math.min(1200,Number(input.target)||1000));
- const keywordPages=Math.max(1,Math.min(10,Number(input.keywordPages)||10));
- const relatedPerSeed=Math.max(5,Math.min(80,Number(input.relatedPerSeed)||80));
- const seedExpansionLimit=Math.max(1,Math.min(100,Number(input.seedExpansionLimit)||18));
+ const target=Math.max(40,Math.min(1200,Number(input.target)||180));
+ const keywordPages=Math.max(1,Math.min(10,Number(input.keywordPages)||3));
+ const relatedPerSeed=Math.max(5,Math.min(80,Number(input.relatedPerSeed)||40));
+ const seedExpansionLimit=Math.max(1,Math.min(100,Number(input.seedExpansionLimit)||8));
+ const seedUsernames=[...new Set((input.seedUsernames||[]).map(cleanUsername).filter(Boolean))].slice(0,12);
  const keywords=deriveKeywordVariants(query,input.learnedKeywords||[]);
  const state=await getOrCreateSearch(normalizeQuery(query),query,target,keywords);
  const seenBefore=new Set(state.seen);const expanded=new Set(state.expanded);const profiles=new Map<string,DiscoveryProfile>();const edges:DiscoveryEdge[]=[];
 
  if(instagramStoreEnabled())for(const p of await loadProfilesForSearch(state.searchId,target))profiles.set(profileKey(p),p);
 
- // Only send keyword phrases that this saved niche has never paid to search before.
+ // "Find similar" starts from the actual selected Instagram node rather than merely
+ // searching its display name. This preserves the graph-first strategy.
+ if(seedUsernames.length&&profiles.size<target){
+  const related=await relatedSearch(seedUsernames,relatedPerSeed);
+  mergeRelated(profiles,edges,related,1);
+ }
+
+ // Only pay for keyword phrases this living niche has not searched before.
+ // Repeating a search therefore moves into new graph territory instead of starting over.
  const freshKeywords=keywords.filter(k=>!state.searchedKeywords.has(k.toLowerCase()));
- if(freshKeywords.length){
+ if(freshKeywords.length&&profiles.size<target){
   const keywordRows=await keywordSearch(freshKeywords,keywordPages);
   for(const p of keywordRows){const key=profileKey(p);profiles.set(key,mergeProfile(profiles.get(key),p,undefined,0))}
   await markKeywordsSearched(state.searchId,freshKeywords);
  }
 
- // Expand only unexpanded parents. Different parents may point to the same child on purpose;
- // that convergence is retained as separate edges and increases the child's relevance score.
- const candidateParents=[...profiles.values()].filter(p=>!expanded.has(p.username)&&!p.isPrivate).sort((a,b)=>b.relevanceScore-a.relevanceScore).slice(0,seedExpansionLimit);
- const parentNames=candidateParents.map(p=>p.username);
- if(parentNames.length&&profiles.size<target){
-  const related=await relatedSearch(parentNames,relatedPerSeed);edges.push(...related.edges);
-  const parentByChild=new Map<string,string[]>();for(const edge of related.edges){const list=parentByChild.get(edge.childUsername)||[];list.push(edge.parentUsername);parentByChild.set(edge.childUsername,list)}
-  for(const p of related.profiles){const parents=parentByChild.get(p.username)||[];let merged=profiles.get(profileKey(p));if(!parents.length)merged=mergeProfile(merged,p,undefined,1);else for(const parent of parents)merged=mergeProfile(merged,p,parent,1);profiles.set(profileKey(p),merged!)}
+ const candidateParents=[...profiles.values()].filter(p=>!expanded.has(p.username)&&!seedUsernames.includes(p.username)&&!p.isPrivate).sort((a,b)=>b.relevanceScore-a.relevanceScore).slice(0,seedExpansionLimit);
+ const parentNames=[...new Set([...seedUsernames,...candidateParents.map(p=>p.username)])].slice(0,seedExpansionLimit+seedUsernames.length);
+ if(candidateParents.length&&profiles.size<target){
+  const related=await relatedSearch(candidateParents.map(p=>p.username),relatedPerSeed);
+  mergeRelated(profiles,edges,related,1);
  }
 
  const ranked=[...profiles.values()].sort((a,b)=>b.relevanceScore-a.relevanceScore||b.sharedParentCount-a.sharedParentCount||(a.rank??999)-(b.rank??999)).slice(0,target);
