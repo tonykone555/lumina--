@@ -1,6 +1,6 @@
 /* Final world/product pass — imported last so the visual rules below win everywhere. */
 
-/* Keep the world fully alive underneath the header. Mobile keeps its soft top shadow; desktop has no crop/shadow layer at all. */
+/* Keep the world fully alive underneath the header. Mobile keeps only a short soft top shadow; desktop has none. */
 .ynot-app-shell::before{
   content:""!important;
   display:block!important;
@@ -12,13 +12,12 @@
   right:0!important;
   bottom:auto!important;
   width:100%!important;
-  height:240px!important;
+  height:150px!important;
   background:linear-gradient(180deg,
-    rgba(0,0,0,.66) 0%,
-    rgba(0,0,0,.48) 23%,
-    rgba(0,0,0,.30) 46%,
-    rgba(0,0,0,.14) 66%,
-    rgba(0,0,0,.05) 82%,
+    rgba(0,0,0,.48) 0%,
+    rgba(0,0,0,.32) 26%,
+    rgba(0,0,0,.18) 50%,
+    rgba(0,0,0,.07) 72%,
     rgba(0,0,0,0) 100%)!important;
   border:0!important;
   box-shadow:none!important;
@@ -220,39 +219,51 @@
   /* If hydration has created the richer gallery, do not leave a duplicate gallery over the image. */
   .lv4-detail:has(.ynot-loaded-gallery) .lv4-gallery:not(.ynot-loaded-gallery){display:none!important}
 
-  /* When +N opens the full image viewer, center it in the viewport — never let it inherit the product card's dropped/right-sheet position. */
-  .ynot-full-slider{
-    position:fixed!important;
+  /* +N viewer covers and centers on the ENTIRE product card, not the main image column. */
+  .lv4-detail .ynot-full-slider{
+    position:absolute!important;
     z-index:20000!important;
-    left:50%!important;
-    top:50%!important;
-    right:auto!important;
-    bottom:auto!important;
-    inset:auto!important;
-    width:min(820px,78vw)!important;
-    height:min(620px,80vh)!important;
-    max-width:calc(100vw - 56px)!important;
-    max-height:calc(100vh - 56px)!important;
-    transform:translate(-50%,-50%)!important;
-    margin:0!important;
-    padding:34px!important;
-    border-radius:30px!important;
-    overflow:hidden!important;
-    background:linear-gradient(145deg,rgba(50,53,52,.96),rgba(18,20,20,.97))!important;
-    box-shadow:0 34px 100px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.22)!important;
-  }
-  .ynot-full-slider-image{
+    inset:0!important;
+    left:0!important;
+    top:0!important;
+    right:0!important;
+    bottom:0!important;
     width:100%!important;
     height:100%!important;
-    max-width:100%!important;
-    max-height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    transform:none!important;
+    margin:0!important;
+    padding:34px 64px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:inherit!important;
+    overflow:hidden!important;
+    background:linear-gradient(145deg,rgba(50,53,52,.96),rgba(18,20,20,.97))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.22)!important;
+  }
+  .lv4-detail .ynot-full-slider-image{
+    width:min(78%,720px)!important;
+    height:min(84%,500px)!important;
+    max-width:calc(100% - 110px)!important;
+    max-height:calc(100% - 56px)!important;
     object-fit:contain!important;
-    margin:0 auto!important;
+    margin:auto!important;
+    align-self:center!important;
+    justify-self:center!important;
   }
 }
 
 @media (max-width:899px){
-  .ynot-app-shell::before{height:220px!important}
+  .ynot-app-shell::before{
+    height:150px!important;
+    background:linear-gradient(180deg,
+      rgba(0,0,0,.48) 0%,
+      rgba(0,0,0,.30) 28%,
+      rgba(0,0,0,.15) 54%,
+      rgba(0,0,0,.05) 76%,
+      rgba(0,0,0,0) 100%)!important;
+  }
 
   .ynot-reference-brand{
     min-width:88px!important;
