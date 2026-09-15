@@ -1,0 +1,180 @@
+/* Mobile interaction polish: profile, merchant dot, gallery dots, description flip. */
+@media (max-width:899px){
+  /* Designed profile control: visible glass orb with an inner profile mark even before an avatar is uploaded. */
+  .ynot-reference-right>.ynot-reference-avatar{
+    display:grid!important;
+    place-items:center!important;
+    position:relative!important;
+    width:44px!important;
+    min-width:44px!important;
+    height:44px!important;
+    min-height:44px!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.28)!important;
+    background:
+      radial-gradient(circle at 34% 24%,rgba(255,255,255,.30),rgba(255,255,255,.09) 28%,rgba(255,255,255,.035) 50%,rgba(7,8,8,.72) 100%)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.30),inset 0 -9px 18px rgba(0,0,0,.28),0 8px 22px rgba(0,0,0,.28)!important;
+    backdrop-filter:blur(18px) saturate(1.15)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.15)!important;
+    color:#fff!important;
+    overflow:hidden!important;
+  }
+  .ynot-reference-right>.ynot-reference-avatar::after{
+    content:""!important;
+    position:absolute!important;
+    inset:5px!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+    pointer-events:none!important;
+  }
+  .ynot-reference-right>.ynot-reference-avatar svg{
+    display:block!important;
+    width:20px!important;
+    height:20px!important;
+    opacity:.96!important;
+    stroke-width:1.8!important;
+    position:relative!important;
+    z-index:2!important;
+  }
+  .ynot-reference-right>.ynot-reference-avatar img{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    z-index:3!important;
+  }
+
+  /* Keep the merchant-site entrance anchored to the bottom-right corner of the product card. */
+  .lv4-detail .ynot-origin-dot,
+  .ynot-origin-dot{
+    position:sticky!important;
+    z-index:70!important;
+    right:10px!important;
+    bottom:10px!important;
+    left:auto!important;
+    top:auto!important;
+    align-self:flex-end!important;
+    margin-left:auto!important;
+    margin-right:2px!important;
+    margin-top:-38px!important;
+    margin-bottom:6px!important;
+    flex:0 0 32px!important;
+    width:32px!important;
+    min-width:32px!important;
+    max-width:32px!important;
+    height:32px!important;
+    min-height:32px!important;
+    max-height:32px!important;
+    border-radius:50%!important;
+    box-shadow:0 8px 20px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.50)!important;
+  }
+
+  /* Image-position dots sit directly below the horizontal thumbnail rail. */
+  .lv4-detail .ynot-mobile-swipe-dots{
+    order:3!important;
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    top:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    align-self:center!important;
+    flex:0 0 auto!important;
+    width:max-content!important;
+    margin:2px auto 5px!important;
+    padding:4px 8px!important;
+    z-index:20!important;
+  }
+  .lv4-detail .lv4-detailcopy{order:4!important}
+
+  /* Main image remains pinned at the top while the rest of the card moves beneath it. */
+  .lv4-detail>img,
+  .lv4-detail .ynot-main-product-image{
+    position:sticky!important;
+    top:0!important;
+    z-index:30!important;
+    flex-shrink:0!important;
+    transform:none!important;
+  }
+
+  /* Description is a true card-turn face on mobile and always fills the product card. */
+  .lv4-detail{
+    perspective:1400px!important;
+    transform-style:preserve-3d!important;
+  }
+  .lv4-detail .ynot-description-toggle{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    min-height:32px!important;
+    width:max-content!important;
+    max-width:100%!important;
+    padding:0 12px!important;
+    margin:8px auto!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+  .lv4-detail .ynot-description-back{
+    display:flex!important;
+    position:absolute!important;
+    z-index:120!important;
+    inset:0!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    justify-content:flex-start!important;
+    gap:10px!important;
+    padding:52px 20px 24px!important;
+    overflow-y:auto!important;
+    border-radius:inherit!important;
+    background:linear-gradient(145deg,rgba(61,64,63,.985),rgba(18,20,20,.99))!important;
+    color:#fff!important;
+    backface-visibility:hidden!important;
+    -webkit-backface-visibility:hidden!important;
+    transform:rotateY(180deg)!important;
+    transform-origin:center center!important;
+    opacity:0!important;
+    pointer-events:none!important;
+    transition:transform .34s cubic-bezier(.2,.8,.2,1),opacity .18s ease!important;
+  }
+  .lv4-detail.ynot-description-flipped .ynot-description-back{
+    transform:rotateY(0deg)!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+  }
+  .lv4-detail.ynot-description-flipped>img,
+  .lv4-detail.ynot-description-flipped>.ynot-loaded-gallery,
+  .lv4-detail.ynot-description-flipped>.lv4-gallery,
+  .lv4-detail.ynot-description-flipped>.ynot-mobile-swipe-dots,
+  .lv4-detail.ynot-description-flipped>.lv4-detailcopy{
+    opacity:0!important;
+    pointer-events:none!important;
+  }
+  .lv4-detail .ynot-description-close{
+    position:absolute!important;
+    right:14px!important;
+    top:14px!important;
+    width:34px!important;
+    height:34px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.20)!important;
+    background:rgba(255,255,255,.10)!important;
+    color:#fff!important;
+  }
+  .lv4-detail .ynot-description-copy{
+    color:rgba(255,255,255,.88)!important;
+    line-height:1.55!important;
+    white-space:pre-wrap!important;
+  }
+
+  /* Keep horizontal gallery usable independently from card-level left/right product swipes. */
+  .lv4-detail .ynot-loaded-gallery,
+  .lv4-detail .lv4-gallery,
+  .lv4-detail .ynot-rich-gallery{
+    order:2!important;
+    touch-action:pan-x!important;
+  }
+}
