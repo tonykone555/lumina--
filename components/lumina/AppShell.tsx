@@ -19,6 +19,7 @@ import CircleDrawer from "./CircleDrawer";
 import ProfilePanel from "./ProfilePanel";
 import CheckoutStatus from "./CheckoutStatus";
 import DesktopLatticeController from "./DesktopLatticeController";
+import MobileProductSwipeController from "./MobileProductSwipeController";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -141,6 +142,7 @@ export default function AppShell(){
   <ProfilePanel/>
   <WorldVisualPolish/>
   <DesktopLatticeController/>
+  <MobileProductSwipeController/>
   <CheckoutStatus/>
  </div>;
 }
