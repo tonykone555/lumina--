@@ -1,0 +1,73 @@
+/* Authoritative product lattice on every viewport. Imported last so legacy radial/hex rules cannot win. */
+.lv4-shell.ynot-desktop-lattice-active .lv4-stage{
+  display:block!important;
+  padding:0!important;
+  grid-template-columns:none!important;
+  grid-auto-rows:auto!important;
+  gap:0!important;
+}
+.lv4-shell.ynot-desktop-lattice-active .lv4-product{
+  position:absolute!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+}
+.lv4-shell.ynot-desktop-lattice-active .lv4-product:nth-child(odd),
+.lv4-shell.ynot-desktop-lattice-active .lv4-product:nth-child(even){
+  transform:translate(-50%,-50%)!important;
+}
+.lv4-shell.ynot-desktop-lattice-active .lv4-product:hover,
+.lv4-shell.ynot-desktop-lattice-active .lv4-product.is-hovered{
+  transform:translate(-50%,-50%) scale(1.065)!important;
+  z-index:70!important;
+}
+.lv4-shell.ynot-desktop-lattice-active .lv4-intent,
+.lv4-shell.ynot-desktop-lattice-active .lv4-textbubble,
+.lv4-shell.ynot-desktop-lattice-active .lv4-zone-connector,
+.lv4-shell.ynot-desktop-lattice-active .lv4-zone-detail-cluster,
+.lv4-shell.ynot-desktop-lattice-active .lv4-zone-annotation,
+.lv4-shell.ynot-desktop-lattice-active .lv4-source-anchor{
+  display:none!important;
+}
+
+/* Keep modal opening lightweight on all devices, especially mobile Safari. */
+.ynot-app-shell.chrome-hidden::after{
+  content:"";
+  position:fixed;
+  z-index:245;
+  inset:0;
+  pointer-events:none;
+  background:rgba(3,4,4,.46);
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.lv4-detail{will-change:auto!important}
+
+@media (max-width:899px){
+  .lv4-shell.ynot-desktop-lattice-active .lv4-product{
+    width:var(--s)!important;
+    height:var(--s)!important;
+  }
+}
+
+@media (min-width:900px){
+  /* Seamless canopy: the board continues behind the header with no hard horizontal edge. */
+  .ynot-app-shell::before{
+    height:290px!important;
+    background:linear-gradient(180deg,
+      rgba(5,6,6,.96) 0%,
+      rgba(5,6,6,.83) 22%,
+      rgba(5,6,6,.61) 43%,
+      rgba(5,6,6,.34) 62%,
+      rgba(5,6,6,.14) 78%,
+      rgba(5,6,6,.04) 90%,
+      rgba(5,6,6,0) 100%)!important;
+    box-shadow:0 56px 110px rgba(0,0,0,.12)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .ynot-reference-header{
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+}
