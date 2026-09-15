@@ -1,0 +1,26 @@
+/* Small safety layer after all reference styling. */
+.ynot-native-hidden{display:none!important}
+.lv4-shell.ynot-desktop-lattice-active .lv4-product{overflow:visible!important}
+.lv4-shell.ynot-desktop-lattice-active .lv4-product>img,
+.lv4-shell.ynot-desktop-lattice-active .lv4-product img:first-of-type{
+  clip-path:circle(50% at 50% 50%)!important;
+}
+
+@media (min-width:900px){
+  .lv4-detail:not(:has(.lv4-gallery:not(.ynot-native-hidden))):not(:has(.ynot-rich-gallery:not(.ynot-native-hidden))):not(:has(.ynot-loaded-gallery))>img{
+    grid-column:1 / 3!important;
+  }
+  .lv4-detail:not(:has(.lv4-gallery:not(.ynot-native-hidden))):not(:has(.ynot-rich-gallery:not(.ynot-native-hidden))):not(:has(.ynot-loaded-gallery)) .lv4-detailcopy{
+    grid-column:3!important;
+  }
+}
+
+@media (max-width:899px){
+  .lv4-detail:not(:has(.lv4-gallery:not(.ynot-native-hidden))):not(:has(.ynot-rich-gallery:not(.ynot-native-hidden))):not(:has(.ynot-loaded-gallery)){
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  .lv4-detail:not(:has(.lv4-gallery:not(.ynot-native-hidden))):not(:has(.ynot-rich-gallery:not(.ynot-native-hidden))):not(:has(.ynot-loaded-gallery))>img,
+  .lv4-detail:not(:has(.lv4-gallery:not(.ynot-native-hidden))):not(:has(.ynot-rich-gallery:not(.ynot-native-hidden))):not(:has(.ynot-loaded-gallery)) .lv4-detailcopy{
+    grid-column:1!important;
+  }
+}
