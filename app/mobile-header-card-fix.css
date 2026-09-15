@@ -1,0 +1,74 @@
+/* Mobile header depth + product card visibility, imported last. */
+@media (max-width:899px){
+  /* Bring back the layered shadow/glass effect on phone without reintroducing a hard seam. */
+  .ynot-reference-header{
+    background:linear-gradient(180deg,rgba(8,9,9,.82) 0%,rgba(8,9,9,.64) 58%,rgba(8,9,9,.28) 84%,rgba(8,9,9,0) 100%)!important;
+    backdrop-filter:blur(18px) saturate(1.08)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+    box-shadow:0 18px 34px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.06)!important;
+    overflow:visible!important;
+    isolation:isolate!important;
+  }
+  .ynot-reference-header::after{
+    content:""!important;
+    display:block!important;
+    position:absolute!important;
+    z-index:-1!important;
+    left:-3vw!important;
+    right:-3vw!important;
+    bottom:-54px!important;
+    height:78px!important;
+    pointer-events:none!important;
+    background:radial-gradient(ellipse at 50% 0%,rgba(0,0,0,.28) 0%,rgba(0,0,0,.15) 42%,rgba(0,0,0,.05) 68%,rgba(0,0,0,0) 100%)!important;
+    filter:blur(10px)!important;
+  }
+  .ynot-reference-header .ynot-top-mode,
+  .ynot-reference-header .ynot-reference-nav-tools button,
+  .ynot-reference-header .ynot-world-row{
+    box-shadow:0 8px 22px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.15)!important;
+  }
+
+  /* Keep zoom/pan world layers interactive underneath the header. */
+  .lv4-world,.lv4-stage,.lv4-products,.lv4-product-layer{
+    overflow:visible!important;
+  }
+
+  /* The previous shell backdrop-filter could blur the card itself on iOS.
+     Use a dark transparent veil only, then force the product above it. */
+  .ynot-app-shell:has(.lv4-detail)::after{
+    z-index:240!important;
+    background:rgba(3,4,4,.58)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .lv4-detail{
+    position:fixed!important;
+    z-index:10000!important;
+    filter:none!important;
+    -webkit-filter:none!important;
+    opacity:1!important;
+    visibility:visible!important;
+    isolation:isolate!important;
+    transform:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .lv4-detail::before,.lv4-detail::after{
+    filter:none!important;
+    -webkit-filter:none!important;
+  }
+  .lv4-detail>img,
+  .lv4-detail .lv4-detailcopy,
+  .lv4-detail .ynot-loaded-gallery,
+  .lv4-detail .lv4-gallery{
+    filter:none!important;
+    -webkit-filter:none!important;
+    opacity:1!important;
+  }
+
+  /* Preserve clear glass on the card itself; only the world behind it is dimmed. */
+  .lv4-detail{
+    background:linear-gradient(160deg,rgba(66,70,68,.94),rgba(18,20,20,.96))!important;
+    box-shadow:0 24px 70px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.16)!important;
+  }
+}
