@@ -80,6 +80,37 @@ function renderDescription(root:HTMLElement,product:Product){
  close.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();shell.classList.remove("ynot-description-flipped")});
 }
 
+function openFullSlider(shell:HTMLElement,images:string[],startIndex=0){
+ shell.querySelector(".ynot-full-slider")?.remove();
+ let index=Math.max(0,Math.min(startIndex,images.length-1));
+ const slider=document.createElement("section");
+ slider.className="ynot-full-slider";
+ slider.setAttribute("aria-label","Product image slider");
+ const image=document.createElement("img");
+ image.className="ynot-full-slider-image";
+ image.alt="Product view";
+ const close=document.createElement("button");
+ close.type="button";close.className="ynot-full-slider-close";close.textContent="×";close.setAttribute("aria-label","Close image slider");
+ const prev=document.createElement("button");
+ prev.type="button";prev.className="ynot-full-slider-prev";prev.textContent="‹";prev.setAttribute("aria-label","Previous image");
+ const next=document.createElement("button");
+ next.type="button";next.className="ynot-full-slider-next";next.textContent="›";next.setAttribute("aria-label","Next image");
+ const count=document.createElement("span");
+ count.className="ynot-full-slider-count";
+ const render=()=>{image.src=images[index];count.textContent=`${index+1} / ${images.length}`};
+ const move=(delta:number)=>{index=(index+delta+images.length)%images.length;render()};
+ close.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();slider.remove()});
+ prev.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();move(-1)});
+ next.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();move(1)});
+ slider.addEventListener("click",event=>event.stopPropagation());
+ slider.addEventListener("keydown",event=>{if(event.key==="ArrowLeft")move(-1);if(event.key==="ArrowRight")move(1);if(event.key==="Escape")slider.remove()});
+ slider.tabIndex=0;
+ slider.append(image,close,prev,next,count);
+ shell.appendChild(slider);
+ render();
+ requestAnimationFrame(()=>slider.focus());
+}
+
 function renderMedia(root:HTMLElement,product:Product){
  const shell=root.closest<HTMLElement>(".lv4-detail");
  if(!shell)return;
@@ -98,7 +129,8 @@ function renderMedia(root:HTMLElement,product:Product){
   if(gallery.dataset.mediaSignature!==signature){
    gallery.dataset.mediaSignature=signature;
    gallery.replaceChildren();
-   images.forEach((src,index)=>{
+   const visibleCount=Math.min(images.length,4);
+   images.slice(0,visibleCount).forEach((src,index)=>{
     const button=document.createElement("button");
     button.type="button";
     if(index===0)button.classList.add("active");
@@ -106,11 +138,19 @@ function renderMedia(root:HTMLElement,product:Product){
     image.src=src;
     image.alt=`${product.title} view ${index+1}`;
     button.appendChild(image);
-    button.addEventListener("click",event=>{
-     event.preventDefault();event.stopPropagation();
-     main.src=src;
-     gallery?.querySelectorAll("button").forEach(node=>node.classList.toggle("active",node===button));
-    });
+    const more=images.length>4&&index===visibleCount-1;
+    if(more){
+     button.classList.add("ynot-gallery-more");
+     button.dataset.more=`+${images.length-visibleCount+1}`;
+     button.setAttribute("aria-label",`Open all ${images.length} product images`);
+     button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();openFullSlider(shell,images,0)});
+    }else{
+     button.addEventListener("click",event=>{
+      event.preventDefault();event.stopPropagation();
+      main.src=src;
+      gallery?.querySelectorAll("button").forEach(node=>node.classList.toggle("active",node===button));
+     });
+    }
     gallery?.appendChild(button);
    });
   }
@@ -195,6 +235,7 @@ export default function ProductDetailHydrator():null{
     if(shell&&shell.dataset.ynotDescriptionTitle!==title){
      clearDescription(shell);
      shell.querySelector(".ynot-loaded-gallery")?.remove();
+     shell.querySelector(".ynot-full-slider")?.remove();
      root.querySelector(".ynot-loaded-variants")?.remove();
      shell.dataset.ynotDescriptionTitle=title;
      delete root.dataset.ynotDescriptionSignature;
