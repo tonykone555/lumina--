@@ -1,0 +1,339 @@
+/* Final desktop reference targeting the actual AppShell that renders in production. */
+@media (min-width: 900px){
+  .ynot-app-shell{
+    min-height:100vh;
+    background:#080909!important;
+    color:#fff;
+    overflow:hidden;
+  }
+
+  /* Protected header canopy: this is the real shell, above every world/product layer. */
+  .ynot-app-shell::before{
+    content:"";
+    position:fixed;
+    z-index:195;
+    left:0;right:0;top:0;height:126px;
+    pointer-events:none;
+    background:linear-gradient(180deg,#080909 0%,rgba(8,9,9,.985) 66%,rgba(8,9,9,.88) 82%,rgba(8,9,9,0) 100%);
+    backdrop-filter:blur(18px) saturate(.78);
+    -webkit-backdrop-filter:blur(18px) saturate(.78);
+  }
+
+  /* The header the user actually sees. */
+  .ynot-top-mode{
+    position:fixed!important;
+    z-index:220!important;
+    top:12px!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:250px!important;
+    height:38px!important;
+    padding:3px!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:3px!important;
+    border-radius:22px!important;
+    border:1px solid rgba(255,255,255,.13)!important;
+    background:rgba(35,37,37,.84)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.08),0 14px 30px rgba(0,0,0,.24)!important;
+    backdrop-filter:blur(24px)!important;
+    -webkit-backdrop-filter:blur(24px)!important;
+  }
+  .ynot-top-mode button{
+    height:32px!important;
+    border:0!important;
+    border-radius:18px!important;
+    background:transparent!important;
+    color:rgba(255,255,255,.42)!important;
+    font:780 10px/1 Inter,ui-sans-serif,system-ui!important;
+    letter-spacing:.09em!important;
+    transition:background .15s ease,color .15s ease!important;
+  }
+  .ynot-top-mode button.active{
+    background:rgba(255,255,255,.14)!important;
+    color:#fff!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.10)!important;
+  }
+
+  .ynot-world-controls{
+    position:fixed!important;
+    z-index:220!important;
+    top:58px!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:9px!important;
+    pointer-events:auto!important;
+  }
+  .ynot-world-row{
+    width:292px!important;
+    height:42px!important;
+    padding:3px!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:3px!important;
+    border:1px solid rgba(255,255,255,.14)!important;
+    border-radius:23px!important;
+    background:rgba(35,37,37,.82)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.08)!important;
+    backdrop-filter:blur(22px)!important;
+    -webkit-backdrop-filter:blur(22px)!important;
+  }
+  .ynot-world-row button{
+    min-width:0!important;
+    border:0!important;
+    border-radius:19px!important;
+    background:transparent!important;
+    color:rgba(255,255,255,.44)!important;
+    font:760 10px/1 Inter,ui-sans-serif,system-ui!important;
+    letter-spacing:.08em!important;
+  }
+  .ynot-world-row button.active{
+    color:#fff!important;
+    background:rgba(255,255,255,.16)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.12)!important;
+  }
+  .ynot-view-source{position:relative!important}
+  .ynot-source-trigger-clean{
+    height:40px!important;
+    min-width:112px!important;
+    padding:0 13px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:7px!important;
+    border:1px solid rgba(255,255,255,.13)!important;
+    border-radius:21px!important;
+    background:rgba(35,37,37,.82)!important;
+    color:#fff!important;
+    font:700 10px/1 Inter,ui-sans-serif,system-ui!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.08)!important;
+    backdrop-filter:blur(22px)!important;
+    -webkit-backdrop-filter:blur(22px)!important;
+  }
+  .ynot-source-trigger-clean svg{width:13px!important;height:13px!important;opacity:.55!important}
+  .ynot-source-list{
+    top:47px!important;
+    right:0!important;
+    min-width:130px!important;
+    padding:6px!important;
+    border-radius:17px!important;
+    border:1px solid rgba(255,255,255,.13)!important;
+    background:rgba(25,27,27,.94)!important;
+    box-shadow:0 18px 45px rgba(0,0,0,.32)!important;
+    backdrop-filter:blur(22px)!important;
+    -webkit-backdrop-filter:blur(22px)!important;
+  }
+
+  /* Remove the older duplicated header controls inside LuminaWorld. */
+  .lv4-search,
+  .lv4-market-toggle,
+  .lv4-source-picker,
+  .lv4-mobile-menu{display:none!important}
+
+  /* Keep product content completely below the protected header. */
+  .lv4-world{
+    position:fixed!important;
+    inset:0!important;
+    padding-top:118px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+  }
+  .lv4-scene{filter:brightness(.22) saturate(.52) contrast(1.08)!important;opacity:.58!important}
+
+  /* Large atmospheric bubbles — true separate depth layer, never interactive. */
+  .lv4-world::before,
+  .lv4-world::after{
+    content:""!important;
+    position:fixed!important;
+    pointer-events:none!important;
+    z-index:15!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.14)!important;
+    background:radial-gradient(circle at 28% 20%,rgba(255,255,255,.22),rgba(255,255,255,.045) 24%,rgba(95,105,108,.035) 50%,rgba(0,0,0,.24) 100%)!important;
+    box-shadow:inset -20px -24px 35px rgba(0,0,0,.28),inset 13px 14px 26px rgba(255,255,255,.055),0 20px 50px rgba(0,0,0,.30)!important;
+    backdrop-filter:blur(2px)!important;
+    -webkit-backdrop-filter:blur(2px)!important;
+    animation:ynotRealBubbleFloat 12s ease-in-out infinite alternate!important;
+  }
+  .lv4-world::before{width:126px!important;height:126px!important;left:36px!important;top:164px!important;opacity:.80!important}
+  .lv4-world::after{width:74px!important;height:74px!important;right:68px!important;top:184px!important;opacity:.62!important;animation-duration:17s!important;animation-delay:-6s!important}
+  @keyframes ynotRealBubbleFloat{from{transform:translate3d(0,0,0)}to{transform:translate3d(15px,-20px,0)}}
+
+  /* HOME STATE: cleaner compact bubble field below the header instead of the old huge radial ring. */
+  .depth-worlds .lv4-stage{transform-origin:0 0!important}
+  .depth-worlds .lv4-category-bubble{
+    width:154px!important;height:154px!important;
+    border-color:rgba(255,255,255,.30)!important;
+    background:radial-gradient(circle at 30% 18%,rgba(255,255,255,.42),rgba(211,218,211,.18) 35%,rgba(85,95,87,.10) 65%,rgba(8,9,9,.18) 100%)!important;
+    box-shadow:inset -17px -19px 30px rgba(0,0,0,.18),inset 11px 12px 23px rgba(255,255,255,.23),0 18px 45px rgba(0,0,0,.26)!important;
+  }
+  .depth-worlds .lv4-category-bubble b{color:#fff!important;font-size:18px!important;text-shadow:0 2px 16px rgba(0,0,0,.28)!important}
+  .depth-worlds .lv4-category-bubble span{color:rgba(255,255,255,.64)!important}
+
+  /* PRODUCT STATE: force the real buttons into a dense staggered lattice. */
+  .lv4-shell.depth-themes .lv4-stage,
+  .lv4-shell.depth-products .lv4-stage,
+  .lv4-shell.depth-details .lv4-stage{
+    display:grid!important;
+    grid-template-columns:repeat(9,132px)!important;
+    grid-auto-rows:154px!important;
+    gap:18px 24px!important;
+    align-content:start!important;
+    justify-content:start!important;
+    box-sizing:border-box!important;
+    padding-left:calc(50% - 690px)!important;
+    padding-top:calc(50% - 470px)!important;
+  }
+  .lv4-shell.depth-themes .lv4-product,
+  .lv4-shell.depth-products .lv4-product,
+  .lv4-shell.depth-details .lv4-product{
+    position:relative!important;
+    left:auto!important;top:auto!important;
+    align-self:center!important;justify-self:center!important;
+    margin:0!important;
+    transform:none!important;
+    z-index:20!important;
+  }
+  .lv4-shell.depth-themes .lv4-product:nth-child(odd),
+  .lv4-shell.depth-products .lv4-product:nth-child(odd),
+  .lv4-shell.depth-details .lv4-product:nth-child(odd){transform:translateY(54px)!important}
+  .lv4-shell.depth-themes .lv4-product:hover,
+  .lv4-shell.depth-products .lv4-product:hover,
+  .lv4-shell.depth-details .lv4-product:hover{transform:scale(1.07)!important;z-index:30!important}
+  .lv4-shell.depth-themes .lv4-product:nth-child(odd):hover,
+  .lv4-shell.depth-products .lv4-product:nth-child(odd):hover,
+  .lv4-shell.depth-details .lv4-product:nth-child(odd):hover{transform:translateY(54px) scale(1.07)!important}
+
+  .lv4-shell.depth-themes .lv4-intent,
+  .lv4-shell.depth-products .lv4-intent,
+  .lv4-shell.depth-details .lv4-intent,
+  .lv4-shell.depth-themes .lv4-textbubble,
+  .lv4-shell.depth-products .lv4-textbubble,
+  .lv4-shell.depth-details .lv4-textbubble,
+  .lv4-shell.depth-themes .lv4-zone-connector,
+  .lv4-shell.depth-products .lv4-zone-connector,
+  .lv4-shell.depth-details .lv4-zone-connector,
+  .lv4-shell.depth-themes .lv4-zone-detail-cluster,
+  .lv4-shell.depth-products .lv4-zone-detail-cluster,
+  .lv4-shell.depth-details .lv4-zone-detail-cluster,
+  .lv4-shell.depth-themes .lv4-zone-annotation,
+  .lv4-shell.depth-products .lv4-zone-annotation,
+  .lv4-shell.depth-details .lv4-zone-annotation,
+  .lv4-shell.depth-themes .lv4-source-anchor,
+  .lv4-shell.depth-products .lv4-source-anchor,
+  .lv4-shell.depth-details .lv4-source-anchor{display:none!important}
+
+  .lv4-product{
+    width:var(--s)!important;height:var(--s)!important;
+    border:1px solid rgba(255,255,255,.34)!important;
+    background:rgba(236,237,233,.94)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.72),0 12px 31px rgba(0,0,0,.25)!important;
+  }
+  .lv4-product img{left:5%!important;top:5%!important;width:90%!important;height:90%!important;object-fit:cover!important;background:#eee!important}
+  .lv4-price{
+    right:-5px!important;left:auto!important;bottom:-4px!important;
+    padding:6px 9px!important;
+    min-width:0!important;
+    border-radius:999px!important;
+    background:rgba(250,250,247,.94)!important;
+    color:#171818!important;
+    border:1px solid rgba(255,255,255,.74)!important;
+    box-shadow:0 6px 16px rgba(0,0,0,.14)!important;
+    font:820 9px/1 Inter,ui-sans-serif,system-ui!important;
+  }
+
+  /* Centered fixed glass product modal, like the supplied desktop reference. */
+  .lv4-detail{
+    position:fixed!important;
+    z-index:260!important;
+    left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;
+    transform:translate(-50%,-50%)!important;
+    width:min(940px,calc(100vw - 96px))!important;
+    height:min(548px,calc(100vh - 150px))!important;
+    max-height:548px!important;
+    padding:16px!important;
+    box-sizing:border-box!important;
+    display:grid!important;
+    grid-template-columns:84px minmax(330px,1.06fr) minmax(320px,.94fr)!important;
+    grid-template-rows:1fr!important;
+    gap:14px!important;
+    overflow:hidden!important;
+    border:1px solid rgba(255,255,255,.27)!important;
+    border-radius:29px!important;
+    background:linear-gradient(135deg,rgba(118,121,118,.57),rgba(42,44,43,.66))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.24),0 38px 100px rgba(0,0,0,.52)!important;
+    backdrop-filter:blur(35px) saturate(.74)!important;
+    -webkit-backdrop-filter:blur(35px) saturate(.74)!important;
+  }
+  .ynot-app-shell:has(.lv4-detail)::after{
+    content:"";
+    position:fixed;
+    z-index:245;
+    inset:0;
+    pointer-events:none;
+    background:rgba(3,4,4,.46);
+    backdrop-filter:blur(7px);
+    -webkit-backdrop-filter:blur(7px);
+  }
+  .lv4-detail>img{
+    grid-column:2!important;grid-row:1!important;
+    width:100%!important;height:100%!important;
+    min-height:0!important;aspect-ratio:auto!important;
+    object-fit:contain!important;
+    margin:0!important;
+    border-radius:20px!important;
+    background:rgba(248,248,245,.97)!important;
+    border:1px solid rgba(255,255,255,.48)!important;
+  }
+  .lv4-gallery{
+    grid-column:1!important;grid-row:1!important;
+    display:flex!important;flex-direction:column!important;
+    align-items:stretch!important;justify-content:flex-start!important;
+    gap:10px!important;
+    padding:2px!important;margin:0!important;
+    overflow-y:auto!important;overflow-x:hidden!important;
+  }
+  .lv4-gallery button{width:78px!important;height:78px!important;min-width:78px!important;flex:0 0 78px!important;border-radius:15px!important;background:rgba(248,248,245,.88)!important;border:1px solid rgba(255,255,255,.36)!important}
+  .lv4-gallery img{width:100%!important;height:100%!important;object-fit:contain!important;border-radius:13px!important}
+  .lv4-gallery button.active{outline:2px solid rgba(255,255,255,.72)!important;outline-offset:1px!important}
+  .lv4-detailcopy{
+    grid-column:3!important;grid-row:1!important;
+    min-width:0!important;
+    padding:14px 14px 12px 8px!important;
+    display:flex!important;flex-direction:column!important;justify-content:center!important;
+    overflow-y:auto!important;
+    color:#fff!important;
+  }
+  .lv4-product-brand{color:rgba(255,255,255,.70)!important;font:760 10px/1 Inter,ui-sans-serif,system-ui!important;letter-spacing:.12em!important;text-transform:uppercase!important}
+  .lv4-product-source{color:rgba(255,255,255,.46)!important;font-size:8px!important;margin-top:6px!important}
+  .lv4-detailcopy h2{
+    margin:11px 44px 8px 0!important;
+    color:#fff!important;
+    font:720 clamp(25px,2.2vw,34px)/1.04 Inter,ui-sans-serif,system-ui!important;
+    letter-spacing:-.035em!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+    display:block!important;
+  }
+  .lv4-detailcopy strong{color:#fff!important;font:830 28px/1 Inter,ui-sans-serif,system-ui!important;margin:5px 0 14px!important}
+  .lv4-variants{padding:6px 0 8px!important;gap:7px!important}
+  .lv4-variants button{color:#fff!important;background:rgba(255,255,255,.09)!important;border-color:rgba(255,255,255,.16)!important}
+  .lv4-variants button.active{background:rgba(255,255,255,.22)!important}
+  .lv4-actions{margin-top:13px!important;display:grid!important;grid-template-columns:1fr 48px!important;gap:8px!important}
+  .lv4-actions button{height:48px!important;border-radius:15px!important;border:1px solid rgba(255,255,255,.18)!important;background:rgba(255,255,255,.10)!important;color:#fff!important}
+  .lv4-actions button:first-child{background:#f5f5f1!important;color:#191a19!important;font-weight:820!important}
+  .lv4-direction-row{margin-top:12px!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important}
+  .lv4-direction-row button{min-height:38px!important;border-radius:13px!important;background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.13)!important;color:rgba(255,255,255,.82)!important}
+  .lv4-close{right:17px!important;top:17px!important;width:42px!important;height:42px!important;border-radius:50%!important;background:rgba(255,255,255,.12)!important;color:#fff!important;border-color:rgba(255,255,255,.20)!important}
+
+  /* No bag flyout/panel in this desktop pass. */
+  .ynot-cart,.ynot-cart-panel,.ynot-bag-panel,.ynot-checkout-panel{display:none!important}
+
+  /* Keep chrome out of the reference composition. */
+  .ynot-bottom-search{bottom:22px!important;z-index:210!important;max-width:440px!important;opacity:.76!important}
+}
