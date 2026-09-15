@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {exchangeAuthorizationCode,setEtsyTokenCookies} from "@/lib/etsy/auth";
+import {saveEtsyConnection} from "@/lib/etsy/oauth";
 
 export const runtime="nodejs";
 
@@ -22,6 +23,14 @@ export async function GET(request:NextRequest){
  }
  try{
   const token=await exchangeAuthorizationCode(code,verifier);
+  if(!token.refresh_token)throw new Error("ETSY_REFRESH_TOKEN_MISSING");
+  await saveEtsyConnection({
+   access_token:token.access_token,
+   refresh_token:token.refresh_token,
+   expires_in:Number(token.expires_in||3600),
+   token_type:token.token_type,
+   scope:token.scope
+  });
   const target=new URL("/",request.url);
   target.searchParams.set("etsy_oauth","connected");
   const response=NextResponse.redirect(target);
