@@ -62,7 +62,7 @@ export const metadata:Metadata={
   other:{"theme-color":"#080909"}
 };
 
-// Production deploy checkpoint for Search Console verification.
+// Production deploy checkpoint after Git integration reconnect.
 export default function RootLayout({children}:{children:React.ReactNode}){
   return <html lang="en"><body>{children}</body></html>;
 }
