@@ -15,9 +15,10 @@ export async function generateMetadata({params}:Props):Promise<Metadata>{
   if(!category)return {};
   const url=`${BASE}/shop/${category.slug}`;
   return {
-    title:category.title,
+    title:{absolute:category.title},
     description:category.description,
     alternates:{canonical:url},
+    robots:{index:true,follow:true},
     openGraph:{type:"website",url,title:category.title,description:category.description,siteName:"YNOT",images:[{url:"/ynot-microphone.jpg",alt:`YNOT ${category.name} shopping`}]},
     twitter:{card:"summary_large_image",title:category.title,description:category.description,images:["/ynot-microphone.jpg"]}
   };
