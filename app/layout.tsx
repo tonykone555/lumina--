@@ -46,6 +46,7 @@ import "./desktop-product-bubble-labels.css";
 import "./final-directional-mobile-pass.css";
 import "./mobile-product-interaction-final.css";
 import "./final-slider-deal-glass.css";
+import "./final-hover-deal-fix.css";
 
 const SITE_URL="https://ynotworld.app";
 const SITE_DESCRIPTION="Discover fashion, furniture, beauty, fitness, tech and more across independent stores with YNOT's visual shopping experience.";
