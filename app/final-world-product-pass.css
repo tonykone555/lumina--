@@ -219,6 +219,36 @@
 
   /* If hydration has created the richer gallery, do not leave a duplicate gallery over the image. */
   .lv4-detail:has(.ynot-loaded-gallery) .lv4-gallery:not(.ynot-loaded-gallery){display:none!important}
+
+  /* When +N opens the full image viewer, center it in the viewport — never let it inherit the product card's dropped/right-sheet position. */
+  .ynot-full-slider{
+    position:fixed!important;
+    z-index:20000!important;
+    left:50%!important;
+    top:50%!important;
+    right:auto!important;
+    bottom:auto!important;
+    inset:auto!important;
+    width:min(820px,78vw)!important;
+    height:min(620px,80vh)!important;
+    max-width:calc(100vw - 56px)!important;
+    max-height:calc(100vh - 56px)!important;
+    transform:translate(-50%,-50%)!important;
+    margin:0!important;
+    padding:34px!important;
+    border-radius:30px!important;
+    overflow:hidden!important;
+    background:linear-gradient(145deg,rgba(50,53,52,.96),rgba(18,20,20,.97))!important;
+    box-shadow:0 34px 100px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.22)!important;
+  }
+  .ynot-full-slider-image{
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    object-fit:contain!important;
+    margin:0 auto!important;
+  }
 }
 
 @media (max-width:899px){
