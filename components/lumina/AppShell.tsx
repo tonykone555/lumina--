@@ -13,7 +13,6 @@ import ProductDetailHydrator from "./ProductDetailHydrator";
 import ProductReferenceEnhancer from "./ProductReferenceEnhancer";
 import ProductCardSync from "./ProductCardSync";
 import WorldVisualPolish from "./WorldVisualPolish";
-import WorldBubbleSpacing from "./WorldBubbleSpacing";
 import WorldCompass from "./WorldCompass";
 import WorldSaveBridge from "./WorldSaveBridge";
 import CircleDrawer from "./CircleDrawer";
@@ -123,7 +122,6 @@ export default function AppShell(){
   <CircleDrawer/>
   <ProfilePanel/>
   <WorldVisualPolish/>
-  <WorldBubbleSpacing/>
   <DesktopLatticeController/>
   <CheckoutStatus/>
  </div>;
