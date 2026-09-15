@@ -95,28 +95,51 @@
   overflow:visible!important;
 }
 
-/* Desktop product media: main image first, then thumbnails in one horizontal row. */
+/* Desktop product media: thumbnails are a dedicated vertical rail on the LEFT of the main image. */
 @media (min-width:900px){
+  .lv4-detail{
+    grid-template-columns:86px minmax(350px,1.07fr) minmax(340px,.93fr)!important;
+    column-gap:14px!important;
+    overflow:hidden!important;
+  }
+
+  .lv4-detail>img,
+  .lv4-detail .ynot-main-product-image{
+    grid-column:2!important;
+    grid-row:1!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    margin:0!important;
+    object-fit:contain!important;
+    align-self:stretch!important;
+  }
+
   .lv4-detail .ynot-loaded-gallery,
-  .lv4-detail .lv4-gallery{
+  .lv4-detail .lv4-gallery,
+  .lv4-detail .ynot-rich-gallery{
+    grid-column:1!important;
+    grid-row:1!important;
     position:relative!important;
     inset:auto!important;
+    z-index:3!important;
     display:flex!important;
-    flex-direction:row!important;
+    flex-direction:column!important;
     flex-wrap:nowrap!important;
     align-items:center!important;
     justify-content:flex-start!important;
-    gap:8px!important;
-    width:100%!important;
-    max-width:100%!important;
-    height:auto!important;
-    max-height:none!important;
-    overflow-x:auto!important;
-    overflow-y:hidden!important;
-    scroll-snap-type:x proximity!important;
+    gap:9px!important;
+    width:86px!important;
+    min-width:86px!important;
+    max-width:86px!important;
+    height:100%!important;
+    max-height:100%!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain!important;
     scrollbar-width:none!important;
-    padding:8px 0 2px!important;
-    margin:8px 0 0!important;
+    padding:2px 3px!important;
+    margin:0!important;
     border:0!important;
     background:transparent!important;
     box-shadow:none!important;
@@ -124,30 +147,49 @@
     -webkit-backdrop-filter:none!important;
   }
   .lv4-detail .ynot-loaded-gallery::-webkit-scrollbar,
-  .lv4-detail .lv4-gallery::-webkit-scrollbar{display:none!important}
+  .lv4-detail .lv4-gallery::-webkit-scrollbar,
+  .lv4-detail .ynot-rich-gallery::-webkit-scrollbar{display:none!important}
 
   .lv4-detail .ynot-loaded-gallery button,
-  .lv4-detail .lv4-gallery button{
-    flex:0 0 62px!important;
-    width:62px!important;
-    min-width:62px!important;
-    height:62px!important;
-    scroll-snap-align:start!important;
+  .lv4-detail .lv4-gallery button,
+  .lv4-detail .ynot-rich-gallery button{
+    position:relative!important;
+    flex:0 0 78px!important;
+    width:78px!important;
+    min-width:78px!important;
+    height:78px!important;
+    min-height:78px!important;
     padding:0!important;
     margin:0!important;
     overflow:hidden!important;
-    border-radius:14px!important;
-    border:1px solid rgba(255,255,255,.18)!important;
-    background:rgba(255,255,255,.06)!important;
-    box-shadow:none!important;
+    border-radius:17px!important;
+    border:1px solid rgba(255,255,255,.36)!important;
+    background:rgba(255,255,255,.08)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.16),0 7px 16px rgba(0,0,0,.10)!important;
+  }
+  .lv4-detail .ynot-loaded-gallery button.active,
+  .lv4-detail .lv4-gallery button.active,
+  .lv4-detail .ynot-rich-gallery button.active{
+    border-color:rgba(255,255,255,.78)!important;
+    box-shadow:0 0 0 1px rgba(255,255,255,.12),inset 0 1px rgba(255,255,255,.20)!important;
   }
   .lv4-detail .ynot-loaded-gallery img,
-  .lv4-detail .lv4-gallery img{
+  .lv4-detail .lv4-gallery img,
+  .lv4-detail .ynot-rich-gallery img{
     width:100%!important;
     height:100%!important;
-    object-fit:cover!important;
+    object-fit:contain!important;
+    border:0!important;
+    box-shadow:none!important;
     border-radius:inherit!important;
   }
+  .lv4-detail .lv4-detailcopy{
+    grid-column:3!important;
+    grid-row:1!important;
+    min-width:0!important;
+  }
+
+  /* If hydration has created the richer gallery, do not leave a duplicate gallery over the image. */
   .lv4-detail:has(.ynot-loaded-gallery) .lv4-gallery:not(.ynot-loaded-gallery){display:none!important}
 }
 
