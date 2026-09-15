@@ -1,0 +1,69 @@
+/* Mobile product media: use a draggable mini-slider below the main image, never a side rail. */
+@media (max-width:899px){
+  .lv4-detail .ynot-loaded-gallery,
+  .lv4-detail .lv4-gallery{
+    position:relative!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    display:flex!important;
+    flex-direction:row!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    grid-template-columns:none!important;
+    grid-auto-flow:unset!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    overscroll-behavior-x:contain!important;
+    scroll-snap-type:x proximity!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-x!important;
+    scrollbar-width:none!important;
+    padding:8px!important;
+    margin:8px 0 0!important;
+    border-radius:20px!important;
+    border:1px solid rgba(255,255,255,.22)!important;
+    background:linear-gradient(160deg,rgba(108,113,110,.22),rgba(16,18,18,.34))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.18),0 10px 26px rgba(0,0,0,.12)!important;
+    backdrop-filter:blur(16px) saturate(1.06)!important;
+    -webkit-backdrop-filter:blur(16px) saturate(1.06)!important;
+  }
+  .lv4-detail .ynot-loaded-gallery::-webkit-scrollbar,
+  .lv4-detail .lv4-gallery::-webkit-scrollbar{display:none!important}
+
+  .lv4-detail .ynot-loaded-gallery button,
+  .lv4-detail .lv4-gallery button{
+    flex:0 0 66px!important;
+    width:66px!important;
+    min-width:66px!important;
+    height:58px!important;
+    scroll-snap-align:start!important;
+    padding:0!important;
+    border-radius:15px!important;
+    overflow:hidden!important;
+    border:1px solid rgba(255,255,255,.18)!important;
+    background:rgba(255,255,255,.08)!important;
+    box-shadow:none!important;
+  }
+  .lv4-detail .ynot-loaded-gallery button.active,
+  .lv4-detail .lv4-gallery button.active{
+    border-color:rgba(255,255,255,.72)!important;
+    box-shadow:0 0 0 1px rgba(255,255,255,.16),inset 0 1px rgba(255,255,255,.18)!important;
+  }
+  .lv4-detail .ynot-loaded-gallery img,
+  .lv4-detail .lv4-gallery img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    border-radius:inherit!important;
+  }
+
+  /* Keep the main image full width, with the slider directly underneath it. */
+  .lv4-detail>img{
+    width:100%!important;
+    max-width:100%!important;
+    margin:0!important;
+  }
+}
