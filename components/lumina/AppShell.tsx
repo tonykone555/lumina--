@@ -3,6 +3,7 @@
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {Bell,ChevronDown,Compass,Minus,Search,UserRound} from "lucide-react";
 import LuminaWorld from "./LuminaWorld";
+import EtsySourceController from "./EtsySourceController";
 import YnotDrawer from "./YnotDrawer";
 import YnotIntentBridge from "./YnotIntentBridge";
 import SubcategoryNavigator from "./SubcategoryNavigator";
@@ -22,7 +23,7 @@ import DesktopLatticeController from "./DesktopLatticeController";
 import MobileProductSwipeController from "./MobileProductSwipeController";
 
 type Mode="shop"|"discover";
-type Source="Shopify"|"Amazon"|"eBay";
+type Source="Shopify"|"Amazon"|"eBay"|"Etsy";
 type HeaderProfile={name?:string;avatar?:string;hasPin?:boolean}|null;
 const PROFILE_KEY="ynot-local-profile-v1";
 
@@ -80,11 +81,16 @@ export default function AppShell(){
  function openNotifications(){window.dispatchEvent(new Event("ynot:open-circle"))}
  function switchSource(next:Source){
   setSource(next);setSourceOpen(false);
+  if(next==="Etsy"){
+   requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".ynot-etsy-tab")?.click());
+   return;
+  }
+  document.body.classList.remove("ynot-etsy-mode");
   if(next==="eBay"){
    const ebay=document.querySelector<HTMLButtonElement>(".lv4-market-toggle button.ebay");ebay?.click();return;
   }
   const worldButtons=[...document.querySelectorAll<HTMLButtonElement>(".lv4-market-toggle button")];
-  const world=worldButtons.find(button=>!button.classList.contains("ebay"));if(world&&!world.classList.contains("active"))world.click();
+  const world=worldButtons.find(button=>!button.classList.contains("ebay")&&!button.classList.contains("ynot-etsy-tab"));if(world&&!world.classList.contains("active"))world.click();
   const trigger=document.querySelector<HTMLButtonElement>(".lv4-source-trigger");trigger?.click();
   requestAnimationFrame(()=>{
    const choices=[...document.querySelectorAll<HTMLButtonElement>(".lv4-source-menu button,.lv4-source-popover button,.lv4-source-options button")];
@@ -119,30 +125,9 @@ export default function AppShell(){
     </div>
     {mode==="shop"&&<div className="ynot-world-controls">
      <div className="ynot-world-row"><button className="active">WORLD</button><button onClick={openYnot}>YNOT</button></div>
-     <div className="ynot-view-source"><button className="ynot-source-trigger-clean" onClick={()=>setSourceOpen(v=>!v)}>{source}<ChevronDown/></button>{sourceOpen&&<div className="ynot-source-list">{(["Shopify","Amazon","eBay"] as Source[]).map(option=><button key={option} className={source===option?"active":""} onClick={()=>switchSource(option)}>{option}</button>)}</div>}</div>
+     <div className="ynot-view-source"><button className="ynot-source-trigger-clean" onClick={()=>setSourceOpen(v=>!v)}>{source}<ChevronDown/></button>{sourceOpen&&<div className="ynot-source-list">{(["Shopify","Amazon","eBay","Etsy"] as Source[]).map(option=><button key={option} className={source===option?"active":""} onClick={()=>switchSource(option)}>{option}</button>)}</div>}</div>
     </div>}
    </div>
    <div className="ynot-reference-right">
     <button className="ynot-reference-notify" onClick={openNotifications} aria-label="Notifications"><Bell/><i/></button>
-    <button className={`ynot-reference-signin ${hasProfile?"has-profile":""}`} onClick={hasProfile?openSaved:openProfile}>{headerProfile?.avatar?<img src={headerProfile.avatar} alt="Your profile"/>:<UserRound/>}<span>{hasProfile?"Saves":"Sign in"}</span></button>
-    <button className="ynot-reference-avatar" onClick={openProfile} aria-label="Open profile">{headerProfile?.avatar?<img src={headerProfile.avatar} alt="Your profile"/>:<UserRound/>}</button>
-   </div>
-  </header>
-  {mode==="discover"?<DiscoveryUniverse/>:<><LuminaWorld/><SubcategoryNavigator/><WorldCompass/></>}
-  <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
-  <YnotDrawer/>
-  <YnotIntentBridge/>
-  <SavedNotebook/>
-  <ProductCardEnhancer/>
-  <ProductDetailHydrator/>
-  <ProductReferenceEnhancer/>
-  <ProductCardSync/>
-  <WorldSaveBridge/>
-  <CircleDrawer/>
-  <ProfilePanel/>
-  <WorldVisualPolish/>
-  <DesktopLatticeController/>
-  <MobileProductSwipeController/>
-  <CheckoutStatus/>
- </div>;
-}
+    <button className={`ynot-reference-signin ${hasProfile?"has-profile":"
