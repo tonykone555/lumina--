@@ -98,11 +98,44 @@
     transform:none!important;
   }
 
-  /* Description is a true card-turn face on mobile and always fills the product card. */
+  /* Make the mobile product card read as a glossy floating glass sheet. */
   .lv4-detail{
     perspective:1400px!important;
     transform-style:preserve-3d!important;
+    border:1px solid rgba(255,255,255,.26)!important;
+    background:linear-gradient(155deg,rgba(74,78,76,.58),rgba(24,26,26,.84) 46%,rgba(12,14,14,.92))!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.24),
+      inset 0 -1px 0 rgba(255,255,255,.05),
+      0 0 0 1px rgba(255,255,255,.035),
+      0 16px 42px rgba(0,0,0,.34),
+      0 4px 16px rgba(0,0,0,.22)!important;
+    backdrop-filter:blur(28px) saturate(1.18)!important;
+    -webkit-backdrop-filter:blur(28px) saturate(1.18)!important;
+    overflow:auto!important;
   }
+  .lv4-detail::before{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    pointer-events:none!important;
+    border-radius:inherit!important;
+    background:linear-gradient(120deg,rgba(255,255,255,.14),rgba(255,255,255,.025) 28%,transparent 48%)!important;
+    z-index:1!important;
+  }
+  .lv4-detail>*{position:relative;z-index:2}
+
+  /* Remove stale/native mini controls that were appearing over card corners. */
+  .lv4-detail .lv4-gallery.ynot-native-hidden,
+  .lv4-detail .ynot-reference-hidden-thumb,
+  .lv4-detail .ynot-gallery-more::after{
+    display:none!important;
+  }
+  .lv4-detail .lv4-gallery:not(.ynot-loaded-gallery){
+    pointer-events:none!important;
+  }
+
+  /* Description is a true card-turn face on mobile and always fills the product card. */
   .lv4-detail .ynot-description-toggle{
     display:flex!important;
     align-items:center!important;
@@ -172,9 +205,10 @@
 
   /* Keep horizontal gallery usable independently from card-level left/right product swipes. */
   .lv4-detail .ynot-loaded-gallery,
-  .lv4-detail .lv4-gallery,
   .lv4-detail .ynot-rich-gallery{
     order:2!important;
     touch-action:pan-x!important;
+    position:relative!important;
+    z-index:35!important;
   }
 }
