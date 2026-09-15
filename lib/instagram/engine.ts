@@ -31,8 +31,8 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  const query=cleanKeyword(input.query||"");if(query.length<2)throw new Error("A search query is required");
  const target=Math.max(40,Math.min(1200,Number(input.target)||180));
  const keywordPages=Math.max(1,Math.min(10,Number(input.keywordPages)||3));
- const relatedPerSeed=Math.max(5,Math.min(80,Number(input.relatedPerSeed)||40));
- const seedExpansionLimit=Math.max(1,Math.min(100,Number(input.seedExpansionLimit)||8));
+ const relatedPerSeed=Math.max(5,Math.min(80,Number(input.relatedPerSeed)||15));
+ const seedExpansionLimit=Math.max(1,Math.min(100,Number(input.seedExpansionLimit)||20));
  const seedUsernames=[...new Set((input.seedUsernames||[]).map(cleanUsername).filter(Boolean))].slice(0,12);
  const keywords=deriveKeywordVariants(query,input.learnedKeywords||[]);
  const state=await getOrCreateSearch(normalizeQuery(query),query,target,keywords);
