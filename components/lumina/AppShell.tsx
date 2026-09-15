@@ -10,6 +10,7 @@ import SavedNotebook from "./SavedNotebook";
 import DiscoveryUniverse from "./DiscoveryUniverse";
 import ProductCardEnhancer from "./ProductCardEnhancer";
 import ProductDetailHydrator from "./ProductDetailHydrator";
+import ProductReferenceEnhancer from "./ProductReferenceEnhancer";
 import ProductCardSync from "./ProductCardSync";
 import WorldVisualPolish from "./WorldVisualPolish";
 import WorldBubbleSpacing from "./WorldBubbleSpacing";
@@ -95,6 +96,7 @@ export default function AppShell(){
   <SavedNotebook/>
   <ProductCardEnhancer/>
   <ProductDetailHydrator/>
+  <ProductReferenceEnhancer/>
   <ProductCardSync/>
   <WorldSaveBridge/>
   <CircleDrawer/>
