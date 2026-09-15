@@ -1,0 +1,73 @@
+/* Final slider/deal corrections — loaded last. */
+
+@media (min-width:900px){
+  /* The full-image viewer fills the product card, but the actual glass frame belongs to the image only. */
+  .lv4-detail .ynot-full-slider{
+    position:absolute!important;
+    inset:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    padding:56px 88px!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    border:0!important;
+    outline:0!important;
+    border-radius:inherit!important;
+    background:rgba(13,15,15,.88)!important;
+    box-shadow:none!important;
+    backdrop-filter:blur(18px) saturate(.92)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(.92)!important;
+  }
+
+  .lv4-detail .ynot-full-slider-image{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    flex:none!important;
+    width:auto!important;
+    height:auto!important;
+    max-width:100%!important;
+    max-height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    object-fit:contain!important;
+    object-position:center center!important;
+    margin:auto!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    border:1px solid rgba(255,255,255,.30)!important;
+    border-radius:24px!important;
+    background:rgba(255,255,255,.035)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 16px 34px rgba(0,0,0,.18)!important;
+  }
+
+  .lv4-detail .ynot-full-slider-count{
+    position:absolute!important;
+    left:50%!important;
+    bottom:18px!important;
+    transform:translateX(-50%)!important;
+  }
+}
+
+/* YNOT Deal uses the same dark translucent glass language as product cards — never cream. */
+[class*="ynot-deal"],
+.lv4-deal,
+.ynot-deal,
+.ynot-deal-pill,
+.ynot-deal-badge{
+  background:linear-gradient(145deg,rgba(58,61,60,.56),rgba(18,20,20,.82))!important;
+  background-color:rgba(27,29,29,.78)!important;
+  color:#fff!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -10px 24px rgba(0,0,0,.16),0 12px 28px rgba(0,0,0,.18)!important;
+  backdrop-filter:blur(22px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.08)!important;
+}
+
+[class*="ynot-deal"]::before,
+[class*="ynot-deal"]::after,
+.lv4-deal::before,
+.lv4-deal::after{
+  background:transparent!important;
+}
