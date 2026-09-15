@@ -1,0 +1,320 @@
+/* Desktop product view matched to the supplied glossy reference while preserving YNOT actions. */
+@media (min-width:900px){
+  .lv4-detail{
+    --ref-white:rgba(255,255,255,.96);
+    --ref-glass:rgba(148,151,149,.36);
+    --ref-line:rgba(255,255,255,.32);
+    width:min(980px,calc(100vw - 92px))!important;
+    height:min(560px,calc(100vh - 146px))!important;
+    max-height:560px!important;
+    grid-template-columns:86px minmax(350px,1.07fr) minmax(340px,.93fr)!important;
+    gap:14px!important;
+    padding:15px!important;
+    border-radius:30px!important;
+    border:1px solid rgba(255,255,255,.40)!important;
+    background:
+      linear-gradient(132deg,rgba(255,255,255,.20) 0%,rgba(255,255,255,.055) 24%,rgba(95,99,97,.34) 56%,rgba(37,39,38,.52) 100%)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.48),
+      inset 0 -1px 0 rgba(255,255,255,.08),
+      0 42px 110px rgba(0,0,0,.52)!important;
+    backdrop-filter:blur(38px) saturate(.88)!important;
+    -webkit-backdrop-filter:blur(38px) saturate(.88)!important;
+    overflow:hidden!important;
+    isolation:isolate;
+  }
+  .lv4-detail::before{
+    content:"";
+    position:absolute;
+    z-index:-1;
+    pointer-events:none;
+    inset:0;
+    border-radius:inherit;
+    background:
+      radial-gradient(ellipse at 22% 0%,rgba(255,255,255,.30),transparent 34%),
+      linear-gradient(105deg,rgba(255,255,255,.12),transparent 28% 72%,rgba(255,255,255,.045));
+    box-shadow:inset 0 0 65px rgba(255,255,255,.035);
+  }
+
+  /* Main product image stays pristine — no tags or copy over/under the image column. */
+  .lv4-detail>img{
+    grid-column:2!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:contain!important;
+    border-radius:22px!important;
+    border:1px solid rgba(255,255,255,.58)!important;
+    background:linear-gradient(145deg,rgba(255,255,255,.98),rgba(244,244,240,.94))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.94),0 14px 32px rgba(0,0,0,.14)!important;
+  }
+
+  /* Reference thumbnail strip. */
+  .lv4-gallery,.ynot-rich-gallery,.ynot-loaded-gallery{
+    grid-column:1!important;
+    grid-row:1!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:10px!important;
+    padding:2px!important;
+    margin:0!important;
+    overflow:visible!important;
+  }
+  .lv4-gallery>button,.ynot-rich-gallery>button,.ynot-loaded-gallery>button{
+    position:relative!important;
+    width:80px!important;height:80px!important;min-width:80px!important;flex:0 0 80px!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border-radius:17px!important;
+    border:1px solid rgba(255,255,255,.44)!important;
+    background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(229,231,227,.72))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.82),0 8px 18px rgba(0,0,0,.13)!important;
+    opacity:.88!important;
+    transition:opacity .15s ease,transform .15s ease,border-color .15s ease!important;
+  }
+  .lv4-gallery>button:hover,.ynot-rich-gallery>button:hover,.ynot-loaded-gallery>button:hover,
+  .lv4-gallery>button.active,.ynot-rich-gallery>button.active,.ynot-loaded-gallery>button.active{
+    opacity:1!important;
+    transform:scale(1.025)!important;
+    border-color:rgba(255,255,255,.90)!important;
+    outline:0!important;
+  }
+  .lv4-gallery>button img,.ynot-rich-gallery>button img,.ynot-loaded-gallery>button img{
+    width:100%!important;height:100%!important;
+    object-fit:contain!important;
+    border-radius:15px!important;
+    background:rgba(247,247,244,.94)!important;
+  }
+  .ynot-reference-hidden-thumb{display:none!important}
+  .ynot-reference-more-thumb::before{
+    content:"";
+    position:absolute;
+    z-index:4;
+    inset:0;
+    border-radius:16px;
+    background:rgba(18,19,19,.48);
+    backdrop-filter:blur(3px);
+    -webkit-backdrop-filter:blur(3px);
+  }
+  .ynot-reference-more-thumb::after{
+    content:attr(data-more);
+    position:absolute;
+    z-index:5;
+    inset:0;
+    display:grid;
+    place-items:center;
+    color:#fff;
+    font:850 18px/1 Inter,ui-sans-serif,system-ui,sans-serif;
+    letter-spacing:-.035em;
+    text-shadow:0 2px 10px rgba(0,0,0,.28);
+  }
+
+  /* Right column — typography/spacing copied from the reference hierarchy. */
+  .lv4-detailcopy{
+    grid-column:3!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    min-width:0!important;
+    padding:18px 15px 16px 10px!important;
+    overflow-y:auto!important;
+    color:#fff!important;
+    font-family:Inter,"Helvetica Neue",Arial,sans-serif!important;
+  }
+  .lv4-product-brand{
+    order:1!important;
+    margin:0!important;
+    color:rgba(255,255,255,.68)!important;
+    font:760 11px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;
+    letter-spacing:.12em!important;
+    text-transform:uppercase!important;
+  }
+  .lv4-product-source{order:2!important;margin:6px 0 0!important;color:rgba(255,255,255,.44)!important;font:650 9px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;letter-spacing:.06em!important}
+  .lv4-detailcopy h2{
+    order:3!important;
+    margin:13px 50px 7px 0!important;
+    color:#fff!important;
+    font:780 clamp(27px,2.25vw,35px)/1.02 Inter,"Helvetica Neue",Arial,sans-serif!important;
+    letter-spacing:-.052em!important;
+    white-space:nowrap!important;
+    overflow:hidden!important;
+    text-overflow:ellipsis!important;
+  }
+  .lv4-detailcopy>strong{
+    order:4!important;
+    display:block!important;
+    margin:10px 0 15px!important;
+    color:#fff!important;
+    font:850 clamp(28px,2.4vw,38px)/.96 Inter,"Helvetica Neue",Arial,sans-serif!important;
+    letter-spacing:-.045em!important;
+  }
+
+  /* Options as small glossy pills rather than a large block. */
+  .lv4-variants,.ynot-rich-variants,.ynot-loaded-variants{
+    order:5!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:7px!important;
+    margin:0 0 11px!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+  }
+  .lv4-variants button,.ynot-rich-variants button,.ynot-loaded-variants button{
+    width:auto!important;
+    min-width:0!important;
+    min-height:31px!important;
+    height:31px!important;
+    padding:0 12px!important;
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.22)!important;
+    background:rgba(255,255,255,.09)!important;
+    color:rgba(255,255,255,.88)!important;
+    font:720 9px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;
+    letter-spacing:.01em!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.08)!important;
+    backdrop-filter:blur(12px)!important;
+  }
+  .lv4-variants button.active,.ynot-rich-variants button.active,.ynot-loaded-variants button.active{
+    background:rgba(255,255,255,.90)!important;
+    color:#171817!important;
+    border-color:rgba(255,255,255,.95)!important;
+  }
+
+  .ynot-shipping-hint{order:6!important;margin:1px 0 11px!important;color:rgba(255,255,255,.52)!important;font:600 9px/1.35 Inter,"Helvetica Neue",Arial,sans-serif!important}
+  .ynot-product-proof{order:0!important;margin:0 0 10px!important}
+
+  /* Reference-like primary pill: preserve the actual YNOT BAG behavior. */
+  .lv4-actions{
+    order:7!important;
+    margin:0!important;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 48px!important;
+    gap:8px!important;
+  }
+  .lv4-actions>button{
+    height:48px!important;
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.20)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.08),0 8px 18px rgba(0,0,0,.12)!important;
+    font:800 11px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;
+    letter-spacing:.02em!important;
+  }
+  .lv4-actions>button:first-child{
+    background:#111212!important;
+    color:#fff!important;
+    border-color:rgba(255,255,255,.18)!important;
+  }
+  .lv4-actions>button:first-child svg{width:14px!important;height:14px!important}
+  .lv4-save-action{
+    width:48px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    background:rgba(255,255,255,.11)!important;
+    color:#fff!important;
+  }
+  .lv4-save-action.active{background:rgba(255,255,255,.92)!important;color:#151616!important}
+
+  /* More-like-this first, then product tags, exactly below the buying controls. */
+  .lv4-direction-row,.ynot-reference-directions{
+    order:8!important;
+    margin:10px 0 0!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:7px!important;
+  }
+  .lv4-direction-row button{
+    width:auto!important;
+    min-width:0!important;
+    min-height:31px!important;
+    padding:0 12px!important;
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.17)!important;
+    background:rgba(255,255,255,.07)!important;
+    color:rgba(255,255,255,.78)!important;
+    font:700 9px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;
+  }
+  .lv4-direction-row button:first-child{
+    background:rgba(255,255,255,.16)!important;
+    color:#fff!important;
+    border-color:rgba(255,255,255,.26)!important;
+  }
+  .lv4-tagrow,.ynot-card-tags,.ynot-reference-tags{
+    order:9!important;
+    margin:9px 0 0!important;
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:6px!important;
+    justify-content:flex-start!important;
+  }
+  .lv4-tagrow button,.ynot-card-tags button{
+    min-height:27px!important;
+    padding:0 10px!important;
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.13)!important;
+    background:rgba(255,255,255,.045)!important;
+    color:rgba(255,255,255,.54)!important;
+    font:670 8px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;
+    letter-spacing:.02em!important;
+  }
+
+  /* Keep the existing flip control, but make it the tiny reference-style description pill. */
+  .ynot-description-toggle,.ynot-reference-description{
+    order:10!important;
+    align-self:flex-start!important;
+    min-height:28px!important;
+    margin:10px 0 0!important;
+    padding:0 11px!important;
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+    background:rgba(255,255,255,.065)!important;
+    color:rgba(255,255,255,.68)!important;
+    font:720 8px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;
+    letter-spacing:.08em!important;
+    text-transform:uppercase!important;
+  }
+
+  /* Flip face remains functional and inherits the glossy card. */
+  .ynot-description-back{
+    position:absolute!important;
+    z-index:12!important;
+    inset:15px!important;
+    padding:36px 42px!important;
+    border-radius:22px!important;
+    border:1px solid rgba(255,255,255,.30)!important;
+    background:linear-gradient(140deg,rgba(117,120,118,.88),rgba(47,49,48,.94))!important;
+    color:#fff!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.20)!important;
+    backdrop-filter:blur(30px)!important;
+    -webkit-backdrop-filter:blur(30px)!important;
+    opacity:0;
+    pointer-events:none;
+    transform:rotateY(180deg);
+    transition:opacity .18s ease,transform .28s cubic-bezier(.2,.75,.2,1)!important;
+    backface-visibility:hidden;
+  }
+  .ynot-description-flipped .ynot-description-back{opacity:1!important;pointer-events:auto!important;transform:rotateY(0)!important}
+  .ynot-description-flipped>img,
+  .ynot-description-flipped>.lv4-gallery,
+  .ynot-description-flipped>.ynot-rich-gallery,
+  .ynot-description-flipped>.ynot-loaded-gallery,
+  .ynot-description-flipped>.lv4-detailcopy{opacity:0!important;pointer-events:none!important;transform:rotateY(-180deg)!important}
+  .ynot-description-back small{color:rgba(255,255,255,.52)!important;font:760 9px/1 Inter,"Helvetica Neue",Arial,sans-serif!important;letter-spacing:.13em!important}
+  .ynot-description-back h3{margin:13px 0 20px!important;font:800 31px/1.02 Inter,"Helvetica Neue",Arial,sans-serif!important;letter-spacing:-.045em!important}
+  .ynot-description-copy{max-width:720px!important;color:rgba(255,255,255,.76)!important;font:540 13px/1.65 Inter,"Helvetica Neue",Arial,sans-serif!important}
+  .ynot-description-close{position:absolute!important;right:18px!important;top:18px!important;min-height:32px!important;padding:0 13px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.17)!important;background:rgba(255,255,255,.09)!important;color:#fff!important;font:720 9px/1 Inter,"Helvetica Neue",Arial,sans-serif!important}
+
+  .lv4-close{
+    z-index:18!important;
+    width:40px!important;height:40px!important;
+    right:17px!important;top:17px!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.18)!important;
+    background:rgba(255,255,255,.10)!important;
+    color:#fff!important;
+    backdrop-filter:blur(14px)!important;
+  }
+  .lv4-close svg{width:17px!important;height:17px!important}
+}
