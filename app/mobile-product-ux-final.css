@@ -1,0 +1,160 @@
+/* Final mobile-only product UX pass. Desktop remains unchanged. */
+@media (max-width:899px){
+  /* Use the main product image as the gallery. Hide thumbnail rails entirely on phones. */
+  .lv4-detail .ynot-loaded-gallery,
+  .lv4-detail .lv4-gallery,
+  .lv4-detail .ynot-rich-gallery{
+    display:none!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
+
+  .lv4-detail>img,
+  .lv4-detail .ynot-main-product-image{
+    touch-action:pan-y!important;
+    user-select:none!important;
+    -webkit-user-drag:none!important;
+  }
+
+  /* Minimal swipe indicator: dots only, no thumbnail strip. */
+  .ynot-mobile-swipe-dots{
+    order:2!important;
+    position:relative!important;
+    z-index:8!important;
+    width:max-content!important;
+    max-width:70%!important;
+    min-height:18px!important;
+    margin:-28px auto 12px!important;
+    padding:5px 8px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:5px!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:rgba(8,9,9,.18)!important;
+    box-shadow:none!important;
+    backdrop-filter:blur(8px)!important;
+    -webkit-backdrop-filter:blur(8px)!important;
+    pointer-events:none!important;
+  }
+  .ynot-mobile-swipe-dots i{
+    display:block!important;
+    width:5px!important;
+    height:5px!important;
+    flex:0 0 5px!important;
+    border-radius:50%!important;
+    background:rgba(255,255,255,.42)!important;
+    box-shadow:none!important;
+    transition:transform .16s ease,background .16s ease!important;
+  }
+  .ynot-mobile-swipe-dots i.active{
+    background:#fff!important;
+    transform:scale(1.35)!important;
+  }
+
+  /* Original merchant dot: a true corner circle, never an oval pill. */
+  .lv4-detail .ynot-origin-dot,
+  .ynot-origin-dot{
+    position:absolute!important;
+    z-index:35!important;
+    right:13px!important;
+    bottom:13px!important;
+    left:auto!important;
+    top:auto!important;
+    width:30px!important;
+    min-width:30px!important;
+    max-width:30px!important;
+    height:30px!important;
+    min-height:30px!important;
+    max-height:30px!important;
+    aspect-ratio:1/1!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.68)!important;
+    background:rgba(255,255,255,.92)!important;
+    box-shadow:0 7px 18px rgba(0,0,0,.14)!important;
+    overflow:hidden!important;
+  }
+
+  /* Description is centered on the phone product card. */
+  .lv4-detail .ynot-reference-description,
+  .lv4-detail .ynot-description-toggle{
+    position:relative!important;
+    left:auto!important;
+    right:auto!important;
+    transform:none!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:max-content!important;
+    max-width:calc(100% - 32px)!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+    text-align:center!important;
+  }
+
+  /* Profile/sign-in affordance belongs on the left edge of the mobile app header. */
+  .ynot-reference-right{
+    display:block!important;
+    position:fixed!important;
+    z-index:270!important;
+    left:12px!important;
+    top:12px!important;
+    right:auto!important;
+    width:auto!important;
+    height:auto!important;
+    padding:0!important;
+    margin:0!important;
+    pointer-events:none!important;
+  }
+  .ynot-reference-right>.ynot-reference-notify{display:none!important}
+  .ynot-reference-right>.ynot-reference-avatar,
+  .ynot-reference-right>.ynot-reference-signin{
+    pointer-events:auto!important;
+    position:relative!important;
+    inset:auto!important;
+    margin:0!important;
+  }
+  .ynot-reference-right>.ynot-reference-avatar{
+    display:grid!important;
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    border-radius:50%!important;
+  }
+  .ynot-reference-right>.ynot-reference-signin{
+    height:38px!important;
+    min-width:38px!important;
+    max-width:112px!important;
+  }
+  .ynot-reference-right>.ynot-reference-signin.has-profile{
+    width:38px!important;
+    min-width:38px!important;
+    max-width:38px!important;
+    padding:0!important;
+    border-radius:50%!important;
+    overflow:hidden!important;
+  }
+  .ynot-reference-right>.ynot-reference-signin.has-profile img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+  }
+  .ynot-reference-right>.ynot-reference-signin.has-profile span,
+  .ynot-reference-right>.ynot-reference-signin.has-profile b{display:none!important}
+
+  /* A YNOT Deal should feel integrated, never trigger the page-darkening veil. */
+  .ynot-app-shell:has(.ynot-deal)::after,
+  .ynot-app-shell:has(.ynot-deal-pill)::after,
+  .ynot-app-shell:has(.ynot-deal-badge)::after,
+  .ynot-app-shell:has(.lv4-deal)::after{
+    content:none!important;
+    display:none!important;
+    background:transparent!important;
+    opacity:0!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+}
