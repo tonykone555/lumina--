@@ -1,0 +1,189 @@
+/* Final world/product pass — imported last so the visual rules below win everywhere. */
+
+/* Keep the world fully alive underneath the header. The shadow is visual only and never blocks wheel/pinch/pan. */
+.ynot-app-shell::before{
+  content:""!important;
+  display:block!important;
+  position:fixed!important;
+  z-index:185!important;
+  pointer-events:none!important;
+  top:0!important;
+  left:0!important;
+  right:0!important;
+  bottom:auto!important;
+  width:100%!important;
+  height:240px!important;
+  background:linear-gradient(180deg,
+    rgba(0,0,0,.66) 0%,
+    rgba(0,0,0,.48) 23%,
+    rgba(0,0,0,.30) 46%,
+    rgba(0,0,0,.14) 66%,
+    rgba(0,0,0,.05) 82%,
+    rgba(0,0,0,0) 100%)!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+
+/* No crop line / seam in the header on either desktop or phone. Bubbles continue behind it. */
+.ynot-reference-header{
+  background:transparent!important;
+  border:0!important;
+  border-bottom:0!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.ynot-reference-header::before,
+.ynot-reference-header::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  border:0!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+/* Opening a product must not darken, blur, or fade the world/header. */
+.ynot-app-shell:has(.lv4-detail)::after{
+  content:none!important;
+  display:none!important;
+  background:transparent!important;
+  opacity:0!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+.ynot-app-shell.chrome-hidden .ynot-reference-header{
+  opacity:1!important;
+  filter:none!important;
+  visibility:visible!important;
+}
+
+/* Main product image is the image itself — no outside frame, border or inset card around it. */
+.lv4-detail>img,
+.lv4-detail .ynot-main-product-image,
+.lv4-detail .ynot-full-slider-image{
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+/* Give the YNOT glass bubble enough horizontal room for the complete wordmark. */
+.ynot-reference-brand{
+  min-width:96px!important;
+  width:auto!important;
+  padding-left:18px!important;
+  padding-right:18px!important;
+  justify-content:center!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  box-sizing:border-box!important;
+}
+.ynot-reference-brand>b{
+  display:block!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+}
+
+/* World remains scroll/zoom driven in both directions; no visual layer may intercept it. */
+.lv4-world,.lv4-stage,.lv4-products,.lv4-product-layer{
+  overflow:visible!important;
+}
+
+@media (max-width:899px){
+  .ynot-app-shell::before{height:220px!important}
+
+  .ynot-reference-brand{
+    min-width:88px!important;
+    padding-left:14px!important;
+    padding-right:14px!important;
+  }
+
+  /* Product card stays centered and clear on phone. */
+  .lv4-detail{
+    left:50%!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translate(-50%,-50%)!important;
+    width:min(92vw,430px)!important;
+    max-height:calc(100dvh - 28px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+  }
+
+  /* Main media first, then one draggable horizontal mini-slider, then the copy. */
+  .lv4-detail>img{order:1!important;width:100%!important;max-width:100%!important;margin:0!important}
+  .lv4-detail .ynot-loaded-gallery,
+  .lv4-detail .lv4-gallery{
+    order:2!important;
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    max-height:none!important;
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:8px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    overscroll-behavior-x:contain!important;
+    scroll-snap-type:x mandatory!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-x!important;
+    scrollbar-width:none!important;
+    margin:8px 0 0!important;
+    padding:7px 2px 4px!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .lv4-detail .ynot-loaded-gallery::-webkit-scrollbar,
+  .lv4-detail .lv4-gallery::-webkit-scrollbar{display:none!important}
+
+  /* If hydration has created the richer gallery, never leave a second side-gallery visible. */
+  .lv4-detail:has(.ynot-loaded-gallery) .lv4-gallery:not(.ynot-loaded-gallery){display:none!important}
+
+  .lv4-detail .ynot-loaded-gallery button,
+  .lv4-detail .lv4-gallery button{
+    position:relative!important;
+    flex:0 0 64px!important;
+    width:64px!important;
+    min-width:64px!important;
+    height:58px!important;
+    scroll-snap-align:start!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    border-radius:14px!important;
+    border:1px solid rgba(255,255,255,.16)!important;
+    background:rgba(255,255,255,.06)!important;
+    box-shadow:none!important;
+  }
+  .lv4-detail .ynot-loaded-gallery button.active,
+  .lv4-detail .lv4-gallery button.active{
+    border-color:rgba(255,255,255,.58)!important;
+    box-shadow:0 0 0 1px rgba(255,255,255,.10)!important;
+  }
+  .lv4-detail .ynot-loaded-gallery img,
+  .lv4-detail .lv4-gallery img{
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    border:0!important;
+    box-shadow:none!important;
+    border-radius:inherit!important;
+  }
+  .lv4-detail .lv4-detailcopy{order:3!important}
+}
