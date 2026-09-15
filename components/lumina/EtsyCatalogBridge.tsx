@@ -4,10 +4,19 @@ import {useEffect} from "react";
 
 type EtsyProduct={id:string;title:string;brand:string;price:number|null;currency?:string;image:string;images?:string[];url?:string;tags?:string[];source?:string;variants?:unknown[];description?:string;supplierPrice?:number;retailPrice?:number;pricingMode?:string;klarna?:unknown;rating?:number|null;reviewCount?:number;reviews?:unknown[]};
 let etsySelected=false;
+const ETSY_CATEGORY_QUERIES:[RegExp,string][]=[
+ [/fashion|dress|shoes|accessories/i,"women clothing dresses jewelry accessories"],
+ [/fitness|activewear|recovery|training/i,"activewear workout accessories fitness"],
+ [/beauty|skincare|self care/i,"skincare beauty self care"],
+ [/hair care|styling tools|scalp/i,"hair accessories hair care styling"],
+ [/home furniture|lighting|decor/i,"home decor wall art furniture lighting"],
+ [/tech gadgets|audio|phone accessories/i,"tech accessories phone accessories gifts"],
+ [/interesting trending products|worth discovering/i,"handmade gifts jewelry clothing home decor"]
+];
+function etsyQuery(raw:string){const clean=raw.trim();for(const [pattern,replacement] of ETSY_CATEGORY_QUERIES)if(pattern.test(clean))return replacement;return clean||"handmade gifts"}
 
-/** Data adapter only. It renders no Etsy UI: Etsy products are normalized into the
- * same catalog response consumed by LuminaWorld, so the existing lv4 product
- * bubbles/stage are reused exactly like the other marketplace sources. */
+/** Data adapter only: Etsy results are fed into LuminaWorld's existing product
+ * array so Etsy uses the exact same native YNOT bubbles, stage and interactions. */
 export default function EtsyCatalogBridge(){
  useEffect(()=>{
   const originalFetch=window.fetch.bind(window);
@@ -16,7 +25,7 @@ export default function EtsyCatalogBridge(){
   window.fetch=(async(input:RequestInfo|URL,init?:RequestInit)=>{
    const raw=typeof input==="string"?input:input instanceof URL?input.toString():input.url;
    if(!etsySelected||!raw.startsWith("/api/catalog?"))return originalFetch(input,init);
-   const sourceUrl=new URL(raw,window.location.origin),q=sourceUrl.searchParams.get("q")||"gifts",direction=sourceUrl.searchParams.get("direction")||"",page=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR";
+   const sourceUrl=new URL(raw,window.location.origin),q=etsyQuery(sourceUrl.searchParams.get("q")||""),direction=sourceUrl.searchParams.get("direction")||"",page=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR";
    const params=new URLSearchParams({q:[q,direction].filter(Boolean).join(", "),page,country,currency:"EUR"});
    const response=await originalFetch(`/api/etsy?${params.toString()}`,{...init,cache:"no-store"});
    const data=await response.clone().json().catch(()=>({}));
