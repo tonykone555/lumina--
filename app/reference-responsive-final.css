@@ -1,0 +1,238 @@
+/* Final reference pass: separated spatial lattice, seamless mobile header, responsive glossy product card. */
+
+/* Product bubbles must always keep air between them. */
+.lv4-shell.ynot-desktop-lattice-active .lv4-product{
+  border:1px solid rgba(255,255,255,.38)!important;
+  background:rgba(242,242,239,.96)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.76),0 11px 26px rgba(0,0,0,.22)!important;
+  overflow:visible!important;
+}
+.lv4-shell.ynot-desktop-lattice-active .lv4-product img{
+  inset:4%!important;
+  width:92%!important;
+  height:92%!important;
+  object-fit:cover!important;
+  border-radius:50%!important;
+}
+.lv4-shell.ynot-desktop-lattice-active .lv4-price{
+  left:50%!important;
+  right:auto!important;
+  bottom:-9px!important;
+  transform:translateX(-50%)!important;
+  width:max-content!important;
+  max-width:92%!important;
+  min-width:0!important;
+  padding:5px 8px!important;
+  border-radius:999px!important;
+  border:1px solid rgba(255,255,255,.82)!important;
+  background:rgba(250,250,247,.95)!important;
+  color:#171818!important;
+  box-shadow:0 6px 14px rgba(0,0,0,.14)!important;
+  font:820 8px/1 Inter,ui-sans-serif,system-ui!important;
+  white-space:nowrap!important;
+}
+
+@media (max-width:899px){
+  /* Old world/header controls must never show through the new header. */
+  .lv4-logo,.lv4-search,.lv4-market-toggle,.lv4-source-picker,.lv4-mobile-menu,
+  .ynot-profile-orb,.ynot-compass-tools{display:none!important}
+
+  .ynot-app-shell{background:#080909!important;overflow:hidden!important}
+  .lv4-world{inset:0!important;padding-top:0!important;overflow:hidden!important}
+
+  /* Long feathered canopy: no hard crop where header meets the world. */
+  .ynot-app-shell::before{
+    content:""!important;
+    position:fixed!important;
+    z-index:190!important;
+    pointer-events:none!important;
+    inset:0 0 auto 0!important;
+    height:214px!important;
+    background:linear-gradient(180deg,
+      rgba(5,6,6,.97) 0%,
+      rgba(5,6,6,.91) 24%,
+      rgba(5,6,6,.72) 46%,
+      rgba(5,6,6,.41) 65%,
+      rgba(5,6,6,.17) 81%,
+      rgba(5,6,6,.04) 92%,
+      rgba(5,6,6,0) 100%)!important;
+    box-shadow:0 42px 78px rgba(0,0,0,.14)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+
+  /* Compact version of the desktop reference header. */
+  .ynot-reference-header{
+    position:fixed!important;
+    z-index:240!important;
+    inset:0 0 auto 0!important;
+    height:146px!important;
+    padding:12px 12px 0!important;
+    display:block!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    pointer-events:none!important;
+  }
+  .ynot-reference-header button{font-family:Inter,"Helvetica Neue",Arial,sans-serif!important}
+  .ynot-reference-left,.ynot-reference-center,.ynot-reference-right{pointer-events:auto!important}
+
+  .ynot-reference-left{position:absolute!important;left:12px!important;top:13px!important;padding:0!important}
+  .ynot-reference-brand{
+    width:66px!important;height:42px!important;padding:0 8px!important;gap:6px!important;
+    border-radius:23px!important;border:1px solid rgba(255,255,255,.21)!important;
+    background:linear-gradient(180deg,rgba(76,79,79,.58),rgba(20,22,22,.78))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.23),inset 0 -8px 17px rgba(0,0,0,.20),0 9px 20px rgba(0,0,0,.22)!important;
+    color:#fff!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;
+  }
+  .ynot-reference-brand>span{width:28px!important;height:28px!important;font-size:12px!important}
+  .ynot-reference-brand>b{font-size:0!important}
+  .ynot-reference-brand>b::after{content:"YNOT";font:850 9px/1 Inter,sans-serif!important;letter-spacing:-.02em!important}
+
+  .ynot-reference-center{position:static!important;display:block!important}
+  .ynot-reference-topline{
+    position:absolute!important;top:12px!important;left:88px!important;right:12px!important;
+    height:44px!important;display:flex!important;align-items:center!important;gap:7px!important;
+  }
+  .ynot-reference-header .ynot-top-mode{
+    position:relative!important;inset:auto!important;transform:none!important;
+    flex:1 1 auto!important;width:auto!important;min-width:0!important;height:44px!important;padding:4px!important;
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:3px!important;
+    border-radius:25px!important;border:1px solid rgba(255,255,255,.22)!important;
+    background:linear-gradient(180deg,rgba(74,77,77,.66),rgba(20,22,22,.81))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.26),inset 0 -9px 20px rgba(0,0,0,.23),0 10px 24px rgba(0,0,0,.24)!important;
+    backdrop-filter:blur(20px) saturate(1.14)!important;-webkit-backdrop-filter:blur(20px) saturate(1.14)!important;
+  }
+  .ynot-reference-header .ynot-top-mode button{
+    height:35px!important;border:0!important;border-radius:20px!important;background:transparent!important;
+    color:rgba(255,255,255,.40)!important;font:820 8px/1 Inter,sans-serif!important;letter-spacing:.10em!important;
+  }
+  .ynot-reference-header .ynot-top-mode button.active{
+    color:#fff!important;background:linear-gradient(180deg,rgba(18,19,19,.89),rgba(38,40,40,.72))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.15),0 4px 12px rgba(0,0,0,.20)!important;
+  }
+  .ynot-reference-nav-tools{display:flex!important;gap:6px!important;flex:0 0 auto!important}
+  .ynot-reference-nav-tools button{
+    width:42px!important;height:42px!important;padding:0!important;display:grid!important;place-items:center!important;
+    border-radius:18px!important;border:1px solid rgba(255,255,255,.21)!important;
+    background:linear-gradient(180deg,rgba(76,79,79,.61),rgba(20,22,22,.80))!important;color:#fff!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.23),inset 0 -8px 18px rgba(0,0,0,.21),0 9px 20px rgba(0,0,0,.22)!important;
+  }
+  .ynot-reference-nav-tools svg{width:17px!important;height:17px!important}
+
+  .ynot-reference-header .ynot-world-controls{
+    position:absolute!important;top:64px!important;left:12px!important;right:12px!important;
+    transform:none!important;display:block!important;pointer-events:auto!important;
+  }
+  .ynot-reference-header .ynot-world-row{
+    width:100%!important;height:48px!important;padding:4px!important;
+    display:grid!important;grid-template-columns:1fr 1fr!important;gap:3px!important;
+    border-radius:27px!important;border:1px solid rgba(255,255,255,.23)!important;
+    background:linear-gradient(180deg,rgba(119,122,120,.61),rgba(47,50,49,.69))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.34),inset 0 -10px 24px rgba(0,0,0,.18),0 12px 26px rgba(0,0,0,.22)!important;
+    backdrop-filter:blur(20px) saturate(1.08)!important;-webkit-backdrop-filter:blur(20px) saturate(1.08)!important;
+  }
+  .ynot-reference-header .ynot-world-row button{
+    height:39px!important;border:0!important;border-radius:22px!important;background:transparent!important;
+    color:rgba(255,255,255,.60)!important;font:760 9px/1 Inter,sans-serif!important;letter-spacing:.12em!important;
+  }
+  .ynot-reference-header .ynot-world-row button.active{
+    color:#fff!important;background:linear-gradient(180deg,rgba(219,221,219,.32),rgba(146,150,148,.18))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.30),0 5px 12px rgba(0,0,0,.15)!important;
+  }
+  .ynot-reference-header .ynot-view-source{
+    position:absolute!important;top:51px!important;left:50%!important;transform:translateX(-50%)!important;
+  }
+  .ynot-reference-header .ynot-source-trigger-clean{
+    height:27px!important;min-width:82px!important;padding:0 9px!important;border:0!important;background:transparent!important;
+    box-shadow:none!important;color:rgba(255,255,255,.78)!important;font:650 9px/1 Inter,sans-serif!important;
+  }
+  .ynot-reference-header .ynot-source-trigger-clean svg{width:11px!important;height:11px!important}
+  .ynot-reference-right{display:none!important}
+
+  /* Keep the world visible behind the fade, but begin readable products beneath the controls. */
+  .lv4-shell.ynot-desktop-lattice-active .lv4-stage{display:block!important;padding:0!important}
+  .lv4-shell.ynot-desktop-lattice-active .lv4-product{
+    transform:translate(-50%,-50%)!important;
+    border-width:1px!important;
+  }
+  .lv4-shell.ynot-desktop-lattice-active .lv4-price{
+    bottom:-7px!important;padding:4px 7px!important;font-size:7px!important;
+  }
+
+  /* Bottom browsing controls lighter/smaller so the world remains the focus. */
+  .ynot-bottom-search{left:14px!important;right:14px!important;bottom:18px!important;width:auto!important;max-width:none!important;height:54px!important}
+  .ynot-bottom-search input{font-size:14px!important}
+  .subcategory-nav,.ynot-subcategory-nav{bottom:82px!important}
+
+  /* Mobile product card = desktop visual language, reflowed rather than redesigned. */
+  .lv4-detail{
+    position:fixed!important;z-index:260!important;
+    left:50%!important;right:auto!important;top:50%!important;bottom:auto!important;
+    transform:translate(-50%,-50%)!important;
+    width:calc(100vw - 24px)!important;
+    height:min(720px,calc(100dvh - 86px))!important;
+    max-height:calc(100dvh - 86px)!important;
+    padding:12px!important;
+    display:grid!important;
+    grid-template-columns:56px minmax(0,1fr)!important;
+    grid-template-rows:minmax(250px,39dvh) auto!important;
+    gap:10px!important;
+    overflow-y:auto!important;overflow-x:hidden!important;
+    border-radius:27px!important;
+    border:1px solid rgba(255,255,255,.38)!important;
+    background:linear-gradient(135deg,rgba(157,160,157,.49),rgba(49,52,51,.74))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.40),0 28px 74px rgba(0,0,0,.52)!important;
+    backdrop-filter:blur(14px) saturate(.92)!important;-webkit-backdrop-filter:blur(14px) saturate(.92)!important;
+    isolation:isolate!important;
+  }
+  .lv4-detail::before{
+    content:""!important;position:absolute!important;inset:0!important;pointer-events:none!important;z-index:-1!important;
+    border-radius:inherit!important;background:radial-gradient(ellipse at 26% 0%,rgba(255,255,255,.23),transparent 34%)!important;
+  }
+  .lv4-detail>img{
+    grid-column:2!important;grid-row:1!important;width:100%!important;height:100%!important;min-height:0!important;
+    object-fit:contain!important;margin:0!important;border-radius:19px!important;
+    border:1px solid rgba(255,255,255,.58)!important;background:rgba(248,248,245,.97)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.94),0 10px 24px rgba(0,0,0,.13)!important;
+  }
+  .lv4-gallery,.ynot-rich-gallery,.ynot-loaded-gallery{
+    grid-column:1!important;grid-row:1!important;display:flex!important;flex-direction:column!important;
+    gap:8px!important;padding:1px!important;margin:0!important;overflow:visible!important;
+  }
+  .lv4-gallery>button,.ynot-rich-gallery>button,.ynot-loaded-gallery>button{
+    position:relative!important;width:54px!important;height:54px!important;min-width:54px!important;flex:0 0 54px!important;
+    padding:0!important;overflow:hidden!important;border-radius:13px!important;border:1px solid rgba(255,255,255,.44)!important;
+    background:linear-gradient(145deg,rgba(255,255,255,.93),rgba(229,231,227,.74))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.82),0 6px 14px rgba(0,0,0,.13)!important;
+  }
+  .lv4-gallery img,.ynot-rich-gallery img,.ynot-loaded-gallery img{width:100%!important;height:100%!important;object-fit:contain!important;border-radius:11px!important;background:#f7f7f4!important}
+  .ynot-reference-hidden-thumb{display:none!important}
+  .ynot-reference-more-thumb::before{content:"";position:absolute;z-index:4;inset:0;border-radius:12px;background:rgba(18,19,19,.47)!important}
+  .ynot-reference-more-thumb::after{content:attr(data-more);position:absolute;z-index:5;inset:0;display:grid;place-items:center;color:#fff;font:850 14px/1 Inter,sans-serif!important}
+
+  .lv4-detailcopy{
+    grid-column:1 / -1!important;grid-row:2!important;display:flex!important;flex-direction:column!important;
+    min-width:0!important;padding:8px 6px 10px!important;overflow:visible!important;color:#fff!important;
+    font-family:Inter,"Helvetica Neue",Arial,sans-serif!important;
+  }
+  .lv4-product-brand{order:1!important;margin:0!important;color:rgba(255,255,255,.66)!important;font:760 9px/1 Inter,sans-serif!important;letter-spacing:.11em!important;text-transform:uppercase!important}
+  .lv4-product-source{order:2!important;margin:4px 0 0!important;color:rgba(255,255,255,.42)!important;font:650 8px/1 Inter,sans-serif!important}
+  .lv4-detailcopy h2{order:3!important;margin:9px 38px 3px 0!important;color:#fff!important;font:790 22px/1.03 Inter,sans-serif!important;letter-spacing:-.045em!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  .lv4-detailcopy>strong{order:4!important;margin:7px 0 11px!important;color:#fff!important;font:850 28px/.98 Inter,sans-serif!important;letter-spacing:-.04em!important}
+  .lv4-variants,.ynot-rich-variants,.ynot-loaded-variants{order:5!important;display:flex!important;flex-wrap:wrap!important;gap:6px!important;margin:0 0 9px!important;padding:0!important;background:transparent!important;border:0!important}
+  .lv4-variants button,.ynot-rich-variants button,.ynot-loaded-variants button{min-height:30px!important;height:30px!important;padding:0 11px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.20)!important;background:rgba(255,255,255,.08)!important;color:#fff!important;font:720 8px/1 Inter,sans-serif!important}
+  .lv4-actions{order:7!important;margin:0!important;display:grid!important;grid-template-columns:minmax(0,1fr) 46px!important;gap:7px!important}
+  .lv4-actions>button{height:46px!important;border-radius:999px!important;font:800 10px/1 Inter,sans-serif!important}
+  .lv4-actions>button:first-child{background:#111212!important;color:#fff!important}
+  .lv4-direction-row,.ynot-reference-directions{order:8!important;margin:9px 0 0!important;display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+  .lv4-tagrow,.ynot-card-tags,.ynot-reference-tags{order:9!important;margin:8px 0 0!important;display:flex!important;flex-wrap:wrap!important;gap:5px!important}
+  .ynot-description-toggle,.ynot-reference-description{order:10!important;align-self:flex-start!important;margin:9px 0 0!important;min-height:27px!important;padding:0 10px!important;border-radius:999px!important}
+  .lv4-close{position:absolute!important;z-index:18!important;right:13px!important;top:13px!important;width:36px!important;height:36px!important;border-radius:50%!important;background:rgba(30,32,31,.48)!important;color:#fff!important;border:1px solid rgba(255,255,255,.20)!important}
+
+  .ynot-description-back{inset:12px!important;padding:28px 24px!important;border-radius:20px!important;overflow-y:auto!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+  .ynot-description-back h3{font-size:25px!important}
+  .ynot-description-copy{font-size:12px!important;line-height:1.58!important}
+
+  .ynot-app-shell.chrome-hidden .ynot-reference-header{opacity:.34!important;filter:blur(.4px)!important;visibility:visible!important}
+}
