@@ -64,7 +64,8 @@ function renderDescription(root:HTMLElement,product:Product){
  const close=document.createElement("button");
  close.type="button";
  close.className="ynot-description-close";
- close.textContent="Back";
+ close.textContent="←";
+ close.setAttribute("aria-label","Back to product");
  const label=document.createElement("small");
  label.textContent="PRODUCT DESCRIPTION";
  const heading=document.createElement("h3");
