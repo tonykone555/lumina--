@@ -355,3 +355,67 @@
   }
   .lv4-detail .lv4-detailcopy{order:3!important}
 }
+
+/* Final popup/slider corrections. */
+.ynot-app-shell:has(.lv4-detail)::before,
+.ynot-app-shell:has(.ynot-full-slider)::before{
+  content:none!important;
+  display:none!important;
+  opacity:0!important;
+  height:0!important;
+  background:none!important;
+}
+
+@media (max-width:899px){
+  .ynot-app-shell::before{
+    height:108px!important;
+    background:linear-gradient(180deg,
+      rgba(0,0,0,.46) 0%,
+      rgba(0,0,0,.27) 32%,
+      rgba(0,0,0,.10) 65%,
+      rgba(0,0,0,0) 100%)!important;
+  }
+}
+
+/* The +N slider image sizes itself from its own aspect ratio, so the glass frame hugs the photo instead of extending below it. */
+.lv4-detail .ynot-full-slider-image{
+  display:block!important;
+  width:auto!important;
+  height:auto!important;
+  max-width:calc(100% - 112px)!important;
+  max-height:calc(100% - 58px)!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  align-self:center!important;
+  justify-self:center!important;
+  margin:auto!important;
+  border:1px solid rgba(255,255,255,.26)!important;
+  border-radius:24px!important;
+  background:rgba(255,255,255,.025)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 12px 28px rgba(0,0,0,.14)!important;
+}
+
+/* Slightly stronger contrast for product-card text fields, choices and pills. */
+.lv4-detailcopy input,
+.lv4-detailcopy textarea,
+.lv4-detailcopy select,
+.lv4-variants button,
+.ynot-rich-variants button,
+.ynot-loaded-variants button,
+.ynot-description-toggle{
+  background:rgba(255,255,255,.14)!important;
+  border-color:rgba(255,255,255,.30)!important;
+  color:rgba(255,255,255,.96)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 4px 12px rgba(0,0,0,.10)!important;
+}
+.lv4-detailcopy input::placeholder,
+.lv4-detailcopy textarea::placeholder{
+  color:rgba(255,255,255,.68)!important;
+}
+.lv4-variants button.active,
+.ynot-rich-variants button.active,
+.ynot-loaded-variants button.active{
+  background:rgba(255,255,255,.24)!important;
+  border-color:rgba(255,255,255,.48)!important;
+  color:#fff!important;
+}
