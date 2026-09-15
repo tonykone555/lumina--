@@ -1,33 +1,127 @@
 "use client";
 
 import {useEffect,useLayoutEffect,useRef} from "react";
-import {dynamicLuminaPrice} from "@/lib/commerce/engine";
 
-type Variant={id?:string;label?:string;price?:number|null;currency?:string;image?:string;url?:string;available?:boolean};
-type Product={id:string;variantId?:string;title:string;brand?:string;price:number|null;currency?:string;image?:string;images?:string[];url?:string;source?:string;category?:string;variants?:Variant[];description?:string;descriptionHydrated?:boolean;supplierPrice?:number};
-type RichResponse={url?:string;variantId?:string;product?:Product;error?:string};
-const products=new Map<string,Product>();const pending=new Map<string,Promise<Product>>();
-function k(s:string){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
-function isShopify(p?:Product){return Boolean(p?.source?.toLowerCase().includes("shopify"))}
-function money(v:number,currency="EUR"){try{return new Intl.NumberFormat(undefined,{style:"currency",currency,maximumFractionDigits:2}).format(v)}catch{return`${v.toFixed(2)} ${currency}`}}
-function inferCategory(p:Product){const text=`${p.category||""} ${p.title||""}`.toLowerCase();if(/dress|fashion|shirt|shoe|bag|jewel|accessor|apparel|clothing/.test(text))return"fashion";if(/fitness|gym|training|running|recovery|sport/.test(text))return"fitness";if(/skin|beauty|serum|cream|spf|cleanser/.test(text))return"skin";if(/hair|scalp|shampoo|conditioner/.test(text))return"hair";if(/home|decor|furniture|lamp|kitchen|bedding/.test(text))return"home";if(/tech|phone|audio|headphone|charger|gaming|smart/.test(text))return"tech";return"default"}
-function retail(p:Product,supplier?:number|null){const base=Number(supplier??p.supplierPrice??p.price);if(!Number.isFinite(base)||base<=0)return null;return dynamicLuminaPrice({sourceId:p.source||"discovery",productId:p.variantId||p.id,title:p.title,category:inferCategory(p),price:base,currency:p.currency||"EUR",shipping:0,stockConfidence:.75,returnPolicyScore:.7,regionMatch:.75})}
-function selectableVariants(p:Product){const seen=new Set<string>(),list=(p.variants||[]).filter(v=>{const label=k(v.label||"");if(!v.id||v.available===false||!label||seen.has(label))return false;seen.add(label);return true});if(list.length>1)return list;if(!list.length)return[];const label=k(list[0].label||"");return label&&label!==k(p.title)&&!/^default(?: title)?$|^option$/.test(label)?list:[]}
-function ingestPayload(data:unknown){const list=(data as {products?:Product[]})?.products;if(!Array.isArray(list))return;for(const p of list)if(p?.title){const previous=products.get(k(p.title));products.set(k(p.title),{...previous,...p,supplierPrice:p.supplierPrice??previous?.supplierPrice})}}
-async function hydrate(product:Product){const id=k(product.title);const cached=products.get(id);if(cached?.descriptionHydrated)return cached;const old=pending.get(id);if(old)return old;const job=(async()=>{if(!isShopify(product))return product;const r=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(product)});const data=await r.json() as RichResponse;if(!r.ok||!data.product)throw new Error(data.error||"PRODUCT_DETAILS_UNAVAILABLE");const rich={...product,...data.product,descriptionHydrated:true,supplierPrice:data.product.supplierPrice??product.supplierPrice,url:data.url||data.product.url||product.url};products.set(id,rich);return rich})().finally(()=>pending.delete(id));pending.set(id,job);return job}
-function currentProduct(title:string){return products.get(k(title))}
-function clearShell(shell:HTMLElement){shell.classList.remove("ynot-description-flipped");delete shell.dataset.ynotVariantId;shell.querySelectorAll(".ynot-rich-gallery,.ynot-rich-variants,.ynot-description-back,.ynot-loaded-gallery,.ynot-loaded-variants").forEach(x=>x.remove());const root=shell.querySelector<HTMLElement>(".lv4-detailcopy");if(root){delete root.dataset.ynotHydrated;root.querySelector(".ynot-description-toggle")?.remove()}}
-function render(root:HTMLElement,p:Product){const shell=root.closest(".lv4-detail") as HTMLElement|null;if(!shell)return;const currentTitle=root.querySelector("h2")?.textContent?.trim()||"";if(k(currentTitle)!==k(p.title))return;const options=selectableVariants(p);const signature=`${k(p.title)}|${p.id}|${(p.images||[]).length}|${options.length}|${p.description?.length||0}`;if(root.dataset.ynotHydrated===signature)return;root.dataset.ynotHydrated=signature;const main=shell.querySelector<HTMLImageElement>(":scope > img");
- shell.querySelector(".lv4-gallery")?.remove();shell.querySelector(".ynot-rich-gallery")?.remove();const images=[...new Set([p.image,...(p.images||[]),...(p.variants||[]).map(v=>v.image).filter(Boolean)].filter(Boolean) as string[])];
- if(images.length>1){const gallery=document.createElement("div");gallery.className="ynot-rich-gallery";for(const src of images.slice(0,12)){const b=document.createElement("button");b.type="button";const img=document.createElement("img");img.src=src;img.alt="";b.appendChild(img);b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();if(main)main.src=src;gallery.querySelectorAll("button").forEach(x=>x.classList.toggle("active",x===b))});gallery.appendChild(b)}main?.insertAdjacentElement("afterend",gallery)}
- root.querySelector(".lv4-variants")?.remove();root.querySelector(".ynot-rich-variants")?.remove();if(options.length){const variants=document.createElement("div");variants.className="ynot-rich-variants";for(const v of options.slice(0,24)){const b=document.createElement("button");b.type="button";b.disabled=v.available===false;b.textContent=v.label||"Option";if(String(v.id||"")===String(p.variantId||""))b.classList.add("active");b.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();variants.querySelectorAll("button").forEach(x=>x.classList.remove("active"));b.classList.add("active");shell.dataset.ynotVariantId=String(v.id||"");const next={...p,variantId:v.id,price:v.price??p.price,supplierPrice:v.price??p.supplierPrice??p.price,currency:v.currency||p.currency,image:v.image||p.image,url:v.url||p.url};products.set(k(p.title),next);if(v.image&&main)main.src=v.image;const strong=root.querySelector<HTMLElement>("strong");const rp=retail(next,v.price);if(strong&&rp!=null)strong.textContent=money(rp,next.currency||"EUR")});variants.appendChild(b)}const actions=root.querySelector(".lv4-actions");actions?.parentElement?.insertBefore(variants,actions)}
- let flip=root.querySelector<HTMLButtonElement>(".ynot-description-toggle");if(!flip){flip=document.createElement("button");flip.type="button";flip.className="ynot-description-toggle";flip.textContent="Description";root.appendChild(flip)}let back=shell.querySelector<HTMLElement>(".ynot-description-back");if(!back){back=document.createElement("section");back.className="ynot-description-back";const close=document.createElement("button");close.type="button";close.className="ynot-description-close";close.textContent="Back";const label=document.createElement("small");label.textContent="PRODUCT DESCRIPTION";const h=document.createElement("h3");h.textContent=p.title;const copy=document.createElement("p");copy.className="ynot-description-copy";back.append(close,label,h,copy);shell.appendChild(back);close.addEventListener("click",e=>{e.preventDefault();e.stopPropagation();shell.classList.remove("ynot-description-flipped")})}const copy=back.querySelector<HTMLElement>(".ynot-description-copy");if(copy)copy.textContent=p.description?.trim()||"No merchant description was supplied for this product.";flip.onclick=e=>{e.preventDefault();e.stopPropagation();shell.classList.add("ynot-description-flipped")};
- root.querySelectorAll(".lv4-tagrow button").forEach(btn=>{const text=(btn.textContent||"").trim();if(/[€$£]\s?\d|\d+[.,]\d{2}/.test(text))btn.remove()});
+type Product={id:string;title:string;source?:string;description?:string;descriptionHydrated?:boolean;url?:string;[key:string]:unknown};
+type RichResponse={url?:string;product?:Product;error?:string};
+
+const products=new Map<string,Product>();
+const pending=new Map<string,Promise<Product>>();
+
+function key(value:string){return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
+function isShopify(product?:Product){return Boolean(product?.source?.toLowerCase().includes("shopify"))}
+function ingestPayload(data:unknown){
+ const list=(data as {products?:Product[]})?.products;
+ if(!Array.isArray(list))return;
+ for(const product of list){
+  if(!product?.title)continue;
+  const prior=products.get(key(product.title));
+  products.set(key(product.title),{...prior,...product});
+ }
 }
 
-export default function ProductDetailHydrator():null{const observer=useRef<MutationObserver|null>(null),patched=useRef(false),lastTitle=useRef("");
- useLayoutEffect(()=>{if(patched.current)return;patched.current=true;const native=window.fetch.bind(window);const wrapped=async(input:RequestInfo|URL,init?:RequestInit)=>{const response=await native(input,init);const url=typeof input==="string"?input:input instanceof URL?input.toString():input.url;if(url.includes("/api/catalog"))response.clone().json().then(ingestPayload).catch(()=>{});return response};window.fetch=wrapped as typeof fetch;return()=>{window.fetch=native}},[]);
- useEffect(()=>{const scan=()=>{document.querySelectorAll<HTMLElement>(".lv4-detailcopy").forEach(async root=>{const title=root.querySelector("h2")?.textContent?.trim()||"";const shell=root.closest(".lv4-detail") as HTMLElement|null;if(shell&&title&&lastTitle.current!==title){clearShell(shell);lastTitle.current=title}const p=currentProduct(title);if(!p)return;try{const rich=await hydrate(p);if(document.body.contains(root))render(root,rich)}catch{if(document.body.contains(root))render(root,p)}})};
- const prefetch=(e:Event)=>{const bubble=(e.target as HTMLElement)?.closest(".lv4-product") as HTMLElement|null;if(!bubble)return;const title=bubble.querySelector(".lv4-product-tooltip b")?.textContent||"";const p=currentProduct(title);if(p)void hydrate(p).catch(()=>{})};
- const onClick=(e:Event)=>{const bubble=(e.target as HTMLElement)?.closest(".lv4-product") as HTMLElement|null;if(!bubble)return;const title=bubble.querySelector(".lv4-product-tooltip b")?.textContent||"";const p=currentProduct(title);document.querySelectorAll<HTMLElement>(".lv4-detail").forEach(clearShell);lastTitle.current=title;if(p)void hydrate(p).then(()=>queueMicrotask(scan)).catch(()=>{});setTimeout(scan,0)};
- document.addEventListener("pointerover",prefetch,true);document.addEventListener("touchstart",prefetch,true);document.addEventListener("click",onClick,true);observer.current=new MutationObserver(()=>queueMicrotask(scan));observer.current.observe(document.body,{subtree:true,childList:true});scan();return()=>{document.removeEventListener("pointerover",prefetch,true);document.removeEventListener("touchstart",prefetch,true);document.removeEventListener("click",onClick,true);observer.current?.disconnect()}},[]);return null}
+async function hydrate(product:Product){
+ const id=key(product.title);
+ const cached=products.get(id)||product;
+ if(cached.descriptionHydrated)return cached;
+ if(!isShopify(cached))return cached;
+ const existing=pending.get(id);
+ if(existing)return existing;
+ const job=(async()=>{
+  const response=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cached)});
+  const data=await response.json() as RichResponse;
+  if(!response.ok||!data.product)throw new Error(data.error||"PRODUCT_DETAILS_UNAVAILABLE");
+  const rich={...cached,...data.product,url:data.url||data.product.url||cached.url,descriptionHydrated:true};
+  products.set(id,rich);
+  return rich;
+ })().finally(()=>pending.delete(id));
+ pending.set(id,job);
+ return job;
+}
+
+function clearDescription(shell:HTMLElement){
+ shell.classList.remove("ynot-description-flipped");
+ shell.querySelector(".ynot-description-back")?.remove();
+ shell.querySelector(".ynot-description-toggle")?.remove();
+}
+
+function renderDescription(root:HTMLElement,product:Product){
+ const shell=root.closest<HTMLElement>(".lv4-detail");
+ if(!shell)return;
+ const title=root.querySelector("h2")?.textContent?.trim()||"";
+ if(key(title)!==key(product.title))return;
+ const signature=`${key(product.title)}:${product.description?.length||0}`;
+ if(root.dataset.ynotDescriptionSignature===signature)return;
+ root.dataset.ynotDescriptionSignature=signature;
+ clearDescription(shell);
+ const toggle=document.createElement("button");
+ toggle.type="button";
+ toggle.className="ynot-description-toggle";
+ toggle.textContent="Description";
+ const back=document.createElement("section");
+ back.className="ynot-description-back";
+ const close=document.createElement("button");
+ close.type="button";
+ close.className="ynot-description-close";
+ close.textContent="Back";
+ const label=document.createElement("small");
+ label.textContent="PRODUCT DESCRIPTION";
+ const heading=document.createElement("h3");
+ heading.textContent=product.title;
+ const copy=document.createElement("p");
+ copy.className="ynot-description-copy";
+ copy.textContent=product.description?.trim()||"No merchant description was supplied for this product.";
+ back.append(close,label,heading,copy);
+ root.appendChild(toggle);
+ shell.appendChild(back);
+ toggle.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();shell.classList.add("ynot-description-flipped")});
+ close.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();shell.classList.remove("ynot-description-flipped")});
+}
+
+export default function ProductDetailHydrator():null{
+ const observer=useRef<MutationObserver|null>(null);
+ const fetchPatched=useRef(false);
+ useLayoutEffect(()=>{
+  if(fetchPatched.current)return;
+  fetchPatched.current=true;
+  const previous=window.fetch.bind(window);
+  const wrapped=async(input:RequestInfo|URL,init?:RequestInit)=>{
+   const response=await previous(input,init);
+   const url=typeof input==="string"?input:input instanceof URL?input.toString():input.url;
+   if(url.includes("/api/catalog"))response.clone().json().then(ingestPayload).catch(()=>{});
+   return response;
+  };
+  window.fetch=wrapped as typeof fetch;
+  return()=>{window.fetch=previous};
+ },[]);
+ useEffect(()=>{
+  let frame=0;
+  const scan=()=>{
+   frame=0;
+   document.querySelectorAll<HTMLElement>(".lv4-detailcopy").forEach(root=>{
+    const title=root.querySelector("h2")?.textContent?.trim()||"";
+    if(!title)return;
+    const shell=root.closest<HTMLElement>(".lv4-detail");
+    if(shell&&shell.dataset.ynotDescriptionTitle!==title){
+     clearDescription(shell);
+     shell.dataset.ynotDescriptionTitle=title;
+     delete root.dataset.ynotDescriptionSignature;
+    }
+    const product=products.get(key(title));
+    if(!product)return;
+    void hydrate(product).then(rich=>{if(document.body.contains(root))renderDescription(root,rich)}).catch(()=>{if(document.body.contains(root))renderDescription(root,product)});
+   });
+  };
+  const schedule=()=>{if(frame)return;frame=requestAnimationFrame(scan)};
+  observer.current=new MutationObserver(schedule);
+  observer.current.observe(document.body,{subtree:true,childList:true});
+  document.addEventListener("click",schedule,true);
+  schedule();
+  return()=>{
+   document.removeEventListener("click",schedule,true);
+   observer.current?.disconnect();
+   if(frame)cancelAnimationFrame(frame);
+  };
+ },[]);
+ return null;
+}
