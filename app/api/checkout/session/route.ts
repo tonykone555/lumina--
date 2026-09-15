@@ -3,7 +3,7 @@ import {cookies} from "next/headers";
 import crypto from "node:crypto";
 import type Stripe from "stripe";
 import {availableCredit,circleReady,releaseCredit,reserveCredit} from "@/lib/circle/server";
-import {priceChangePct,pricedCheckout,revalidateProduct,resolveShipping,signQuote,verifyQuote} from "@/lib/commerce/checkout";
+import {checkoutEnabled,priceChangePct,pricedCheckout,revalidateProduct,resolveShipping,signQuote,verifyQuote} from "@/lib/commerce/checkout";
 import {stripeClient} from "@/lib/commerce/stripe";
 
 export const runtime="nodejs";
@@ -11,7 +11,7 @@ export const runtime="nodejs";
 export async function POST(req:NextRequest){
  let checkoutRef="";
  try{
-  if(process.env.YNOT_CHECKOUT_ENABLED!=="true")throw new Error("CHECKOUT_DISABLED");
+  if(!checkoutEnabled())throw new Error("CHECKOUT_DISABLED");
   const {token,acceptPriceChange=false,applyCredits=false}=await req.json(),signed=verifyQuote(String(token)),quantity=Math.max(1,Math.min(10,Math.floor(Number(signed.quantity)||1))),operatorFlow=signed.fulfillment==="operator_approval";
   const product=operatorFlow?signed.product:await revalidateProduct(signed.product),fresh=pricedCheckout(product),change=operatorFlow?0:priceChangePct(Number(signed.supplierPrice||signed.product?.price||0),Number(product.price)),shipping=operatorFlow?signed.shipping:await resolveShipping(product,signed.region);
   if(change>.10&&!acceptPriceChange){const expiresAt=Date.now()+5*60_000,repriceToken=signQuote({product,region:signed.region,shipping,quantity,supplierPrice:product.price,price:fresh.luminaPrice,cost:fresh.riskAdjustedCost,marginPct:fresh.marginPct,fulfillment:"operator_approval",expiresAt});return NextResponse.json({error:"PRICE_CHANGED_SIGNIFICANT",changePct:Math.round(change*10000)/100,freshPrice:fresh.luminaPrice,currency:product.currency,shipping,repriceToken,customerMayContinue:true},{status:409})}

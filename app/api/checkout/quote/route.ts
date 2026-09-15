@@ -1,11 +1,11 @@
 import {NextRequest,NextResponse} from "next/server";
-import {checkoutMode,manualProcurementEnabled,manualProcurementProduct,manualShippingFor,pricedCheckout,revalidateProduct,resolveShipping,signQuote,type CheckoutProduct,type Region} from "@/lib/commerce/checkout";
+import {checkoutEnabled,checkoutMode,manualProcurementEnabled,manualProcurementProduct,manualShippingFor,pricedCheckout,revalidateProduct,resolveShipping,signQuote,type CheckoutProduct,type Region} from "@/lib/commerce/checkout";
 
 export const runtime="nodejs";
 
 export async function POST(req:NextRequest){
  try{
-  if(process.env.YNOT_CHECKOUT_ENABLED!=="true")return NextResponse.json({error:"YNOT checkout is not enabled yet"},{status:503});
+  if(!checkoutEnabled())return NextResponse.json({error:"YNOT checkout is not enabled yet"},{status:503});
   const body=await req.json() as CheckoutProduct&{region?:Region;quantity?:number},region=body.region;
   if(!region?.country)throw new Error("REGION_REQUIRED");
   const quantity=Math.max(1,Math.min(10,Math.floor(Number(body.quantity)||1))),operatorFlow=checkoutMode(body).mode==="merchant";

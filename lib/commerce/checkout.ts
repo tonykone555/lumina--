@@ -14,7 +14,8 @@ export function checkoutMode(p:{id?:string;url?:string;source?:string}){
   if(p.source?.includes("shopify")&&p.url&&approvedSupplier(p.url))return{mode:"ynot" as const,reason:"Approved supplier"};
   return{mode:"merchant" as const,reason:"Marketplace checkout"};
 }
-export function manualProcurementEnabled(){return process.env.YNOT_MANUAL_PROCUREMENT_ENABLED==="true"}
+export function checkoutEnabled(){return process.env.YNOT_CHECKOUT_ENABLED!=="false"&&Boolean(process.env.STRIPE_RESTRICTED_KEY&&process.env.STRIPE_WEBHOOK_SECRET&&process.env.YNOT_CHECKOUT_SIGNING_SECRET&&process.env.YNOT_OPERATOR_SECRET)}
+export function manualProcurementEnabled(){return process.env.YNOT_MANUAL_PROCUREMENT_ENABLED!=="false"}
 function publicMerchantUrl(raw:string){
  const url=new URL(raw);if(url.protocol!=="https:")throw new Error("INVALID_SUPPLIER_URL");
  const host=url.hostname.toLowerCase();
