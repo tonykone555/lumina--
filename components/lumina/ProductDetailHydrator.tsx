@@ -2,7 +2,8 @@
 
 import {useEffect,useLayoutEffect,useRef} from "react";
 
-type Product={id:string;title:string;source?:string;description?:string;descriptionHydrated?:boolean;url?:string;[key:string]:unknown};
+type Variant={id?:string;label?:string;price?:number|null;currency?:string;image?:string;url?:string;available?:boolean};
+type Product={id:string;title:string;source?:string;description?:string;descriptionHydrated?:boolean;url?:string;image?:string;images?:string[];variantId?:string;variants?:Variant[];[key:string]:unknown};
 type RichResponse={url?:string;product?:Product;error?:string};
 
 const products=new Map<string,Product>();
@@ -23,7 +24,7 @@ function ingestPayload(data:unknown){
 async function hydrate(product:Product){
  const id=key(product.title);
  const cached=products.get(id)||product;
- if(cached.descriptionHydrated)return cached;
+ if(cached.descriptionHydrated&&Array.isArray(cached.images)&&cached.images.length)return cached;
  if(!isShopify(cached))return cached;
  const existing=pending.get(id);
  if(existing)return existing;
@@ -78,6 +79,94 @@ function renderDescription(root:HTMLElement,product:Product){
  close.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();shell.classList.remove("ynot-description-flipped")});
 }
 
+function renderMedia(root:HTMLElement,product:Product){
+ const shell=root.closest<HTMLElement>(".lv4-detail");
+ if(!shell)return;
+ const title=root.querySelector("h2")?.textContent?.trim()||"";
+ if(key(title)!==key(product.title))return;
+ const main=shell.querySelector<HTMLImageElement>(":scope > img");
+ if(!main)return;
+
+ const images=[...new Set<string>([product.image,...(product.images||[]),...(product.variants||[]).map(v=>v.image).filter(Boolean)].filter(Boolean) as string[])];
+ const nativeGallery=shell.querySelector<HTMLElement>(".lv4-gallery");
+ if(images.length>1){
+  nativeGallery?.classList.add("ynot-native-hidden");
+  let gallery=shell.querySelector<HTMLElement>(".ynot-loaded-gallery");
+  if(!gallery){gallery=document.createElement("div");gallery.className="ynot-loaded-gallery";main.insertAdjacentElement("afterend",gallery)}
+  const signature=images.join("|");
+  if(gallery.dataset.mediaSignature!==signature){
+   gallery.dataset.mediaSignature=signature;
+   gallery.replaceChildren();
+   images.forEach((src,index)=>{
+    const button=document.createElement("button");
+    button.type="button";
+    if(index===0)button.classList.add("active");
+    const image=document.createElement("img");
+    image.src=src;
+    image.alt=`${product.title} view ${index+1}`;
+    button.appendChild(image);
+    button.addEventListener("click",event=>{
+     event.preventDefault();event.stopPropagation();
+     main.src=src;
+     gallery?.querySelectorAll("button").forEach(node=>node.classList.toggle("active",node===button));
+    });
+    gallery?.appendChild(button);
+   });
+  }
+ }else{
+  shell.querySelector(".ynot-loaded-gallery")?.remove();
+  nativeGallery?.classList.add("ynot-native-hidden");
+ }
+
+ const rawVariants=product.variants||[];
+ const seen=new Set<string>();
+ const variants=rawVariants.filter(v=>{
+  const id=String(v.id||"");
+  const label=String(v.label||"").trim();
+  const token=`${id}|${label.toLowerCase()}`;
+  if(!id||seen.has(token))return false;
+  seen.add(token);
+  return true;
+ });
+ const meaningful=variants.filter(v=>!/^default(?: title)?$|^option$/i.test(String(v.label||"").trim()));
+ const visible=meaningful.length?meaningful:variants.length>1?variants:[];
+ const nativeVariants=root.querySelector<HTMLElement>(".lv4-variants");
+ if(visible.length){
+  nativeVariants?.classList.add("ynot-native-hidden");
+  let wrap=root.querySelector<HTMLElement>(".ynot-loaded-variants");
+  if(!wrap){
+   wrap=document.createElement("div");
+   wrap.className="ynot-loaded-variants";
+   const actions=root.querySelector(".lv4-actions");
+   actions?.parentElement?.insertBefore(wrap,actions);
+  }
+  const signature=visible.map(v=>`${v.id}:${v.label}:${v.available}`).join("|");
+  if(wrap.dataset.variantSignature!==signature){
+   wrap.dataset.variantSignature=signature;
+   wrap.replaceChildren();
+   visible.forEach(v=>{
+    const button=document.createElement("button");
+    button.type="button";
+    button.disabled=v.available===false;
+    button.textContent=String(v.label||"Option");
+    if(String(product.variantId||"")===String(v.id||""))button.classList.add("active");
+    button.addEventListener("click",event=>{
+     event.preventDefault();event.stopPropagation();
+     shell.dataset.ynotVariantId=String(v.id||"");
+     wrap?.querySelectorAll("button").forEach(node=>node.classList.toggle("active",node===button));
+     if(v.image)main.src=v.image;
+    });
+    wrap?.appendChild(button);
+   });
+  }
+ }else{
+  root.querySelector(".ynot-loaded-variants")?.remove();
+  nativeVariants?.classList.remove("ynot-native-hidden");
+ }
+}
+
+function renderRich(root:HTMLElement,product:Product){renderDescription(root,product);renderMedia(root,product)}
+
 export default function ProductDetailHydrator():null{
  const observer=useRef<MutationObserver|null>(null);
  const fetchPatched=useRef(false);
@@ -104,12 +193,14 @@ export default function ProductDetailHydrator():null{
     const shell=root.closest<HTMLElement>(".lv4-detail");
     if(shell&&shell.dataset.ynotDescriptionTitle!==title){
      clearDescription(shell);
+     shell.querySelector(".ynot-loaded-gallery")?.remove();
+     root.querySelector(".ynot-loaded-variants")?.remove();
      shell.dataset.ynotDescriptionTitle=title;
      delete root.dataset.ynotDescriptionSignature;
     }
     const product=products.get(key(title));
     if(!product)return;
-    void hydrate(product).then(rich=>{if(document.body.contains(root))renderDescription(root,rich)}).catch(()=>{if(document.body.contains(root))renderDescription(root,product)});
+    void hydrate(product).then(rich=>{if(document.body.contains(root))renderRich(root,rich)}).catch(()=>{if(document.body.contains(root))renderRich(root,product)});
    });
   };
   const schedule=()=>{if(frame)return;frame=requestAnimationFrame(scan)};
