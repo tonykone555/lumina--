@@ -34,12 +34,40 @@ function ringCell(index:number){
  return{x:-ring,y:ring-1-offset,ring};
 }
 
+function stageCamera(stage:HTMLElement){
+ const raw=stage.style.transform||getComputedStyle(stage).transform||"";
+ const direct=raw.match(/translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px\s*\)\s*scale\(\s*([\d.]+)\s*\)/i);
+ if(direct)return{panX:Number(direct[1]),panY:Number(direct[2]),zoom:Math.max(.001,Number(direct[3]))};
+ const matrix=raw.match(/matrix\(\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*\)/i);
+ if(matrix)return{panX:Number(matrix[5]),panY:Number(matrix[6]),zoom:Math.max(.001,Math.abs(Number(matrix[1])))};
+ return{panX:-WORLD_CX*.22,panY:-WORLD_CY*.22,zoom:.22};
+}
+
+function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
+ if(window.innerWidth<900||!shell.classList.contains("depth-worlds"))return;
+ const voice=stage.querySelector<HTMLElement>(":scope > .ynot-voice-orb");
+ const categories=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-category-bubble")];
+ if(!voice||!categories.length)return;
+ const {panX,panY,zoom}=stageCamera(stage);
+ const centerX=(window.innerWidth*.5-panX)/zoom;
+ const centerY=(window.innerHeight*.5-panY)/zoom;
+ voice.style.setProperty("left",`${centerX}px`,"important");
+ voice.style.setProperty("top",`${centerY}px`,"important");
+ const radius=Math.min(860,Math.max(620,Math.min(window.innerWidth,window.innerHeight)*2.2));
+ categories.forEach((node,index)=>{
+  const angle=index/categories.length*Math.PI*2-Math.PI/2;
+  node.style.setProperty("left",`${centerX+Math.cos(angle)*radius}px`,"important");
+  node.style.setProperty("top",`${centerY+Math.sin(angle)*radius}px`,"important");
+ });
+}
+
 function applyLattice(){
  if(typeof window==="undefined")return;
  const shell=document.querySelector<HTMLElement>(".lv4-shell");
  if(!shell)return;
  const stage=shell.querySelector<HTMLElement>(".lv4-stage");
  if(!stage)return;
+ centerDesktopHome(shell,stage);
  const products=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-product")];
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");return}
  shell.classList.add("ynot-desktop-lattice-active");
@@ -74,12 +102,14 @@ export default function DesktopLatticeController():null{
    frame=requestAnimationFrame(()=>{frame=0;applyLattice()});
   };
   const observer=new MutationObserver(schedule);
-  observer.observe(document.body,{subtree:true,childList:true});
+  observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class","style"]});
   window.addEventListener("resize",schedule);
   window.addEventListener("shop:tag-search",schedule as EventListener);
   window.addEventListener("ynot:world-focus",schedule as EventListener);
+  window.addEventListener("pointerup",schedule,{passive:true});
+  window.addEventListener("wheel",schedule,{passive:true});
   schedule();
-  const delayed=[70,160,320,620,1100,1800,2800].map(ms=>window.setTimeout(schedule,ms));
+  const delayed=[40,90,160,280,480,780,1200,1800,2800].map(ms=>window.setTimeout(schedule,ms));
   return()=>{
    observer.disconnect();
    if(frame)cancelAnimationFrame(frame);
@@ -87,6 +117,8 @@ export default function DesktopLatticeController():null{
    window.removeEventListener("resize",schedule);
    window.removeEventListener("shop:tag-search",schedule as EventListener);
    window.removeEventListener("ynot:world-focus",schedule as EventListener);
+   window.removeEventListener("pointerup",schedule);
+   window.removeEventListener("wheel",schedule);
   };
  },[]);
  return null;
