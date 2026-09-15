@@ -9,11 +9,12 @@ function buildSlider(gallery:HTMLElement,startIndex:number){
  if(!detail)return;
  const images=[...gallery.querySelectorAll<HTMLImageElement>(":scope > button img")].map(img=>img.src).filter(Boolean);
  if(!images.length)return;
- detail.querySelector(".ynot-full-slider")?.remove();
+ document.querySelector(".ynot-full-slider")?.remove();
  detail.classList.add("ynot-gallery-slider-active");
  let index=Math.max(0,Math.min(startIndex,images.length-1));
  const slider=document.createElement("section");
  slider.className="ynot-full-slider";
+ slider.dataset.ynotViewportSlider="1";
  const image=document.createElement("img");
  image.className="ynot-full-slider-image";
  image.alt="Product view";
@@ -30,7 +31,7 @@ function buildSlider(gallery:HTMLElement,startIndex:number){
  next.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();index=(index+1)%images.length;render()});
  close.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();detail.classList.remove("ynot-gallery-slider-active");slider.remove()});
  slider.append(image,close,prev,next,count);
- detail.appendChild(slider);
+ document.body.appendChild(slider);
  render();
 }
 
@@ -58,6 +59,7 @@ function decorateGallery(gallery:HTMLElement){
 }
 
 function decorateProductModal(root:ParentNode=document){
+ if(!document.querySelector(".lv4-detail"))document.querySelector(".ynot-full-slider[data-ynot-viewport-slider='1']")?.remove();
  root.querySelectorAll<HTMLElement>(GALLERIES).forEach(decorateGallery);
  root.querySelectorAll<HTMLElement>(".lv4-detailcopy").forEach(copy=>{
   copy.querySelector<HTMLElement>(".lv4-direction-row")?.classList.add("ynot-reference-directions");
@@ -74,7 +76,7 @@ export default function ProductReferenceEnhancer():null{
   observer.observe(document.body,{subtree:true,childList:true});
   document.addEventListener("click",schedule,true);
   schedule();
-  return()=>{observer.disconnect();document.removeEventListener("click",schedule,true);if(frame)cancelAnimationFrame(frame)};
+  return()=>{observer.disconnect();document.removeEventListener("click",schedule,true);if(frame)cancelAnimationFrame(frame);document.querySelector(".ynot-full-slider[data-ynot-viewport-slider='1']")?.remove()};
  },[]);
  return null;
 }
