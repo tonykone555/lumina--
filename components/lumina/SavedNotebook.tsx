@@ -1,28 +1,10 @@
 "use client";
-
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-
-type SavedItem={id:string;title:string;brand?:string;price?:number;currency?:string;image:string;images?:string[];url?:string;source?:string;section?:string;sections?:string[];variants?:unknown[];variantId?:string;description?:string;cutout?:string;savedAt?:number};
-const STORAGE="ynot-saved-items";
-
-function loadSaved():SavedItem[]{try{const parsed=JSON.parse(localStorage.getItem(STORAGE)||"[]");return Array.isArray(parsed)?parsed:[]}catch{return[]}}
-export default function SavedNotebook(){
- const [open,setOpen]=useState(false),[items,setItems]=useState<SavedItem[]>([]);
- useEffect(()=>{const refresh=()=>setItems(loadSaved());const openNotebook=()=>{refresh();setOpen(true)};const onClick=(event:MouseEvent)=>{const button=(event.target as HTMLElement)?.closest(".lv4-rail button");if(button?.textContent?.toLowerCase().includes("saved")){event.preventDefault();openNotebook()}};window.addEventListener("ynot:open-saves",openNotebook as EventListener);window.addEventListener("ynot:saves-changed",refresh as EventListener);document.addEventListener("click",onClick,true);return()=>{window.removeEventListener("ynot:open-saves",openNotebook as EventListener);window.removeEventListener("ynot:saves-changed",refresh as EventListener);document.removeEventListener("click",onClick,true)}},[]);
- if(!open)return null;
- return <div className="ynot-notebook-shell" role="dialog" aria-modal="true" aria-label="Saved products">
-   <div className="ynot-notebook-backdrop" onClick={()=>setOpen(false)}/>
-   <section className="ynot-notebook">
-    <button className="ynot-notebook-close" onClick={()=>setOpen(false)} aria-label="Close saved notebook"><X/></button>
-    <header className="ynot-notebook-head"><small>YNOT LIBRARY</small><h2>Saved</h2><span>{items.length} product{items.length===1?"":"s"}</span></header>
-    <div className="ynot-notebook-grid">
-      {items.map(item=><button key={item.id} className="ynot-save-orb" aria-label={item.title} title={item.title} onClick={()=>window.dispatchEvent(new CustomEvent("ynot:open-story",{detail:item}))}>
-        <span className="ynot-save-orb-gloss"/>
-        <img loading="lazy" src={item.image} alt=""/>
-      </button>)}
-      {!items.length&&<p className="ynot-notebook-empty">Tap the heart on any product to build your saved world.</p>}
-    </div>
-   </section>
- </div>
-}
+import {useEffect,useState} from "react";import {ArrowRight,Globe2,Plus,Share2,Sparkles,Users,X} from "lucide-react";import {authedFetch,readSession} from "../../lib/ynot/supabase-browser";
+type SavedItem={id:string;title:string;brand?:string;price?:number;currency?:string;image:string;url?:string;source?:string};type World={id:string;name:string;description?:string;role:"owner"|"contributor"|"viewer";updated_at?:string};const STORAGE="ynot-saved-items";function loadSaved():SavedItem[]{try{const p=JSON.parse(localStorage.getItem(STORAGE)||"[]");return Array.isArray(p)?p:[]}catch{return[]}}
+export default function SavedNotebook(){const[open,setOpen]=useState(false),[items,setItems]=useState<SavedItem[]>([]),[worlds,setWorlds]=useState<World[]>([]),[selected,setSelected]=useState<string[]>([]),[creating,setCreating]=useState(false),[name,setName]=useState("My World"),[share,setShare]=useState<string>("");
+async function refreshWorlds(){if(!readSession()){setWorlds([]);return}const r=await authedFetch("/api/worlds"),d=await r.json().catch(()=>({}));if(r.ok)setWorlds(d.worlds||[])}
+useEffect(()=>{const refresh=()=>setItems(loadSaved()),show=()=>{refresh();void refreshWorlds();setOpen(true)};window.addEventListener("ynot:open-saves",show);window.addEventListener("ynot:saves-changed",refresh);return()=>{window.removeEventListener("ynot:open-saves",show);window.removeEventListener("ynot:saves-changed",refresh)}},[]);
+useEffect(()=>{const token=new URLSearchParams(location.search).get("worldInvite");if(!token)return;if(!readSession()){window.dispatchEvent(new Event("ynot:open-auth"));return}authedFetch("/api/worlds/invite",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({token})}).then(r=>{if(r.ok){history.replaceState(null,"",location.pathname);void refreshWorlds();setOpen(true)}}).catch(()=>{})},[]);
+async function createWorld(){if(!readSession()){window.dispatchEvent(new Event("ynot:open-auth"));return}const products=items.filter(x=>selected.includes(x.id));if(!products.length)return;setCreating(true);try{const r=await authedFetch("/api/worlds",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,products,tags:products.map(x=>x.brand).filter(Boolean)})});if(r.ok){setSelected([]);await refreshWorlds()}}finally{setCreating(false)}}
+async function invite(w:World){if(w.role!=="owner")return;const r=await authedFetch("/api/worlds/invite",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({worldId:w.id,role:"contributor"})}),d=await r.json().catch(()=>({}));if(r.ok)setShare(d.url||"")}
+if(!open)return null;return <div className="ynot-notebook-shell" role="dialog" aria-modal="true" aria-label="YNOT Library"><div className="ynot-notebook-backdrop" onClick={()=>setOpen(false)}/><section className="ynot-notebook ynot-world-library"><button className="ynot-notebook-close" onClick={()=>setOpen(false)}><X/></button><header className="ynot-notebook-head"><small>YNOT LIBRARY</small><h2>Your Worlds</h2><span>{items.length} saves · {worlds.length} worlds</span></header>{worlds.length?<div className="ynot-world-list">{worlds.map(w=><article key={w.id} className="ynot-world-row"><span className="ynot-world-icon"><Globe2/></span><div><b>{w.name}</b><small><Users/> {w.role}</small></div>{w.role==="owner"?<button onClick={()=>void invite(w)}><Share2/> Invite</button>:<span className="ynot-world-role">Shared with you</span>}</article>)}</div>:<div className="ynot-world-empty"><Sparkles/><b>Turn your Saves into a World</b><span>Select products below. YNOT will keep the collection together so it can become a visual preference signal.</span></div>}{share?<div className="ynot-world-share"><b>Contributor link ready</b><input readOnly value={share}/><small>Anyone you invite through this link can join this World as a contributor after signing in.</small></div>:null}<div className="ynot-world-create"><input value={name} maxLength={80} onChange={e=>setName(e.target.value)} aria-label="World name"/><button disabled={!selected.length||creating} onClick={()=>void createWorld()}><Plus/>{creating?"Creating…":`Create World (${selected.length})`}</button></div><div className="ynot-notebook-grid">{items.map(item=><button key={item.id} className={`ynot-save-orb ${selected.includes(item.id)?"selected":""}`} aria-label={item.title} title={item.title} onClick={()=>setSelected(v=>v.includes(item.id)?v.filter(id=>id!==item.id):[...v,item.id])}><span className="ynot-save-orb-gloss"/><img loading="lazy" src={item.image} alt=""/>{selected.includes(item.id)?<i><ArrowRight/></i>:null}</button>)}{!items.length&&<p className="ynot-notebook-empty">Tap the heart on products you like. Your Saves can then become a World.</p>}</div></section></div>}
