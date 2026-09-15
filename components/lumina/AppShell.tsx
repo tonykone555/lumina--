@@ -22,8 +22,11 @@ import DesktopLatticeController from "./DesktopLatticeController";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
+type HeaderProfile={name?:string;avatar?:string;hasPin?:boolean}|null;
+const PROFILE_KEY="ynot-local-profile-v1";
 
 function setReactInput(input:HTMLInputElement,value:string){const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;setter?.call(input,value);input.dispatchEvent(new Event("input",{bubbles:true}))}
+function readHeaderProfile():HeaderProfile{try{return JSON.parse(localStorage.getItem(PROFILE_KEY)||"null") as HeaderProfile}catch{return null}}
 
 export default function AppShell(){
  const [mode,setMode]=useState<Mode>("shop");
@@ -32,6 +35,7 @@ export default function AppShell(){
  const [bottomQuery,setBottomQuery]=useState("");
  const [chromeHidden,setChromeHidden]=useState(false);
  const [selectedTags,setSelectedTags]=useState<string[]>([]);
+ const [headerProfile,setHeaderProfile]=useState<HeaderProfile>(null);
  const effectiveQuery=useMemo(()=>[bottomQuery.trim(),...selectedTags].filter(Boolean).join(" ").replace(/\s+/g," ").trim(),[bottomQuery,selectedTags]);
 
  useEffect(()=>{
@@ -41,6 +45,18 @@ export default function AppShell(){
   const observer=new MutationObserver(sync);
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class"]});
   return()=>observer.disconnect();
+ },[]);
+
+ useEffect(()=>{
+  const sync=()=>setHeaderProfile(readHeaderProfile());
+  const onProfile=(event:Event)=>{
+   const detail=(event as CustomEvent<HeaderProfile>).detail;
+   if(detail)setHeaderProfile(detail);else sync();
+  };
+  sync();
+  window.addEventListener("ynot:profile-changed",onProfile as EventListener);
+  window.addEventListener("storage",sync);
+  return()=>{window.removeEventListener("ynot:profile-changed",onProfile as EventListener);window.removeEventListener("storage",sync)};
  },[]);
 
  useEffect(()=>{
@@ -59,6 +75,7 @@ export default function AppShell(){
  function toggleFar(){document.querySelector<HTMLButtonElement>(".ynot-far-button")?.click()}
  function toggleCompass(){document.querySelector<HTMLButtonElement>(".ynot-compass-button")?.click()}
  function openProfile(){document.querySelector<HTMLButtonElement>(".ynot-profile-orb")?.click()}
+ function openSaved(){window.dispatchEvent(new Event("ynot:open-saves"))}
  function openNotifications(){window.dispatchEvent(new Event("ynot:open-circle"))}
  function switchSource(next:Source){
   setSource(next);setSourceOpen(false);
@@ -85,10 +102,11 @@ export default function AppShell(){
   window.dispatchEvent(new CustomEvent("shop:tag-search",{detail:{query:clean,tags:selectedTags}}));
   requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".lv4-search button")?.click());
  }
+ const hasProfile=Boolean(headerProfile?.hasPin||headerProfile?.name||headerProfile?.avatar);
  return <div className={`ynot-app-shell ${chromeHidden?"chrome-hidden":""}`}>
   <header className="ynot-reference-header">
    <div className="ynot-reference-left">
-    <button className="ynot-reference-brand" onClick={goHome} aria-label="YNOT home"><span>Y</span><b>YNOT</b></button>
+    <button className="ynot-reference-brand" onClick={goHome} aria-label="YNOT home"><b>YNOT</b></button>
    </div>
    <div className="ynot-reference-center">
     <div className="ynot-reference-topline">
@@ -105,8 +123,8 @@ export default function AppShell(){
    </div>
    <div className="ynot-reference-right">
     <button className="ynot-reference-notify" onClick={openNotifications} aria-label="Notifications"><Bell/><i/></button>
-    <button className="ynot-reference-signin" onClick={openProfile}><UserRound/><span>Sign in</span></button>
-    <button className="ynot-reference-avatar" onClick={openProfile} aria-label="Open profile"><UserRound/></button>
+    <button className={`ynot-reference-signin ${hasProfile?"has-profile":""}`} onClick={hasProfile?openSaved:openProfile}>{headerProfile?.avatar?<img src={headerProfile.avatar} alt="Your profile"/>:<UserRound/>}<span>{hasProfile?"Saves":"Sign in"}</span></button>
+    <button className="ynot-reference-avatar" onClick={openProfile} aria-label="Open profile">{headerProfile?.avatar?<img src={headerProfile.avatar} alt="Your profile"/>:<UserRound/>}</button>
    </div>
   </header>
   {mode==="discover"?<DiscoveryUniverse/>:<><LuminaWorld/><SubcategoryNavigator/><WorldCompass/></>}
