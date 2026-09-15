@@ -44,23 +44,33 @@ function bindMobileSwipe(gallery:HTMLElement){
  const images=[...gallery.querySelectorAll<HTMLImageElement>(":scope > button img")].map(img=>img.src).filter(Boolean);
  const unique=[...new Set(images)];
  if(unique.length<2)return;
+ const signature=unique.join("|");
  let dots=detail.querySelector<HTMLElement>(".ynot-mobile-swipe-dots");
- if(!dots){dots=document.createElement("div");dots.className="ynot-mobile-swipe-dots";main.insertAdjacentElement("afterend",dots)}
- if(dots.dataset.count!==String(unique.length)){
-  dots.dataset.count=String(unique.length);
+ if(!dots){dots=document.createElement("div");dots.className="ynot-mobile-swipe-dots";gallery.insertAdjacentElement("afterend",dots)}
+ if(dots.dataset.signature!==signature){
+  dots.dataset.signature=signature;
   dots.replaceChildren(...unique.map((_,i)=>{const dot=document.createElement("i");dot.className=i===0?"active":"";return dot}));
+  detail.dataset.ynotMobileImage="0";
  }
  const render=(index:number)=>{
   const safe=(index+unique.length)%unique.length;
   main.src=unique[safe];
   detail.dataset.ynotMobileImage=String(safe);
   dots?.querySelectorAll("i").forEach((dot,i)=>dot.classList.toggle("active",i===safe));
+  gallery.querySelectorAll("button").forEach((button,i)=>button.classList.toggle("active",i===safe));
  };
- if(main.dataset.ynotMobileSwipeBound==="1")return;
- main.dataset.ynotMobileSwipeBound="1";
+ if(gallery.dataset.ynotMobileSwipeSignature===signature)return;
+ gallery.dataset.ynotMobileSwipeSignature=signature;
  let startX=0,startY=0;
- main.addEventListener("touchstart",e=>{const t=e.touches[0];if(!t)return;startX=t.clientX;startY=t.clientY},{passive:true});
- main.addEventListener("touchend",e=>{const t=e.changedTouches[0];if(!t)return;const dx=t.clientX-startX,dy=t.clientY-startY;if(Math.abs(dx)<34||Math.abs(dx)<=Math.abs(dy))return;const current=Number(detail.dataset.ynotMobileImage||0);render(current+(dx<0?1:-1))},{passive:true});
+ gallery.addEventListener("touchstart",e=>{const t=e.touches[0];if(!t)return;startX=t.clientX;startY=t.clientY},{passive:true});
+ gallery.addEventListener("touchend",e=>{const t=e.changedTouches[0];if(!t)return;const dx=t.clientX-startX,dy=t.clientY-startY;if(Math.abs(dx)<30||Math.abs(dx)<=Math.abs(dy))return;const current=Number(detail.dataset.ynotMobileImage||0);render(current+(dx<0?1:-1))},{passive:true});
+ gallery.addEventListener("click",e=>{
+  const button=(e.target as HTMLElement|null)?.closest<HTMLButtonElement>(":scope > button");
+  if(!button)return;
+  const buttons=[...gallery.querySelectorAll<HTMLButtonElement>(":scope > button")];
+  const index=buttons.indexOf(button);
+  if(index>=0)render(index);
+ },true);
 }
 
 function decorateGallery(gallery:HTMLElement){
