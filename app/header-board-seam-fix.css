@@ -23,9 +23,17 @@
     -webkit-mask-image:none!important;
   }
 
+  /* The shopping world owns the whole viewport, including the area behind the floating header. */
+  .lv4-shell,
   .lv4-world{
     position:fixed!important;
     inset:0!important;
+    top:0!important;
+    right:0!important;
+    bottom:0!important;
+    left:0!important;
+    width:100vw!important;
+    height:100dvh!important;
     overflow:visible!important;
     background:#080909!important;
   }
@@ -33,7 +41,22 @@
   .lv4-stage,
   .lv4-products,
   .lv4-product-layer{
+    top:0!important;
+    margin-top:0!important;
     overflow:visible!important;
+  }
+
+  /* Kill the old protected-zone canopy that was masking bubbles below the header controls. */
+  .lv4-shell::before{
+    content:none!important;
+    display:none!important;
+    background:none!important;
+    height:0!important;
+    border:0!important;
+    box-shadow:none!important;
+    filter:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
   }
 
   /* Desktop header has NO full-width canopy, strip, edge or seam. Products/bubbles continue behind the controls. */
@@ -65,11 +88,24 @@
     box-shadow:none!important;
   }
 
+  /* Header is only floating controls above the world; it must not own a painted background layer. */
   .ynot-reference-header{
+    position:fixed!important;
+    z-index:240!important;
+    background:transparent!important;
     overflow:visible!important;
+    pointer-events:none!important;
     backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;
   }
+  .ynot-reference-header button,
+  .ynot-reference-left,
+  .ynot-reference-center,
+  .ynot-reference-right,
+  .ynot-world-controls{
+    pointer-events:auto!important;
+  }
+
   .ynot-reference-header::before,
   .ynot-reference-header::after,
   .ynot-reference-center::before,
