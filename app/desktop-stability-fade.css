@@ -1,0 +1,62 @@
+/* Final stability layer: lightweight product opening + seamless header fade. */
+@media (min-width:900px){
+  /* Do not stack full-screen GPU blurs when the product card opens. */
+  .lv4-detail::after{content:none!important;display:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .ynot-app-shell:has(.lv4-detail)::after{content:none!important;display:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .ynot-app-shell.chrome-hidden::after{
+    content:""!important;
+    display:block!important;
+    position:fixed!important;
+    z-index:245!important;
+    inset:0!important;
+    pointer-events:none!important;
+    background:rgba(3,4,4,.50)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .lv4-detail{
+    z-index:260!important;
+    backdrop-filter:blur(18px) saturate(.90)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(.90)!important;
+    will-change:auto!important;
+  }
+  .lv4-detail::before{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .ynot-description-back{backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important}
+
+  /* The board stays continuous under the header. No blur cutoff line. */
+  .ynot-app-shell::before{
+    height:238px!important;
+    background:
+      radial-gradient(ellipse at 50% 0%,rgba(5,6,6,.96) 0%,rgba(5,6,6,.74) 34%,rgba(5,6,6,.35) 61%,rgba(5,6,6,.10) 79%,rgba(5,6,6,0) 100%),
+      linear-gradient(180deg,rgba(5,6,6,.84) 0%,rgba(5,6,6,.50) 43%,rgba(5,6,6,.18) 70%,rgba(5,6,6,0) 100%)!important;
+    box-shadow:0 44px 84px rgba(0,0,0,.13)!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    opacity:1!important;
+  }
+  .ynot-reference-header{
+    background:transparent!important;
+    box-shadow:none!important;
+    border:0!important;
+  }
+
+  /* Ensure old row/grid transforms cannot fight the center-out lattice controller. */
+  .lv4-shell.ynot-desktop-lattice-active.depth-themes .lv4-stage,
+  .lv4-shell.ynot-desktop-lattice-active.depth-products .lv4-stage,
+  .lv4-shell.ynot-desktop-lattice-active.depth-details .lv4-stage{
+    display:block!important;
+    padding:0!important;
+    grid-template-columns:none!important;
+    grid-auto-rows:auto!important;
+    gap:0!important;
+  }
+  .lv4-shell.ynot-desktop-lattice-active .lv4-product{
+    position:absolute!important;
+    transform:translate(-50%,-50%)!important;
+    margin:0!important;
+  }
+  .lv4-shell.ynot-desktop-lattice-active .lv4-product:nth-child(odd),
+  .lv4-shell.ynot-desktop-lattice-active .lv4-product:nth-child(even){transform:translate(-50%,-50%)!important}
+  .lv4-shell.ynot-desktop-lattice-active .lv4-product:hover,
+  .lv4-shell.ynot-desktop-lattice-active .lv4-product.is-hovered{transform:translate(-50%,-50%) scale(1.065)!important}
+}
