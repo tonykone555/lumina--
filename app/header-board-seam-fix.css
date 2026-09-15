@@ -1,0 +1,78 @@
+/* Absolute final desktop seam fix — keep the shopping world continuous behind the header. */
+@media (min-width:900px){
+  .ynot-app-shell{
+    background:#080909!important;
+    overflow:hidden!important;
+  }
+
+  /* Remove every inherited top crop/padding/mask from the world surface. */
+  .lv4-shell,
+  .lv4-world,
+  .lv4-stage,
+  .lv4-products,
+  .lv4-product-layer{
+    margin-top:0!important;
+    padding-top:0!important;
+    border-top:0!important;
+    box-shadow:none!important;
+    clip-path:none!important;
+    -webkit-clip-path:none!important;
+    mask-image:none!important;
+    -webkit-mask-image:none!important;
+  }
+
+  .lv4-world{
+    position:fixed!important;
+    inset:0!important;
+    overflow:visible!important;
+    background:#080909!important;
+  }
+
+  .lv4-stage,
+  .lv4-products,
+  .lv4-product-layer{
+    overflow:visible!important;
+  }
+
+  /* A long canopy hides products behind the controls without creating a boundary. */
+  .ynot-app-shell::before{
+    content:""!important;
+    display:block!important;
+    position:fixed!important;
+    z-index:185!important;
+    pointer-events:none!important;
+    inset:0 0 auto 0!important;
+    width:100%!important;
+    height:340px!important;
+    background:linear-gradient(180deg,
+      rgba(8,9,9,1) 0%,
+      rgba(8,9,9,.98) 25%,
+      rgba(8,9,9,.90) 43%,
+      rgba(8,9,9,.68) 58%,
+      rgba(8,9,9,.38) 72%,
+      rgba(8,9,9,.16) 84%,
+      rgba(8,9,9,.05) 92%,
+      rgba(8,9,9,0) 100%)!important;
+    border:0!important;
+    outline:0!important;
+    box-shadow:none!important;
+    filter:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+
+  .ynot-reference-header{
+    background:transparent!important;
+    border:0!important;
+    outline:0!important;
+    box-shadow:none!important;
+    overflow:visible!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .ynot-reference-header::before,
+  .ynot-reference-header::after{
+    content:none!important;
+    display:none!important;
+  }
+}
