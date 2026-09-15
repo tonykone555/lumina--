@@ -5,11 +5,13 @@ import {useEffect} from "react";
 const WORLD_CX=100000;
 const WORLD_CY=100000;
 
-function spacing(){
+function metrics(){
  const w=typeof window!=="undefined"?window.innerWidth:1440;
- if(w<700)return{stepX:128,stepY:116};
- if(w<1100)return{stepX:146,stepY:130};
- return{stepX:166,stepY:148};
+ if(w<520)return{stepX:158,stepY:142,size:92};
+ if(w<700)return{stepX:166,stepY:148,size:98};
+ if(w<900)return{stepX:170,stepY:152,size:104};
+ if(w<1100)return{stepX:172,stepY:154,size:116};
+ return{stepX:176,stepY:156,size:126};
 }
 
 function spiralCell(index:number){
@@ -35,13 +37,13 @@ function applyLattice(){
  const products=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-product")];
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");return}
  shell.classList.add("ynot-desktop-lattice-active");
- const {stepX,stepY}=spacing();
+ const {stepX,stepY,size}=metrics();
  products.forEach((product,index)=>{
   const cell=spiralCell(index);
   const stagger=(Math.abs(cell.y)%2)*stepX*.5;
   const x=WORLD_CX+cell.x*stepX+stagger;
   const y=WORLD_CY+cell.y*stepY;
-  const signature=`${stepX}:${stepY}:${cell.x}:${cell.y}`;
+  const signature=`${stepX}:${stepY}:${size}:${cell.x}:${cell.y}`;
   if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;
   product.dataset.ynotLattice=signature;
   product.dataset.ynotLatticeRow=String(cell.y);
@@ -49,6 +51,9 @@ function applyLattice(){
   product.style.setProperty("position","absolute","important");
   product.style.setProperty("left",`${x}px`,"important");
   product.style.setProperty("top",`${y}px`,"important");
+  product.style.setProperty("width",`${size}px`,"important");
+  product.style.setProperty("height",`${size}px`,"important");
+  product.style.setProperty("--s",`${size}px`);
   product.style.setProperty("margin","0","important");
   product.style.setProperty("z-index",String(20+(Math.abs(cell.x+cell.y)%3)),"important");
  });
