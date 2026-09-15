@@ -14,6 +14,8 @@
     margin-top:0!important;
     padding-top:0!important;
     border-top:0!important;
+    border-bottom:0!important;
+    outline:0!important;
     box-shadow:none!important;
     clip-path:none!important;
     -webkit-clip-path:none!important;
@@ -34,25 +36,13 @@
     overflow:visible!important;
   }
 
-  /* A long canopy hides products behind the controls without creating a boundary. */
-  .ynot-app-shell::before{
-    content:""!important;
-    display:block!important;
-    position:fixed!important;
-    z-index:185!important;
-    pointer-events:none!important;
-    inset:0 0 auto 0!important;
-    width:100%!important;
-    height:340px!important;
-    background:linear-gradient(180deg,
-      rgba(8,9,9,1) 0%,
-      rgba(8,9,9,.98) 25%,
-      rgba(8,9,9,.90) 43%,
-      rgba(8,9,9,.68) 58%,
-      rgba(8,9,9,.38) 72%,
-      rgba(8,9,9,.16) 84%,
-      rgba(8,9,9,.05) 92%,
-      rgba(8,9,9,0) 100%)!important;
+  /* Desktop header has NO full-width canopy, strip, edge or seam. Products/bubbles continue behind the controls. */
+  .ynot-app-shell::before,
+  .ynot-app-shell::after{
+    content:none!important;
+    display:none!important;
+    background:none!important;
+    height:0!important;
     border:0!important;
     outline:0!important;
     box-shadow:none!important;
@@ -61,18 +51,35 @@
     -webkit-backdrop-filter:none!important;
   }
 
-  .ynot-reference-header{
+  .ynot-reference-header,
+  .ynot-reference-center,
+  .ynot-reference-topline,
+  .ynot-world-controls{
     background:transparent!important;
     border:0!important;
+    border-top:0!important;
+    border-right:0!important;
+    border-bottom:0!important;
+    border-left:0!important;
     outline:0!important;
     box-shadow:none!important;
+  }
+
+  .ynot-reference-header{
     overflow:visible!important;
     backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;
   }
   .ynot-reference-header::before,
-  .ynot-reference-header::after{
+  .ynot-reference-header::after,
+  .ynot-reference-center::before,
+  .ynot-reference-center::after,
+  .ynot-world-controls::before,
+  .ynot-world-controls::after{
     content:none!important;
     display:none!important;
+    background:none!important;
+    border:0!important;
+    box-shadow:none!important;
   }
 }
