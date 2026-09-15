@@ -49,31 +49,31 @@ import "./final-slider-deal-glass.css";
 import "./final-hover-deal-fix.css";
 
 const SITE_URL="https://ynotworld.app";
-const SITE_DESCRIPTION="Discover fashion, furniture, beauty, fitness, tech and more across independent stores with YNOT's visual shopping experience.";
+const SITE_TITLE="YNOT Shop — YNOT World Visual & AI Shopping";
+const SITE_DESCRIPTION="Shop with YNOT World at ynotworld.app — a visual, spatial and AI-powered shopping experience for discovering fashion, home, beauty, fitness, tech and more.";
 
 export const metadata:Metadata={
   metadataBase:new URL(SITE_URL),
-  title:{default:"YNOT — Visual Shopping & Product Discovery",template:"%s | YNOT"},
+  title:{default:SITE_TITLE,template:"%s | YNOT"},
   description:SITE_DESCRIPTION,
   applicationName:"YNOT",
   category:"shopping",
-  keywords:["YNOT","YNOT World","visual shopping","online shopping","product discovery","independent stores","Shopify products","fashion shopping","furniture shopping","home decor shopping","beauty products","fitness gear","tech products"],
+  keywords:["YNOT","YNOT shop","YNOT shopping","YNOT World","ynotworld.app","YNOT spatial shopping","YNOT AI shopping","YNOT visual shopping","visual shopping","AI shopping","spatial shopping","online shopping","product discovery","independent stores","Shopify products","fashion shopping","furniture shopping","home decor shopping","beauty products","fitness gear","tech products"],
   alternates:{canonical:"/"},
   robots:{index:true,follow:true,googleBot:{index:true,follow:true,"max-image-preview":"large","max-snippet":-1,"max-video-preview":-1}},
   openGraph:{
     type:"website",
     url:SITE_URL,
-    siteName:"YNOT",
-    title:"YNOT — Visual Shopping & Product Discovery",
+    siteName:"YNOT World",
+    title:SITE_TITLE,
     description:SITE_DESCRIPTION,
-    images:[{url:"/ynot-microphone.jpg",alt:"YNOT visual shopping"}]
+    images:[{url:"/ynot-microphone.jpg",alt:"YNOT World visual and AI shopping"}]
   },
-  twitter:{card:"summary_large_image",title:"YNOT — Visual Shopping & Product Discovery",description:SITE_DESCRIPTION,images:["/ynot-microphone.jpg"]},
+  twitter:{card:"summary_large_image",title:SITE_TITLE,description:SITE_DESCRIPTION,images:["/ynot-microphone.jpg"]},
   verification:{google:"-GQTuojAnMn-0J1mgsbr0j_zasvkZYoFrakODO8skNA"},
   other:{"theme-color":"#080909"}
 };
 
-// Production deploy checkpoint after Git integration reconnect.
 export default function RootLayout({children}:{children:React.ReactNode}){
   return <html lang="en"><body>{children}</body></html>;
 }
