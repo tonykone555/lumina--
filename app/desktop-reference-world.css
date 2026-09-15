@@ -1,0 +1,302 @@
+/* Desktop blueprint: endless staggered product lattice + protected glass header + centered product glass. */
+@media (min-width: 900px){
+  .lv4-shell{
+    background:#090a0a!important;
+    overflow:hidden!important;
+  }
+  .lv4-scene{
+    filter:brightness(.24) saturate(.56) contrast(1.06)!important;
+    opacity:.52!important;
+  }
+  .lv4-shell::before{
+    content:"";
+    position:fixed;
+    z-index:48;
+    inset:0 0 auto 0;
+    height:124px;
+    pointer-events:none;
+    background:linear-gradient(180deg,rgba(8,9,9,.99) 0%,rgba(8,9,9,.965) 67%,rgba(8,9,9,.78) 86%,rgba(8,9,9,0) 100%);
+    backdrop-filter:blur(20px) saturate(.84);
+    -webkit-backdrop-filter:blur(20px) saturate(.84);
+  }
+
+  /* Ambient non-interactive glass bubbles, independent from the product lattice. */
+  .lv4-world::before,.lv4-world::after{
+    content:"";
+    position:fixed;
+    z-index:9;
+    pointer-events:none;
+    border-radius:50%;
+    border:1px solid rgba(255,255,255,.18);
+    background:
+      radial-gradient(circle at 31% 22%,rgba(255,255,255,.22),rgba(255,255,255,.04) 24%,rgba(138,147,150,.04) 47%,rgba(4,5,5,.14) 68%,rgba(0,0,0,.28) 100%);
+    box-shadow:inset -18px -22px 34px rgba(0,0,0,.24),inset 12px 12px 24px rgba(255,255,255,.06),0 16px 44px rgba(0,0,0,.24);
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
+    opacity:.78;
+    animation:ynotAmbientFloat 13s ease-in-out infinite alternate;
+  }
+  .lv4-world::before{
+    width:122px;height:122px;left:32px;top:151px;
+    box-shadow:
+      inset -18px -22px 34px rgba(0,0,0,.24),inset 12px 12px 24px rgba(255,255,255,.06),0 16px 44px rgba(0,0,0,.24),
+      1040px 52px 0 -34px rgba(165,174,176,.12),
+      1166px 326px 0 -8px rgba(151,160,162,.09),
+      -12px 344px 0 -35px rgba(174,182,184,.12);
+  }
+  .lv4-world::after{
+    width:64px;height:64px;right:63px;top:174px;
+    opacity:.6;
+    animation-duration:17s;
+    animation-delay:-5s;
+    box-shadow:
+      inset -10px -12px 19px rgba(0,0,0,.22),inset 7px 7px 16px rgba(255,255,255,.07),0 12px 28px rgba(0,0,0,.18),
+      -996px -83px 0 -16px rgba(169,177,180,.12),
+      -62px 368px 0 -8px rgba(160,168,170,.09),
+      -918px 396px 0 -18px rgba(175,183,185,.10);
+  }
+  @keyframes ynotAmbientFloat{from{transform:translate3d(0,0,0) scale(.98)}to{transform:translate3d(12px,-18px,0) scale(1.035)}}
+
+  /* Header/control composition: clean protected zone, no product bubbles behind it. */
+  .lv4-search,.lv4-market-toggle,.lv4-source-picker,.lv4-mobile-menu,.lv4-rail{
+    z-index:58!important;
+  }
+  .lv4-search{
+    top:16px!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:min(430px,36vw)!important;
+    height:42px!important;
+    border-radius:22px!important;
+    border:1px solid rgba(255,255,255,.15)!important;
+    background:rgba(34,36,36,.72)!important;
+    color:#f6f6f4!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.08),0 12px 34px rgba(0,0,0,.24)!important;
+    backdrop-filter:blur(22px) saturate(.85)!important;
+    -webkit-backdrop-filter:blur(22px) saturate(.85)!important;
+  }
+  .lv4-search input{color:#f5f5f2!important;font-size:12px!important;letter-spacing:.01em!important}
+  .lv4-search input::placeholder{color:rgba(255,255,255,.43)!important}
+  .lv4-search svg,.lv4-search button{color:rgba(255,255,255,.76)!important}
+  .lv4-market-toggle{
+    top:67px!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:280px!important;
+    min-height:40px!important;
+    padding:3px!important;
+    border-radius:23px!important;
+    background:rgba(31,33,33,.76)!important;
+    border:1px solid rgba(255,255,255,.14)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.07)!important;
+    backdrop-filter:blur(22px)!important;
+    -webkit-backdrop-filter:blur(22px)!important;
+  }
+  .lv4-market-toggle button{min-height:34px!important;border-radius:19px!important;color:rgba(255,255,255,.62)!important}
+  .lv4-market-toggle button.active{background:rgba(255,255,255,.18)!important;color:#fff!important;box-shadow:inset 0 1px rgba(255,255,255,.12)!important}
+  .lv4-market-toggle button span{display:none!important}
+  .lv4-market-toggle button b{font-size:10px!important;letter-spacing:.1em!important;text-transform:uppercase!important}
+  .lv4-source-picker{top:68px!important;left:calc(50% + 156px)!important;right:auto!important}
+  .lv4-source-trigger{height:38px!important;border-radius:20px!important;background:rgba(31,33,33,.72)!important;border-color:rgba(255,255,255,.13)!important;color:#fff!important}
+
+  /* Product level becomes a structured, endless staggered lattice. Existing append-on-drag keeps rows growing. */
+  .lv4-shell:not(.depth-worlds) .lv4-stage{
+    display:grid!important;
+    grid-template-columns:repeat(9,132px)!important;
+    grid-auto-rows:154px!important;
+    column-gap:24px!important;
+    row-gap:18px!important;
+    align-content:start!important;
+    justify-content:start!important;
+    box-sizing:border-box!important;
+    padding-left:calc(50% - 690px)!important;
+    padding-top:calc(50% - 505px)!important;
+  }
+  .lv4-shell:not(.depth-worlds) .lv4-product{
+    position:relative!important;
+    left:auto!important;
+    top:auto!important;
+    width:var(--s)!important;
+    height:var(--s)!important;
+    align-self:center!important;
+    justify-self:center!important;
+    margin:0!important;
+    z-index:12!important;
+    border:1px solid rgba(255,255,255,.34)!important;
+    background:rgba(235,235,231,.94)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.72),0 10px 28px rgba(0,0,0,.23)!important;
+    transition:transform .2s cubic-bezier(.2,.78,.2,1),box-shadow .2s ease!important;
+  }
+  .lv4-shell:not(.depth-worlds) .lv4-product:nth-of-type(even){transform:translateY(62px)!important}
+  .lv4-shell:not(.depth-worlds) .lv4-product:hover,.lv4-shell:not(.depth-worlds) .lv4-product.is-hovered{transform:scale(1.065)!important;z-index:20!important;box-shadow:0 20px 44px rgba(0,0,0,.32)!important}
+  .lv4-shell:not(.depth-worlds) .lv4-product:nth-of-type(even):hover,.lv4-shell:not(.depth-worlds) .lv4-product:nth-of-type(even).is-hovered{transform:translateY(62px) scale(1.065)!important}
+  .lv4-product img{object-fit:cover!important}
+  .lv4-product .lv4-price{
+    bottom:-4px!important;
+    right:-4px!important;
+    left:auto!important;
+    min-width:0!important;
+    padding:6px 9px!important;
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.66)!important;
+    background:rgba(248,248,245,.9)!important;
+    color:#1d1e1d!important;
+    font:800 9px/1 Inter,ui-sans-serif,system-ui!important;
+    box-shadow:0 5px 16px rgba(0,0,0,.13)!important;
+    backdrop-filter:blur(10px)!important;
+    -webkit-backdrop-filter:blur(10px)!important;
+  }
+  .lv4-product-tooltip{background:rgba(20,21,21,.8)!important;color:#fff!important;border-color:rgba(255,255,255,.1)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important}
+
+  /* Remove radial-world scaffolding once products are present; the lattice is the navigation. */
+  .lv4-shell:not(.depth-worlds) .lv4-intent,
+  .lv4-shell:not(.depth-worlds) .lv4-textbubble,
+  .lv4-shell:not(.depth-worlds) .lv4-zone-connector,
+  .lv4-shell:not(.depth-worlds) .lv4-zone-detail-cluster,
+  .lv4-shell:not(.depth-worlds) .lv4-zone-annotation,
+  .lv4-shell:not(.depth-worlds) .lv4-source-anchor{display:none!important}
+
+  /* Fixed centered glass product view, world remains visible and softly blurred behind it. */
+  .lv4-shell:has(.lv4-detail) .lv4-world::marker{display:none}
+  .lv4-detail{
+    position:fixed!important;
+    z-index:86!important;
+    left:50%!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translate(-50%,-50%)!important;
+    width:min(930px,calc(100vw - 100px))!important;
+    height:min(540px,calc(100vh - 150px))!important;
+    max-height:540px!important;
+    box-sizing:border-box!important;
+    padding:16px!important;
+    overflow:hidden!important;
+    display:grid!important;
+    grid-template-columns:84px minmax(310px,1.05fr) minmax(330px,.95fr)!important;
+    grid-template-rows:1fr!important;
+    gap:14px!important;
+    border-radius:28px!important;
+    border:1px solid rgba(255,255,255,.28)!important;
+    background:linear-gradient(135deg,rgba(111,112,110,.54),rgba(44,46,45,.62))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.25),0 34px 90px rgba(0,0,0,.48)!important;
+    backdrop-filter:blur(34px) saturate(.76)!important;
+    -webkit-backdrop-filter:blur(34px) saturate(.76)!important;
+    animation:ynotDesktopProductIn .2s cubic-bezier(.2,.82,.22,1) both!important;
+  }
+  @keyframes ynotDesktopProductIn{from{opacity:0;transform:translate(-50%,-47%) scale(.975)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  .lv4-detail::after{
+    content:"";
+    position:fixed;
+    z-index:-1;
+    inset:-100vh -100vw;
+    background:rgba(4,5,5,.42);
+    backdrop-filter:blur(7px);
+    -webkit-backdrop-filter:blur(7px);
+    pointer-events:none;
+  }
+  .lv4-detail>img{
+    grid-column:2!important;
+    grid-row:1!important;
+    width:100%!important;
+    height:100%!important;
+    min-height:0!important;
+    aspect-ratio:auto!important;
+    object-fit:contain!important;
+    border-radius:20px!important;
+    background:rgba(246,246,243,.95)!important;
+    border:1px solid rgba(255,255,255,.44)!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.74)!important;
+  }
+  .lv4-gallery{
+    grid-column:1!important;
+    grid-row:1!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    justify-content:flex-start!important;
+    gap:10px!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    padding:2px!important;
+    margin:0!important;
+  }
+  .lv4-gallery button{
+    width:78px!important;
+    height:78px!important;
+    min-width:78px!important;
+    flex:0 0 78px!important;
+    border-radius:15px!important;
+    background:rgba(240,240,237,.82)!important;
+    border:1px solid rgba(255,255,255,.35)!important;
+    box-shadow:none!important;
+  }
+  .lv4-gallery button.active{outline:2px solid rgba(255,255,255,.72)!important;outline-offset:1px!important}
+  .lv4-gallery img{width:100%!important;height:100%!important;object-fit:contain!important;border-radius:13px!important}
+  .lv4-detailcopy{
+    grid-column:3!important;
+    grid-row:1!important;
+    min-width:0!important;
+    padding:10px 12px 10px 8px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    align-items:stretch!important;
+    overflow-y:auto!important;
+    color:#fff!important;
+  }
+  .lv4-product-brand{color:rgba(255,255,255,.68)!important;font-size:10px!important;letter-spacing:.12em!important}
+  .lv4-product-source{color:rgba(255,255,255,.46)!important;font-size:8px!important;margin-top:6px!important}
+  .lv4-detailcopy h2{
+    margin:12px 48px 10px 0!important;
+    color:#fff!important;
+    font:720 clamp(25px,2.25vw,34px)/1.04 Inter,ui-sans-serif,system-ui!important;
+    letter-spacing:-.035em!important;
+    white-space:nowrap!important;
+    text-overflow:ellipsis!important;
+    overflow:hidden!important;
+    display:block!important;
+  }
+  .lv4-detailcopy strong{color:#fff!important;font:820 27px/1 Inter,ui-sans-serif,system-ui!important;margin:4px 0 10px!important}
+  .lv4-detailcopy::after{
+    content:"Selected from the live catalog · price and availability verified at checkout";
+    order:4;
+    margin:0 0 14px!important;
+    color:rgba(255,255,255,.56)!important;
+    font:600 10px/1.35 Inter,ui-sans-serif,system-ui!important;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .lv4-variants{order:5!important;padding:4px 0 8px!important;gap:7px!important}
+  .lv4-variants button{background:rgba(255,255,255,.09)!important;border-color:rgba(255,255,255,.16)!important;color:#fff!important}
+  .lv4-variants button.active{background:rgba(255,255,255,.86)!important;color:#171818!important}
+  .lv4-actions{order:6!important;grid-template-columns:1fr 48px!important;gap:8px!important;margin-top:8px!important}
+  .lv4-actions button{
+    border-color:rgba(255,255,255,.18)!important;
+    background:rgba(255,255,255,.10)!important;
+    color:#fff!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.1)!important;
+  }
+  .lv4-actions>button:first-child{background:#f2f2ef!important;color:#151616!important;font-weight:800!important}
+  .lv4-actions .try{background:rgba(255,255,255,.12)!important;color:#fff!important}
+  .lv4-direction-row{order:7!important;margin-top:10px!important;grid-template-columns:repeat(2,1fr)!important}
+  .lv4-direction-row button{background:rgba(255,255,255,.075)!important;border-color:rgba(255,255,255,.13)!important;color:rgba(255,255,255,.82)!important}
+  .lv4-checkout-fallback{order:8!important;background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.13)!important;color:#fff!important}
+  .lv4-close{
+    right:16px!important;
+    top:16px!important;
+    width:38px!important;
+    height:38px!important;
+    border-radius:50%!important;
+    background:rgba(36,38,37,.58)!important;
+    border-color:rgba(255,255,255,.18)!important;
+    color:#fff!important;
+    z-index:10!important;
+  }
+
+  /* Keep utility controls below the protected header, like the reference. */
+  .lv4-refine{top:132px!important;bottom:auto!important}
+}
