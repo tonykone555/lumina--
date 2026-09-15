@@ -3,6 +3,7 @@ import {SEO_CATEGORIES} from "@/lib/seo-categories";
 
 const BASE="https://ynotworld.app";
 
+// Keep the sitemap focused on public, crawlable shopping experiences.
 export default function sitemap():MetadataRoute.Sitemap{
   const now=new Date();
   return [
