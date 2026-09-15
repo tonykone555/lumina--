@@ -37,6 +37,7 @@ import "./final-ui-refinement.css";
 import "./final-detail-safety.css";
 import "./final-interaction-polish.css";
 import "./final-request-polish.css";
+import "./mobile-header-card-fix.css";
 
 const SITE_URL="https://ynotworld.app";
 const SITE_DESCRIPTION="Discover fashion, furniture, home decor, beauty, fitness, tech and more across independent stores and shopping sources with YNOT's visual spatial shopping experience.";
