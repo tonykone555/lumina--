@@ -38,6 +38,7 @@ export default function Home(){
   };
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
+    <h1 style={{position:"absolute",width:1,height:1,padding:0,margin:-1,overflow:"hidden",clip:"rect(0,0,0,0)",whiteSpace:"nowrap",border:0}}>YNOT visual shopping and product discovery</h1>
     <AppShell/>
   </>;
 }
