@@ -1,4 +1,5 @@
 import type {Metadata} from "next";
+import EtsySourceController from "@/components/lumina/EtsySourceController";
 import "./globals.css";
 import "./frameless.css";
 import "./spatial-ui.css";
@@ -47,6 +48,7 @@ import "./final-directional-mobile-pass.css";
 import "./mobile-product-interaction-final.css";
 import "./final-slider-deal-glass.css";
 import "./final-hover-deal-fix.css";
+import "./etsy-source.css";
 
 const SITE_URL="https://ynotworld.app";
 const SITE_TITLE="YNOT Shop — YNOT World Visual & AI Shopping";
@@ -75,5 +77,5 @@ export const metadata:Metadata={
 };
 
 export default function RootLayout({children}:{children:React.ReactNode}){
-  return <html lang="en"><body>{children}</body></html>;
+  return <html lang="en"><body>{children}<EtsySourceController/></body></html>;
 }
