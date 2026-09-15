@@ -1,0 +1,178 @@
+/* Final requested UI polish — intentionally imported last. */
+
+/* Blend header into the board: darker translucent canopy, no hard seam. */
+.ynot-reference-header{
+  background:linear-gradient(180deg,rgba(5,6,6,.78),rgba(5,6,6,.54) 66%,rgba(5,6,6,.30))!important;
+  backdrop-filter:blur(18px) saturate(1.04)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.04)!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+.ynot-reference-header::after{
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  pointer-events:none!important;
+  left:0!important;
+  right:0!important;
+  bottom:-42px!important;
+  height:58px!important;
+  border:0!important;
+  background:linear-gradient(180deg,rgba(5,6,6,.34),rgba(5,6,6,.14) 44%,rgba(5,6,6,0))!important;
+  filter:blur(8px)!important;
+}
+.lv4-world,.lv4-stage,.lv4-shell{border-top:0!important;box-shadow:none!important}
+
+/* Product hover/title must sit above every neighbouring bubble. */
+.lv4-products,.lv4-product-layer,.lv4-stage,.lv4-world{overflow:visible!important}
+.lv4-product:hover,.lv4-product:focus-within{z-index:1200!important;isolation:auto!important}
+.lv4-product:hover .lv4-product-tooltip,.lv4-product:focus-within .lv4-product-tooltip{
+  z-index:1250!important;
+  position:absolute!important;
+  overflow:visible!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
+
+/* Glass thumbnail rail + compact well-positioned media box. */
+.lv4-detail .ynot-loaded-gallery{
+  display:grid!important;
+  grid-auto-flow:row!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  align-content:start!important;
+  width:116px!important;
+  max-height:360px!important;
+  padding:9px!important;
+  margin:0!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  border-radius:24px!important;
+  background:linear-gradient(160deg,rgba(118,123,120,.24),rgba(20,22,22,.38))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.22),0 16px 34px rgba(0,0,0,.16)!important;
+  backdrop-filter:blur(18px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+  overflow:hidden!important;
+}
+.lv4-detail .ynot-loaded-gallery button{
+  position:relative!important;
+  width:45px!important;
+  height:58px!important;
+  min-width:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border-radius:15px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  background:rgba(255,255,255,.08)!important;
+  box-shadow:none!important;
+}
+.lv4-detail .ynot-loaded-gallery button.active{
+  border-color:rgba(255,255,255,.72)!important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18),inset 0 1px rgba(255,255,255,.20)!important;
+}
+.lv4-detail .ynot-loaded-gallery img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:inherit!important}
+.lv4-detail .ynot-gallery-more::after{
+  content:attr(data-more)!important;
+  position:absolute!important;
+  inset:0!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(8,9,9,.48)!important;
+  color:#fff!important;
+  font:800 12px/1 ui-sans-serif,system-ui,sans-serif!important;
+  backdrop-filter:blur(5px)!important;
+  -webkit-backdrop-filter:blur(5px)!important;
+}
+
+/* Full-product media slider. */
+.ynot-full-slider{
+  position:absolute!important;
+  z-index:1500!important;
+  inset:0!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:34px!important;
+  border-radius:inherit!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  background:linear-gradient(145deg,rgba(88,93,90,.72),rgba(16,18,18,.88))!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.24)!important;
+  backdrop-filter:blur(24px) saturate(1.06)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(1.06)!important;
+}
+.ynot-full-slider-image{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;border-radius:24px!important;background:transparent!important}
+.ynot-full-slider-close,.ynot-full-slider-prev,.ynot-full-slider-next{
+  position:absolute!important;z-index:4!important;display:grid!important;place-items:center!important;
+  border:1px solid rgba(255,255,255,.28)!important;background:rgba(18,20,20,.42)!important;color:#fff!important;
+  backdrop-filter:blur(15px)!important;-webkit-backdrop-filter:blur(15px)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.18)!important;cursor:pointer!important;
+}
+.ynot-full-slider-close{top:15px!important;right:15px!important;width:32px!important;height:32px!important;border-radius:50%!important;font:700 17px/1 system-ui!important}
+.ynot-full-slider-prev,.ynot-full-slider-next{top:50%!important;width:40px!important;height:54px!important;transform:translateY(-50%)!important;border-radius:20px!important;font:500 28px/1 system-ui!important}
+.ynot-full-slider-prev{left:14px!important}.ynot-full-slider-next{right:14px!important}
+.ynot-full-slider-count{position:absolute!important;left:50%!important;bottom:14px!important;transform:translateX(-50%)!important;padding:7px 11px!important;border-radius:999px!important;border:1px solid rgba(255,255,255,.18)!important;background:rgba(18,20,20,.38)!important;color:#fff!important;font:750 9px/1 system-ui!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important}
+
+/* Modal dimming belongs behind the card only. */
+.ynot-app-shell:has(.lv4-detail)::after{
+  content:""!important;position:fixed!important;z-index:255!important;inset:0!important;pointer-events:none!important;
+  background:rgba(3,4,4,.52)!important;backdrop-filter:blur(3px) saturate(.90)!important;-webkit-backdrop-filter:blur(3px) saturate(.90)!important;
+}
+.lv4-detail{z-index:300!important;filter:none!important;opacity:1!important}
+
+/* Description close = tiny icon in top-right. */
+.ynot-description-close{
+  top:14px!important;right:14px!important;left:auto!important;width:29px!important;height:29px!important;min-width:29px!important;
+  padding:0!important;display:grid!important;place-items:center!important;border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.18)!important;background:rgba(14,16,16,.24)!important;color:#fff!important;
+  font:700 13px/1 system-ui!important;box-shadow:none!important;backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important;
+}
+
+/* YNOT Deal = glossy curved glass, never cream, never a top shadow. */
+.ynot-deal,.ynot-deal-pill,.ynot-deal-badge,.lv4-deal{
+  border:1px solid rgba(255,255,255,.30)!important;border-radius:999px!important;
+  background:linear-gradient(180deg,rgba(150,156,151,.30),rgba(52,56,53,.50))!important;color:#fff!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.24),0 9px 18px rgba(0,0,0,.10)!important;
+  backdrop-filter:blur(17px) saturate(1.08)!important;-webkit-backdrop-filter:blur(17px) saturate(1.08)!important;
+}
+.ynot-deal::before,.ynot-deal-pill::before,.ynot-deal-badge::before,.lv4-deal::before{box-shadow:none!important}
+
+/* Retire the old Y-only icon from the left rail. */
+.lv4-rail .lv4-logo{display:none!important}
+
+/* Avatar image in both profile affordances. */
+.ynot-reference-avatar img,.ynot-reference-signin img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
+.ynot-reference-signin.has-profile{gap:8px!important}
+.ynot-reference-signin.has-profile img{width:24px!important;height:24px!important;flex:0 0 24px!important}
+
+@media (max-width:899px){
+  /* No compass/zoom controls on top of a product card. */
+  .ynot-app-shell:has(.lv4-detail) .ynot-reference-nav-tools,
+  .ynot-app-shell:has(.lv4-detail) .ynot-world-compass,
+  .ynot-app-shell:has(.lv4-detail) .ynot-compass-tools,
+  .ynot-app-shell.chrome-hidden .ynot-reference-nav-tools,
+  .ynot-app-shell.chrome-hidden .ynot-world-compass{display:none!important}
+
+  /* Compact search under tags. */
+  .ynot-app-shell:not(.chrome-hidden) .ynot-bottom-search{
+    height:40px!important;
+    width:min(320px,calc(100vw - 54px))!important;
+    padding:3px 4px 3px 12px!important;
+    bottom:max(10px,env(safe-area-inset-bottom))!important;
+    border-radius:22px!important;
+  }
+  .ynot-bottom-search button{height:32px!important;min-width:64px!important;border-radius:18px!important}
+  .ynot-bottom-search input{font-size:12px!important}
+  .subcategory-nav,.ynot-subcategory-nav{bottom:55px!important}
+
+  .lv4-detail .ynot-loaded-gallery{
+    width:min(100%,330px)!important;
+    max-height:none!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    grid-auto-flow:column!important;
+    gap:7px!important;
+    padding:8px!important;
+    border-radius:19px!important;
+  }
+  .lv4-detail .ynot-loaded-gallery button{width:100%!important;height:54px!important}
+  .ynot-full-slider{padding:24px 12px 28px!important}
+  .ynot-full-slider-image{border-radius:18px!important}
+}
