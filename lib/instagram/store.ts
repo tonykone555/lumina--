@@ -1,12 +1,13 @@
 import type {DiscoveryEdge,DiscoveryProfile} from "./types";
 
-const base=()=>process.env.SUPABASE_URL?.replace(/\/$/,"")||"";
-const key=()=>process.env.SUPABASE_SERVICE_ROLE_KEY||"";
+const base=()=>String(process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.SUPABASE_URL||"").replace(/\/$/,"");
+const key=()=>String(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+const authHeaders=()=>{const value=key();return{apikey:value,...(value.startsWith("sb_")?{}:{Authorization:`Bearer ${value}`})}};
 export function instagramStoreEnabled(){return Boolean(base()&&key())}
 
 async function rest(path:string,init:RequestInit={}){
  if(!instagramStoreEnabled())throw new Error("Instagram persistence is not configured");
- const response=await fetch(`${base()}/rest/v1/${path}`,{...init,headers:{apikey:key(),Authorization:`Bearer ${key()}`,"Content-Type":"application/json",...(init.headers||{})},cache:"no-store"});
+ const response=await fetch(`${base()}/rest/v1/${path}`,{...init,headers:{...authHeaders(),"Content-Type":"application/json",...(init.headers||{})},cache:"no-store"});
  if(!response.ok)throw new Error(`Supabase ${response.status}: ${(await response.text()).slice(0,240)}`);
  const text=await response.text();return text?JSON.parse(text):null;
 }

@@ -3,11 +3,12 @@ import crypto from "node:crypto";
 
 export type CircleProfile={id:string;referral_code:string;parent_user_id:string|null;display_name:string|null;avatar_data?:string|null;created_at:string};
 const base=()=>String(process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.SUPABASE_URL||"").replace(/\/$/,"");
-const key=()=>String(process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+const key=()=>String(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||"");
+const authHeaders=()=>{const value=key();return{apikey:value,...(value.startsWith("sb_")?{}:{Authorization:`Bearer ${value}`})}};
 export function circleReady(){return Boolean(base()&&key())}
 async function request(path:string,init:RequestInit={}){
  if(!circleReady())throw new Error("CIRCLE_NOT_CONFIGURED");
- const response=await fetch(`${base()}/rest/v1/${path}`,{...init,headers:{apikey:key(),Authorization:`Bearer ${key()}`,"Content-Type":"application/json",Prefer:"return=representation",...(init.headers||{})},cache:"no-store"});
+ const response=await fetch(`${base()}/rest/v1/${path}`,{...init,headers:{...authHeaders(),"Content-Type":"application/json",Prefer:"return=representation",...(init.headers||{})},cache:"no-store"});
  const text=await response.text();if(!response.ok)throw new Error(text||"CIRCLE_DATABASE_ERROR");return text?JSON.parse(text):null;
 }
 export function referralCode(){return crypto.randomBytes(4).toString("base64url").toUpperCase().replace(/[^A-Z0-9]/g,"").slice(0,7)}
