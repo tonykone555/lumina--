@@ -1,6 +1,6 @@
 /* Final world/product pass — imported last so the visual rules below win everywhere. */
 
-/* Keep the world fully alive underneath the header. The shadow is visual only and never blocks wheel/pinch/pan. */
+/* Keep the world fully alive underneath the header. Mobile keeps its soft top shadow; desktop has no crop/shadow layer at all. */
 .ynot-app-shell::before{
   content:""!important;
   display:block!important;
@@ -27,12 +27,16 @@
   -webkit-backdrop-filter:none!important;
 }
 
-/* No crop line / seam in the header on either desktop or phone. Bubbles continue behind it. */
+/* No crop line / seam in the header. Bubbles continue behind it. */
 .ynot-reference-header{
   background:transparent!important;
   border:0!important;
+  border-top:0!important;
+  border-right:0!important;
   border-bottom:0!important;
+  border-left:0!important;
   box-shadow:none!important;
+  outline:0!important;
   overflow:visible!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
@@ -95,8 +99,32 @@
   overflow:visible!important;
 }
 
-/* Desktop product media: thumbnails are a dedicated vertical rail on the LEFT of the main image. */
+/* Desktop: absolutely no header crop/shadow strip. The world/bubbles render continuously behind the header chrome. */
 @media (min-width:900px){
+  .ynot-app-shell::before{
+    content:none!important;
+    display:none!important;
+    background:none!important;
+    height:0!important;
+    border:0!important;
+    box-shadow:none!important;
+    filter:none!important;
+  }
+  .ynot-reference-header{
+    background:transparent!important;
+    border:0!important;
+    border-bottom:0!important;
+    box-shadow:none!important;
+    outline:0!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .ynot-reference-header::before,
+  .ynot-reference-header::after{
+    content:none!important;
+    display:none!important;
+  }
+
   .lv4-detail{
     grid-template-columns:86px minmax(350px,1.07fr) minmax(340px,.93fr)!important;
     column-gap:14px!important;
