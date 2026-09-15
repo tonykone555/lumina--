@@ -1,0 +1,177 @@
+/* Final interaction polish: hover layering, full-card gallery slider, clean modal dimming, mobile controls. */
+
+/* Hovered product/title must always render above neighbouring bubbles. */
+.lv4-product:hover,
+.lv4-product:focus-within{
+  z-index:140!important;
+}
+.lv4-product:hover .lv4-product-tooltip,
+.lv4-product:focus-within .lv4-product-tooltip{
+  z-index:160!important;
+  position:absolute!important;
+  pointer-events:none!important;
+}
+.lv4-product-tooltip{
+  overflow:visible!important;
+}
+
+/* Only darken/fade the world around the modal — never the product card itself. */
+.ynot-app-shell:has(.lv4-detail)::after{
+  content:"";
+  position:fixed;
+  z-index:255;
+  inset:0;
+  pointer-events:none;
+  background:rgba(4,5,5,.50);
+  backdrop-filter:blur(3px) saturate(.88);
+  -webkit-backdrop-filter:blur(3px) saturate(.88);
+}
+.lv4-detail{
+  z-index:300!important;
+  filter:none!important;
+  opacity:1!important;
+}
+
+/* Full-card image slider launched by the +N thumbnail. */
+.ynot-full-slider{
+  position:absolute;
+  z-index:120;
+  inset:0;
+  display:grid;
+  place-items:center;
+  padding:34px;
+  border-radius:inherit;
+  overflow:hidden;
+  background:linear-gradient(145deg,rgba(50,53,52,.94),rgba(18,20,20,.94));
+  box-shadow:inset 0 1px rgba(255,255,255,.22);
+}
+.ynot-full-slider-image{
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  border-radius:22px!important;
+  background:transparent!important;
+}
+.ynot-full-slider-close,
+.ynot-full-slider-prev,
+.ynot-full-slider-next{
+  position:absolute;
+  z-index:3;
+  display:grid;
+  place-items:center;
+  border:1px solid rgba(255,255,255,.28);
+  background:rgba(25,27,27,.46);
+  color:#fff;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 20px rgba(0,0,0,.16);
+}
+.ynot-full-slider-close{
+  top:16px;
+  right:16px;
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  font:700 17px/1 ui-sans-serif,system-ui,sans-serif;
+}
+.ynot-full-slider-prev,.ynot-full-slider-next{
+  top:50%;
+  width:40px;
+  height:54px;
+  transform:translateY(-50%);
+  border-radius:20px;
+  font:500 30px/1 ui-sans-serif,system-ui,sans-serif;
+}
+.ynot-full-slider-prev{left:14px}
+.ynot-full-slider-next{right:14px}
+.ynot-full-slider-count{
+  position:absolute;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  padding:7px 11px;
+  border-radius:999px;
+  background:rgba(20,22,22,.46);
+  border:1px solid rgba(255,255,255,.20);
+  color:#fff;
+  font:750 9px/1 ui-sans-serif,system-ui,sans-serif;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+/* Description back control is now a tiny top-right icon only. */
+.ynot-description-close{
+  top:14px!important;
+  right:14px!important;
+  left:auto!important;
+  width:30px!important;
+  height:30px!important;
+  min-width:30px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  background:rgba(20,22,22,.24)!important;
+  color:#fff!important;
+  font:700 14px/1 ui-sans-serif,system-ui,sans-serif!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(10px)!important;
+  -webkit-backdrop-filter:blur(10px)!important;
+}
+
+/* YNOT Deal: glossy curved glass, no cream fill and no top cast shadow. */
+.ynot-deal,
+.ynot-deal-pill,
+.ynot-deal-badge,
+.lv4-deal,
+[class*="ynot-deal"]{
+  border:1px solid rgba(255,255,255,.28)!important;
+  border-radius:999px!important;
+  background:linear-gradient(180deg,rgba(96,101,98,.38),rgba(43,47,45,.52))!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.22),0 8px 18px rgba(0,0,0,.12)!important;
+  backdrop-filter:blur(16px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(16px) saturate(1.08)!important;
+}
+
+@media (max-width:899px){
+  /* Product card owns the screen: hide header zoom/compass while it is open. */
+  .ynot-app-shell:has(.lv4-detail) .ynot-reference-nav-tools,
+  .ynot-app-shell:has(.lv4-detail) .ynot-compass-tools,
+  .ynot-app-shell:has(.lv4-detail) .ynot-world-compass{
+    display:none!important;
+  }
+
+  /* Shorter mobile search bar so it sits cleanly below the tag row. */
+  .ynot-app-shell:not(.chrome-hidden) .ynot-bottom-search{
+    height:44px!important;
+    bottom:max(10px,env(safe-area-inset-bottom))!important;
+    padding:4px 5px 4px 14px!important;
+    border-radius:24px!important;
+  }
+  .ynot-bottom-search button{
+    height:34px!important;
+    min-width:68px!important;
+    border-radius:19px!important;
+  }
+  .ynot-bottom-search input{
+    font-size:13px!important;
+  }
+  .subcategory-nav,.ynot-subcategory-nav{
+    bottom:60px!important;
+  }
+
+  .ynot-full-slider{
+    padding:24px 14px 26px;
+  }
+  .ynot-full-slider-image{
+    border-radius:18px!important;
+  }
+  .ynot-full-slider-prev,.ynot-full-slider-next{
+    width:36px;
+    height:48px;
+  }
+}
