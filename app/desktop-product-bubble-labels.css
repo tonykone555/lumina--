@@ -1,0 +1,30 @@
+/* Desktop-only: make product bubble hover/title text boxes larger and easier to read. */
+@media (min-width:900px){
+  .lv4-product .lv4-product-tooltip{
+    min-width:190px!important;
+    max-width:240px!important;
+    padding:11px 14px!important;
+    border-radius:16px!important;
+    background:rgba(24,26,25,.72)!important;
+    border:1px solid rgba(255,255,255,.24)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 10px 28px rgba(0,0,0,.18)!important;
+    backdrop-filter:blur(16px) saturate(1.06)!important;
+    -webkit-backdrop-filter:blur(16px) saturate(1.06)!important;
+  }
+  .lv4-product .lv4-product-tooltip b{
+    display:block!important;
+    font-size:14px!important;
+    line-height:1.16!important;
+    font-weight:780!important;
+    letter-spacing:-.02em!important;
+    white-space:normal!important;
+  }
+  .lv4-product .lv4-product-tooltip small{
+    display:block!important;
+    margin-top:5px!important;
+    font-size:10.5px!important;
+    line-height:1.2!important;
+    color:rgba(255,255,255,.72)!important;
+    white-space:normal!important;
+  }
+}
