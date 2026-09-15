@@ -22,24 +22,21 @@ function decorateGallery(gallery:HTMLElement){
 function decorateProductModal(root:ParentNode=document){
  root.querySelectorAll<HTMLElement>(GALLERIES).forEach(decorateGallery);
  root.querySelectorAll<HTMLElement>(".lv4-detailcopy").forEach(copy=>{
-  const directions=copy.querySelector<HTMLElement>(".lv4-direction-row");
-  const tags=copy.querySelector<HTMLElement>(".lv4-tagrow,.ynot-card-tags");
-  const description=copy.querySelector<HTMLElement>(".ynot-description-toggle");
-  if(directions)directions.classList.add("ynot-reference-directions");
-  if(tags)tags.classList.add("ynot-reference-tags");
-  if(description)description.classList.add("ynot-reference-description");
+  copy.querySelector<HTMLElement>(".lv4-direction-row")?.classList.add("ynot-reference-directions");
+  copy.querySelector<HTMLElement>(".lv4-tagrow,.ynot-card-tags")?.classList.add("ynot-reference-tags");
+  copy.querySelector<HTMLElement>(".ynot-description-toggle")?.classList.add("ynot-reference-description");
  });
 }
 
 export default function ProductReferenceEnhancer():null{
  useEffect(()=>{
-  let queued=false;
-  const scan=()=>{queued=false;decorateProductModal()};
-  const queue=()=>{if(queued)return;queued=true;queueMicrotask(scan)};
-  const observer=new MutationObserver(queue);
-  observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class"]});
-  scan();
-  return()=>observer.disconnect();
+  let frame=0;
+  const schedule=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;decorateProductModal()})};
+  const observer=new MutationObserver(schedule);
+  observer.observe(document.body,{subtree:true,childList:true});
+  document.addEventListener("click",schedule,true);
+  schedule();
+  return()=>{observer.disconnect();document.removeEventListener("click",schedule,true);if(frame)cancelAnimationFrame(frame)};
  },[]);
  return null;
 }
