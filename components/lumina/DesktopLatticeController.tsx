@@ -14,18 +14,24 @@ function metrics(){
  return{stepX:176,stepY:156,size:126};
 }
 
-function spiralCell(index:number){
- if(index<=0)return{x:0,y:0};
- let x=0,y=0,dx=1,dy=0,segmentLength=1,segmentPassed=0,turns=0;
- for(let i=0;i<index;i++){
-  x+=dx;y+=dy;segmentPassed+=1;
-  if(segmentPassed===segmentLength){
-   segmentPassed=0;
-   const nextDx=-dy,nextDy=dx;dx=nextDx;dy=nextDy;turns+=1;
-   if(turns%2===0)segmentLength+=1;
-  }
- }
- return{x,y};
+/*
+  Fill concentric square rings instead of a one-way sequence. Each new batch
+  immediately prepares rows above/below and columns left/right, so panning in
+  any direction reveals already-positioned product layers rather than an empty edge.
+*/
+function ringCell(index:number){
+ if(index<=0)return{x:0,y:0,ring:0};
+ const ring=Math.ceil((Math.sqrt(index+1)-1)/2);
+ const side=ring*2;
+ const first=(2*ring-1)*(2*ring-1);
+ let offset=index-first;
+ if(offset<side)return{x:-ring+1+offset,y:-ring,ring};
+ offset-=side;
+ if(offset<side)return{x:ring,y:-ring+1+offset,ring};
+ offset-=side;
+ if(offset<side)return{x:ring-1-offset,y:ring,ring};
+ offset-=side;
+ return{x:-ring,y:ring-1-offset,ring};
 }
 
 function applyLattice(){
@@ -39,14 +45,15 @@ function applyLattice(){
  shell.classList.add("ynot-desktop-lattice-active");
  const {stepX,stepY,size}=metrics();
  products.forEach((product,index)=>{
-  const cell=spiralCell(index);
+  const cell=ringCell(index);
   const stagger=(Math.abs(cell.y)%2)*stepX*.5;
   const x=WORLD_CX+cell.x*stepX+stagger;
   const y=WORLD_CY+cell.y*stepY;
-  const signature=`${stepX}:${stepY}:${size}:${cell.x}:${cell.y}`;
+  const signature=`${stepX}:${stepY}:${size}:${cell.x}:${cell.y}:${cell.ring}`;
   if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;
   product.dataset.ynotLattice=signature;
   product.dataset.ynotLatticeRow=String(cell.y);
+  product.dataset.ynotBufferRing=String(cell.ring);
   delete product.dataset.hexSlot;
   product.style.setProperty("position","absolute","important");
   product.style.setProperty("left",`${x}px`,"important");
@@ -55,7 +62,7 @@ function applyLattice(){
   product.style.setProperty("height",`${size}px`,"important");
   product.style.setProperty("--s",`${size}px`);
   product.style.setProperty("margin","0","important");
-  product.style.setProperty("z-index",String(20+(Math.abs(cell.x+cell.y)%3)),"important");
+  product.style.setProperty("z-index",String(20+(cell.ring%3)),"important");
  });
 }
 
@@ -72,7 +79,7 @@ export default function DesktopLatticeController():null{
   window.addEventListener("shop:tag-search",schedule as EventListener);
   window.addEventListener("ynot:world-focus",schedule as EventListener);
   schedule();
-  const delayed=[100,280,650,1200,2200].map(ms=>window.setTimeout(schedule,ms));
+  const delayed=[70,160,320,620,1100,1800,2800].map(ms=>window.setTimeout(schedule,ms));
   return()=>{
    observer.disconnect();
    if(frame)cancelAnimationFrame(frame);
