@@ -58,7 +58,7 @@ export const metadata:Metadata={
     images:[{url:"/ynot-microphone.jpg",alt:"YNOT visual shopping"}]
   },
   twitter:{card:"summary_large_image",title:"YNOT — Visual Shopping & Product Discovery",description:SITE_DESCRIPTION,images:["/ynot-microphone.jpg"]},
-  verification:process.env.GOOGLE_SITE_VERIFICATION?{google:process.env.GOOGLE_SITE_VERIFICATION}:undefined,
+  verification:{google:"-GQTuojAnMn-0J1mgsbr0j_zasvkZYoFrakODO8skNA"},
   other:{"theme-color":"#080909"}
 };
 
