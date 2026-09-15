@@ -130,4 +130,25 @@ export default function AppShell(){
    </div>
    <div className="ynot-reference-right">
     <button className="ynot-reference-notify" onClick={openNotifications} aria-label="Notifications"><Bell/><i/></button>
-    <button className={`ynot-reference-signin ${hasProfile?"has-profile":"
+    <button className={`ynot-reference-signin ${hasProfile?"has-profile":""}`} onClick={hasProfile?openSaved:openProfile}>{headerProfile?.avatar?<img src={headerProfile.avatar} alt="Your profile"/>:<UserRound/>}<span>{hasProfile?"Saves":"Sign in"}</span></button>
+    <button className="ynot-reference-avatar" onClick={openProfile} aria-label="Open profile">{headerProfile?.avatar?<img src={headerProfile.avatar} alt="Your profile"/>:<UserRound/>}</button>
+   </div>
+  </header>
+  {mode==="discover"?<DiscoveryUniverse/>:<><LuminaWorld/><EtsySourceController/><SubcategoryNavigator/><WorldCompass/></>}
+  <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
+  <YnotDrawer/>
+  <YnotIntentBridge/>
+  <SavedNotebook/>
+  <ProductCardEnhancer/>
+  <ProductDetailHydrator/>
+  <ProductReferenceEnhancer/>
+  <ProductCardSync/>
+  <WorldSaveBridge/>
+  <CircleDrawer/>
+  <ProfilePanel/>
+  <WorldVisualPolish/>
+  <DesktopLatticeController/>
+  <MobileProductSwipeController/>
+  <CheckoutStatus/>
+ </div>;
+}
