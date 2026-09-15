@@ -34,5 +34,6 @@ import "./lattice-universal.css";
 import "./reference-responsive-final.css";
 import "./final-ui-refinement.css";
 import "./final-detail-safety.css";
+import "./final-interaction-polish.css";
 export const metadata={title:"YNOT — Spatial Shopping",description:"Explore products through an endless spatial shopping world"};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
