@@ -11,7 +11,8 @@ const ONE_TIME_DIAGNOSTIC="9e7c6f4d3a2b41f0b8890c7edb6215ac";
 export async function GET(req:NextRequest){
  if(req.nextUrl.searchParams.get("diagnostic")===ONE_TIME_DIAGNOSTIC){
   try{
-   const result=await discoverInstagramGraph({query:"swimwear",target:20,keywordPages:1,relatedPerSeed:5,seedExpansionLimit:1});
+   const query=(req.nextUrl.searchParams.get("q")||"independent beachwear labels september 2026").slice(0,100);
+   const result=await discoverInstagramGraph({query,target:20,keywordPages:1,relatedPerSeed:5,seedExpansionLimit:1});
    return NextResponse.json(result,{headers:{"Cache-Control":"no-store"}});
   }catch(error){
    const message=error instanceof Error?error.message:"Instagram discovery failed";
