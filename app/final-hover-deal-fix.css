@@ -1,0 +1,65 @@
+/* Final hover label + YNOT Deals correction — load last. */
+
+@media (min-width:900px){
+  .lv4-product .lv4-product-tooltip{
+    min-width:154px!important;
+    max-width:190px!important;
+    padding:8px 10px!important;
+    border-radius:13px!important;
+    background:rgba(18,20,20,.90)!important;
+    border:1px solid rgba(255,255,255,.22)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.11),0 8px 22px rgba(0,0,0,.22)!important;
+    backdrop-filter:blur(12px) saturate(1.04)!important;
+    -webkit-backdrop-filter:blur(12px) saturate(1.04)!important;
+  }
+  .lv4-product .lv4-product-tooltip b{
+    font-size:12px!important;
+    line-height:1.14!important;
+    font-weight:760!important;
+    color:rgba(255,255,255,.98)!important;
+  }
+  .lv4-product .lv4-product-tooltip small{
+    margin-top:3px!important;
+    font-size:9px!important;
+    line-height:1.15!important;
+    color:rgba(255,255,255,.82)!important;
+  }
+}
+
+/* Kill the old beige/cream YNOT Deals treatment everywhere and use product-card glass. */
+.ynot-drawer,
+.ynot-selected,
+.ynot-deal,
+.ynot-deal-pill,
+.ynot-deal-badge,
+.lv4-deal,
+[class*="deal" i]{
+  background:linear-gradient(145deg,rgba(54,58,57,.54),rgba(14,16,16,.88))!important;
+  background-color:rgba(20,22,22,.82)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.22)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16),0 16px 34px rgba(0,0,0,.18)!important;
+  backdrop-filter:blur(22px) saturate(1.06)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.06)!important;
+}
+
+.ynot-drawer .ynot-dock button,
+.ynot-drawer .ynot-search,
+.ynot-selected-close,
+.ynot-load-more{
+  background:rgba(255,255,255,.08)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.20)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.10)!important;
+}
+.ynot-drawer .ynot-dock button.active{
+  background:rgba(255,255,255,.17)!important;
+  color:#fff!important;
+  border-color:rgba(255,255,255,.32)!important;
+}
+.ynot-drawer h1,.ynot-drawer h2,.ynot-drawer h3,.ynot-drawer p,.ynot-drawer span,.ynot-drawer strong,.ynot-drawer em,.ynot-selected h1,.ynot-selected h2,.ynot-selected h3,.ynot-selected p,.ynot-selected span,.ynot-selected strong{
+  color:rgba(255,255,255,.96)!important;
+}
+.ynot-drawer::before,.ynot-drawer::after,.ynot-selected::before,.ynot-selected::after,[class*="deal" i]::before,[class*="deal" i]::after{
+  background:transparent!important;
+}
