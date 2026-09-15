@@ -28,5 +28,6 @@ import "./operator-orders.css";
 import "./desktop-reference-world.css";
 import "./desktop-reference-fix.css";
 import "./product-reference-card.css";
+import "./header-lattice-final.css";
 export const metadata={title:"YNOT — Spatial Shopping",description:"Explore products through an endless spatial shopping world"};
 export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="en"><body>{children}</body></html>}
