@@ -1,7 +1,7 @@
 "use client";
 
 import {FormEvent,useEffect,useMemo,useState} from "react";
-import {ChevronDown,Search} from "lucide-react";
+import {Bell,ChevronDown,Compass,Minus,Search,UserRound} from "lucide-react";
 import LuminaWorld from "./LuminaWorld";
 import YnotDrawer from "./YnotDrawer";
 import YnotIntentBridge from "./YnotIntentBridge";
@@ -19,6 +19,7 @@ import WorldSaveBridge from "./WorldSaveBridge";
 import CircleDrawer from "./CircleDrawer";
 import ProfilePanel from "./ProfilePanel";
 import CheckoutStatus from "./CheckoutStatus";
+import DesktopLatticeController from "./DesktopLatticeController";
 
 type Mode="shop"|"discover";
 type Source="Shopify"|"Amazon"|"eBay";
@@ -55,6 +56,11 @@ export default function AppShell(){
  },[mode]);
 
  function openYnot(){document.querySelector<HTMLButtonElement>(".ynot-peek")?.click()}
+ function goHome(){document.querySelector<HTMLButtonElement>(".lv4-logo")?.click()}
+ function toggleFar(){document.querySelector<HTMLButtonElement>(".ynot-far-button")?.click()}
+ function toggleCompass(){document.querySelector<HTMLButtonElement>(".ynot-compass-button")?.click()}
+ function openProfile(){document.querySelector<HTMLButtonElement>(".ynot-profile-orb")?.click()}
+ function openNotifications(){window.dispatchEvent(new Event("ynot:open-circle"))}
  function switchSource(next:Source){
   setSource(next);setSourceOpen(false);
   if(next==="eBay"){
@@ -81,14 +87,29 @@ export default function AppShell(){
   requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".lv4-search button")?.click());
  }
  return <div className={`ynot-app-shell ${chromeHidden?"chrome-hidden":""}`}>
-  <nav className="ynot-top-mode" aria-label="Main experience">
-   <button className={mode==="shop"?"active":""} onClick={()=>setMode("shop")}>SHOP</button>
-   <button className={mode==="discover"?"active":""} onClick={()=>setMode("discover")}>DISCOVER</button>
-  </nav>
-  {mode==="shop"&&<div className="ynot-world-controls">
-   <div className="ynot-world-row"><button className="active">WORLD</button><button onClick={openYnot}>YNOT</button></div>
-   <div className="ynot-view-source"><button className="ynot-source-trigger-clean" onClick={()=>setSourceOpen(v=>!v)}>{source}<ChevronDown/></button>{sourceOpen&&<div className="ynot-source-list">{(["Shopify","Amazon","eBay"] as Source[]).map(option=><button key={option} className={source===option?"active":""} onClick={()=>switchSource(option)}>{option}</button>)}</div>}</div>
-  </div>}
+  <header className="ynot-reference-header">
+   <div className="ynot-reference-left">
+    <button className="ynot-reference-brand" onClick={goHome} aria-label="YNOT home"><span>Y</span><b>YNOT</b></button>
+   </div>
+   <div className="ynot-reference-center">
+    <div className="ynot-reference-topline">
+     <nav className="ynot-top-mode" aria-label="Main experience">
+      <button className={mode==="shop"?"active":""} onClick={()=>setMode("shop")}>SHOP</button>
+      <button className={mode==="discover"?"active":""} onClick={()=>setMode("discover")}>DISCOVER</button>
+     </nav>
+     {mode==="shop"&&<div className="ynot-reference-nav-tools"><button onClick={toggleFar} aria-label="Zoom out"><Minus/></button><button onClick={toggleCompass} aria-label="Open world map"><Compass/></button></div>}
+    </div>
+    {mode==="shop"&&<div className="ynot-world-controls">
+     <div className="ynot-world-row"><button className="active">WORLD</button><button onClick={openYnot}>YNOT</button></div>
+     <div className="ynot-view-source"><button className="ynot-source-trigger-clean" onClick={()=>setSourceOpen(v=>!v)}>{source}<ChevronDown/></button>{sourceOpen&&<div className="ynot-source-list">{(["Shopify","Amazon","eBay"] as Source[]).map(option=><button key={option} className={source===option?"active":""} onClick={()=>switchSource(option)}>{option}</button>)}</div>}</div>
+    </div>}
+   </div>
+   <div className="ynot-reference-right">
+    <button className="ynot-reference-notify" onClick={openNotifications} aria-label="Notifications"><Bell/><i/></button>
+    <button className="ynot-reference-signin" onClick={openProfile}><UserRound/><span>Sign in</span></button>
+    <button className="ynot-reference-avatar" onClick={openProfile} aria-label="Open profile"><UserRound/></button>
+   </div>
+  </header>
   {mode==="discover"?<DiscoveryUniverse/>:<><LuminaWorld/><SubcategoryNavigator/><WorldCompass/></>}
   <form className={`ynot-bottom-search ${mode}`} onSubmit={submitBottomSearch}><Search/><input value={bottomQuery} onChange={e=>setBottomQuery(e.target.value)} placeholder={mode==="discover"?"Search Instagram niches, brands or styles":"Search products, brands or categories"}/><button aria-label="Search">Search</button></form>
   <YnotDrawer/>
@@ -103,6 +124,7 @@ export default function AppShell(){
   <ProfilePanel/>
   <WorldVisualPolish/>
   <WorldBubbleSpacing/>
+  <DesktopLatticeController/>
   <CheckoutStatus/>
  </div>;
 }
