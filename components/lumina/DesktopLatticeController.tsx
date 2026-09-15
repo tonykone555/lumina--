@@ -4,6 +4,22 @@ import {useEffect} from "react";
 
 const WORLD_CX=100000;
 const WORLD_CY=100000;
+const STEP_X=166;
+const STEP_Y=148;
+
+function spiralCell(index:number){
+ if(index<=0)return{x:0,y:0};
+ let x=0,y=0,dx=1,dy=0,segmentLength=1,segmentPassed=0,turns=0;
+ for(let i=0;i<index;i++){
+  x+=dx;y+=dy;segmentPassed+=1;
+  if(segmentPassed===segmentLength){
+   segmentPassed=0;
+   const nextDx=-dy,nextDy=dx;dx=nextDx;dy=nextDy;turns+=1;
+   if(turns%2===0)segmentLength+=1;
+  }
+ }
+ return{x,y};
+}
 
 function applyDesktopLattice(){
  if(typeof window==="undefined"||window.innerWidth<900)return;
@@ -14,27 +30,20 @@ function applyDesktopLattice(){
  const products=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-product")];
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");return}
  shell.classList.add("ynot-desktop-lattice-active");
- const cols=window.innerWidth>=1560?9:window.innerWidth>=1220?8:7;
- const stepX=166;
- const stepY=148;
- const totalWidth=(cols-1)*stepX;
- const startX=WORLD_CX-totalWidth/2-stepX*.25;
- const startY=WORLD_CY-370;
  products.forEach((product,index)=>{
-  const row=Math.floor(index/cols);
-  const col=index%cols;
-  const stagger=row%2?stepX/2:0;
-  const x=startX+col*stepX+stagger;
-  const y=startY+row*stepY;
-  const signature=`${cols}:${row}:${col}`;
+  const cell=spiralCell(index);
+  const stagger=(Math.abs(cell.y)%2)*STEP_X*.5;
+  const x=WORLD_CX+cell.x*STEP_X+stagger;
+  const y=WORLD_CY+cell.y*STEP_Y;
+  const signature=`${cell.x}:${cell.y}`;
   if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;
   product.dataset.ynotLattice=signature;
-  product.dataset.ynotLatticeRow=String(row);
+  product.dataset.ynotLatticeRow=String(cell.y);
   product.style.setProperty("position","absolute","important");
   product.style.setProperty("left",`${x}px`,"important");
   product.style.setProperty("top",`${y}px`,"important");
   product.style.setProperty("margin","0","important");
-  product.style.setProperty("z-index",String(20+(row%3)),"important");
+  product.style.setProperty("z-index",String(20+(Math.abs(cell.x+cell.y)%3)),"important");
  });
 }
 
@@ -46,12 +55,12 @@ export default function DesktopLatticeController():null{
    frame=requestAnimationFrame(()=>{frame=0;applyDesktopLattice()});
   };
   const observer=new MutationObserver(schedule);
-  observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class"]});
+  observer.observe(document.body,{subtree:true,childList:true});
   window.addEventListener("resize",schedule);
   window.addEventListener("shop:tag-search",schedule as EventListener);
   window.addEventListener("ynot:world-focus",schedule as EventListener);
   schedule();
-  const delayed=[120,420,900].map(ms=>window.setTimeout(schedule,ms));
+  const delayed=[120,420,900,1800].map(ms=>window.setTimeout(schedule,ms));
   return()=>{
    observer.disconnect();
    if(frame)cancelAnimationFrame(frame);
