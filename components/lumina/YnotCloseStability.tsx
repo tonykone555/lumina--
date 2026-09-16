@@ -8,10 +8,12 @@ export default function YnotCloseStability(){
   const wired=new Set<HTMLElement>();
   let cleanupFrame=0;
 
-  const wireGestureCloseButtons=()=>{
-   document.querySelectorAll<HTMLElement>(".ynot-selected-close,.ynot-story-close").forEach(button=>{
+  const wireGestureControls=()=>{
+   document.querySelectorAll<HTMLElement>(".ynot-selected-close,.ynot-story-close,.ynot-selected-heart,.ynot-story-heart,.ynot-final-save-heart").forEach(button=>{
     if(wired.has(button))return;
     wired.add(button);
+    button.style.setProperty("pointer-events","auto","important");
+    button.style.setProperty("touch-action","manipulation","important");
     button.addEventListener("pointerdown",stopPointer);
     button.addEventListener("pointerup",stopPointer);
    });
@@ -32,13 +34,11 @@ export default function YnotCloseStability(){
   const onClick=(event:MouseEvent)=>{
    const target=event.target as HTMLElement|null;
    if(!target)return;
-   if(target.closest(".ynot-close")||(target.classList.contains("ynot-backdrop")&&target.classList.contains("open"))){
-    clearTransientAfterDrawerCloses();
-   }
+   if(target.closest(".ynot-close")||(target.classList.contains("ynot-backdrop")&&target.classList.contains("open"))){clearTransientAfterDrawerCloses()}
   };
 
-  wireGestureCloseButtons();
-  const observer=new MutationObserver(wireGestureCloseButtons);
+  wireGestureControls();
+  const observer=new MutationObserver(wireGestureControls);
   observer.observe(document.body,{childList:true,subtree:true});
   document.addEventListener("click",onClick,false);
   return()=>{
