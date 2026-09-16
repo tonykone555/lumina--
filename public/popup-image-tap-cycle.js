@@ -13,12 +13,20 @@
       ...(Array.isArray(product?.images)?product.images:[]),
       ...(Array.isArray(product?.variants)?product.variants.map(v=>v?.image):[]),
       ...(Array.isArray(product?.videos)?product.videos:[]),
-      product?.video,
-      product?.videoUrl,
-      product?.video_url,
+      product?.video,product?.videoUrl,product?.video_url,
       ...(Array.isArray(product?.media)?product.media.map(m=>typeof m==='string'?m:(m?.url||m?.src||m?.video||m?.image)):[])
     ].filter(Boolean);
     return [...new Set(raw.map(String))];
+  }
+
+  async function enrichExact(product){
+    if(!product)return product;
+    try{
+      const response=await fetch('/api/commerce/product-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(product),cache:'no-store'});
+      const data=await response.json();
+      if(response.ok&&data?.product)return {...product,...data.product};
+    }catch{}
+    return product;
   }
 
   async function loadMedia(card){
@@ -30,7 +38,8 @@
         const params=new URLSearchParams({q:title,market:'lumina',source:'all',page:'0'});
         const response=await fetch(`/api/catalog?${params.toString()}`,{cache:'no-store'}),data=await response.json();
         const products=Array.isArray(data?.products)?data.products:[];
-        const exact=products.find(p=>norm(p?.title)===key)||products.find(p=>norm(p?.title).includes(key)||key.includes(norm(p?.title)))||products[0];
+        const base=products.find(p=>norm(p?.title)===key)||products.find(p=>norm(p?.title).includes(key)||key.includes(norm(p?.title)))||products[0];
+        const exact=await enrichExact(base);
         return collectProductMedia(exact,current);
       }catch{return current?[current]:[]}
     })();
@@ -50,8 +59,7 @@
     const image=card.querySelector(':scope > img');
     if(isVideo(url)){
       if(!video){video=document.createElement('video');video.className='ynot-popup-video';video.controls=true;video.playsInline=true;video.muted=true;image?.insertAdjacentElement('afterend',video)}
-      video.src=url;video.load();card.classList.add('ynot-showing-video');
-      video.play().catch(()=>{});
+      video.src=url;video.load();card.classList.add('ynot-showing-video');video.play().catch(()=>{});
     }else{
       if(video){video.pause();video.removeAttribute('src');video.load()}
       card.classList.remove('ynot-showing-video');
@@ -74,15 +82,8 @@
     if(!(target instanceof Element))return;
     const card=target.closest('.lv4-detail,.ynot-selected');
     if(!card)return;
-
-    if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){
-      void cycle(card,event);return;
-    }
-    if(target instanceof HTMLImageElement&&target===card.querySelector(':scope > img')){
-      void cycle(card,event);return;
-    }
-
-    /* On YNOT Deals, tapping the visual card area advances media too. Controls/copy/gallery remain interactive. */
+    if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){void cycle(card,event);return}
+    if(target instanceof HTMLImageElement&&target===card.querySelector(':scope > img')){void cycle(card,event);return}
     if(card.classList.contains('ynot-selected')){
       if(target.closest('button,a,input,select,textarea,video,.ynot-deal-thumb-gallery,.ynot-selected-copy,.ynot-variants'))return;
       void cycle(card,event);
