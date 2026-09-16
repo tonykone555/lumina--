@@ -40,6 +40,8 @@ export default function AdFactoryPage(){
  const[headline,setHeadline]=useState("Discover the edit on YNOT");
  const[busy,setBusy]=useState(false);
  const[notice,setNotice]=useState("");
+ const[requesting,setRequesting]=useState(false);
+ const[accessNotice,setAccessNotice]=useState("");
  const previewSize=dimensions(format);
 
  async function loadOverview(){
@@ -52,6 +54,8 @@ export default function AdFactoryPage(){
   setOwner(data?.owner?.name||"YNOT Owner");setOverview(data.overview);setAccess("ok");
  }
  useEffect(()=>{void loadOverview()},[]);
+
+ async function requestOwnerAccess(){setRequesting(true);setAccessNotice("");try{const response=await authedFetch("/api/admin/ads/request-access",{method:"POST"});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data?.error||"REQUEST_FAILED");setAccessNotice("Owner activation request recorded. Tell ChatGPT you clicked it so this exact signed-in account can be approved.")}catch(error){setAccessNotice(error instanceof Error?error.message:"Request failed")}finally{setRequesting(false)}}
 
  async function searchProducts(event?:FormEvent){event?.preventDefault();if(access!=="ok")return;setSearching(true);setNotice("");
   try{const params=new URLSearchParams({q:query.trim()||"trending products",source:"shopify",limit:"36"});const response=await fetch(`/api/catalog?${params}`);const data=await response.json().catch(()=>({}));const found=Array.isArray(data?.products)?data.products:[];setProducts(found.slice(0,36));if(!found.length)setNotice("No live products came back for that query. Try a broader niche.")}
@@ -71,7 +75,7 @@ export default function AdFactoryPage(){
 
  const scored=useMemo(()=>products.map(product=>({product,score:productScore(product)})).sort((a,b)=>b.score-a.score),[products]);
 
- if(access!=="ok")return <main className={styles.shell}><div className={styles.locked}><div className={styles.brand}>YNOT / OWNER</div><h1>{access==="loading"?"Opening Ad Factory…":access==="signin"?"Sign in required":access==="forbidden"?"Owner access locked":"Ad Factory unavailable"}</h1><p>{access==="signin"?"Sign in to YNOT with your owner account, then return to this private dashboard.":access==="forbidden"?"The dashboard and all ad actions are server-protected. Your signed-in account has not yet been assigned the owner/admin role.":access==="error"?"The private admin API could not be loaded.":"Checking your private YNOT owner access."}</p>{access==="forbidden"&&<div className={styles.code}>Security state: authenticated ✓ · owner role required</div>}<p><a href="/" style={{color:"#9be995"}}>Return to YNOT</a></p></div></main>;
+ if(access!=="ok")return <main className={styles.shell}><div className={styles.locked}><div className={styles.brand}>YNOT / OWNER</div><h1>{access==="loading"?"Opening Ad Factory…":access==="signin"?"Sign in required":access==="forbidden"?"Owner access locked":"Ad Factory unavailable"}</h1><p>{access==="signin"?"Sign in to YNOT with your owner account, then return to this private dashboard.":access==="forbidden"?"The dashboard and all ad actions are server-protected. Your signed-in account has not yet been assigned the owner/admin role.":access==="error"?"The private admin API could not be loaded.":"Checking your private YNOT owner access."}</p>{access==="forbidden"&&<><div className={styles.code}>Security state: authenticated ✓ · owner role required</div><button className={styles.buttonGreen} style={{marginTop:14}} disabled={requesting} onClick={()=>void requestOwnerAccess()}>{requesting?"Requesting…":"Request owner activation"}</button>{accessNotice&&<div className={styles.notice}>{accessNotice}</div>}</>}<p><a href="/" style={{color:"#9be995"}}>Return to YNOT</a></p></div></main>;
 
  return <main className={styles.shell}><div className={styles.wrap}>
   <header className={styles.top}><div><div className={styles.brand}>YNOT / PRIVATE OWNER SYSTEM</div><h1 className={styles.title}>Ad Factory</h1><div className={styles.sub}>Turn the live catalogue into scored, niche-specific paid and organic creatives. Product accuracy stays locked to the source imagery while templates, hooks and formats scale around it.</div></div><div className={styles.badge}>{owner} · owner access</div></header>
