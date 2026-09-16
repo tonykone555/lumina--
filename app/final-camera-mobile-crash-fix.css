@@ -1,0 +1,40 @@
+/* Final home-camera + mobile interaction stability pass. */
+@media(min-width:900px){
+  /* The stage itself is anchored at 50vw/50vh. At START_ZOOM .22, translating
+     WORLD_CX/WORLD_CY by -22000 maps the world origin to the physical viewport centre. */
+  .lv4-shell.depth-worlds .lv4-stage{
+    transform:translate(-22000px,-22000px) scale(.22)!important;
+    transform-origin:0 0!important;
+  }
+}
+
+/* Saved product preview stays inside Saves instead of opening another global world/drawer. */
+.ynot-saved-product-backdrop{position:absolute;z-index:80;inset:0;display:grid;place-items:center;padding:24px;background:rgba(1,2,2,.62);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.ynot-saved-product-card{position:relative;width:min(620px,92%);max-height:min(680px,82dvh);overflow:auto;display:grid;grid-template-columns:minmax(180px,44%) 1fr;gap:22px;padding:24px;border:1px solid rgba(255,255,255,.22);border-radius:30px;background:linear-gradient(145deg,rgba(35,39,42,.82),rgba(8,10,12,.88));box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 30px 90px rgba(0,0,0,.48);color:#fff}
+.ynot-saved-product-card>img{width:100%;aspect-ratio:1;border-radius:24px;object-fit:contain;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.12)}
+.ynot-saved-product-card>div{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;min-width:0}.ynot-saved-product-card small{font:750 9px/1.2 Inter,ui-sans-serif,system-ui;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.52)}.ynot-saved-product-card h3{margin:10px 0 12px;font:760 clamp(22px,4vw,36px)/1.02 Inter,ui-sans-serif,system-ui;letter-spacing:-.045em}.ynot-saved-product-card strong{font:800 22px/1 Inter,ui-sans-serif,system-ui}.ynot-saved-product-card p{font:500 12px/1.55 Inter,ui-sans-serif,system-ui;color:rgba(255,255,255,.66)}.ynot-saved-product-card a{margin-top:18px;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:#f4f4f4;color:#111;display:inline-flex;align-items:center;gap:8px;text-decoration:none;font:760 11px/1 Inter,ui-sans-serif,system-ui}.ynot-saved-product-card a svg{width:15px}
+.ynot-saved-product-close{position:absolute;z-index:4;left:14px;top:14px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(7,9,10,.55);color:#fff;display:grid;place-items:center;font:700 22px/1 Inter;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);touch-action:manipulation}
+
+@media(max-width:760px){
+  .ynot-saved-product-backdrop{padding:10px!important}
+  .ynot-saved-product-card{width:100%!important;max-height:calc(100dvh - 42px)!important;grid-template-columns:1fr!important;gap:14px!important;padding:58px 16px 18px!important;border-radius:25px!important}
+  .ynot-saved-product-card>img{max-height:42dvh!important}
+  .ynot-notebook-close,.ynot-compass-close,.ynot-selected-close,.ynot-close{touch-action:manipulation!important;pointer-events:auto!important}
+
+  /* Product description back control belongs on the left on phones. */
+  .lv4-detail .ynot-description-close,
+  .ynot-description-back .ynot-description-close{
+    position:absolute!important;
+    left:12px!important;
+    right:auto!important;
+    top:12px!important;
+    margin:0!important;
+    width:42px!important;
+    height:42px!important;
+    display:grid!important;
+    place-items:center!important;
+    border-radius:50%!important;
+    z-index:50!important;
+    touch-action:manipulation!important;
+  }
+}
