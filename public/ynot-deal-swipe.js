@@ -5,15 +5,18 @@
   function titleOf(node){return norm(node.querySelector('.ynot-orb-copy b')?.textContent||'')}
   function selected(){return document.querySelector('.ynot-drawer.open .ynot-selected')}
   function selectedTitle(){return norm(selected()?.querySelector('.ynot-selected-copy h3,.ynot-selected h3')?.textContent||'')}
-  function openCard(target){if(!(target instanceof HTMLElement))return;target.click()}
+  function openCard(target){
+    if(!(target instanceof HTMLElement))return;
+    target.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',code:'Enter',bubbles:true,cancelable:true}));
+  }
   function move(direction){
     const list=cards();if(list.length<2)return;
     const current=selectedTitle();
     let index=list.findIndex(card=>titleOf(card)===current);
     if(index<0){const active=list.findIndex(card=>card.classList.contains('active'));index=active>=0?active:0}
     const target=list[(index+direction+list.length)%list.length];if(!target)return;
-    selected()?.querySelector('.ynot-selected-close')?.click();
-    requestAnimationFrame(()=>requestAnimationFrame(()=>openCard(target)));
+    /* Replace the selected product in place. Never close the card first: that was exposing the dashboard between products on mobile. */
+    openCard(target);
   }
   function ensureControls(){
     if(!prev){prev=document.createElement('button');prev.type='button';prev.className='ynot-deal-desktop-prev';prev.setAttribute('aria-label','Previous product');prev.innerHTML='<span></span>';prev.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();move(-1)});document.body.appendChild(prev)}
