@@ -1,0 +1,54 @@
+/* Final YNOT BUY naming + CTA geometry. Loaded last. */
+.lv4-actions>.ynot-unified-add,
+.ynot-selected>.ynot-shop.ynot-own,
+.ynot-story .ynot-story-action{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  gap:0!important;
+  text-transform:uppercase!important;
+  letter-spacing:.10em!important;
+  font-weight:800!important;
+}
+.lv4-actions>.ynot-unified-add svg,
+.ynot-selected>.ynot-shop.ynot-own svg,
+.ynot-story .ynot-story-action svg{
+  display:none!important;
+}
+.lv4-actions>.ynot-unified-add span,
+.ynot-selected>.ynot-shop.ynot-own span,
+.ynot-story .ynot-story-action .ynot-buy-label{
+  width:100%!important;
+  display:block!important;
+  text-align:center!important;
+  font:800 15px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+  letter-spacing:.10em!important;
+  text-transform:uppercase!important;
+}
+
+@media(max-width:899px){
+  /* Keep the X fully above the card rather than overlapping its rounded corner. */
+  .lv4-detail>.lv4-close,
+  .ynot-drawer.open .ynot-selected>.ynot-selected-close{
+    position:fixed!important;
+    z-index:575!important;
+    top:calc(9dvh - 52px)!important;
+    right:18px!important;
+    left:auto!important;
+    width:38px!important;
+    height:38px!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+  }
+  .lv4-detail>.lv4-close svg,
+  .ynot-drawer.open .ynot-selected>.ynot-selected-close svg{
+    width:25px!important;
+    height:25px!important;
+    stroke-width:3.4!important;
+  }
+}
