@@ -5,6 +5,7 @@ import {useEffect} from "react";
 const WORLD_CX=100000;
 const WORLD_CY=100000;
 const HOME_Y_OFFSET=200;
+const DESKTOP_COLUMNS=39;
 
 function metrics(){
  const w=typeof window!=="undefined"?window.innerWidth:1440;
@@ -15,19 +16,19 @@ function metrics(){
  return{stepX:176,stepY:156,size:126};
 }
 
-function ringCell(index:number){
- if(index<=0)return{x:0,y:0,ring:0};
- const ring=Math.ceil((Math.sqrt(index+1)-1)/2);
- const side=ring*2;
- const first=(2*ring-1)*(2*ring-1);
- let offset=index-first;
- if(offset<side)return{x:-ring+1+offset,y:-ring,ring};
- offset-=side;
- if(offset<side)return{x:ring,y:-ring+1+offset,ring};
- offset-=side;
- if(offset<side)return{x:ring-1-offset,y:ring,ring};
- offset-=side;
- return{x:-ring,y:ring-1-offset,ring};
+function signedSpread(index:number){
+ if(index<=0)return 0;
+ const n=Math.ceil(index/2);
+ return index%2===1?n:-n;
+}
+
+/* Fill a very wide centre row before adding rows above/below. This keeps a deep
+   horizontal catalogue buffer ready for the desktop side controls. */
+function horizontalCell(index:number){
+ const row=Math.floor(index/DESKTOP_COLUMNS);
+ const local=index%DESKTOP_COLUMNS;
+ const x=signedSpread(local),y=signedSpread(row);
+ return{x,y,ring:Math.max(Math.abs(x),Math.abs(y))};
 }
 
 function setImportant(node:HTMLElement,property:string,value:string){
@@ -35,8 +36,6 @@ function setImportant(node:HTMLElement,property:string,value:string){
  node.style.setProperty(property,value,"important");
 }
 
-/* Home objects stay tied to the real world origin, with a small downward offset
-   so the visual centre is the usable screen area between the header and search. */
 function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
  if(window.innerWidth<900||!shell.classList.contains("depth-worlds"))return;
  const voice=stage.querySelector<HTMLElement>(":scope > .ynot-voice-orb");
@@ -53,6 +52,17 @@ function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
  });
 }
 
+function warmImages(products:HTMLElement[]){
+ if(window.innerWidth<900)return;
+ products.slice(0,220).forEach(product=>{
+  const image=product.querySelector<HTMLImageElement>("img");
+  if(!image)return;
+  image.loading="eager";
+  image.setAttribute("fetchpriority","high");
+  void image.decode?.().catch(()=>{});
+ });
+}
+
 function applyLattice(){
  if(typeof window==="undefined")return;
  const shell=document.querySelector<HTMLElement>(".lv4-shell");
@@ -63,13 +73,14 @@ function applyLattice(){
  const products=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-product")];
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");return}
  shell.classList.add("ynot-desktop-lattice-active");
+ warmImages(products);
  const {stepX,stepY,size}=metrics();
  products.forEach((product,index)=>{
-  const cell=ringCell(index);
+  const cell=horizontalCell(index);
   const stagger=(Math.abs(cell.y)%2)*stepX*.5;
   const x=WORLD_CX+cell.x*stepX+stagger;
   const y=WORLD_CY+cell.y*stepY;
-  const signature=`${stepX}:${stepY}:${size}:${cell.x}:${cell.y}:${cell.ring}`;
+  const signature=`wide:${stepX}:${stepY}:${size}:${cell.x}:${cell.y}`;
   if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;
   product.dataset.ynotLattice=signature;
   product.dataset.ynotLatticeRow=String(cell.y);
@@ -82,7 +93,7 @@ function applyLattice(){
   setImportant(product,"height",`${size}px`);
   product.style.setProperty("--s",`${size}px`);
   setImportant(product,"margin","0");
-  setImportant(product,"z-index",String(20+(cell.ring%3)));
+  setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)));
  });
 }
 
@@ -103,7 +114,7 @@ export default function DesktopLatticeController():null{
   window.addEventListener("ynot:world-focus",schedule as EventListener);
   window.addEventListener("pointerup",schedule,{passive:true});
   schedule();
-  const delayed=[40,100,220,480,900].map(ms=>window.setTimeout(schedule,ms));
+  const delayed=[40,100,220,480,900,1500].map(ms=>window.setTimeout(schedule,ms));
   return()=>{
    observer.disconnect();
    if(frame)cancelAnimationFrame(frame);
