@@ -1,0 +1,216 @@
+/* Final YNOT card + mobile header/detail pass. Loaded last on purpose. */
+
+/* YNOT Deal cards become one seamless square glass bubble: the image is the card, text lives inside it. */
+.ynot-grid{gap:12px!important;align-items:start!important}
+.ynot-orb{
+  position:relative!important;
+  aspect-ratio:1/1!important;
+  min-height:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  border-radius:27px!important;
+  border:1px solid rgba(255,255,255,.30)!important;
+  background:linear-gradient(145deg,rgba(126,132,128,.34),rgba(20,22,21,.54))!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.33),inset 0 -18px 34px rgba(0,0,0,.12),0 16px 34px rgba(0,0,0,.16)!important;
+  backdrop-filter:blur(20px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.08)!important;
+}
+.ynot-orb::before{
+  content:""!important;
+  position:absolute!important;
+  z-index:2!important;
+  inset:0!important;
+  border-radius:inherit!important;
+  pointer-events:none!important;
+  background:linear-gradient(180deg,rgba(255,255,255,.16) 0%,rgba(255,255,255,0) 26%,rgba(0,0,0,0) 47%,rgba(4,5,5,.18) 66%,rgba(4,5,5,.76) 100%)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.24)!important;
+}
+.ynot-orb::after{content:none!important}
+.ynot-orb-img{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  aspect-ratio:1/1!important;
+  border:0!important;
+  border-radius:inherit!important;
+  overflow:hidden!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.ynot-orb-img>img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:inherit!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  transform:scale(1.01)!important;
+  filter:saturate(1.03) contrast(1.02)!important;
+}
+.ynot-orb-copy{
+  position:absolute!important;
+  z-index:4!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  gap:4px 8px!important;
+  padding:18px 13px 13px!important;
+  color:#fff!important;
+  text-shadow:0 1px 7px rgba(0,0,0,.52)!important;
+}
+.ynot-orb-copy b{
+  grid-column:1/-1!important;
+  margin:0!important;
+  font:760 11px/1.16 Inter,ui-sans-serif,system-ui!important;
+  letter-spacing:-.018em!important;
+  color:#fff!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+}
+.ynot-orb-copy em{
+  min-width:0!important;
+  margin:0!important;
+  font:620 8px/1.15 Inter,ui-sans-serif,system-ui!important;
+  color:rgba(255,255,255,.72)!important;
+  opacity:1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.ynot-orb-copy strong{
+  margin:0!important;
+  align-self:end!important;
+  justify-self:end!important;
+  font:840 11px/1 Inter,ui-sans-serif,system-ui!important;
+  color:#fff!important;
+  white-space:nowrap!important;
+}
+.ynot-variant-strip{
+  z-index:5!important;
+  left:10px!important;
+  right:auto!important;
+  top:10px!important;
+  bottom:auto!important;
+  gap:4px!important;
+}
+.ynot-variant-strip img{
+  width:28px!important;
+  height:28px!important;
+  border:0!important;
+  border-radius:9px!important;
+  box-shadow:0 5px 14px rgba(0,0,0,.18)!important;
+}
+.ynot-orb:hover,.ynot-orb.active{
+  transform:translateY(-2px) scale(1.01)!important;
+  background:linear-gradient(145deg,rgba(145,151,147,.38),rgba(20,22,21,.58))!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),0 18px 40px rgba(0,0,0,.20)!important;
+}
+.ynot-selected>img{
+  aspect-ratio:1/1!important;
+  height:auto!important;
+  object-fit:cover!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+
+@media(max-width:599px){
+  /* One fixed viewport axis for both pills. The top pill is thicker and almost meets WORLD / YNOT. */
+  .ynot-reference-header .ynot-top-mode{
+    position:fixed!important;
+    left:50vw!important;
+    right:auto!important;
+    top:1.3vw!important;
+    transform:translateX(-50%)!important;
+    width:36vw!important;
+    max-width:148px!important;
+    height:10.5vw!important;
+    max-height:42px!important;
+    min-height:36px!important;
+    padding:.70vw!important;
+    z-index:716!important;
+  }
+  .ynot-reference-header .ynot-top-mode button{height:100%!important;min-height:0!important}
+
+  /* Lower WORLD / YNOT enough that the minus + compass controls no longer touch it. */
+  .ynot-reference-header .ynot-world-controls{
+    position:fixed!important;
+    left:50vw!important;
+    right:auto!important;
+    top:13.5vw!important;
+    transform:translateX(-50%)!important;
+    width:72vw!important;
+    max-width:300px!important;
+    z-index:714!important;
+  }
+  .ynot-reference-header .ynot-world-row{width:72vw!important;max-width:300px!important}
+
+  /* Keep YNOT Deal cards clean on phones: no inner image frame, perfectly square bubbles. */
+  .ynot-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  .ynot-orb{border-radius:22px!important}
+  .ynot-orb-copy{padding:16px 10px 10px!important;gap:3px 6px!important}
+  .ynot-orb-copy b{font-size:10px!important;line-height:1.13!important}
+  .ynot-orb-copy em{font-size:7.4px!important}
+  .ynot-orb-copy strong{font-size:10px!important}
+  .ynot-variant-strip{display:none!important}
+  .ynot-selected>img{width:82px!important;height:82px!important;border-radius:18px!important}
+
+  /* Normal board product popups use the same dark translucent glass language as desktop. */
+  .lv4-detail{
+    border:1px solid rgba(255,255,255,.30)!important;
+    background:linear-gradient(145deg,rgba(112,118,114,.46),rgba(28,31,30,.68))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.34),inset 0 -18px 42px rgba(0,0,0,.12),0 28px 78px rgba(0,0,0,.46)!important;
+    backdrop-filter:blur(28px) saturate(1.10)!important;
+    -webkit-backdrop-filter:blur(28px) saturate(1.10)!important;
+    color:#fff!important;
+  }
+  .lv4-detail::before{
+    background:radial-gradient(ellipse at 24% 0%,rgba(255,255,255,.20),transparent 38%),linear-gradient(180deg,rgba(255,255,255,.04),transparent 28%)!important;
+  }
+  .lv4-detail>img,
+  .lv4-detail .ynot-rich-main-image,
+  .lv4-detail .ynot-product-main-image{
+    border:1px solid rgba(255,255,255,.30)!important;
+    background:rgba(255,255,255,.07)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 12px 28px rgba(0,0,0,.16)!important;
+  }
+  .lv4-detailcopy,.lv4-detailcopy h2,.lv4-detailcopy>strong{color:#fff!important}
+  .lv4-product-brand,.lv4-product-source{color:rgba(255,255,255,.66)!important}
+  .lv4-gallery>button,.ynot-rich-gallery>button,.ynot-loaded-gallery>button{
+    border:1px solid rgba(255,255,255,.28)!important;
+    background:rgba(255,255,255,.08)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 7px 18px rgba(0,0,0,.14)!important;
+  }
+
+  /* The upper-right close icons are bare X marks: no circle, ring or capsule. */
+  .lv4-detail .lv4-close,
+  .ynot-story-close{
+    width:38px!important;
+    height:38px!important;
+    padding:0!important;
+    border:0!important;
+    outline:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    background-color:transparent!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    color:#fff!important;
+  }
+  .lv4-detail .lv4-close::before,.lv4-detail .lv4-close::after,
+  .ynot-story-close::before,.ynot-story-close::after{content:none!important;display:none!important}
+  .lv4-detail .lv4-close svg,.ynot-story-close svg{width:22px!important;height:22px!important;stroke-width:1.8!important}
+}
