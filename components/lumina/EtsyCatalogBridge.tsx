@@ -25,13 +25,16 @@ export default function EtsyCatalogBridge(){
   window.fetch=(async(input:RequestInfo|URL,init?:RequestInit)=>{
    const raw=typeof input==="string"?input:input instanceof URL?input.toString():input.url;
    if(!etsySelected||!raw.startsWith("/api/catalog?"))return originalFetch(input,init);
-   const sourceUrl=new URL(raw,window.location.origin),q=etsyQuery(sourceUrl.searchParams.get("q")||""),direction=sourceUrl.searchParams.get("direction")||"",page=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR";
-   const params=new URLSearchParams({q:[q,direction].filter(Boolean).join(", "),page,country,currency:"EUR"});
+   const sourceUrl=new URL(raw,window.location.origin),q=etsyQuery(sourceUrl.searchParams.get("q")||""),direction=sourceUrl.searchParams.get("direction")||"",pageRaw=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR";
+   const currentPage=Math.max(0,Number(pageRaw)||0);
+   const params=new URLSearchParams({q:[q,direction].filter(Boolean).join(", "),page:String(currentPage),country,currency:"EUR"});
    const response=await originalFetch(`/api/etsy?${params.toString()}`,{...init,cache:"no-store"});
    const data=await response.clone().json().catch(()=>({}));
    if(!response.ok)return response;
    const products=(Array.isArray(data.products)?data.products:[]).map((product:EtsyProduct)=>({...product,source:"etsy-marketplace",tags:["Etsy",...(product.tags||[])]}));
-   return new Response(JSON.stringify({source:"etsy-marketplace",sources:["etsy-marketplace"],market:"lumina",luminaSource:"shopify",products,pagination:{has_next_page:products.length>=24,next_cursor:null},error:products.length?undefined:"No Etsy products found for this search yet."}),{status:200,headers:{"Content-Type":"application/json"}});
+   const total=Math.max(0,Number(data.total||0));
+   const hasNext=total>0?((currentPage+1)*24<total):products.length>=24;
+   return new Response(JSON.stringify({source:"etsy-marketplace",sources:["etsy-marketplace"],market:"lumina",luminaSource:"shopify",products,pagination:{has_next_page:hasNext,next_cursor:hasNext?`etsy:${currentPage+1}`:null},error:products.length?undefined:"No Etsy products found for this search yet."}),{status:200,headers:{"Content-Type":"application/json"}});
   }) as typeof window.fetch;
   return()=>{window.removeEventListener("ynot:catalog-source",onSource as EventListener);window.fetch=originalFetch;etsySelected=false};
  },[]);
