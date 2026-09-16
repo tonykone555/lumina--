@@ -4,6 +4,7 @@ import {useEffect} from "react";
 
 const WORLD_CX=100000;
 const WORLD_CY=100000;
+const HOME_Y_OFFSET=200;
 
 function metrics(){
  const w=typeof window!=="undefined"?window.innerWidth:1440;
@@ -14,11 +15,6 @@ function metrics(){
  return{stepX:176,stepY:156,size:126};
 }
 
-/*
-  Fill concentric square rings instead of a one-way sequence. Each new batch
-  immediately prepares rows above/below and columns left/right, so panning in
-  any direction reveals already-positioned product layers rather than an empty edge.
-*/
 function ringCell(index:number){
  if(index<=0)return{x:0,y:0,ring:0};
  const ring=Math.ceil((Math.sqrt(index+1)-1)/2);
@@ -34,21 +30,26 @@ function ringCell(index:number){
  return{x:-ring,y:ring-1-offset,ring};
 }
 
-/* Home objects belong to the world's real origin. Never recalculate their
-   coordinates from the current camera/pan: doing that made the mic and category
-   bubbles follow a dragged viewport and permanently appear off-centre. */
+function setImportant(node:HTMLElement,property:string,value:string){
+ if(node.style.getPropertyValue(property)===value&&node.style.getPropertyPriority(property)==="important")return;
+ node.style.setProperty(property,value,"important");
+}
+
+/* Home objects stay tied to the real world origin, with a small downward offset
+   so the visual centre is the usable screen area between the header and search. */
 function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
  if(window.innerWidth<900||!shell.classList.contains("depth-worlds"))return;
  const voice=stage.querySelector<HTMLElement>(":scope > .ynot-voice-orb");
  const categories=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-category-bubble")];
  if(!voice||!categories.length)return;
- voice.style.setProperty("left",`${WORLD_CX}px`,"important");
- voice.style.setProperty("top",`${WORLD_CY}px`,"important");
- const radius=Math.min(860,Math.max(620,Math.min(window.innerWidth,window.innerHeight)*2.2));
+ const centerY=WORLD_CY+HOME_Y_OFFSET;
+ setImportant(voice,"left",`${WORLD_CX}px`);
+ setImportant(voice,"top",`${centerY}px`);
+ const radius=Math.min(820,Math.max(560,Math.min(window.innerWidth,window.innerHeight)*2.0));
  categories.forEach((node,index)=>{
   const angle=index/categories.length*Math.PI*2-Math.PI/2;
-  node.style.setProperty("left",`${WORLD_CX+Math.cos(angle)*radius}px`,"important");
-  node.style.setProperty("top",`${WORLD_CY+Math.sin(angle)*radius}px`,"important");
+  setImportant(node,"left",`${WORLD_CX+Math.cos(angle)*radius}px`);
+  setImportant(node,"top",`${centerY+Math.sin(angle)*radius}px`);
  });
 }
 
@@ -74,14 +75,14 @@ function applyLattice(){
   product.dataset.ynotLatticeRow=String(cell.y);
   product.dataset.ynotBufferRing=String(cell.ring);
   delete product.dataset.hexSlot;
-  product.style.setProperty("position","absolute","important");
-  product.style.setProperty("left",`${x}px`,"important");
-  product.style.setProperty("top",`${y}px`,"important");
-  product.style.setProperty("width",`${size}px`,"important");
-  product.style.setProperty("height",`${size}px`,"important");
+  setImportant(product,"position","absolute");
+  setImportant(product,"left",`${x}px`);
+  setImportant(product,"top",`${y}px`);
+  setImportant(product,"width",`${size}px`);
+  setImportant(product,"height",`${size}px`);
   product.style.setProperty("--s",`${size}px`);
-  product.style.setProperty("margin","0","important");
-  product.style.setProperty("z-index",String(20+(cell.ring%3)),"important");
+  setImportant(product,"margin","0");
+  setImportant(product,"z-index",String(20+(cell.ring%3)));
  });
 }
 
@@ -92,15 +93,17 @@ export default function DesktopLatticeController():null{
    if(frame)cancelAnimationFrame(frame);
    frame=requestAnimationFrame(()=>{frame=0;applyLattice()});
   };
-  const observer=new MutationObserver(schedule);
+  const observer=new MutationObserver(mutations=>{
+   if(mutations.every(m=>m.target instanceof HTMLElement&&m.target.closest(".ynot-world-desktop-prev,.ynot-world-desktop-next,.ynot-deal-desktop-prev,.ynot-deal-desktop-next")))return;
+   schedule();
+  });
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class","style"]});
   window.addEventListener("resize",schedule);
   window.addEventListener("shop:tag-search",schedule as EventListener);
   window.addEventListener("ynot:world-focus",schedule as EventListener);
   window.addEventListener("pointerup",schedule,{passive:true});
-  window.addEventListener("wheel",schedule,{passive:true});
   schedule();
-  const delayed=[40,90,160,280,480,780,1200,1800,2800].map(ms=>window.setTimeout(schedule,ms));
+  const delayed=[40,100,220,480,900].map(ms=>window.setTimeout(schedule,ms));
   return()=>{
    observer.disconnect();
    if(frame)cancelAnimationFrame(frame);
@@ -109,7 +112,6 @@ export default function DesktopLatticeController():null{
    window.removeEventListener("shop:tag-search",schedule as EventListener);
    window.removeEventListener("ynot:world-focus",schedule as EventListener);
    window.removeEventListener("pointerup",schedule);
-   window.removeEventListener("wheel",schedule);
   };
  },[]);
  return null;
