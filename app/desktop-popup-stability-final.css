@@ -1,6 +1,5 @@
 /* Final desktop stability pass: popup steppers, fixed header coordinates, faster YNOT open. */
 @media (min-width:900px){
-  /* Both product systems use the same persistent side controls. */
   .ynot-world-desktop-prev,
   .ynot-world-desktop-next,
   .ynot-deal-desktop-prev,
@@ -33,8 +32,6 @@
   .ynot-world-desktop-prev.visible,.ynot-world-desktop-next.visible,
   .ynot-deal-desktop-prev.visible,.ynot-deal-desktop-next.visible{display:grid!important;pointer-events:auto!important;opacity:1!important;visibility:visible!important}
 
-  /* On the open product board these same controls become directional navigation.
-     They stay slightly quieter until hovered, then move the camera one screen segment. */
   .ynot-world-desktop-prev.board-mode,.ynot-world-desktop-next.board-mode{
     z-index:420!important;
     opacity:.72!important;
@@ -42,14 +39,11 @@
   }
   .ynot-world-desktop-prev.board-mode:hover,.ynot-world-desktop-next.board-mode:hover{opacity:1!important;transform:translateY(-50%) scale(1.07)!important}
 
-  /* The normal-world controls must never sit on top of the YNOT drawer itself.
-     YNOT's own controls only appear once a YNOT product is actually open. */
   body:has(.ynot-drawer.open) .ynot-world-desktop-prev,
   body:has(.ynot-drawer.open) .ynot-world-desktop-next{display:none!important;pointer-events:none!important}
   body:has(.ynot-drawer.open:not(:has(.ynot-selected))) .ynot-deal-desktop-prev,
   body:has(.ynot-drawer.open:not(:has(.ynot-selected))) .ynot-deal-desktop-next{display:none!important;pointer-events:none!important}
 
-  /* Popups may dim the header, but they can never change its geometry. */
   .ynot-app-shell.chrome-hidden .ynot-reference-header,
   .ynot-drawer.open~* .ynot-reference-header{transform:none!important}
   .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-reference-topline{
@@ -73,13 +67,32 @@
     transform:none!important;margin:0!important;
   }
 
-  /* Remove long camera interpolation that caused the category world to flash in a wrong place. */
   .lv4-shell .lv4-stage{transition:transform .12s ease-out!important;will-change:transform!important}
   .lv4-shell.depth-worlds .ynot-voice-orb,
   .lv4-shell.depth-worlds .lv4-category-bubble{transition:opacity .12s ease,transform .12s ease!important}
+
+  /* Keep the desktop search out of the way while exploring. A thin invisible
+     bottom edge remains hoverable, so moving the pointer to the bottom reveals it. */
+  .ynot-bottom-search{
+    opacity:.02!important;
+    transform:translate(-50%,calc(100% - 10px))!important;
+    transition:transform .18s ease,opacity .14s ease!important;
+    pointer-events:auto!important;
+  }
+  .ynot-bottom-search:hover,
+  .ynot-bottom-search:focus-within{
+    opacity:1!important;
+    transform:translate(-50%,0)!important;
+  }
+  .ynot-app-shell.chrome-hidden .ynot-bottom-search,
+  html.ynot-step-switching .ynot-bottom-search{
+    opacity:0!important;
+    transform:translate(-50%,110%)!important;
+    pointer-events:none!important;
+    transition:none!important;
+  }
 }
 
-/* YNOT drawer opens immediately; keep blur on its canopy/cards rather than blurring the entire viewport. */
 .ynot-drawer{
   transition:transform .22s cubic-bezier(.22,.86,.24,1),opacity .14s ease!important;
   backdrop-filter:none!important;
