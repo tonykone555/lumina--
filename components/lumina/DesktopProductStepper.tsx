@@ -24,7 +24,7 @@ export default function DesktopProductStepper():null{
   const titleOf=(card:HTMLElement)=>norm(card.querySelector(".lv4-product-tooltip b,.lv4-orbmeta b")?.textContent||card.getAttribute("aria-label")||"");
   const dealTitleOf=(card:HTMLElement)=>norm(card.querySelector(".ynot-orb-copy b")?.textContent||card.getAttribute("aria-label")||"");
   const activeTitle=()=>norm(document.querySelector(".lv4-detail .lv4-detailcopy h2")?.textContent||"");
-  const activeDealTitle=()=>norm(document.querySelector(".ynot-selected .ynot-selected-copy h3,.ynot-story .ynot-story-copy h2")?.textContent||"");
+  const activeDealTitle=()=>norm(document.querySelector(".ynot-selected .ynot-selected-copy h3")?.textContent||"");
   const drawerOpen=()=>Boolean(document.querySelector(".ynot-drawer.open"));
 
   const warmDirection=(direction:number)=>{
@@ -58,7 +58,8 @@ export default function DesktopProductStepper():null{
   };
 
   const make=(cls:string,label:string,direction:number,handler:(d:number)=>void)=>{
-    const button=document.createElement("button");button.type="button";button.className=cls;button.setAttribute("aria-label",label);button.innerHTML="<span></span>";
+    document.querySelectorAll(`.${cls}`).forEach(node=>node.remove());
+    const button=document.createElement("button");button.type="button";button.className=`${cls} ynot-stepper-owned`;button.setAttribute("aria-label",label);button.innerHTML="<span></span>";
     button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();handler(direction)});document.body.appendChild(button);return button;
   };
 
@@ -67,16 +68,27 @@ export default function DesktopProductStepper():null{
   dealPrev=make("ynot-deal-desktop-prev","Previous YNOT Deal product",-1,moveDeal);
   dealNext=make("ynot-deal-desktop-next","Next YNOT Deal product",1,moveDeal);
 
+  const force=(button:HTMLButtonElement|null,show:boolean,board=false)=>{
+    if(!button)return;
+    button.classList.toggle("visible",show);button.classList.toggle("board-mode",board);button.disabled=!show;
+    button.style.setProperty("display",show?"grid":"none","important");
+    button.style.setProperty("pointer-events",show?"auto":"none","important");
+    button.style.setProperty("visibility",show?"visible":"hidden","important");
+    button.style.setProperty("opacity",show?(board?".72":"1"):"0","important");
+  };
+
   const sync=()=>{
-    frame=0;const desktop=window.innerWidth>=900,detail=Boolean(document.querySelector(".lv4-detail")),drawer=drawerOpen(),dealOpen=drawer&&Boolean(document.querySelector(".ynot-selected,.ynot-story"));
-    const board=desktop&&!detail&&!drawer&&cards().length>0,worldShow=desktop&&!drawer&&(detail?cards().length>1:board),dealShow=desktop&&dealOpen&&dealCards().length>1;
-    prev?.classList.toggle("visible",worldShow);next?.classList.toggle("visible",worldShow);prev?.classList.toggle("board-mode",board);next?.classList.toggle("board-mode",board);
-    dealPrev?.classList.toggle("visible",dealShow);dealNext?.classList.toggle("visible",dealShow);
-    if(prev)prev.disabled=!worldShow;if(next)next.disabled=!worldShow;if(dealPrev)dealPrev.disabled=!dealShow;if(dealNext)dealNext.disabled=!dealShow;
+    frame=0;
+    const desktop=window.innerWidth>=900,detail=Boolean(document.querySelector(".lv4-detail")),drawer=drawerOpen(),dealOpen=drawer&&Boolean(document.querySelector(".ynot-selected"));
+    const board=desktop&&!detail&&!drawer&&cards().length>0;
+    const worldShow=desktop&&!drawer&&(detail?cards().length>1:board);
+    const dealShow=desktop&&dealOpen&&dealCards().length>1;
+    force(prev,worldShow,board);force(next,worldShow,board);force(dealPrev,dealShow);force(dealNext,dealShow);
   };
   const queue=()=>{if(frame)cancelAnimationFrame(frame);frame=requestAnimationFrame(sync)};
   const observer=new MutationObserver(queue);observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["class"]});window.addEventListener("resize",queue);queue();
-  return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame);window.removeEventListener("resize",queue);document.documentElement.classList.remove("ynot-step-switching");prev?.remove();next?.remove();dealPrev?.remove();dealNext?.remove()};
+  const watchdog=window.setInterval(sync,350);
+  return()=>{observer.disconnect();window.clearInterval(watchdog);if(frame)cancelAnimationFrame(frame);window.removeEventListener("resize",queue);document.documentElement.classList.remove("ynot-step-switching");prev?.remove();next?.remove();dealPrev?.remove();dealNext?.remove()};
  },[]);
  return null;
 }
