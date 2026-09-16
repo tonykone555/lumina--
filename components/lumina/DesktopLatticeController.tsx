@@ -4,9 +4,11 @@ import {useEffect} from "react";
 
 const WORLD_CX=100000;
 const WORLD_CY=100000;
-/* Home runs at a much smaller zoom than product worlds, so this needs a much
-   larger world-space offset to land at the actual visual centre of the screen. */
-const HOME_Y_OFFSET=1220;
+/* The entry camera already maps WORLD_CX/WORLD_CY to the physical viewport centre.
+   Keep the landing mic/category ring on that real origin instead of compensating
+   with a guessed world-space Y offset. Category/product worlds retain their own
+   lower visual landing position. */
+const HOME_Y_OFFSET=0;
 const PRODUCT_Y_OFFSET=340;
 const DESKTOP_COLUMNS=39;
 
@@ -45,7 +47,7 @@ function applyLattice(){
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");return}
  shell.classList.add("ynot-desktop-lattice-active");warmImages(products);
  const {stepX,stepY,size}=metrics();
- products.forEach((product,index)=>{const cell=horizontalCell(index),stagger=(Math.abs(cell.y)%2)*stepX*.5,x=WORLD_CX+cell.x*stepX+stagger,y=WORLD_CY+PRODUCT_Y_OFFSET+cell.y*stepY,signature=`wide3:${stepX}:${stepY}:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
+ products.forEach((product,index)=>{const cell=horizontalCell(index),stagger=(Math.abs(cell.y)%2)*stepX*.5,x=WORLD_CX+cell.x*stepX+stagger,y=WORLD_CY+PRODUCT_Y_OFFSET+cell.y*stepY,signature=`wide4:${stepX}:${stepY}:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
 }
 
 export default function DesktopLatticeController():null{
