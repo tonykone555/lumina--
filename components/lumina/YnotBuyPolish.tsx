@@ -4,7 +4,8 @@ import {useEffect} from "react";
 
 function applyLabels(){
  document.querySelectorAll<HTMLElement>(".ynot-unified-add span,.ynot-shop span").forEach(label=>{
-  if(label.textContent!=="YNOT BUY")label.textContent="YNOT BUY";
+  const busy=/verifying|adding/i.test(label.textContent||"");
+  if(!busy&&label.textContent!=="ADD TO BAG")label.textContent="ADD TO BAG";
  });
  document.querySelectorAll<HTMLButtonElement>(".ynot-story-action").forEach(button=>{
   button.querySelectorAll("svg").forEach(icon=>icon.setAttribute("aria-hidden","true"));
@@ -15,16 +16,10 @@ function applyLabels(){
    label.className="ynot-buy-label";
    button.appendChild(label);
   }
-  label.textContent="YNOT BUY";
- });
- document.querySelectorAll<HTMLElement>(".ynot-unified-bag header small").forEach(label=>{
-  if(label.textContent!=="YNOT BUY")label.textContent="YNOT BUY";
- });
- document.querySelectorAll<HTMLElement>(".ynot-cart header small").forEach(label=>{
-  if(label.textContent?.trim().toUpperCase()==="YNOT BAG")label.textContent="YNOT BUY";
+  label.textContent="ADD TO BAG";
  });
  document.querySelectorAll<HTMLButtonElement>(".ynot-unified-add,.ynot-shop,.ynot-story-action").forEach(button=>{
-  button.setAttribute("aria-label","YNOT BUY");
+  button.setAttribute("aria-label","Add to bag");
  });
 }
 
