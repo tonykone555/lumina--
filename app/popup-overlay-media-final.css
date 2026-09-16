@@ -1,0 +1,67 @@
+/* Final popup overlay/media pass. */
+.ynot-app-shell:has(.lv4-detail)::before,
+.ynot-app-shell:has(.ynot-drawer.open .ynot-selected)::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:300;
+  pointer-events:none;
+  background:rgba(0,0,0,.58);
+  backdrop-filter:blur(7px) brightness(.72);
+  -webkit-backdrop-filter:blur(7px) brightness(.72);
+}
+
+.lv4-detail,
+.ynot-drawer.open .ynot-selected{z-index:500!important}
+
+.lv4-detail>.ynot-popup-video,
+.ynot-drawer.open .ynot-selected>.ynot-popup-video{
+  display:block!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  max-height:52dvh!important;
+  object-fit:contain!important;
+  margin:0 auto!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.lv4-detail.ynot-showing-video>img,
+.ynot-drawer.open .ynot-selected.ynot-showing-video>img{display:none!important}
+
+@media(max-width:899px){
+  /* X belongs to the floating header line above the popup, not inside the card. */
+  .lv4-detail>.lv4-close{
+    position:fixed!important;
+    z-index:560!important;
+    top:calc(9dvh - 30px)!important;
+    right:20px!important;
+    left:auto!important;
+    width:40px!important;
+    height:40px!important;
+    margin:0!important;
+    color:#fff!important;
+    filter:drop-shadow(0 2px 12px rgba(0,0,0,.72))!important;
+  }
+  .lv4-detail>.lv4-close svg{width:25px!important;height:25px!important;stroke-width:3.4!important}
+
+  .ynot-drawer.open .ynot-selected>.ynot-selected-close{
+    position:fixed!important;
+    z-index:560!important;
+    top:calc(9dvh - 30px)!important;
+    right:20px!important;
+    left:auto!important;
+    width:40px!important;
+    height:40px!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    color:#fff!important;
+    filter:drop-shadow(0 2px 12px rgba(0,0,0,.72))!important;
+  }
+  .ynot-drawer.open .ynot-selected>.ynot-selected-close svg{width:25px!important;height:25px!important;stroke-width:3.4!important}
+}
