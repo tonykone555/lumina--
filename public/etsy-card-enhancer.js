@@ -16,14 +16,18 @@
  async function reviewsFor(product){
   const id=Number(product?.listingId||String(product?.id||'').replace(/\D+/g,''));if(!id)return{rating:null,reviewCount:0};
   if(reviewCache.has(id))return reviewCache.get(id);
-  const promise=fetch(`/api/etsy?mode=reviews&listingId=${id}`,{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(data=>({rating:Number(data.rating)||null,reviewCount:Number(data.reviewCount)||0})).catch(()=>({rating:null,reviewCount:0}));
+  const promise=fetch(`/api/etsy?mode=reviews&listingId=${id}`,{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(data=>({rating:Number(data.rating)||null,reviewCount:Number(data.reviewCount)||0,reviews:Array.isArray(data.reviews)?data.reviews:[]})).catch(()=>({rating:null,reviewCount:0,reviews:[]}));
   reviewCache.set(id,promise);return promise;
  }
  function removeBubbleRatings(){document.querySelectorAll('.ynot-etsy-bubble-rating').forEach(node=>node.remove())}
+ function clearDetail(detail){detail.querySelectorAll('.ynot-etsy-rating,.ynot-etsy-description-toggle,.ynot-etsy-description').forEach(node=>node.remove())}
  async function enhanceDetail(detail){
-  if(!(detail instanceof HTMLElement)||detail.dataset.etsyDetailBound==='1')return;
+  if(!(detail instanceof HTMLElement))return;
   const product=matchProduct(detail);if(!product)return;
-  detail.dataset.etsyDetailBound='1';detail.classList.add('ynot-etsy-detail');document.body.classList.add('ynot-product-popup-open');
+  const key=String(product.id||product.listingId||norm(product.title));
+  if(detail.dataset.etsyDetailProductKey===key)return;
+  detail.dataset.etsyDetailProductKey=key;detail.classList.add('ynot-etsy-detail');document.body.classList.add('ynot-product-popup-open');
+  clearDetail(detail);
   const copy=detail.querySelector('.lv4-detailcopy');if(!(copy instanceof HTMLElement))return;
   const rating=document.createElement('div');rating.className='ynot-etsy-rating';rating.hidden=true;
   const price=copy.querySelector('strong');(price?.parentNode||copy).insertBefore(rating,price?.nextSibling||copy.firstChild);
@@ -33,7 +37,7 @@
    button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();panel.hidden=!panel.hidden;button.classList.toggle('active',!panel.hidden)});
    copy.append(button,panel);
   }
-  const data=await reviewsFor(product);if(!rating.isConnected)return;
+  const data=await reviewsFor(product);if(!rating.isConnected||detail.dataset.etsyDetailProductKey!==key)return;
   const value=Number(data.rating)||0,count=Number(data.reviewCount)||0;
   if(value>0&&count>0){rating.hidden=false;rating.innerHTML=`<span>${stars(value)}</span><b>${value.toFixed(1)}</b><small>${count} review${count===1?'':'s'}</small>`}
   else rating.remove();
