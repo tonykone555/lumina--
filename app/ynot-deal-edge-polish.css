@@ -1,28 +1,33 @@
 /* Final YNOT Deal popup edge + title treatment. Loaded last. */
 
-/* Feather the product itself into the blurred environment on every edge. */
+/* Size the foreground image to the real contained image bounds first. This keeps the feather mask attached to the actual photo edges, including square images. */
 .ynot-drawer.open .ynot-selected>img{
+  width:var(--ynot-deal-fit-w,min(94vw,900px))!important;
+  height:var(--ynot-deal-fit-h,72dvh)!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:fill!important;
   -webkit-mask-image:
     linear-gradient(
       180deg,
       transparent 0%,
-      rgba(0,0,0,.16) 3%,
-      rgba(0,0,0,.58) 8%,
+      rgba(0,0,0,.12) 2.5%,
+      rgba(0,0,0,.48) 7%,
       #000 15%,
       #000 82%,
-      rgba(0,0,0,.70) 89%,
-      rgba(0,0,0,.24) 95%,
+      rgba(0,0,0,.64) 89%,
+      rgba(0,0,0,.20) 95.5%,
       transparent 100%
     ),
     linear-gradient(
       90deg,
       transparent 0%,
-      rgba(0,0,0,.18) 3%,
-      rgba(0,0,0,.60) 7%,
-      #000 13%,
-      #000 87%,
-      rgba(0,0,0,.60) 93%,
-      rgba(0,0,0,.18) 97%,
+      rgba(0,0,0,.14) 2.5%,
+      rgba(0,0,0,.52) 7%,
+      #000 14%,
+      #000 86%,
+      rgba(0,0,0,.52) 93%,
+      rgba(0,0,0,.14) 97.5%,
       transparent 100%
     )!important;
   -webkit-mask-composite:source-in!important;
@@ -30,27 +35,37 @@
     linear-gradient(
       180deg,
       transparent 0%,
-      rgba(0,0,0,.16) 3%,
-      rgba(0,0,0,.58) 8%,
+      rgba(0,0,0,.12) 2.5%,
+      rgba(0,0,0,.48) 7%,
       #000 15%,
       #000 82%,
-      rgba(0,0,0,.70) 89%,
-      rgba(0,0,0,.24) 95%,
+      rgba(0,0,0,.64) 89%,
+      rgba(0,0,0,.20) 95.5%,
       transparent 100%
     ),
     linear-gradient(
       90deg,
       transparent 0%,
-      rgba(0,0,0,.18) 3%,
-      rgba(0,0,0,.60) 7%,
-      #000 13%,
-      #000 87%,
-      rgba(0,0,0,.60) 93%,
-      rgba(0,0,0,.18) 97%,
+      rgba(0,0,0,.14) 2.5%,
+      rgba(0,0,0,.52) 7%,
+      #000 14%,
+      #000 86%,
+      rgba(0,0,0,.52) 93%,
+      rgba(0,0,0,.14) 97.5%,
       transparent 100%
     )!important;
   mask-composite:intersect!important;
   filter:drop-shadow(0 16px 34px rgba(0,0,0,.18)) saturate(1.02)!important;
+}
+
+/* Square catalogue images get a slightly deeper vertical dissolve so their full-width top/bottom edges can never read as a hard square. */
+.ynot-drawer.open .ynot-selected>img.ynot-deal-square-image{
+  -webkit-mask-image:
+    linear-gradient(180deg,transparent 0%,rgba(0,0,0,.10) 3%,rgba(0,0,0,.40) 8%,#000 18%,#000 79%,rgba(0,0,0,.52) 89%,rgba(0,0,0,.14) 96%,transparent 100%),
+    linear-gradient(90deg,transparent 0%,rgba(0,0,0,.14) 3%,rgba(0,0,0,.48) 8%,#000 15%,#000 85%,rgba(0,0,0,.48) 92%,rgba(0,0,0,.14) 97%,transparent 100%)!important;
+  mask-image:
+    linear-gradient(180deg,transparent 0%,rgba(0,0,0,.10) 3%,rgba(0,0,0,.40) 8%,#000 18%,#000 79%,rgba(0,0,0,.52) 89%,rgba(0,0,0,.14) 96%,transparent 100%),
+    linear-gradient(90deg,transparent 0%,rgba(0,0,0,.14) 3%,rgba(0,0,0,.48) 8%,#000 15%,#000 85%,rgba(0,0,0,.48) 92%,rgba(0,0,0,.14) 97%,transparent 100%)!important;
 }
 
 /* A masked backdrop blur softly dissolves the photo into its enlarged image echo. */
@@ -93,14 +108,24 @@
 
 @media(max-width:760px){
   .ynot-drawer.open .ynot-selected>img{
+    width:var(--ynot-deal-fit-w,100vw)!important;
+    height:var(--ynot-deal-fit-h,66dvh)!important;
     -webkit-mask-image:
-      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.38) 6%,#000 16%,#000 80%,rgba(0,0,0,.58) 91%,transparent 100%),
-      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.30) 5%,#000 14%,#000 86%,rgba(0,0,0,.30) 95%,transparent 100%)!important;
+      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.28) 5%,#000 17%,#000 79%,rgba(0,0,0,.48) 91%,transparent 100%),
+      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.24) 5%,#000 15%,#000 85%,rgba(0,0,0,.24) 95%,transparent 100%)!important;
     -webkit-mask-composite:source-in!important;
     mask-image:
-      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.38) 6%,#000 16%,#000 80%,rgba(0,0,0,.58) 91%,transparent 100%),
-      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.30) 5%,#000 14%,#000 86%,rgba(0,0,0,.30) 95%,transparent 100%)!important;
+      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.28) 5%,#000 17%,#000 79%,rgba(0,0,0,.48) 91%,transparent 100%),
+      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.24) 5%,#000 15%,#000 85%,rgba(0,0,0,.24) 95%,transparent 100%)!important;
     mask-composite:intersect!important;
+  }
+  .ynot-drawer.open .ynot-selected>img.ynot-deal-square-image{
+    -webkit-mask-image:
+      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.08) 3%,rgba(0,0,0,.34) 8%,#000 19%,#000 78%,rgba(0,0,0,.44) 89%,rgba(0,0,0,.10) 96%,transparent 100%),
+      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.10) 3%,rgba(0,0,0,.40) 8%,#000 16%,#000 84%,rgba(0,0,0,.40) 92%,rgba(0,0,0,.10) 97%,transparent 100%)!important;
+    mask-image:
+      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.08) 3%,rgba(0,0,0,.34) 8%,#000 19%,#000 78%,rgba(0,0,0,.44) 89%,rgba(0,0,0,.10) 96%,transparent 100%),
+      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.10) 3%,rgba(0,0,0,.40) 8%,#000 16%,#000 84%,rgba(0,0,0,.40) 92%,rgba(0,0,0,.10) 97%,transparent 100%)!important;
   }
   .ynot-drawer.open .ynot-selected-copy{
     width:calc(100vw - 28px)!important;
