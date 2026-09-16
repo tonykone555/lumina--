@@ -1,0 +1,104 @@
+/* Final mobile entry-page overrides. Loaded after every other mobile stylesheet. */
+@media (max-width:599px){
+  /* SHOP / DISCOVER must read as the smaller centered control. */
+  .ynot-top-mode{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:36.5vw!important;
+    max-width:148px!important;
+    height:8.15vw!important;
+    max-height:34px!important;
+  }
+  .ynot-top-mode button{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    width:100%!important;
+    height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    line-height:1!important;
+    text-indent:.17em!important;
+  }
+
+  /* WORLD / YNOT is deliberately much longer and a little taller. */
+  .ynot-world-controls{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:72vw!important;
+  }
+  .ynot-world-row{
+    width:72vw!important;
+    height:11.6vw!important;
+    max-height:48px!important;
+  }
+  .ynot-world-row button{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    text-align:center!important;
+    width:100%!important;
+    height:100%!important;
+    margin:0!important;
+    padding:0!important;
+    line-height:1!important;
+    text-indent:.18em!important;
+  }
+
+  /* Entry world only: crop the microphone artwork so its square/black image frame never shows. */
+  .level-worlds .ynot-voice-orb{
+    background:transparent!important;
+    border-radius:50%!important;
+    border:1px solid rgba(255,255,255,.62)!important;
+    box-shadow:0 10px 32px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.24)!important;
+  }
+  .level-worlds .ynot-voice-orb img{
+    position:absolute!important;
+    left:50%!important;
+    top:50%!important;
+    width:118%!important;
+    height:118%!important;
+    max-width:none!important;
+    max-height:none!important;
+    transform:translate(-50%,-50%) scale(1.16)!important;
+    transform-origin:center!important;
+    object-fit:cover!important;
+    object-position:50% 50%!important;
+    border-radius:50%!important;
+    clip-path:circle(48.5% at 50% 50%)!important;
+    -webkit-clip-path:circle(48.5% at 50% 50%)!important;
+  }
+  .level-worlds .ynot-voice-pulse{z-index:2!important}
+  .level-worlds .ynot-voice-orb strong{z-index:3!important;color:#fff!important}
+
+  /* Entry world only: category names live under each orb in white, not inside it. */
+  .level-worlds .lv4-category-bubble{
+    overflow:visible!important;
+    color:transparent!important;
+  }
+  .level-worlds .lv4-category-bubble b{
+    position:absolute!important;
+    left:50%!important;
+    top:calc(100% + 18px)!important;
+    transform:translateX(-50%)!important;
+    width:220px!important;
+    margin:0!important;
+    padding:0!important;
+    color:#fff!important;
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif!important;
+    font-size:28px!important;
+    line-height:1!important;
+    font-weight:650!important;
+    letter-spacing:.015em!important;
+    text-align:center!important;
+    white-space:nowrap!important;
+    text-shadow:0 2px 12px rgba(0,0,0,.72)!important;
+    pointer-events:none!important;
+  }
+  .level-worlds .lv4-category-bubble span{
+    display:none!important;
+  }
+}
