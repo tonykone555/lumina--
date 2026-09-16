@@ -1,0 +1,159 @@
+/* Final world product popup scroll/fitting pass. Loaded last. */
+
+/* Hide app profile/avatar whenever a normal world product popup is open. */
+.ynot-app-shell:has(.lv4-detail) .ynot-reference-right{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* Circle proof does not belong inside the compact world product card. */
+.lv4-detail .ynot-product-proof{
+  display:none!important;
+}
+
+/* Remove the Same shape action from the popup so the lower controls fit cleanly. */
+.lv4-detail .lv4-direction-row>button:last-child{
+  display:none!important;
+}
+
+@media(max-width:899px){
+  /* One scrolling card. Nothing inside remains vertically pinned. */
+  .lv4-detail{
+    display:flex!important;
+    flex-direction:column!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    overscroll-behavior:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    padding:10px 10px calc(28px + env(safe-area-inset-bottom))!important;
+    scroll-padding-top:0!important;
+  }
+
+  .lv4-detail>img,
+  .lv4-detail .ynot-main-product-image{
+    order:1!important;
+    position:relative!important;
+    inset:auto!important;
+    top:auto!important;
+    bottom:auto!important;
+    left:auto!important;
+    right:auto!important;
+    z-index:2!important;
+    flex:0 0 auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:min(58dvh,460px)!important;
+    aspect-ratio:auto!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    margin:0!important;
+    transform:none!important;
+    will-change:auto!important;
+  }
+
+  /* Keep up to four image thumbnails/+N area inside normal document flow. */
+  .lv4-detail .lv4-gallery,
+  .lv4-detail .ynot-rich-gallery,
+  .lv4-detail .ynot-loaded-gallery{
+    order:2!important;
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    max-width:100%!important;
+    flex:0 0 auto!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:7px!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    padding:7px 0 6px!important;
+    margin:0!important;
+    scroll-snap-type:x proximity!important;
+  }
+  .lv4-detail .lv4-gallery>button,
+  .lv4-detail .ynot-rich-gallery>button,
+  .lv4-detail .ynot-loaded-gallery>button{
+    flex:0 0 58px!important;
+    width:58px!important;
+    min-width:58px!important;
+    height:52px!important;
+    min-height:52px!important;
+    position:relative!important;
+    scroll-snap-align:start!important;
+  }
+
+  /* Product copy follows media naturally instead of sliding below it. */
+  .lv4-detail .lv4-detailcopy{
+    order:3!important;
+    position:relative!important;
+    inset:auto!important;
+    flex:0 0 auto!important;
+    min-height:0!important;
+    overflow:visible!important;
+    padding:12px 4px 4px!important;
+    margin:0!important;
+  }
+
+  .lv4-detail .lv4-actions{
+    width:100%!important;
+    max-width:100%!important;
+    grid-template-columns:minmax(0,1fr) 44px!important;
+    gap:7px!important;
+  }
+  .lv4-detail .lv4-actions>button{
+    min-width:0!important;
+  }
+
+  .lv4-detail .lv4-direction-row{
+    width:100%!important;
+    max-width:100%!important;
+    display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:6px!important;
+    overflow:visible!important;
+    margin-bottom:2px!important;
+  }
+  .lv4-detail .lv4-direction-row>button{
+    width:100%!important;
+    min-width:0!important;
+    padding:0 7px!important;
+    white-space:nowrap!important;
+  }
+
+  /* Dots belong in the flow as the real bottom of the image/gallery area. */
+  .lv4-detail .ynot-mobile-swipe-dots{
+    order:2!important;
+    position:relative!important;
+    inset:auto!important;
+    left:auto!important;
+    right:auto!important;
+    top:auto!important;
+    bottom:auto!important;
+    transform:none!important;
+    flex:0 0 auto!important;
+    align-self:center!important;
+    margin:-2px auto 7px!important;
+    z-index:6!important;
+  }
+
+  /* Make sure the popup has a visible end rather than content disappearing below the viewport. */
+  .lv4-detail .lv4-detailcopy::after{
+    content:""!important;
+    display:block!important;
+    width:100%!important;
+    height:calc(18px + env(safe-area-inset-bottom))!important;
+    flex:0 0 auto!important;
+  }
+
+  /* Close control remains accessible without affecting the scroll layout. */
+  .lv4-detail>.lv4-close{
+    position:fixed!important;
+    z-index:420!important;
+    top:calc(12px + env(safe-area-inset-top))!important;
+    right:12px!important;
+  }
+}
