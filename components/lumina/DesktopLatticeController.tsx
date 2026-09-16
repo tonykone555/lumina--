@@ -34,30 +34,21 @@ function ringCell(index:number){
  return{x:-ring,y:ring-1-offset,ring};
 }
 
-function stageCamera(stage:HTMLElement){
- const raw=stage.style.transform||getComputedStyle(stage).transform||"";
- const direct=raw.match(/translate\(\s*(-?[\d.]+)px\s*,\s*(-?[\d.]+)px\s*\)\s*scale\(\s*([\d.]+)\s*\)/i);
- if(direct)return{panX:Number(direct[1]),panY:Number(direct[2]),zoom:Math.max(.001,Number(direct[3]))};
- const matrix=raw.match(/matrix\(\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*,\s*([\d.-]+)\s*\)/i);
- if(matrix)return{panX:Number(matrix[5]),panY:Number(matrix[6]),zoom:Math.max(.001,Math.abs(Number(matrix[1])))};
- return{panX:-WORLD_CX*.22,panY:-WORLD_CY*.22,zoom:.22};
-}
-
+/* Home objects belong to the world's real origin. Never recalculate their
+   coordinates from the current camera/pan: doing that made the mic and category
+   bubbles follow a dragged viewport and permanently appear off-centre. */
 function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
  if(window.innerWidth<900||!shell.classList.contains("depth-worlds"))return;
  const voice=stage.querySelector<HTMLElement>(":scope > .ynot-voice-orb");
  const categories=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-category-bubble")];
  if(!voice||!categories.length)return;
- const {panX,panY,zoom}=stageCamera(stage);
- const centerX=(window.innerWidth*.5-panX)/zoom;
- const centerY=(window.innerHeight*.5-panY)/zoom;
- voice.style.setProperty("left",`${centerX}px`,"important");
- voice.style.setProperty("top",`${centerY}px`,"important");
+ voice.style.setProperty("left",`${WORLD_CX}px`,"important");
+ voice.style.setProperty("top",`${WORLD_CY}px`,"important");
  const radius=Math.min(860,Math.max(620,Math.min(window.innerWidth,window.innerHeight)*2.2));
  categories.forEach((node,index)=>{
   const angle=index/categories.length*Math.PI*2-Math.PI/2;
-  node.style.setProperty("left",`${centerX+Math.cos(angle)*radius}px`,"important");
-  node.style.setProperty("top",`${centerY+Math.sin(angle)*radius}px`,"important");
+  node.style.setProperty("left",`${WORLD_CX+Math.cos(angle)*radius}px`,"important");
+  node.style.setProperty("top",`${WORLD_CY+Math.sin(angle)*radius}px`,"important");
  });
 }
 
