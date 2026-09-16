@@ -1,0 +1,49 @@
+/* Left-edge Saves reveal handle. */
+.ynot-saves-edge-zone{
+  position:fixed!important;
+  z-index:680!important;
+  left:0!important;
+  top:22dvh!important;
+  bottom:22dvh!important;
+  width:18px!important;
+  pointer-events:auto!important;
+}
+.ynot-saves-edge-handle{
+  position:fixed!important;
+  z-index:681!important;
+  left:0!important;
+  top:50dvh!important;
+  transform:translate(-74%,-50%)!important;
+  width:48px!important;
+  height:58px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-left:0!important;
+  border-radius:0 18px 18px 0!important;
+  background:linear-gradient(145deg,rgba(26,28,28,.78),rgba(13,14,14,.64))!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.15),10px 14px 34px rgba(0,0,0,.28)!important;
+  backdrop-filter:blur(20px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(20px) saturate(1.08)!important;
+  opacity:.72!important;
+  transition:transform .22s ease,opacity .18s ease!important;
+}
+.ynot-saves-edge-handle svg{width:23px!important;height:23px!important;stroke-width:1.9!important}
+html.ynot-saves-edge-visible .ynot-saves-edge-handle,
+.ynot-saves-edge-handle:hover,
+.ynot-saves-edge-zone:hover + .ynot-saves-edge-handle{
+  transform:translate(0,-50%)!important;
+  opacity:1!important;
+}
+html.ynot-deal-product-open .ynot-saves-edge-zone,
+html.ynot-deal-product-open .ynot-saves-edge-handle,
+.ynot-unified-bag-backdrop ~ .ynot-saves-edge-handle{
+  pointer-events:none!important;
+}
+@media(max-width:760px){
+  .ynot-saves-edge-zone{width:16px!important;top:18dvh!important;bottom:18dvh!important}
+  .ynot-saves-edge-handle{width:44px!important;height:54px!important;border-radius:0 17px 17px 0!important;transform:translate(-78%,-50%)!important}
+  .ynot-saves-edge-handle svg{width:22px!important;height:22px!important}
+}
