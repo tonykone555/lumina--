@@ -1,0 +1,311 @@
+/* Phone-only lock measured from the 1179px YNOT reference image (3x iPhone capture).
+   The geometry is expressed as viewport ratios so the composition scales as one unit on phones. */
+@media (max-width:599px){
+  .ynot-reference-header{
+    display:block!important;
+    position:fixed!important;
+    z-index:600!important;
+    inset:auto!important;
+    top:0!important;
+    left:0!important;
+    width:100vw!important;
+    height:35vw!important;
+    padding:0!important;
+    margin:0!important;
+    overflow:visible!important;
+    pointer-events:none!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+  }
+  .ynot-reference-header button,.ynot-reference-header .ynot-view-source{pointer-events:auto!important}
+  .ynot-reference-header:before,.ynot-reference-header:after{content:none!important}
+
+  /* Reference profile: x≈2.46%, y≈2.2%, diameter≈10.86% of viewport width. */
+  .ynot-reference-left{display:none!important}
+  .ynot-reference-right{
+    display:block!important;
+    position:absolute!important;
+    z-index:8!important;
+    left:2.46vw!important;
+    right:auto!important;
+    top:2.20vw!important;
+    width:10.86vw!important;
+    height:10.86vw!important;
+    margin:0!important;
+    padding:0!important;
+  }
+  .ynot-reference-notify,.ynot-reference-signin,.ynot-packages-button{display:none!important}
+  .ynot-reference-avatar{
+    display:grid!important;
+    place-items:center!important;
+    width:10.86vw!important;
+    height:10.86vw!important;
+    min-width:0!important;
+    min-height:0!important;
+    padding:0!important;
+    border-radius:50%!important;
+    border:1.35px solid rgba(255,255,255,.62)!important;
+    background:linear-gradient(165deg,rgba(255,255,255,.16),rgba(255,255,255,.075) 55%,rgba(10,10,10,.06))!important;
+    color:rgba(255,255,255,.94)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.48),
+      inset 1px 0 0 rgba(255,255,255,.20),
+      inset 0 -1.5px 0 rgba(0,0,0,.18),
+      0 3px 9px rgba(0,0,0,.18)!important;
+    backdrop-filter:blur(14px) saturate(1.12) brightness(1.04)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(1.12) brightness(1.04)!important;
+    overflow:hidden!important;
+  }
+  .ynot-reference-avatar:before{
+    content:""!important;
+    position:absolute!important;
+    inset:1.3px!important;
+    border-radius:50%!important;
+    border-top:1px solid rgba(255,255,255,.30)!important;
+    border-left:1px solid rgba(255,255,255,.17)!important;
+    pointer-events:none!important;
+  }
+  .ynot-reference-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
+  .ynot-reference-avatar svg{width:4.2vw!important;height:4.2vw!important;max-width:17px!important;max-height:17px!important;stroke-width:1.55!important}
+
+  .ynot-reference-center{display:block!important;position:static!important}
+  .ynot-reference-topline{display:block!important;position:static!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important}
+
+  /* TOP PILL — screenshot ≈ 39.35vw × 8.82vw, centered at x=50%. */
+  .ynot-top-mode{
+    position:absolute!important;
+    z-index:7!important;
+    left:50%!important;
+    top:1.53vw!important;
+    transform:translateX(-50%)!important;
+    width:39.35vw!important;
+    height:8.82vw!important;
+    min-width:0!important;
+    padding:.72vw!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    border:1.4px solid rgba(255,255,255,.57)!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,rgba(197,201,198,.16),rgba(130,134,131,.105))!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.48),
+      inset 0 -1.3px 0 rgba(0,0,0,.22),
+      inset 1px 0 0 rgba(255,255,255,.16),
+      0 3px 9px rgba(0,0,0,.18)!important;
+    backdrop-filter:blur(15px) saturate(1.14) brightness(1.05)!important;
+    -webkit-backdrop-filter:blur(15px) saturate(1.14) brightness(1.05)!important;
+    overflow:hidden!important;
+    pointer-events:auto!important;
+  }
+  .ynot-top-mode:before{
+    content:""!important;
+    position:absolute!important;
+    inset:1.2px!important;
+    border-radius:999px!important;
+    border-top:1px solid rgba(255,255,255,.25)!important;
+    border-left:1px solid rgba(255,255,255,.13)!important;
+    pointer-events:none!important;
+    z-index:0!important;
+  }
+  .ynot-top-mode:after{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.08),transparent 42%,rgba(0,0,0,.035))!important;
+    pointer-events:none!important;
+    z-index:0!important;
+  }
+  .ynot-top-mode button{
+    position:relative!important;
+    z-index:1!important;
+    height:7.35vw!important;
+    min-height:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:transparent!important;
+    color:rgba(13,13,13,.54)!important;
+    font-size:2.22vw!important;
+    line-height:1!important;
+    font-weight:760!important;
+    letter-spacing:.17em!important;
+    text-shadow:none!important;
+  }
+  .ynot-top-mode button.active{
+    background:linear-gradient(180deg,rgba(12,12,12,.83),rgba(19,19,19,.72))!important;
+    color:#fff!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08),inset 0 -1px 0 rgba(0,0,0,.3),0 1px 3px rgba(0,0,0,.16)!important;
+  }
+
+  /* RIGHT CONTROLS — screenshot ≈10.26vw square, right edge≈1.95vw, gap≈1.27vw. */
+  .ynot-reference-nav-tools{
+    display:flex!important;
+    position:absolute!important;
+    z-index:9!important;
+    top:2.29vw!important;
+    right:1.95vw!important;
+    left:auto!important;
+    width:auto!important;
+    height:10.0vw!important;
+    gap:1.27vw!important;
+    pointer-events:auto!important;
+  }
+  .ynot-reference-nav-tools button{
+    position:relative!important;
+    display:grid!important;
+    place-items:center!important;
+    width:10.26vw!important;
+    height:10.0vw!important;
+    min-width:0!important;
+    min-height:0!important;
+    padding:0!important;
+    border-radius:3.20vw!important;
+    border:1.35px solid rgba(255,255,255,.59)!important;
+    background:linear-gradient(165deg,rgba(255,255,255,.15),rgba(255,255,255,.065) 58%,rgba(0,0,0,.055))!important;
+    color:rgba(255,255,255,.96)!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.43),
+      inset 1px 0 0 rgba(255,255,255,.13),
+      inset 0 -1.4px 0 rgba(0,0,0,.20),
+      0 3px 9px rgba(0,0,0,.18)!important;
+    backdrop-filter:blur(14px) saturate(1.12) brightness(1.04)!important;
+    -webkit-backdrop-filter:blur(14px) saturate(1.12) brightness(1.04)!important;
+  }
+  .ynot-reference-nav-tools button:before{
+    content:""!important;
+    position:absolute!important;
+    inset:1.2px!important;
+    border-radius:calc(3.20vw - 1px)!important;
+    border-top:1px solid rgba(255,255,255,.25)!important;
+    border-left:1px solid rgba(255,255,255,.12)!important;
+    pointer-events:none!important;
+  }
+  .ynot-reference-nav-tools svg{width:4.35vw!important;height:4.35vw!important;max-width:18px!important;max-height:18px!important;stroke-width:1.8!important}
+
+  /* BOTTOM PILL — screenshot ≈71.25vw × 11.54vw, much larger than the top pill. */
+  .ynot-world-controls{
+    display:grid!important;
+    grid-template-rows:11.54vw 7.0vw!important;
+    gap:1.7vw!important;
+    justify-items:center!important;
+    position:absolute!important;
+    z-index:6!important;
+    left:50%!important;
+    right:auto!important;
+    top:12.30vw!important;
+    width:71.25vw!important;
+    height:auto!important;
+    margin:0!important;
+    padding:0!important;
+    transform:translateX(-50%)!important;
+    pointer-events:auto!important;
+  }
+  .ynot-world-row{
+    position:relative!important;
+    width:71.25vw!important;
+    height:11.54vw!important;
+    min-height:0!important;
+    padding:.78vw!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    border:1.45px solid rgba(255,255,255,.61)!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,rgba(206,211,207,.18),rgba(139,145,141,.105))!important;
+    box-shadow:
+      inset 0 1.15px 0 rgba(255,255,255,.54),
+      inset 0 -1.5px 0 rgba(0,0,0,.21),
+      inset 1px 0 0 rgba(255,255,255,.17),
+      0 3px 10px rgba(0,0,0,.18)!important;
+    backdrop-filter:blur(17px) saturate(1.14) brightness(1.06)!important;
+    -webkit-backdrop-filter:blur(17px) saturate(1.14) brightness(1.06)!important;
+    overflow:hidden!important;
+  }
+  .ynot-world-row:before{
+    content:""!important;
+    position:absolute!important;
+    inset:1.25px!important;
+    z-index:0!important;
+    border-radius:999px!important;
+    border-top:1px solid rgba(255,255,255,.31)!important;
+    border-left:1px solid rgba(255,255,255,.14)!important;
+    pointer-events:none!important;
+  }
+  .ynot-world-row:after{
+    content:""!important;
+    position:absolute!important;
+    inset:0!important;
+    z-index:0!important;
+    border-radius:999px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.08),transparent 40%,rgba(0,0,0,.038))!important;
+    pointer-events:none!important;
+  }
+  .ynot-world-row button{
+    position:relative!important;
+    z-index:1!important;
+    height:9.92vw!important;
+    min-height:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:999px!important;
+    background:transparent!important;
+    color:rgba(255,255,255,.95)!important;
+    font-size:2.22vw!important;
+    line-height:1!important;
+    font-weight:520!important;
+    letter-spacing:.18em!important;
+    text-shadow:0 .5px 2px rgba(0,0,0,.16)!important;
+  }
+  .ynot-world-row button.active{
+    background:linear-gradient(180deg,rgba(214,220,216,.20),rgba(174,181,176,.105))!important;
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.48),
+      inset 0 0 0 1px rgba(255,255,255,.24),
+      inset 0 -1px 0 rgba(0,0,0,.10)!important;
+  }
+  .ynot-world-row button.active:before{
+    content:""!important;
+    position:absolute!important;
+    inset:1px!important;
+    border-radius:999px!important;
+    border-top:1px solid rgba(255,255,255,.25)!important;
+    border-left:1px solid rgba(255,255,255,.12)!important;
+    pointer-events:none!important;
+  }
+
+  /* Source sits clearly below the larger pill, matching the phone reference. */
+  .ynot-view-source{
+    position:relative!important;
+    display:flex!important;
+    justify-content:center!important;
+    align-items:flex-start!important;
+    width:100%!important;
+    height:7vw!important;
+    margin:0!important;
+    transform:none!important;
+  }
+  .ynot-source-trigger-clean{
+    height:6.4vw!important;
+    padding:0 1vw!important;
+    border:0!important;
+    background:transparent!important;
+    color:rgba(255,255,255,.97)!important;
+    font-size:2.16vw!important;
+    font-weight:500!important;
+    letter-spacing:.02em!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:1.55vw!important;
+    text-shadow:0 1px 5px rgba(0,0,0,.28)!important;
+  }
+  .ynot-source-trigger-clean svg{width:2.85vw!important;height:2.85vw!important;stroke-width:2.1!important}
+  .ynot-source-list{top:6.4vw!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important}
+
+  /* Keep the opening mic + category constellation visible underneath this floating header. */
+  .level-worlds .ynot-voice-orb,.ynot-voice-orb{display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+  .level-worlds .lv4-category-bubble,.lv4-category-bubble{display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+
+  .lv4-rail,.lv4-search,.lv4-market-toggle,.lv4-source-picker,.lv4-mobile-menu,.ynot-compass-tools,.ynot-profile-orb{display:none!important}
+  .ynot-app-shell:not(.chrome-hidden) .ynot-reference-header,.ynot-app-shell:not(.chrome-hidden) .ynot-bottom-search{opacity:1!important;visibility:visible!important;pointer-events:auto!important}
+}
