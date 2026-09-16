@@ -1,0 +1,48 @@
+/* Final mobile YNOT Deal + world interaction stability. */
+@media(max-width:899px){
+  .ynot-selected-heart,
+  .ynot-story-heart{
+    left:14px!important;
+    right:auto!important;
+    top:14px!important;
+    z-index:560!important;
+  }
+  .ynot-selected-heart.active,
+  .ynot-story-heart.active{
+    color:#ff304f!important;
+    border-color:rgba(255,48,79,.52)!important;
+    background:rgba(28,8,13,.78)!important;
+    box-shadow:0 8px 24px rgba(255,48,79,.18),inset 0 1px 0 rgba(255,255,255,.16)!important;
+  }
+  .ynot-selected-heart.active svg,
+  .ynot-story-heart.active svg{
+    fill:#ff304f!important;
+    stroke:#ff304f!important;
+  }
+  .ynot-selected-close,
+  .ynot-story-close{
+    touch-action:none!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+}
+
+/* Switching catalog sources must never visually kick the camera back into the entry zoom. */
+.ynot-source-switching .lv4-stage{
+  transition:none!important;
+  animation:none!important;
+  will-change:transform!important;
+}
+.ynot-source-switching .lv4-category-status,
+.ynot-source-switching .lv4-category-bubble,
+.ynot-source-switching .ynot-voice-orb{
+  opacity:0!important;
+  pointer-events:none!important;
+}
+.ynot-source-switching .lv4-world,
+.ynot-source-switching .lv4-stage{
+  transition-duration:0s!important;
+}
+
+/* New waves discovered by vertical dragging are physically placed in the direction revealed. */
+.lv4-product.ynot-drag-fresh-top{margin-top:-1500px!important}
+.lv4-product.ynot-drag-fresh-bottom{margin-top:1500px!important}
