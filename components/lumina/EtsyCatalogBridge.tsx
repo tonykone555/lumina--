@@ -24,11 +24,19 @@ export default function EtsyCatalogBridge(){
  useEffect(()=>{
   const originalFetch=window.fetch.bind(window);
   const onSource=(event:Event)=>{etsySelected=(event as CustomEvent<{source?:string}>).detail?.source==="etsy"};
+  const onMarketClick=(event:Event)=>{const target=event.target as Element|null;if(target?.closest?.(".lv4-market-toggle .ebay"))etsySelected=false};
   window.addEventListener("ynot:catalog-source",onSource as EventListener);
+  document.addEventListener("click",onMarketClick,true);
   window.fetch=(async(input:RequestInfo|URL,init?:RequestInit)=>{
    const raw=typeof input==="string"?input:input instanceof URL?input.toString():input.url;
-   if(!etsySelected||!raw.startsWith("/api/catalog?"))return originalFetch(input,init);
-   const sourceUrl=new URL(raw,window.location.origin),q=etsyQuery(sourceUrl.searchParams.get("q")||""),direction=sourceUrl.searchParams.get("direction")||"",pageRaw=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR",cursor=sourceUrl.searchParams.get("cursor")||"";
+   if(!raw.startsWith("/api/catalog?"))return originalFetch(input,init);
+   const sourceUrl=new URL(raw,window.location.origin);
+   if(sourceUrl.searchParams.get("market")==="ebay"){
+    etsySelected=false;
+    return originalFetch(input,init);
+   }
+   if(!etsySelected)return originalFetch(input,init);
+   const q=etsyQuery(sourceUrl.searchParams.get("q")||""),direction=sourceUrl.searchParams.get("direction")||"",pageRaw=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR",cursor=sourceUrl.searchParams.get("cursor")||"";
    const cursorMatch=cursor.match(/^etsy:(\d+)$/),requestedPage=Math.max(0,Number(pageRaw)||0),startPage=cursorMatch?Number(cursorMatch[1]):requestedPage;
    const batchSize=4;
    const fetchPage=async(page:number)=>{
@@ -46,7 +54,7 @@ export default function EtsyCatalogBridge(){
    const nextPage=startPage+batchSize,hasNext=total>0?nextPage*24<total:pages.some(entry=>Array.isArray(entry.data.products)&&entry.data.products.length>=24);
    return new Response(JSON.stringify({source:"etsy-marketplace",sources:["etsy-marketplace"],market:"lumina",luminaSource:"shopify",products,pagination:{has_next_page:hasNext,next_cursor:hasNext?`etsy:${nextPage}`:null},error:products.length?undefined:"No Etsy products found for this search yet."}),{status:200,headers:{"Content-Type":"application/json"}});
   }) as typeof window.fetch;
-  return()=>{window.removeEventListener("ynot:catalog-source",onSource as EventListener);window.fetch=originalFetch;etsySelected=false};
+  return()=>{window.removeEventListener("ynot:catalog-source",onSource as EventListener);document.removeEventListener("click",onMarketClick,true);window.fetch=originalFetch;etsySelected=false};
  },[]);
  return null;
 }
