@@ -1,0 +1,12 @@
+/* Final mobile compass stacking: the map must sit above every header control. */
+@media(max-width:899px){
+  .ynot-reference-avatar{display:none!important;visibility:hidden!important;pointer-events:none!important}
+  .ynot-compass-backdrop{z-index:2147483000!important;pointer-events:auto!important}
+  .ynot-compass-map{position:relative!important;z-index:2147483001!important;pointer-events:auto!important}
+  .ynot-compass-map>header{position:relative!important;z-index:2147483002!important}
+  .ynot-compass-close{position:relative!important;z-index:2147483003!important;pointer-events:auto!important;touch-action:manipulation!important}
+  body.ynot-compass-open .ynot-reference-right,
+  body.ynot-compass-open .ynot-reference-header,
+  body.ynot-compass-open .ynot-reference-avatar{pointer-events:none!important}
+  body.ynot-compass-open .ynot-reference-avatar{display:none!important}
+}
