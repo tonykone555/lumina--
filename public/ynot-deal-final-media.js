@@ -40,9 +40,33 @@
     }
     const i=document.createElement('img');i.src=url;i.alt=`${title} view ${index+1}`;return i;
   }
+  function openViewer(media,start=0){
+    document.querySelector('.ynot-final-media-viewer')?.remove();
+    if(!media.length)return;
+    let index=Math.max(0,Math.min(start,media.length-1));
+    const viewer=document.createElement('section');viewer.className='ynot-final-media-viewer';viewer.setAttribute('role','dialog');viewer.setAttribute('aria-label','Product media');
+    const stage=document.createElement('div');stage.className='ynot-final-media-stage';
+    const close=document.createElement('button');close.type='button';close.className='ynot-final-media-close';close.setAttribute('aria-label','Close media viewer');close.textContent='×';
+    const prev=document.createElement('button');prev.type='button';prev.className='ynot-final-media-prev';prev.setAttribute('aria-label','Previous media');prev.textContent='‹';
+    const next=document.createElement('button');next.type='button';next.className='ynot-final-media-next';next.setAttribute('aria-label','Next media');next.textContent='›';
+    const count=document.createElement('span');count.className='ynot-final-media-count';
+    const render=()=>{
+      stage.replaceChildren();const url=media[index];
+      if(isVideo(url)){const v=document.createElement('video');v.src=url;v.controls=true;v.playsInline=true;v.autoplay=true;v.className='ynot-final-media-main';stage.appendChild(v)}
+      else{const i=document.createElement('img');i.src=url;i.alt='Product view';i.className='ynot-final-media-main';stage.appendChild(i)}
+      count.textContent=`${index+1} / ${media.length}`;
+    };
+    const move=d=>{index=(index+d+media.length)%media.length;render()};
+    close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();viewer.remove()});
+    prev.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();move(-1)});
+    next.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();move(1)});
+    viewer.addEventListener('click',e=>{if(e.target===viewer)viewer.remove()});
+    viewer.addEventListener('keydown',e=>{if(e.key==='ArrowLeft')move(-1);if(e.key==='ArrowRight')move(1);if(e.key==='Escape')viewer.remove()});viewer.tabIndex=0;
+    viewer.append(stage,close,prev,next,count);document.body.appendChild(viewer);render();requestAnimationFrame(()=>viewer.focus());
+  }
   async function rebuildGallery(shell){
     if(!(shell instanceof HTMLElement))return;const title=titleOf(shell),main=shell.querySelector(':scope > img');if(!title||!main)return;
-    const signature=`final:${norm(title)}`;const existing=shell.querySelector('.ynot-deal-thumb-gallery');if(existing?.dataset.finalSignature===signature)return;
+    const signature=`final2:${norm(title)}`;const existing=shell.querySelector('.ynot-deal-thumb-gallery');if(existing?.dataset.finalSignature===signature)return;
     const product=await exactProduct(title);if(!document.body.contains(shell)||titleOf(shell)!==title)return;
     const media=collectMedia(product,main.src);if(!media.length)return;
     existing?.remove();
@@ -51,8 +75,11 @@
     media.slice(0,visible).forEach((url,index)=>{
       const b=document.createElement('button');b.type='button';b.dataset.mediaUrl=url;b.appendChild(makeThumb(url,title,index));
       if(index===0)b.classList.add('active');
-      if(media.length>4&&index===visible-1){b.classList.add('ynot-deal-thumb-more');b.dataset.more=`+${media.length-visible+1}`}
-      b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showMedia(shell,url)});
+      const more=media.length>4&&index===visible-1;
+      if(more){
+        b.classList.add('ynot-deal-thumb-more');b.dataset.more=`+${media.length-(visible-1)}`;b.setAttribute('aria-label',`Open all ${media.length} product media`);
+        b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openViewer(media,index)});
+      }else b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showMedia(shell,url)});
       gallery.appendChild(b);
     });
     main.insertAdjacentElement('afterend',gallery);
