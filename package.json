@@ -10,16 +10,18 @@
     "start": "next start"
   },
   "dependencies": {
+    "@huggingface/transformers": "3.8.1",
     "@react-three/drei": "10.7.8",
     "@react-three/fiber": "9.7.0",
+    "@remotion/player": "4.0.506",
     "gsap": "3.13.0",
     "lucide-react": "0.468.0",
     "next": "15.5.24",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "remotion": "4.0.506",
     "stripe": "22.4.0",
-    "three": "0.180.0",
-    "@huggingface/transformers": "3.8.1"
+    "three": "0.180.0"
   },
   "devDependencies": {
     "@types/node": "22.0.0",
