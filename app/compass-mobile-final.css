@@ -1,0 +1,17 @@
+/* Final mobile compass interaction lock. */
+@media(max-width:899px){
+  /* The mobile profile control was overlapping the compass close target. */
+  .ynot-reference-avatar{display:none!important;pointer-events:none!important}
+  body.ynot-compass-open .ynot-reference-right{display:none!important;pointer-events:none!important}
+
+  /* Compass must sit above every mobile header/control layer. */
+  .ynot-compass-backdrop{z-index:2147482500!important;pointer-events:auto!important}
+  .ynot-compass-map{position:relative!important;z-index:2147482501!important}
+  .ynot-compass-map>header{position:sticky!important;top:0!important;z-index:2147482502!important;pointer-events:auto!important}
+  .ynot-compass-close{position:relative!important;z-index:2147482503!important;pointer-events:auto!important;touch-action:manipulation!important}
+  .ynot-compass-close svg{pointer-events:none!important}
+}
+
+/* After the loading dots disappear, never flash back to the entry mic/world while products are still mounting. */
+html.ynot-initial-world-await-products:not(.ynot-initial-world-loading) .lv4-world{visibility:hidden!important}
+html.ynot-initial-world-await-products:not(.ynot-initial-world-loading) .lv4-category-status{display:none!important}
