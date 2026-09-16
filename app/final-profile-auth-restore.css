@@ -24,6 +24,11 @@
 .ynot-reference-avatar svg{width:19px!important;height:19px!important}
 .ynot-reference-signin{white-space:nowrap!important}
 
+.ynot-auth-form-back{position:absolute!important;left:18px!important;top:18px!important;width:42px!important;height:42px!important;border-radius:50%!important;border:1px solid rgba(255,255,255,.15)!important;background:rgba(255,255,255,.07)!important;color:#fff!important;display:grid!important;place-items:center!important;z-index:5!important}
+.ynot-auth-form-back svg{width:17px!important;height:17px!important}
+.ynot-auth-entry-signin{min-height:54px!important;font-size:13px!important}
+.ynot-auth-create-link{margin-top:10px!important}
+
 @media(max-width:899px){
   .ynot-reference-right{gap:6px!important}
   .ynot-reference-avatar{display:grid!important;position:relative!important;right:auto!important;top:auto!important;flex-basis:38px!important;width:38px!important;height:38px!important;min-width:38px!important;z-index:900!important}
@@ -33,4 +38,59 @@
 @media(min-width:900px){
   .ynot-reference-avatar{display:grid!important}
   .ynot-reference-signin{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:40px!important}
+}
+
+/* Mobile auth must read like a proper sheet, not a squeezed desktop card. */
+@media(max-width:600px){
+  .ynot-auth-shell{padding:10px!important;align-items:center!important;overflow:auto!important}
+  .ynot-auth-card{
+    width:calc(100vw - 20px)!important;
+    max-width:430px!important;
+    max-height:calc(100dvh - 20px)!important;
+    overflow-y:auto!important;
+    overflow-x:hidden!important;
+    padding:22px 18px 24px!important;
+    border-radius:26px!important;
+    box-sizing:border-box!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  .ynot-auth-worldmark{
+    position:relative!important;
+    left:auto!important;
+    top:auto!important;
+    transform:none!important;
+    width:104px!important;
+    height:104px!important;
+    margin:0 auto 18px!important;
+    flex:0 0 auto!important;
+  }
+  .ynot-auth-worldmark span{font-size:13px!important}
+  .ynot-auth-close{position:absolute!important;right:14px!important;top:14px!important;z-index:8!important}
+  .ynot-auth-form-back{left:14px!important;top:14px!important}
+  .ynot-auth-card>small{display:block!important;margin-top:2px!important}
+  .ynot-auth-card h2{font-size:clamp(26px,8vw,34px)!important;line-height:1.02!important;margin:8px 0 10px!important}
+  .ynot-auth-lead{font-size:13px!important;line-height:1.45!important;margin-bottom:18px!important}
+  .ynot-auth-email{
+    width:100%!important;
+    min-height:56px!important;
+    padding:0 14px!important;
+    border-radius:18px!important;
+    box-sizing:border-box!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:10px!important;
+    margin:0 0 10px!important;
+  }
+  .ynot-auth-email input{
+    min-width:0!important;
+    width:100%!important;
+    height:54px!important;
+    font-size:16px!important;
+    line-height:1.2!important;
+    padding:0!important;
+  }
+  .ynot-auth-primary,.ynot-auth-secondary,.ynot-google{width:100%!important;min-height:54px!important;border-radius:18px!important;padding:0 15px!important;box-sizing:border-box!important}
+  .ynot-profile-photo.ynot-auth-avatar{width:100%!important;min-height:64px!important;border-radius:18px!important;padding:10px 12px!important;box-sizing:border-box!important;margin-bottom:10px!important}
+  .ynot-auth-divider{margin:12px 0!important}
+  .ynot-auth-trust{margin-top:14px!important;font-size:11px!important;line-height:1.35!important}
 }
