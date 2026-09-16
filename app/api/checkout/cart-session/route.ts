@@ -7,7 +7,20 @@ import {stripeClient} from "@/lib/commerce/stripe";
 
 export const runtime="nodejs";
 
-type CartItem=CheckoutProduct&{quantity?:number;supplierPrice?:number;variantLabel?:string};
+type CartItem=Partial<CheckoutProduct>&{productId?:string;quantity?:number;supplierPrice?:number;variantLabel?:string};
+
+function normalizeCartProduct(raw:CartItem):CheckoutProduct{
+ const id=String(raw.id||raw.productId||"").trim();
+ return{
+  ...raw,
+  id,
+  title:String(raw.title||"").trim(),
+  price:Number(raw.price),
+  currency:String(raw.currency||"EUR").trim().toUpperCase(),
+  url:String(raw.url||"").trim(),
+  variantId:raw.variantId?String(raw.variantId):undefined,
+ } as CheckoutProduct;
+}
 
 export async function POST(req:NextRequest){
  try{
@@ -19,9 +32,9 @@ export async function POST(req:NextRequest){
   const prepared=[] as Array<{product:CheckoutProduct;quantity:number;customerPrice:number;shipping:{amount:number;currency:string;country:string;source?:string};variantLabel?:string}>;
   let currency="";
   for(const raw of items){
-   const quantity=Math.max(1,Math.min(10,Math.floor(Number(raw.quantity)||1))),operatorFlow=checkoutMode(raw).mode==="merchant";
+   const input=normalizeCartProduct(raw),quantity=Math.max(1,Math.min(10,Math.floor(Number(raw.quantity)||1))),operatorFlow=checkoutMode(input).mode==="merchant";
    if(operatorFlow&&!manualProcurementEnabled())throw new Error("MERCHANT_CHECKOUT_ONLY");
-   const product=operatorFlow?manualProcurementProduct(raw):await revalidateProduct(raw),base=pricedCheckout(product),isEtsy=String(product.source||"").toLowerCase()==="etsy",etsy=isEtsy?etsyProductPrice(product.price):null,customerPrice=etsy?.ynotProductPrice??base.luminaPrice;
+   const product=operatorFlow?manualProcurementProduct(input):await revalidateProduct(input),base=pricedCheckout(product),isEtsy=String(product.source||"").toLowerCase()==="etsy",etsy=isEtsy?etsyProductPrice(product.price):null,customerPrice=etsy?.ynotProductPrice??base.luminaPrice;
    if(!operatorFlow&&!isEtsy&&base.state!=="buy-with-lumina")throw new Error("PRODUCT_NOT_AVAILABLE_FOR_YNOT_CHECKOUT");
    const shipping=operatorFlow?manualShippingFor(product,region):await resolveShipping(product,region),itemCurrency=String(product.currency||raw.currency||"EUR").toUpperCase();
    if(!currency)currency=itemCurrency;if(currency!==itemCurrency)throw new Error("MIXED_CURRENCY_BAG");
