@@ -35,12 +35,17 @@
   .ynot-world-desktop-prev.board-mode,.ynot-world-desktop-next.board-mode{
     z-index:420!important;opacity:.72!important;width:46px!important;height:46px!important;
   }
-  .ynot-world-desktop-prev.board-mode:hover,.ynot-world-desktop-next.board-mode:hover{opacity:1!important;transform:translateY(-50%) scale(1.07)!important}
+  .ynot-world-desktop-prev:hover,.ynot-world-desktop-next:hover,
+  .ynot-deal-desktop-prev:hover,.ynot-deal-desktop-next:hover{
+    opacity:1!important;
+    transform:translateY(-50%) scale(1.08)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 20px 52px rgba(0,0,0,.42)!important;
+  }
 
   body:has(.ynot-drawer.open) .ynot-world-desktop-prev,
   body:has(.ynot-drawer.open) .ynot-world-desktop-next{display:none!important;pointer-events:none!important}
-  body:has(.ynot-drawer.open:not(:has(.ynot-selected)):not(:has(.ynot-story))) .ynot-deal-desktop-prev,
-  body:has(.ynot-drawer.open:not(:has(.ynot-selected)):not(:has(.ynot-story))) .ynot-deal-desktop-next{display:none!important;pointer-events:none!important}
+  body:has(.ynot-drawer.open:not(:has(.ynot-selected))) .ynot-deal-desktop-prev,
+  body:has(.ynot-drawer.open:not(:has(.ynot-selected))) .ynot-deal-desktop-next{display:none!important;pointer-events:none!important}
 
   .ynot-app-shell.chrome-hidden .ynot-reference-header,
   .ynot-drawer.open~* .ynot-reference-header{transform:none!important}
@@ -63,8 +68,8 @@
   .lv4-shell.depth-worlds .ynot-voice-orb,
   .lv4-shell.depth-worlds .lv4-category-bubble{transition:opacity .12s ease,transform .12s ease!important}
 
-  /* Search is normally always visible on desktop. Only an open product card tucks it
-     down to a 10px hover target; hovering/focusing the bottom edge reveals it. */
+  /* Search is normally always visible on desktop. Product cards tuck it down but
+     keep a real hover strip at the bottom so it can always be pulled back up. */
   .ynot-bottom-search{
     opacity:1!important;
     transform:translate(-50%,0)!important;
@@ -73,20 +78,66 @@
   }
   body:has(.lv4-detail) .ynot-bottom-search,
   body:has(.ynot-selected) .ynot-bottom-search,
-  body:has(.ynot-story) .ynot-bottom-search,
   html.ynot-step-switching .ynot-bottom-search{
-    opacity:.02!important;
-    transform:translate(-50%,calc(100% - 10px))!important;
+    opacity:.06!important;
+    transform:translate(-50%,calc(100% - 14px))!important;
     pointer-events:auto!important;
   }
   body:has(.lv4-detail) .ynot-bottom-search:hover,
   body:has(.lv4-detail) .ynot-bottom-search:focus-within,
   body:has(.ynot-selected) .ynot-bottom-search:hover,
-  body:has(.ynot-selected) .ynot-bottom-search:focus-within,
-  body:has(.ynot-story) .ynot-bottom-search:hover,
-  body:has(.ynot-story) .ynot-bottom-search:focus-within{
+  body:has(.ynot-selected) .ynot-bottom-search:focus-within{
     opacity:1!important;
     transform:translate(-50%,0)!important;
+  }
+
+  /* Description sits centered under the purchase action instead of floating off to a side. */
+  .lv4-detail .lv4-detailcopy .ynot-description-toggle{
+    position:relative!important;
+    inset:auto!important;
+    display:block!important;
+    width:max-content!important;
+    min-width:116px!important;
+    height:30px!important;
+    margin:12px auto 4px!important;
+    padding:0 16px!important;
+    border:1px solid rgba(255,255,255,.18)!important;
+    border-radius:999px!important;
+    background:rgba(255,255,255,.07)!important;
+    color:rgba(255,255,255,.82)!important;
+    text-align:center!important;
+    font:700 10px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+    backdrop-filter:blur(16px)!important;
+    -webkit-backdrop-filter:blur(16px)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.12)!important;
+  }
+  .lv4-detail .ynot-description-back{
+    position:absolute!important;
+    inset:0!important;
+    z-index:38!important;
+    border:0!important;
+    border-radius:inherit!important;
+    background:rgba(15,16,16,.92)!important;
+    backdrop-filter:blur(28px) saturate(1.04)!important;
+    -webkit-backdrop-filter:blur(28px) saturate(1.04)!important;
+    padding:64px 28px 28px!important;
+    overflow:auto!important;
+  }
+  .lv4-detail .ynot-description-close{
+    position:absolute!important;
+    left:18px!important;
+    top:18px!important;
+    width:34px!important;
+    height:34px!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    color:#fff!important;
+    box-shadow:none!important;
+    font-size:26px!important;
+    line-height:1!important;
+    text-align:center!important;
   }
 }
 
@@ -101,4 +152,35 @@
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
   transition:opacity .12s ease!important;
+}
+
+/* Small saves-book acknowledgement after a heart/save action. */
+.ynot-saves-book-toast{
+  position:fixed!important;
+  z-index:2200!important;
+  left:18px!important;
+  top:50%!important;
+  transform:translate(-130%,-50%) scale(.92)!important;
+  width:54px!important;
+  height:54px!important;
+  padding:0!important;
+  border:1px solid rgba(255,255,255,.28)!important;
+  border-radius:18px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.05))!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 18px 50px rgba(0,0,0,.34)!important;
+  backdrop-filter:blur(22px) saturate(1.1)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.1)!important;
+  opacity:0!important;
+  pointer-events:none!important;
+  transition:transform .28s cubic-bezier(.22,.86,.24,1),opacity .2s ease!important;
+}
+.ynot-saves-book-toast svg{width:22px!important;height:22px!important;stroke-width:1.8!important}
+.ynot-saves-book-toast span{position:absolute!important;left:64px!important;white-space:nowrap!important;font:700 10px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;opacity:.82!important}
+.ynot-saves-book-toast.show{
+  transform:translate(0,-50%) scale(1)!important;
+  opacity:1!important;
+  pointer-events:auto!important;
 }
