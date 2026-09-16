@@ -15,7 +15,7 @@ export async function adminDb(path:string,init:RequestInit={}){
 
 export type AdminContext={authUser:{id:string;email?:string};profile:{id:string;display_name?:string;email?:string;is_admin:boolean}};
 
-export async function requireYnotAdmin(req:NextRequest):Promise<AdminContext>{
+export async function requireYnotUser(req:NextRequest):Promise<AdminContext>{
  const token=req.headers.get("authorization")?.replace(/^Bearer\s+/i,"");
  if(!token)throw new Error("SIGN_IN_REQUIRED");
  const userResponse=await fetch(`${supabaseBase()}/auth/v1/user`,{headers:{apikey:publishableKey(),Authorization:`Bearer ${token}`},cache:"no-store"});
@@ -24,8 +24,13 @@ export async function requireYnotAdmin(req:NextRequest):Promise<AdminContext>{
  const rows=await adminDb(`ynot_users?auth_user_id=eq.${encodeURIComponent(authUser.id)}&select=id,display_name,email,is_admin&limit=1`);
  const profile=rows?.[0];
  if(!profile)throw new Error("ACCOUNT_NOT_FOUND");
- if(profile.is_admin!==true)throw new Error("OWNER_ACCESS_REQUIRED");
  return {authUser,profile};
+}
+
+export async function requireYnotAdmin(req:NextRequest):Promise<AdminContext>{
+ const context=await requireYnotUser(req);
+ if(context.profile.is_admin!==true)throw new Error("OWNER_ACCESS_REQUIRED");
+ return context;
 }
 
 export function adminErrorStatus(error:unknown){
