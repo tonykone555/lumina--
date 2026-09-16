@@ -16,9 +16,10 @@ const ETSY_CATEGORY_QUERIES:[RegExp,string][]=[
 ];
 function etsyQuery(raw:string){const clean=raw.trim();for(const [pattern,replacement] of ETSY_CATEGORY_QUERIES)if(pattern.test(clean))return replacement;return clean||"handmade gifts"}
 function remember(products:EtsyProduct[]){const map=window.__ynotEtsyProducts||{};for(const product of products){map[String(product.id||"").toLowerCase()]=product;map[String(product.title||"").trim().toLowerCase()]=product}window.__ynotEtsyProducts=map}
+function dedupe(products:EtsyProduct[]){const seen=new Set<string>();return products.filter(product=>{const key=String(product.id||product.url||product.title);if(!key||seen.has(key))return false;seen.add(key);return true})}
 
-/** Data adapter only: Etsy results are fed into LuminaWorld's existing product
- * array so Etsy uses the exact same native YNOT bubbles, stage and interactions. */
+/** Etsy results are fed into the native YNOT world in larger batches so the
+ * spatial product field stays dense instead of appearing nearly empty. */
 export default function EtsyCatalogBridge(){
  useEffect(()=>{
   const originalFetch=window.fetch.bind(window);
@@ -27,17 +28,23 @@ export default function EtsyCatalogBridge(){
   window.fetch=(async(input:RequestInfo|URL,init?:RequestInit)=>{
    const raw=typeof input==="string"?input:input instanceof URL?input.toString():input.url;
    if(!etsySelected||!raw.startsWith("/api/catalog?"))return originalFetch(input,init);
-   const sourceUrl=new URL(raw,window.location.origin),q=etsyQuery(sourceUrl.searchParams.get("q")||""),direction=sourceUrl.searchParams.get("direction")||"",pageRaw=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR";
-   const currentPage=Math.max(0,Number(pageRaw)||0);
-   const params=new URLSearchParams({q:[q,direction].filter(Boolean).join(", "),page:String(currentPage),country,currency:"EUR"});
-   const response=await originalFetch(`/api/etsy?${params.toString()}`,{...init,cache:"no-store"});
-   const data=await response.clone().json().catch(()=>({}));
-   if(!response.ok)return response;
-   const products=(Array.isArray(data.products)?data.products:[]).map((product:EtsyProduct)=>({...product,source:"etsy-marketplace",tags:["Etsy",...(product.tags||[])]}));
+   const sourceUrl=new URL(raw,window.location.origin),q=etsyQuery(sourceUrl.searchParams.get("q")||""),direction=sourceUrl.searchParams.get("direction")||"",pageRaw=sourceUrl.searchParams.get("page")||"0",country=sourceUrl.searchParams.get("country")||"FR",cursor=sourceUrl.searchParams.get("cursor")||"";
+   const cursorMatch=cursor.match(/^etsy:(\d+)$/),requestedPage=Math.max(0,Number(pageRaw)||0),startPage=cursorMatch?Number(cursorMatch[1]):requestedPage;
+   const batchSize=4;
+   const fetchPage=async(page:number)=>{
+    const params=new URLSearchParams({q:[q,direction].filter(Boolean).join(", "),page:String(page),country,currency:"EUR"});
+    const response=await originalFetch(`/api/etsy?${params.toString()}`,{...init,cache:"no-store"});
+    const data=await response.clone().json().catch(()=>({}));
+    return{response,data,page};
+   };
+   const pages=await Promise.all(Array.from({length:batchSize},(_,index)=>fetchPage(startPage+index)));
+   const firstFailure=pages.find(entry=>!entry.response.ok);
+   if(firstFailure&&pages.every(entry=>!entry.response.ok))return firstFailure.response;
+   const products=dedupe(pages.flatMap(entry=>Array.isArray(entry.data.products)?entry.data.products:[]).map((product:EtsyProduct)=>({...product,source:"etsy-marketplace",tags:["Etsy",...(product.tags||[])]})));
    remember(products);
-   const total=Math.max(0,Number(data.total||0));
-   const hasNext=total>0?((currentPage+1)*24<total):products.length>=24;
-   return new Response(JSON.stringify({source:"etsy-marketplace",sources:["etsy-marketplace"],market:"lumina",luminaSource:"shopify",products,pagination:{has_next_page:hasNext,next_cursor:hasNext?`etsy:${currentPage+1}`:null},error:products.length?undefined:"No Etsy products found for this search yet."}),{status:200,headers:{"Content-Type":"application/json"}});
+   const total=Math.max(0,...pages.map(entry=>Number(entry.data.total||0)));
+   const nextPage=startPage+batchSize,hasNext=total>0?nextPage*24<total:pages.some(entry=>Array.isArray(entry.data.products)&&entry.data.products.length>=24);
+   return new Response(JSON.stringify({source:"etsy-marketplace",sources:["etsy-marketplace"],market:"lumina",luminaSource:"shopify",products,pagination:{has_next_page:hasNext,next_cursor:hasNext?`etsy:${nextPage}`:null},error:products.length?undefined:"No Etsy products found for this search yet."}),{status:200,headers:{"Content-Type":"application/json"}});
   }) as typeof window.fetch;
   return()=>{window.removeEventListener("ynot:catalog-source",onSource as EventListener);window.fetch=originalFetch;etsySelected=false};
  },[]);
