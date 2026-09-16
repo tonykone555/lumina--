@@ -1,0 +1,78 @@
+/* Final desktop stability pass: popup steppers, fixed header coordinates, faster YNOT open. */
+@media (min-width:900px){
+  /* Both product systems use the same persistent side controls. */
+  .ynot-world-desktop-prev,
+  .ynot-world-desktop-next,
+  .ynot-deal-desktop-prev,
+  .ynot-deal-desktop-next{
+    position:fixed!important;
+    z-index:1600!important;
+    top:50%!important;
+    width:50px!important;
+    height:50px!important;
+    padding:0!important;
+    place-items:center!important;
+    transform:translateY(-50%)!important;
+    border:1px solid rgba(255,255,255,.30)!important;
+    border-radius:50%!important;
+    background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.035))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 18px 44px rgba(0,0,0,.34)!important;
+    backdrop-filter:blur(20px) saturate(1.08)!important;
+    -webkit-backdrop-filter:blur(20px) saturate(1.08)!important;
+    cursor:pointer!important;
+  }
+  .ynot-world-desktop-prev,.ynot-deal-desktop-prev{left:28px!important}
+  .ynot-world-desktop-next,.ynot-deal-desktop-next{right:28px!important}
+  .ynot-world-desktop-prev span,.ynot-world-desktop-next span,
+  .ynot-deal-desktop-prev span,.ynot-deal-desktop-next span{
+    width:7px!important;height:7px!important;border-radius:50%!important;
+    background:#fff!important;box-shadow:0 0 16px rgba(255,255,255,.78)!important;
+  }
+  .ynot-world-desktop-prev:not(.visible),.ynot-world-desktop-next:not(.visible),
+  .ynot-deal-desktop-prev:not(.visible),.ynot-deal-desktop-next:not(.visible){display:none!important;pointer-events:none!important}
+  .ynot-world-desktop-prev.visible,.ynot-world-desktop-next.visible,
+  .ynot-deal-desktop-prev.visible,.ynot-deal-desktop-next.visible{display:grid!important;pointer-events:auto!important;opacity:1!important;visibility:visible!important}
+
+  /* Popups may dim the header, but they can never change its geometry. */
+  .ynot-app-shell.chrome-hidden .ynot-reference-header,
+  .ynot-drawer.open~* .ynot-reference-header{transform:none!important}
+  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-reference-topline{
+    position:fixed!important;left:50%!important;right:auto!important;top:12px!important;
+    width:max-content!important;transform:translateX(-50%)!important;margin:0!important;
+  }
+  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-world-controls{
+    position:fixed!important;left:50%!important;right:auto!important;top:64px!important;
+    width:315px!important;transform:translateX(-50%)!important;margin:0!important;
+  }
+  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-view-source{
+    position:absolute!important;left:50%!important;right:auto!important;top:50px!important;
+    transform:translateX(-50%)!important;margin:0!important;
+  }
+  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-reference-right{
+    position:fixed!important;top:17px!important;right:28px!important;left:auto!important;
+    transform:none!important;margin:0!important;opacity:1!important;visibility:visible!important;
+  }
+  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-world-row,
+  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-top-mode{
+    transform:none!important;margin:0!important;
+  }
+
+  /* Remove long camera interpolation that caused the category world to flash in a wrong place. */
+  .lv4-shell .lv4-stage{transition:transform .12s ease-out!important;will-change:transform!important}
+  .lv4-shell.depth-worlds .ynot-voice-orb,
+  .lv4-shell.depth-worlds .lv4-category-bubble{transition:opacity .12s ease,transform .12s ease!important}
+}
+
+/* YNOT drawer opens immediately; keep blur on its canopy/cards rather than blurring the entire viewport. */
+.ynot-drawer{
+  transition:transform .22s cubic-bezier(.22,.86,.24,1),opacity .14s ease!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  will-change:transform,opacity!important;
+  contain:layout paint!important;
+}
+.ynot-backdrop{
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  transition:opacity .12s ease!important;
+}
