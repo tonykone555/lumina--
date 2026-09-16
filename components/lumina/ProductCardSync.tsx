@@ -3,7 +3,7 @@
 import {useEffect} from "react";
 
 function clearInjected(root:Element){
- root.querySelectorAll(".ynot-loaded-gallery,.ynot-loaded-variants,.ynot-rich-gallery,.ynot-rich-variants,.ynot-description-back,.ynot-mini-slider").forEach(x=>x.remove());
+ root.querySelectorAll(".ynot-loaded-gallery,.ynot-loaded-variants,.ynot-rich-gallery,.ynot-rich-variants,.ynot-description-back,.ynot-mini-slider,.ynot-origin-dot").forEach(x=>x.remove());
  root.querySelectorAll<HTMLElement>("[data-ynot-hydrated],[data-ynot-slider]").forEach(x=>{delete x.dataset.ynotHydrated;delete x.dataset.ynotSlider});
  const shell=root.closest(".lv4-detail,.ynot-selected,.ynot-story") as HTMLElement|null;
  if(shell){delete shell.dataset.ynotVariantId;shell.classList.remove("ynot-description-flipped")}
