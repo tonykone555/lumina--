@@ -23,6 +23,32 @@
   .ynot-drawer.open .ynot-dock::before,
   .ynot-drawer.open .ynot-dock::after{content:none!important;display:none!important}
 
+  /* Give the center controls their own viewport-wide coordinate system. This
+     prevents source changes (especially Etsy) from shifting the whole header. */
+  .ynot-app-shell,
+  .ynot-app-shell.source-etsy{transform:none!important}
+  .ynot-reference-header .ynot-reference-center{
+    position:fixed!important;
+    z-index:712!important;
+    inset:0 0 auto 0!important;
+    width:100vw!important;
+    height:142px!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
+    pointer-events:none!important;
+  }
+  .ynot-reference-header .ynot-reference-center>*{pointer-events:auto!important}
+  .ynot-reference-header .ynot-reference-topline{
+    position:static!important;
+    inset:auto!important;
+    width:0!important;
+    height:0!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
+  }
+
   /* Main desktop header uses the true viewport axis for both pill rows. */
   .ynot-reference-header .ynot-top-mode{
     position:fixed!important;
@@ -43,6 +69,11 @@
     z-index:714!important;
   }
   .ynot-reference-header .ynot-world-row{margin-inline:auto!important}
+  .ynot-reference-header .ynot-view-source{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+  }
 
   /* The desktop YNOT wordmark, tabs and search share one viewport center. */
   .ynot-drawer.open .ynot-head h2,
