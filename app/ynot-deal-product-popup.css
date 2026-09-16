@@ -1,0 +1,259 @@
+/* YNOT Deal product: full-image frameless blur popup. Loaded last. */
+
+/* The app profile/avatar must never bleed through the YNOT Deal world. */
+html.ynot-deal-open .ynot-reference-right,
+html.ynot-deal-open .ynot-reference-avatar,
+html.ynot-deal-open .ynot-reference-signin,
+html.ynot-deal-open .ynot-reference-notify,
+html.ynot-deal-open .discover-profile-backdrop,
+html.ynot-deal-open .discover-profile-panel{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* Opening a YNOT deal card becomes a full-screen visual product popup, not a framed card. */
+.ynot-drawer.open .ynot-selected{
+  position:fixed!important;
+  z-index:390!important;
+  inset:0!important;
+  left:0!important;
+  right:0!important;
+  top:0!important;
+  bottom:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  min-height:100dvh!important;
+  max-width:none!important;
+  transform:none!important;
+  display:block!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:0!important;
+  outline:0!important;
+  background:rgba(8,9,9,.46)!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(28px) saturate(1.08)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.08)!important;
+  color:#fff!important;
+}
+
+/* Soft enlarged echo of the product image creates the blurred environment. */
+.ynot-drawer.open .ynot-selected::before{
+  content:""!important;
+  position:absolute!important;
+  z-index:0!important;
+  inset:-12%!important;
+  pointer-events:none!important;
+  background-image:linear-gradient(180deg,rgba(8,9,9,.36),rgba(8,9,9,.66)),var(--ynot-deal-popup-image)!important;
+  background-size:cover!important;
+  background-position:center!important;
+  filter:blur(44px) saturate(1.16)!important;
+  opacity:.68!important;
+  transform:scale(1.08)!important;
+}
+.ynot-drawer.open .ynot-selected::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:1!important;
+  inset:0!important;
+  pointer-events:none!important;
+  background:
+    linear-gradient(180deg,rgba(5,6,6,.30) 0%,rgba(5,6,6,.02) 20%,rgba(5,6,6,.03) 58%,rgba(5,6,6,.58) 82%,rgba(5,6,6,.88) 100%),
+    radial-gradient(circle at 50% 38%,rgba(255,255,255,.08),transparent 52%)!important;
+}
+
+/* Full-size foreground product image: no card, no border, no image frame. */
+.ynot-drawer.open .ynot-selected>img{
+  position:absolute!important;
+  z-index:2!important;
+  left:50%!important;
+  top:calc(24px + env(safe-area-inset-top))!important;
+  transform:translateX(-50%)!important;
+  width:min(94vw,900px)!important;
+  height:72dvh!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  object-position:center center!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  outline:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 18px 38px rgba(0,0,0,.22))!important;
+}
+
+/* Minimal floating text/price information over blur. */
+.ynot-drawer.open .ynot-selected-copy{
+  position:absolute!important;
+  z-index:5!important;
+  left:50%!important;
+  bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  transform:translateX(-50%)!important;
+  width:min(680px,calc(100vw - 34px))!important;
+  min-width:0!important;
+  display:block!important;
+  padding:18px 18px 16px!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:linear-gradient(145deg,rgba(18,20,20,.26),rgba(18,20,20,.08))!important;
+  box-shadow:none!important;
+  backdrop-filter:blur(24px) saturate(1.12)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(1.12)!important;
+  text-align:left!important;
+}
+.ynot-drawer.open .ynot-selected-copy>small,
+.ynot-drawer.open .ynot-selected-copy>p,
+.ynot-drawer.open .ynot-selected .ynot-product-proof,
+.ynot-drawer.open .ynot-selected .ynot-origin-dot,
+.ynot-drawer.open .ynot-selected .ynot-selected-heart,
+.ynot-drawer.open .ynot-selected .ynot-swipe-cue{
+  display:none!important;
+}
+.ynot-drawer.open .ynot-selected-copy h3{
+  margin:0 0 7px!important;
+  max-width:100%!important;
+  color:#fff!important;
+  font:780 clamp(21px,4vw,34px)/1.02 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif!important;
+  letter-spacing:-.045em!important;
+  text-shadow:0 2px 20px rgba(0,0,0,.28)!important;
+  -webkit-line-clamp:2!important;
+}
+.ynot-drawer.open .ynot-selected-copy strong{
+  display:block!important;
+  margin:0!important;
+  color:#fff!important;
+  font:850 clamp(20px,3.6vw,30px)/1 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif!important;
+  letter-spacing:-.03em!important;
+}
+
+/* Options remain available but float with the typography instead of looking like a sub-card. */
+.ynot-drawer.open .ynot-selected .ynot-variants{
+  margin:13px 0 0!important;
+  padding:0!important;
+  gap:6px!important;
+}
+.ynot-drawer.open .ynot-selected .ynot-variants button{
+  min-height:30px!important;
+  padding:0 11px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.07)!important;
+  color:#fff!important;
+  backdrop-filter:blur(14px)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+}
+.ynot-drawer.open .ynot-selected .ynot-variants button.active{
+  background:rgba(255,255,255,.88)!important;
+  color:#111!important;
+}
+
+/* Bare close glyph: no surrounding circle/frame. */
+.ynot-drawer.open .ynot-selected-close{
+  position:absolute!important;
+  z-index:8!important;
+  right:18px!important;
+  top:calc(16px + env(safe-area-inset-top))!important;
+  width:36px!important;
+  height:36px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  border:0!important;
+  border-radius:0!important;
+  outline:0!important;
+  background:transparent!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  filter:drop-shadow(0 2px 12px rgba(0,0,0,.45))!important;
+}
+.ynot-drawer.open .ynot-selected-close svg{width:22px!important;height:22px!important}
+
+/* YNOT Bag and clothing-only Try On live as floating actions over the blur. */
+.ynot-drawer.open .ynot-selected>.ynot-shop,
+.ynot-drawer.open .ynot-selected>.ynot-deal-try-button{
+  position:absolute!important;
+  z-index:7!important;
+  bottom:calc(20px + env(safe-area-inset-bottom))!important;
+  height:50px!important;
+  min-height:50px!important;
+  margin:0!important;
+  border-radius:999px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  color:#fff!important;
+  font:800 11px/1 Inter,ui-sans-serif,system-ui,-apple-system,sans-serif!important;
+  letter-spacing:.01em!important;
+  backdrop-filter:blur(22px) saturate(1.12)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(1.12)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 14px 36px rgba(0,0,0,.22)!important;
+}
+.ynot-drawer.open .ynot-selected>.ynot-shop{
+  left:calc(50% - min(330px,calc(50vw - 17px)))!important;
+  width:min(315px,calc(50vw - 22px))!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  background:rgba(18,20,20,.76)!important;
+}
+.ynot-drawer.open .ynot-selected>.ynot-deal-try-button{
+  right:calc(50% - min(330px,calc(50vw - 17px)))!important;
+  width:min(170px,calc(42vw - 14px))!important;
+  border:1px solid rgba(255,255,255,.26)!important;
+  background:rgba(255,255,255,.13)!important;
+}
+.ynot-drawer.open .ynot-selected>.ynot-deal-try-button span{font-size:15px!important;line-height:1!important}
+.ynot-drawer.open .ynot-selected>.ynot-deal-try-button b{font:inherit!important}
+
+/* If there is no Try On button, let YNOT Bag occupy the centered primary action. */
+.ynot-drawer.open .ynot-selected:not(:has(.ynot-deal-try-button))>.ynot-shop{
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:min(420px,calc(100vw - 34px))!important;
+}
+
+/* The full product popup sits above the YNOT feed canopy/search. */
+html.ynot-deal-product-open .ynot-drawer::before,
+html.ynot-deal-product-open .ynot-drawer::after,
+html.ynot-deal-product-open .ynot-head,
+html.ynot-deal-product-open .ynot-search,
+html.ynot-deal-product-open .ynot-dock{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+@media(max-width:760px){
+  .ynot-drawer.open .ynot-selected>img{
+    top:calc(30px + env(safe-area-inset-top))!important;
+    width:100vw!important;
+    height:66dvh!important;
+  }
+  .ynot-drawer.open .ynot-selected-copy{
+    bottom:calc(82px + env(safe-area-inset-bottom))!important;
+    width:calc(100vw - 24px)!important;
+    padding:16px 12px 14px!important;
+    background:linear-gradient(145deg,rgba(17,19,19,.20),rgba(17,19,19,.04))!important;
+  }
+  .ynot-drawer.open .ynot-selected-copy h3{font-size:22px!important}
+  .ynot-drawer.open .ynot-selected-copy strong{font-size:21px!important}
+  .ynot-drawer.open .ynot-selected>.ynot-shop{
+    left:12px!important;
+    width:calc(58vw - 17px)!important;
+  }
+  .ynot-drawer.open .ynot-selected>.ynot-deal-try-button{
+    right:12px!important;
+    width:calc(42vw - 19px)!important;
+  }
+  .ynot-drawer.open .ynot-selected:not(:has(.ynot-deal-try-button))>.ynot-shop{
+    left:12px!important;
+    transform:none!important;
+    width:calc(100vw - 24px)!important;
+  }
+}
