@@ -1,39 +1,67 @@
 /* Final YNOT Deal popup edge + title treatment. Loaded last. */
 
-/* Feather the product itself into the blurred environment so there are no visible image edges. */
+/* Feather the product itself into the blurred environment on every edge. */
 .ynot-drawer.open .ynot-selected>img{
-  -webkit-mask-image:linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(0,0,0,.16) 3%,
-    rgba(0,0,0,.58) 8%,
-    #000 15%,
-    #000 82%,
-    rgba(0,0,0,.70) 89%,
-    rgba(0,0,0,.24) 95%,
-    transparent 100%
-  )!important;
-  mask-image:linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(0,0,0,.16) 3%,
-    rgba(0,0,0,.58) 8%,
-    #000 15%,
-    #000 82%,
-    rgba(0,0,0,.70) 89%,
-    rgba(0,0,0,.24) 95%,
-    transparent 100%
-  )!important;
+  -webkit-mask-image:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0,0,0,.16) 3%,
+      rgba(0,0,0,.58) 8%,
+      #000 15%,
+      #000 82%,
+      rgba(0,0,0,.70) 89%,
+      rgba(0,0,0,.24) 95%,
+      transparent 100%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0,0,0,.18) 3%,
+      rgba(0,0,0,.60) 7%,
+      #000 13%,
+      #000 87%,
+      rgba(0,0,0,.60) 93%,
+      rgba(0,0,0,.18) 97%,
+      transparent 100%
+    )!important;
+  -webkit-mask-composite:source-in!important;
+  mask-image:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(0,0,0,.16) 3%,
+      rgba(0,0,0,.58) 8%,
+      #000 15%,
+      #000 82%,
+      rgba(0,0,0,.70) 89%,
+      rgba(0,0,0,.24) 95%,
+      transparent 100%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(0,0,0,.18) 3%,
+      rgba(0,0,0,.60) 7%,
+      #000 13%,
+      #000 87%,
+      rgba(0,0,0,.60) 93%,
+      rgba(0,0,0,.18) 97%,
+      transparent 100%
+    )!important;
+  mask-composite:intersect!important;
   filter:drop-shadow(0 16px 34px rgba(0,0,0,.18)) saturate(1.02)!important;
 }
 
-/* A masked backdrop blur softly dissolves the top and bottom of the photo into its enlarged image echo. */
+/* A masked backdrop blur softly dissolves the photo into its enlarged image echo. */
 .ynot-drawer.open .ynot-selected::after{
-  background:linear-gradient(180deg,rgba(7,8,8,.18) 0%,rgba(7,8,8,.02) 18%,rgba(7,8,8,0) 35%,rgba(7,8,8,0) 66%,rgba(7,8,8,.14) 84%,rgba(7,8,8,.54) 100%)!important;
+  background:
+    linear-gradient(180deg,rgba(7,8,8,.18) 0%,rgba(7,8,8,.02) 18%,rgba(7,8,8,0) 35%,rgba(7,8,8,0) 66%,rgba(7,8,8,.14) 84%,rgba(7,8,8,.54) 100%),
+    linear-gradient(90deg,rgba(7,8,8,.22) 0%,rgba(7,8,8,0) 18%,rgba(7,8,8,0) 82%,rgba(7,8,8,.22) 100%)!important;
   backdrop-filter:blur(17px) saturate(1.05)!important;
   -webkit-backdrop-filter:blur(17px) saturate(1.05)!important;
-  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.74) 9%,transparent 25%,transparent 72%,rgba(0,0,0,.66) 88%,#000 100%)!important;
-  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.74) 9%,transparent 25%,transparent 72%,rgba(0,0,0,.66) 88%,#000 100%)!important;
+  -webkit-mask-image:radial-gradient(ellipse 92% 90% at 50% 48%,transparent 58%,rgba(0,0,0,.34) 72%,rgba(0,0,0,.78) 88%,#000 100%)!important;
+  mask-image:radial-gradient(ellipse 92% 90% at 50% 48%,transparent 58%,rgba(0,0,0,.34) 72%,rgba(0,0,0,.78) 88%,#000 100%)!important;
 }
 
 /* Keep the information area frameless; only the title gets a light transparent glass frame. */
@@ -65,8 +93,14 @@
 
 @media(max-width:760px){
   .ynot-drawer.open .ynot-selected>img{
-    -webkit-mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.38) 6%,#000 16%,#000 80%,rgba(0,0,0,.58) 91%,transparent 100%)!important;
-    mask-image:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.38) 6%,#000 16%,#000 80%,rgba(0,0,0,.58) 91%,transparent 100%)!important;
+    -webkit-mask-image:
+      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.38) 6%,#000 16%,#000 80%,rgba(0,0,0,.58) 91%,transparent 100%),
+      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.30) 5%,#000 14%,#000 86%,rgba(0,0,0,.30) 95%,transparent 100%)!important;
+    -webkit-mask-composite:source-in!important;
+    mask-image:
+      linear-gradient(180deg,transparent 0%,rgba(0,0,0,.38) 6%,#000 16%,#000 80%,rgba(0,0,0,.58) 91%,transparent 100%),
+      linear-gradient(90deg,transparent 0%,rgba(0,0,0,.30) 5%,#000 14%,#000 86%,rgba(0,0,0,.30) 95%,transparent 100%)!important;
+    mask-composite:intersect!important;
   }
   .ynot-drawer.open .ynot-selected-copy{
     width:calc(100vw - 28px)!important;
