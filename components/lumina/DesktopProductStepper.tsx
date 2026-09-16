@@ -24,6 +24,18 @@ export default function DesktopProductStepper():null{
   const activeTitle=()=>norm(document.querySelector(".lv4-detail .lv4-detailcopy h2")?.textContent||"");
   const drawerOpen=()=>Boolean(document.querySelector(".ynot-drawer.open"));
 
+  const warmDirection=(direction:number)=>{
+    const list=cards();
+    const ordered=direction>0?list:[...list].reverse();
+    ordered.slice(0,100).forEach(card=>{
+      const image=card.querySelector<HTMLImageElement>("img");
+      if(!image)return;
+      image.loading="eager";
+      image.setAttribute("fetchpriority","high");
+      void image.decode?.().catch(()=>{});
+    });
+  };
+
   const moveProduct=(direction:number)=>{
     const list=cards();
     if(list.length<2)return;
@@ -32,21 +44,25 @@ export default function DesktopProductStepper():null{
     if(index<0)index=0;
     const target=list[(index+direction+list.length)%list.length];
     if(!target)return;
-    document.querySelector<HTMLButtonElement>(".lv4-detail .lv4-close")?.click();
-    requestAnimationFrame(()=>requestAnimationFrame(()=>target.click()));
+    document.documentElement.classList.add("ynot-step-switching");
+    warmDirection(direction);
+    /* A programmatic card click updates React's selected product in place. Keeping
+       the existing detail mounted prevents the bottom search from flashing between products. */
+    target.click();
+    window.setTimeout(()=>document.documentElement.classList.remove("ynot-step-switching"),180);
   };
 
   const panBoard=(direction:number)=>{
     const stage=document.querySelector<HTMLElement>(".lv4-stage");
     if(!stage)return;
+    warmDirection(direction);
     const camera=parseCamera(stage);
-    const amount=Math.max(440,window.innerWidth*.46);
+    const amount=Math.max(520,window.innerWidth*.52);
     const panX=camera.panX-direction*amount;
     stage.style.setProperty("transform",`translate(${panX}px, ${camera.panY}px) scale(${camera.zoom})`,`important`);
-    stage.style.setProperty("transition","transform .34s cubic-bezier(.22,.86,.24,1)","important");
-    window.setTimeout(()=>stage.style.removeProperty("transition"),380);
-    window.dispatchEvent(new Event("pointerup"));
-    window.dispatchEvent(new CustomEvent("ynot:world-focus",{detail:{direction:direction>0?"right":"left",panX}}));
+    stage.style.setProperty("transition","transform .26s cubic-bezier(.22,.86,.24,1)","important");
+    window.setTimeout(()=>stage.style.removeProperty("transition"),300);
+    window.dispatchEvent(new CustomEvent("ynot:world-focus",{detail:{direction:direction>0?"right":"left",panX,prefetch:true}}));
   };
 
   const activate=(direction:number)=>{
@@ -99,6 +115,7 @@ export default function DesktopProductStepper():null{
     observer.disconnect();
     if(frame)cancelAnimationFrame(frame);
     window.removeEventListener("resize",queue);
+    document.documentElement.classList.remove("ynot-step-switching");
     prev?.remove();
     next?.remove();
   };
