@@ -1,0 +1,133 @@
+/* Final Saves popup: centered hard-glass card with YNOT WORLD mark; hide app chrome while open. */
+html.ynot-saves-open .ynot-reference-header,
+body:has(.ynot-notebook-shell) .ynot-reference-header{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+  transform:none!important;
+}
+
+.ynot-notebook-shell{
+  z-index:2600!important;
+  padding:clamp(14px,3vw,34px)!important;
+  place-items:center!important;
+}
+.ynot-notebook-backdrop{
+  background:rgba(2,3,3,.58)!important;
+  backdrop-filter:blur(28px) saturate(1.18)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.18)!important;
+}
+.ynot-notebook.ynot-world-library{
+  width:min(920px,92vw)!important;
+  height:min(760px,86dvh)!important;
+  max-height:86dvh!important;
+  border-radius:34px!important;
+  border:1px solid rgba(255,255,255,.18)!important;
+  background:
+    radial-gradient(circle at 50% -8%,rgba(255,255,255,.18),transparent 30%),
+    radial-gradient(circle at 12% 82%,rgba(113,255,201,.08),transparent 28%),
+    radial-gradient(circle at 88% 72%,rgba(143,122,255,.08),transparent 30%),
+    linear-gradient(145deg,rgba(255,255,255,.105),rgba(255,255,255,.025))!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -1px 0 rgba(255,255,255,.04),0 34px 100px rgba(0,0,0,.52)!important;
+  backdrop-filter:blur(34px) saturate(1.16)!important;
+  -webkit-backdrop-filter:blur(34px) saturate(1.16)!important;
+  overflow:auto!important;
+  padding-top:92px!important;
+}
+.ynot-notebook.ynot-world-library:before{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  pointer-events:none!important;
+  background:linear-gradient(120deg,rgba(255,255,255,.08),transparent 24%,transparent 70%,rgba(255,255,255,.025))!important;
+  border-radius:inherit!important;
+}
+.ynot-saves-brand{
+  position:absolute;
+  z-index:20;
+  left:50%;
+  top:18px;
+  transform:translateX(-50%);
+  width:70px;
+  height:70px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  gap:1px;
+  border:1px solid rgba(255,255,255,.28);
+  background:radial-gradient(circle at 34% 24%,rgba(255,255,255,.28),rgba(255,255,255,.08) 42%,rgba(0,0,0,.2) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.34),0 14px 38px rgba(0,0,0,.35);
+  backdrop-filter:blur(18px) saturate(1.3);
+  -webkit-backdrop-filter:blur(18px) saturate(1.3);
+  color:#fff;
+  text-align:center;
+}
+.ynot-saves-brand span{font:900 11px/1 ui-sans-serif,system-ui;letter-spacing:-.05em}
+.ynot-saves-brand b{font:700 7px/1 ui-sans-serif,system-ui;letter-spacing:.18em;opacity:.72}
+.ynot-notebook-head{
+  position:relative!important;
+  top:auto!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex-wrap:wrap!important;
+  gap:8px 12px!important;
+  padding:8px 72px 22px!important;
+  background:transparent!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  text-align:center!important;
+}
+.ynot-notebook-head small{width:100%;font:800 8px/1 ui-sans-serif,system-ui;letter-spacing:.18em;opacity:.48}
+.ynot-notebook-head h2{margin:0!important;font:760 30px/1 ui-sans-serif,system-ui;letter-spacing:-.045em}
+.ynot-notebook-head span{font:650 10px/1 ui-sans-serif,system-ui;opacity:.48}
+.ynot-notebook-close{
+  position:absolute!important;
+  z-index:30!important;
+  right:18px!important;
+  top:18px!important;
+  width:40px!important;
+  height:40px!important;
+  border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.2)!important;
+  color:#fff!important;
+  background:rgba(255,255,255,.07)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.16)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+}
+.ynot-world-list,.ynot-world-empty,.ynot-world-share,.ynot-world-create,.ynot-notebook-grid{position:relative;z-index:3}
+.ynot-world-empty,.ynot-world-share,.ynot-world-create,.ynot-world-row{
+  border-color:rgba(255,255,255,.14)!important;
+  background:rgba(255,255,255,.055)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08)!important;
+  backdrop-filter:blur(14px)!important;
+  -webkit-backdrop-filter:blur(14px)!important;
+}
+.ynot-notebook-grid{
+  min-height:unset!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  align-content:start!important;
+  gap:clamp(18px,2.5vw,30px)!important;
+  padding:22px clamp(22px,4vw,46px) 48px!important;
+}
+.ynot-save-orb{width:min(13vw,120px)!important;border-color:rgba(255,255,255,.24)!important}
+
+@media(max-width:700px){
+  .ynot-notebook-shell{padding:10px!important}
+  .ynot-notebook.ynot-world-library{
+    width:calc(100vw - 20px)!important;
+    height:calc(100dvh - 20px)!important;
+    max-height:calc(100dvh - 20px)!important;
+    border-radius:26px!important;
+    padding-top:82px!important;
+  }
+  .ynot-saves-brand{top:14px;width:62px;height:62px}
+  .ynot-notebook-close{right:13px!important;top:13px!important}
+  .ynot-notebook-head{padding:8px 52px 18px!important}
+  .ynot-notebook-head h2{font-size:26px!important}
+  .ynot-notebook-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:16px 10px!important;padding:18px 12px 34px!important}
+  .ynot-save-orb{width:min(27vw,105px)!important}
+}
