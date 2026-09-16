@@ -94,3 +94,20 @@
   .ynot-auth-divider{margin:12px 0!important}
   .ynot-auth-trust{margin-top:14px!important;font-size:11px!important;line-height:1.35!important}
 }
+
+/* Product-card taps must win over the world drag surface. */
+.lv4-product,.ynot-orb,.ynot-product-card{pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important;-webkit-user-select:none!important;user-select:none!important}
+.lv4-product *,.ynot-orb *,.ynot-product-card *{pointer-events:none}
+.lv4-product button,.lv4-product a,.ynot-orb button,.ynot-orb a,.ynot-product-card button,.ynot-product-card a{pointer-events:auto!important}
+
+/* Keep the description/back face fixed rather than creating a second scrolling layer. */
+.lv4-detail-backdrop,.ynot-description-back{overscroll-behavior:none!important}
+.ynot-description-back,.lv4-detail .ynot-description-back{position:absolute!important;inset:0!important;overflow:hidden!important;touch-action:none!important}
+.ynot-description-back>*,.ynot-description-content{max-height:100%!important;overflow:hidden!important}
+
+/* Smaller turn-around/back control. */
+.lv4-detail .ynot-description-close,.ynot-description-back .ynot-description-close{width:30px!important;height:30px!important;min-width:30px!important;min-height:30px!important;padding:0!important;font-size:16px!important;line-height:1!important}
+.lv4-detail .ynot-description-close svg,.ynot-description-back .ynot-description-close svg{width:14px!important;height:14px!important}
+
+/* Compass close remains the topmost, reliable touch target. */
+.ynot-compass-close{position:relative!important;z-index:99999!important;pointer-events:auto!important;touch-action:none!important;-webkit-tap-highlight-color:transparent!important}
