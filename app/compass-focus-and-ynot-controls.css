@@ -1,0 +1,58 @@
+/* Compass focus: when the "What are you looking for?" chooser is open, hide the normal app header everywhere except the standalone profile avatar. */
+body.ynot-compass-open .ynot-reference-header .ynot-reference-left,
+body.ynot-compass-open .ynot-reference-header .ynot-reference-center,
+body.ynot-compass-open .ynot-reference-header .ynot-reference-notify,
+body.ynot-compass-open .ynot-reference-header .ynot-reference-signin{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+body.ynot-compass-open .ynot-reference-header .ynot-reference-right{
+  position:fixed!important;
+  z-index:2205!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:none!important;
+}
+body.ynot-compass-open .ynot-reference-header .ynot-reference-avatar{
+  display:grid!important;
+  opacity:1!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+  z-index:2206!important;
+}
+
+/* Make the YNOT product exit/save controls sit above all media and remain clickable. */
+.ynot-selected>.ynot-selected-close,
+.ynot-selected>.ynot-selected-heart,
+.ynot-selected>.ynot-final-save-heart,
+.ynot-story>.ynot-story-close,
+.ynot-story>.ynot-story-heart{
+  z-index:2605!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  isolation:isolate!important;
+}
+.ynot-selected>.ynot-selected-close svg,
+.ynot-selected>.ynot-selected-heart svg,
+.ynot-selected>.ynot-final-save-heart svg,
+.ynot-story>.ynot-story-close svg,
+.ynot-story>.ynot-story-heart svg{
+  pointer-events:none!important;
+}
+
+@media(max-width:899px){
+  body.ynot-compass-open .ynot-reference-header .ynot-reference-right{
+    top:calc(10px + env(safe-area-inset-top))!important;
+    right:10px!important;
+    left:auto!important;
+    width:auto!important;
+    transform:none!important;
+  }
+  body.ynot-compass-open .ynot-reference-header .ynot-reference-avatar{
+    position:fixed!important;
+    top:calc(10px + env(safe-area-inset-top))!important;
+    right:10px!important;
+    left:auto!important;
+  }
+}
