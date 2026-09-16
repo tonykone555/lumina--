@@ -1,6 +1,8 @@
 "use client";
 
 import {FormEvent,useEffect,useMemo,useState} from "react";
+import {Player} from "@remotion/player";
+import {ThingsIFoundAd} from "@/components/lumina/ad-factory/ThingsIFoundAd";
 import {authedFetch,readSession} from "@/lib/ynot/supabase-browser";
 import styles from "./ads.module.css";
 
@@ -9,6 +11,7 @@ type Overview={niches:{total:number;active:number;draft:number};creatives:{total
 
 const TEMPLATES=["things-i-found","single-product-premium","ugc-discovery","collection-edit","digital-ai-course-demo"];
 const FORMATS=["9:16","4:5","1:1"];
+function dimensions(format:string){if(format==="1:1")return{width:1080,height:1080};if(format==="4:5")return{width:1080,height:1350};return{width:1080,height:1920}}
 
 function productScore(p:Product){
  const images=[p.image,...(p.images||[])].filter(Boolean);let score=0;
@@ -37,6 +40,7 @@ export default function AdFactoryPage(){
  const[headline,setHeadline]=useState("Discover the edit on YNOT");
  const[busy,setBusy]=useState(false);
  const[notice,setNotice]=useState("");
+ const previewSize=dimensions(format);
 
  async function loadOverview(){
   if(!readSession()){setAccess("signin");return}
@@ -88,6 +92,7 @@ export default function AdFactoryPage(){
     <div className={styles.formGrid}><label className={styles.label}>Template</label><select className={styles.select} value={templateKey} onChange={e=>setTemplateKey(e.target.value)}>{TEMPLATES.map(x=><option key={x}>{x}</option>)}</select>
      <div className={styles.row2}><div><div className={styles.label}>Format</div><select className={styles.select} value={format} onChange={e=>setFormat(e.target.value)}>{FORMATS.map(x=><option key={x}>{x}</option>)}</select></div><div><div className={styles.label}>Products</div><div style={{paddingTop:12,fontWeight:800}}>{selected.length}/8</div></div></div>
      <label className={styles.label}>Hook</label><textarea className={styles.textarea} value={hook} onChange={e=>setHook(e.target.value)}/><label className={styles.label}>Headline</label><input className={styles.input} value={headline} onChange={e=>setHeadline(e.target.value)}/>
+     {selected.length>0&&templateKey==="things-i-found"&&<div className={styles.preview}><div className={styles.previewLabel}>Live Remotion preview · 12s</div><Player component={ThingsIFoundAd} durationInFrames={360} fps={30} compositionWidth={previewSize.width} compositionHeight={previewSize.height} inputProps={{products:selected,hook,headline,cta:"Shop the edit on YNOT"}} controls loop style={{width:"100%",aspectRatio:`${previewSize.width}/${previewSize.height}`,borderRadius:14,overflow:"hidden"}}/></div>}
      <button className={styles.button} disabled={busy||!selected.length} onClick={()=>void createDraft(false)}>{busy?"Saving…":"Save creative draft"}</button><button className={styles.buttonGreen} disabled={busy||!selected.length} onClick={()=>void createDraft(true)}>Save + queue Remotion render</button>
     </div>
     <div className={styles.queue}><h2>Render queue</h2>{overview?.recentJobs?.length?overview.recentJobs.slice(0,7).map(job=><div className={styles.queueItem} key={job.id}><span>{job.job_type}</span><span className={styles.status}>{job.status}</span></div>):<div className={styles.muted}>No jobs queued yet.</div>}</div>
