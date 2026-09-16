@@ -40,13 +40,13 @@ export async function GET(request:NextRequest){
  try{
   const active=await etsy(`/listings/active?keywords=${encodeURIComponent(q)}&limit=24&offset=${page*24}&sort_on=score&sort_order=desc`) as {count?:number;results?:EtsyListing[]};
   const ids=(active.results||[]).map(x=>Number(x.listing_id)).filter(Boolean);
-  if(!ids.length)return withTokenCookies(NextResponse.json({products:[],source:"etsy",page,total:Number(active.count||0),oauthConnected:Boolean(accessToken)}),cookieState.refreshed);
+  if(!ids.length)return withTokenCookies(NextResponse.json({products:[],source:"etsy",page,total:Number(active.count||0),nextPage:page+1,oauthConnected:Boolean(accessToken)}),cookieState.refreshed);
   const details=await etsy(`/listings/batch?listing_ids=${ids.join(",")}&includes=Images,Shop&buyer_country=${country}&currency=${currency}`) as {results?:EtsyListing[]};
   const inventory=await inventoryFor(ids);
-  const enriched=await Promise.all((details.results||[]).map(async listing=>{
-   const price=money(listing.price);const review=await reviewsFor(listing.listing_id);const images=[...(listing.images||[])].sort((a,b)=>Number(a.rank||0)-Number(b.rank||0)).map(img=>img.url_fullxfull||img.url_570xN).filter(Boolean) as string[];const variants=normalizeVariants(inventory.get(listing.listing_id)||[]);
-   return{id:`etsy-${listing.listing_id}`,listingId:listing.listing_id,shopId:Number(listing.shop_id||listing.shop?.shop_id||0),title:String(listing.title||"Etsy product"),brand:String(listing.shop?.shop_name||listing.shop?.title||"Etsy seller"),description:String(listing.description||""),price:price.value,currency:price.currency,image:images[0]||"",images,url:listing.url||`https://www.etsy.com/listing/${listing.listing_id}`,tags:["Etsy",...(listing.tags||[])],source:"etsy",variants,rating:review.rating,reviewCount:review.reviewCount,reviews:review.reviews,quantity:Number(listing.quantity||0)}
-  }));
+  const enriched=(details.results||[]).map(listing=>{
+   const price=money(listing.price);const images=[...(listing.images||[])].sort((a,b)=>Number(a.rank||0)-Number(b.rank||0)).map(img=>img.url_fullxfull||img.url_570xN).filter(Boolean) as string[];const variants=normalizeVariants(inventory.get(listing.listing_id)||[]);
+   return{id:`etsy-${listing.listing_id}`,listingId:listing.listing_id,shopId:Number(listing.shop_id||listing.shop?.shop_id||0),title:String(listing.title||"Etsy product"),brand:String(listing.shop?.shop_name||listing.shop?.title||"Etsy seller"),description:String(listing.description||""),price:price.value,currency:price.currency,image:images[0]||"",images,url:listing.url||`https://www.etsy.com/listing/${listing.listing_id}`,tags:["Etsy",...(listing.tags||[])],source:"etsy",variants,rating:null,reviewCount:0,reviews:[],quantity:Number(listing.quantity||0)}
+  });
   return withTokenCookies(NextResponse.json({products:enriched.filter(p=>p.image),source:"etsy",page,total:Number(active.count||0),nextPage:page+1,oauthConnected:Boolean(accessToken)}),cookieState.refreshed);
  }catch(error){return withTokenCookies(NextResponse.json({error:error instanceof Error?error.message:"ETSY_UNAVAILABLE"},{status:502}),cookieState.refreshed)}
 }
