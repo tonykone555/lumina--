@@ -71,9 +71,21 @@
 
   document.addEventListener('click',event=>{
     const target=event.target;
-    if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){const card=target.closest('.lv4-detail,.ynot-selected');if(card)void cycle(card,event);return}
-    if(!(target instanceof HTMLImageElement))return;
-    const card=target.closest('.lv4-detail,.ynot-selected');if(!card)return;
-    if(target===card.querySelector(':scope > img'))void cycle(card,event);
+    if(!(target instanceof Element))return;
+    const card=target.closest('.lv4-detail,.ynot-selected');
+    if(!card)return;
+
+    if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){
+      void cycle(card,event);return;
+    }
+    if(target instanceof HTMLImageElement&&target===card.querySelector(':scope > img')){
+      void cycle(card,event);return;
+    }
+
+    /* On YNOT Deals, tapping the visual card area advances media too. Controls/copy/gallery remain interactive. */
+    if(card.classList.contains('ynot-selected')){
+      if(target.closest('button,a,input,select,textarea,video,.ynot-deal-thumb-gallery,.ynot-selected-copy,.ynot-variants'))return;
+      void cycle(card,event);
+    }
   },true);
 })();
