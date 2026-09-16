@@ -1,0 +1,132 @@
+/* Final desktop coordinate repair. Keep every major control on viewport coordinates. */
+@media (min-width:900px){
+  .ynot-reference-header{
+    position:fixed!important;
+    inset:0 0 auto 0!important;
+    width:100vw!important;
+    max-width:none!important;
+    transform:none!important;
+  }
+
+  /* Top controls stay centered as one unit. */
+  .ynot-reference-header .ynot-reference-topline{
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    top:12px!important;
+    transform:translateX(-50%)!important;
+    width:max-content!important;
+  }
+
+  /* WORLD / YNOT is centered independently. The marketplace chip is centered
+     directly underneath instead of participating in the row width. */
+  .ynot-reference-header .ynot-world-controls{
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    top:64px!important;
+    transform:translateX(-50%)!important;
+    width:315px!important;
+    height:94px!important;
+    display:block!important;
+    margin:0!important;
+    padding:0!important;
+    pointer-events:auto!important;
+  }
+  .ynot-reference-header .ynot-world-row{
+    position:relative!important;
+    width:315px!important;
+    height:43px!important;
+    margin:0!important;
+  }
+  .ynot-reference-header .ynot-world-row button{
+    display:grid!important;
+    place-items:center!important;
+    padding:0!important;
+    margin:0!important;
+    line-height:1!important;
+    text-align:center!important;
+  }
+  .ynot-reference-header .ynot-view-source{
+    position:absolute!important;
+    left:50%!important;
+    right:auto!important;
+    top:50px!important;
+    width:max-content!important;
+    margin:0!important;
+    transform:translateX(-50%)!important;
+  }
+  .ynot-reference-header .ynot-source-trigger-clean{
+    margin:0 auto!important;
+  }
+  .ynot-reference-header .ynot-source-list{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+  }
+
+  /* Restore the complete right-side account cluster and keep it above the
+     centered header layer. */
+  .ynot-reference-header .ynot-reference-right{
+    position:fixed!important;
+    z-index:725!important;
+    top:17px!important;
+    right:28px!important;
+    left:auto!important;
+    width:max-content!important;
+    height:43px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:flex-end!important;
+    gap:10px!important;
+    margin:0!important;
+    padding:0!important;
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    pointer-events:auto!important;
+  }
+  .ynot-reference-header .ynot-reference-notify,
+  .ynot-reference-header .ynot-reference-signin,
+  .ynot-reference-header .ynot-reference-avatar{
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+
+  /* Normal world product popups use the same side-step language as YNOT Deals. */
+  .ynot-world-desktop-prev,
+  .ynot-world-desktop-next{
+    position:fixed!important;
+    z-index:1100!important;
+    top:50%!important;
+    width:48px!important;
+    height:48px!important;
+    padding:0!important;
+    display:grid!important;
+    place-items:center!important;
+    transform:translateY(-50%)!important;
+    border:1px solid rgba(255,255,255,.30)!important;
+    border-radius:50%!important;
+    background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035))!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 18px 42px rgba(0,0,0,.28)!important;
+    backdrop-filter:blur(18px) saturate(1.08)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(1.08)!important;
+    cursor:pointer!important;
+  }
+  .ynot-world-desktop-prev{left:26px!important}
+  .ynot-world-desktop-next{right:26px!important}
+  .ynot-world-desktop-prev span,
+  .ynot-world-desktop-next span{
+    width:7px!important;
+    height:7px!important;
+    border-radius:50%!important;
+    background:#fff!important;
+    box-shadow:0 0 16px rgba(255,255,255,.72)!important;
+  }
+  .ynot-world-desktop-prev:hover,
+  .ynot-world-desktop-next:hover{
+    background:rgba(255,255,255,.16)!important;
+    transform:translateY(-50%) scale(1.06)!important;
+  }
+}
