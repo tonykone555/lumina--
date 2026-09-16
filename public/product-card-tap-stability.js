@@ -1,7 +1,7 @@
 (()=>{
   let start=null;
   let synthetic=false;
-  const selector='.lv4-product,.ynot-orb,.ynot-product-card';
+  const selector='.lv4-product,.ynot-product-card';
   const interactive='button,a,input,select,textarea,label';
   function cardFrom(target){return target instanceof Element?target.closest(selector):null}
   function popupOpen(){return Boolean(document.querySelector('.lv4-detail,.ynot-selected,.ynot-story,.ynot-saved-product-backdrop'))}
@@ -22,7 +22,7 @@
       if(popupOpen()||!document.contains(current.card))return;
       synthetic=true;
       try{current.card.click()}finally{queueMicrotask(()=>{synthetic=false})}
-    },70);
+    },55);
   },true);
   document.addEventListener('pointercancel',()=>{start=null},true);
 })();
