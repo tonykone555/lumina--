@@ -1,0 +1,120 @@
+/* Final desktop alignment + auth glass pass. Loaded last. */
+
+/* Desktop YNOT Deals category tabs have no surrounding rail/frame. */
+@media(min-width:900px){
+  .ynot-drawer.open .ynot-dock{
+    position:fixed!important;
+    left:50vw!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:max-content!important;
+    max-width:calc(100vw - 180px)!important;
+    justify-content:center!important;
+    padding:2px 0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    outline:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  .ynot-drawer.open .ynot-dock::before,
+  .ynot-drawer.open .ynot-dock::after{content:none!important;display:none!important}
+
+  /* Main desktop header uses the true viewport axis for both pill rows. */
+  .ynot-reference-header .ynot-top-mode{
+    position:fixed!important;
+    left:50vw!important;
+    right:auto!important;
+    top:12px!important;
+    transform:translateX(-50%)!important;
+    margin:0!important;
+    z-index:716!important;
+  }
+  .ynot-reference-header .ynot-world-controls{
+    position:fixed!important;
+    left:50vw!important;
+    right:auto!important;
+    top:64px!important;
+    transform:translateX(-50%)!important;
+    margin:0!important;
+    z-index:714!important;
+  }
+  .ynot-reference-header .ynot-world-row{margin-inline:auto!important}
+
+  /* The desktop YNOT wordmark, tabs and search share one viewport center. */
+  .ynot-drawer.open .ynot-head h2,
+  .ynot-drawer.open .ynot-search{left:50vw!important;right:auto!important;transform:translateX(-50%)!important}
+
+  /* Persistent side-product controls only become interactive while a product is open. */
+  .ynot-deal-desktop-prev,.ynot-deal-desktop-next{display:none!important;pointer-events:none!important}
+  .ynot-deal-desktop-prev.visible,.ynot-deal-desktop-next.visible{display:grid!important;pointer-events:auto!important}
+}
+
+/* YNOT +N now reuses the same full-slider visual language as a normal product popup. */
+.ynot-selected>.ynot-full-slider.ynot-deal-full-slider{
+  position:fixed!important;
+  z-index:1250!important;
+  inset:0!important;
+  width:100vw!important;
+  height:100dvh!important;
+  display:grid!important;
+  place-items:center!important;
+  margin:0!important;
+  padding:0!important;
+  background:rgba(5,6,6,.82)!important;
+  backdrop-filter:blur(28px) saturate(1.06)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.06)!important;
+}
+.ynot-deal-full-slider-stage{width:min(1040px,92vw)!important;height:min(82dvh,900px)!important;display:grid!important;place-items:center!important}
+.ynot-deal-full-slider .ynot-full-slider-image{width:100%!important;height:100%!important;object-fit:contain!important;border:0!important;border-radius:0!important;background:transparent!important}
+
+/* Login/profile auth becomes a harder dark glass object with the YNOTWORLD orb centered above it. */
+.ynot-auth-backdrop{background:rgba(2,4,5,.72)!important;backdrop-filter:blur(24px) brightness(.72)!important;-webkit-backdrop-filter:blur(24px) brightness(.72)!important}
+.ynot-auth-card{
+  width:min(460px,calc(100vw - 28px))!important;
+  padding:118px 30px 30px!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  border-radius:30px!important;
+  background:linear-gradient(145deg,rgba(34,38,42,.76),rgba(9,11,13,.82))!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(255,255,255,.06),0 34px 100px rgba(0,0,0,.52)!important;
+  backdrop-filter:blur(38px) saturate(1.22)!important;
+  -webkit-backdrop-filter:blur(38px) saturate(1.22)!important;
+}
+.ynot-auth-worldmark{
+  position:absolute!important;
+  z-index:2!important;
+  left:50%!important;
+  top:-54px!important;
+  transform:translateX(-50%)!important;
+  width:136px!important;
+  height:136px!important;
+  display:grid!important;
+  place-items:center!important;
+  border:1px solid rgba(255,255,255,.34)!important;
+  border-radius:50%!important;
+  background:
+    radial-gradient(circle at 32% 24%,rgba(255,255,255,.72) 0 2%,rgba(255,255,255,.18) 5%,transparent 19%),
+    radial-gradient(circle at 70% 78%,rgba(164,202,255,.22),transparent 25%),
+    linear-gradient(145deg,rgba(255,255,255,.19),rgba(255,255,255,.035) 40%,rgba(0,0,0,.36))!important;
+  box-shadow:inset 10px 12px 24px rgba(255,255,255,.12),inset -16px -18px 30px rgba(0,0,0,.42),0 24px 58px rgba(0,0,0,.42)!important;
+  backdrop-filter:blur(18px) saturate(1.15)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(1.15)!important;
+  overflow:hidden!important;
+}
+.ynot-auth-worldmark::after{content:"";position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(255,255,255,.12);box-shadow:inset 0 0 24px rgba(255,255,255,.08)}
+.ynot-auth-worldmark span{position:relative;z-index:2;color:#fff;font:760 17px/1 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.015em;text-shadow:0 2px 14px rgba(0,0,0,.5)}
+.ynot-auth-close{border-color:rgba(255,255,255,.16)!important;background:rgba(255,255,255,.08)!important;color:#fff!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
+.ynot-auth-card>small{color:rgba(255,255,255,.58)!important}.ynot-auth-card h2{color:#fff!important}.ynot-auth-lead{color:rgba(255,255,255,.66)!important}
+.ynot-google,.ynot-auth-email,.ynot-auth-account,.ynot-auth-sent{border-color:rgba(255,255,255,.15)!important;background:rgba(255,255,255,.10)!important;color:#fff!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important}
+.ynot-google-logo{border:0!important;background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 25% 45%,#fbbc05 45% 68%,#ea4335 68% 86%,#4285f4 86% 100%)!important;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;font:800 24px/1 Arial,sans-serif!important}
+.ynot-google span{text-align:center!important;color:#fff!important}.ynot-google svg{color:rgba(255,255,255,.72)!important}
+.ynot-auth-divider{color:rgba(255,255,255,.42)!important}.ynot-auth-divider:before,.ynot-auth-divider:after{background:rgba(255,255,255,.13)!important}
+.ynot-auth-email input{color:#fff!important}.ynot-auth-email input::placeholder{color:rgba(255,255,255,.42)!important}
+.ynot-auth-primary{background:#f4f4f4!important;color:#111!important;border-color:rgba(255,255,255,.34)!important}.ynot-auth-secondary{color:#fff!important;border-color:rgba(255,255,255,.15)!important;background:rgba(255,255,255,.05)!important}
+.ynot-auth-trust{color:rgba(255,255,255,.54)!important}
+
+@media(max-width:600px){.ynot-auth-card{padding:104px 20px 24px!important}.ynot-auth-worldmark{width:120px!important;height:120px!important;top:-46px!important}.ynot-auth-worldmark span{font-size:15px!important}}
