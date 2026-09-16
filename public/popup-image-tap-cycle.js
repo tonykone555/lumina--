@@ -1,92 +1,22 @@
 (()=>{
-  const cache=new Map();
+  const cache=new Map(),lastCycle=new WeakMap(),starts=new Map();
   const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-  const isVideo=url=>/\.(mp4|webm|mov)(?:\?|$)/i.test(String(url||''));
-
+  const isVideo=url=>/\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(String(url||''));
   function titleFor(card){return (card.querySelector('.lv4-detailcopy h2,.ynot-selected-copy h3')?.textContent||'').trim()}
   function currentImage(card){return card.querySelector(':scope > img')?.src||''}
-
-  function collectProductMedia(product,current){
-    const raw=[
-      current,
-      product?.image,
-      ...(Array.isArray(product?.images)?product.images:[]),
-      ...(Array.isArray(product?.variants)?product.variants.map(v=>v?.image):[]),
-      ...(Array.isArray(product?.videos)?product.videos:[]),
-      product?.video,product?.videoUrl,product?.video_url,
-      ...(Array.isArray(product?.media)?product.media.map(m=>typeof m==='string'?m:(m?.url||m?.src||m?.video||m?.image)):[])
-    ].filter(Boolean);
-    return [...new Set(raw.map(String))];
-  }
-
-  async function enrichExact(product){
-    if(!product)return product;
-    try{
-      const response=await fetch('/api/commerce/product-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(product),cache:'no-store'});
-      const data=await response.json();
-      if(response.ok&&data?.product)return {...product,...data.product};
-    }catch{}
-    return product;
-  }
-
+  function collectProductMedia(product,current){const raw=[current,product?.image,...(Array.isArray(product?.images)?product.images:[]),...(Array.isArray(product?.variants)?product.variants.map(v=>v?.image):[]),...(Array.isArray(product?.videos)?product.videos:[]),product?.video,product?.videoUrl,product?.video_url,...(Array.isArray(product?.media)?product.media.map(m=>typeof m==='string'?m:(m?.url||m?.src||m?.video||m?.image||m?.previewImage?.url||m?.originalSource?.url)):[])].filter(Boolean);return [...new Set(raw.map(String))]}
+  async function enrichExact(product){if(!product)return product;try{const response=await fetch('/api/commerce/product-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(product),cache:'no-store'}),data=await response.json();if(response.ok&&data?.product)return {...product,...data.product}}catch{}return product}
   async function loadMedia(card){
-    const title=titleFor(card),key=norm(title),current=currentImage(card);
-    if(!title)return current?[current]:[];
+    const title=titleFor(card),key=norm(title),current=currentImage(card);if(!title)return current?[current]:[];
+    const preset=card.dataset.ynotFinalMedia;try{const parsed=JSON.parse(preset||'[]');if(Array.isArray(parsed)&&parsed.length>1)return parsed}catch{}
     if(cache.has(key))return cache.get(key);
-    const promise=(async()=>{
-      try{
-        const params=new URLSearchParams({q:title,market:'lumina',source:'all',page:'0'});
-        const response=await fetch(`/api/catalog?${params.toString()}`,{cache:'no-store'}),data=await response.json();
-        const products=Array.isArray(data?.products)?data.products:[];
-        const base=products.find(p=>norm(p?.title)===key)||products.find(p=>norm(p?.title).includes(key)||key.includes(norm(p?.title)))||products[0];
-        const exact=await enrichExact(base);
-        return collectProductMedia(exact,current);
-      }catch{return current?[current]:[]}
-    })();
-    cache.set(key,promise);
-    return promise;
+    const promise=(async()=>{try{const params=new URLSearchParams({q:title,market:'lumina',source:'all',page:'0'}),response=await fetch(`/api/catalog?${params}`,{cache:'no-store'}),data=await response.json(),products=Array.isArray(data?.products)?data.products:[],base=products.find(p=>norm(p?.title)===key)||products.find(p=>norm(p?.title).includes(key)||key.includes(norm(p?.title)))||products[0],exact=await enrichExact(base);return collectProductMedia(exact,current)}catch{return current?[current]:[]}})();cache.set(key,promise);return promise;
   }
-
-  function syncThumbs(card,url){
-    card.querySelectorAll('.ynot-loaded-gallery button,.ynot-rich-gallery button,.lv4-gallery button,.ynot-deal-thumb-gallery button').forEach(button=>{
-      const src=button.querySelector('img')?.src||'';
-      button.classList.toggle('active',src===url);
-    });
-  }
-
-  function showMedia(card,url){
-    let video=card.querySelector(':scope > .ynot-popup-video');
-    const image=card.querySelector(':scope > img');
-    if(isVideo(url)){
-      if(!video){video=document.createElement('video');video.className='ynot-popup-video';video.controls=true;video.playsInline=true;video.muted=true;image?.insertAdjacentElement('afterend',video)}
-      video.src=url;video.load();card.classList.add('ynot-showing-video');video.play().catch(()=>{});
-    }else{
-      if(video){video.pause();video.removeAttribute('src');video.load()}
-      card.classList.remove('ynot-showing-video');
-      if(image)image.src=url;
-      syncThumbs(card,url);
-    }
-    card.dataset.ynotFullMediaUrl=url;
-  }
-
-  async function cycle(card,event){
-    const media=await loadMedia(card);if(media.length<2)return;
-    event.preventDefault();event.stopPropagation();
-    const current=card.dataset.ynotFullMediaUrl||currentImage(card);
-    let index=media.findIndex(url=>url===current);if(index<0)index=0;
-    showMedia(card,media[(index+1)%media.length]);
-  }
-
-  document.addEventListener('click',event=>{
-    const target=event.target;
-    if(!(target instanceof Element))return;
-    const card=target.closest('.lv4-detail,.ynot-selected');
-    if(!card)return;
-    if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){void cycle(card,event);return}
-    if(target instanceof HTMLImageElement&&target===card.querySelector(':scope > img')){void cycle(card,event);return}
-    if(card.classList.contains('ynot-selected')){
-      if(target.closest('button,a,input,select,textarea,video,.ynot-deal-thumb-gallery,.ynot-selected-copy,.ynot-variants'))return;
-      void cycle(card,event);
-    }
-  },true);
+  function syncThumbs(card,url){card.querySelectorAll('.ynot-loaded-gallery button,.ynot-rich-gallery button,.lv4-gallery button,.ynot-deal-thumb-gallery button').forEach(button=>{const src=button.dataset.mediaUrl||button.querySelector('img,video')?.src||'';button.classList.toggle('active',src===url)})}
+  function showMedia(card,url){let video=card.querySelector(':scope > .ynot-popup-video');const image=card.querySelector(':scope > img');if(isVideo(url)){if(!video){video=document.createElement('video');video.className='ynot-popup-video';video.controls=true;video.playsInline=true;video.muted=true;image?.insertAdjacentElement('afterend',video)}video.src=url;video.load();card.classList.add('ynot-showing-video');video.play().catch(()=>{})}else{if(video){video.pause();video.removeAttribute('src');video.load()}card.classList.remove('ynot-showing-video');if(image)image.src=url;syncThumbs(card,url)}card.dataset.ynotFullMediaUrl=url}
+  async function cycle(card,event){const now=Date.now();if((lastCycle.get(card)||0)>now-320)return;lastCycle.set(card,now);const media=await loadMedia(card);if(media.length<2)return;event?.preventDefault?.();event?.stopPropagation?.();const current=card.dataset.ynotFullMediaUrl||currentImage(card);let index=media.findIndex(url=>url===current);if(index<0)index=0;showMedia(card,media[(index+1)%media.length])}
+  document.addEventListener('pointerdown',e=>{const t=e.target;if(!(t instanceof Element))return;const card=t.closest('.lv4-detail,.ynot-selected');if(!card)return;const main=card.querySelector(':scope > img');if(t===main)starts.set(e.pointerId,{x:e.clientX,y:e.clientY,card})},true);
+  document.addEventListener('pointerup',e=>{const s=starts.get(e.pointerId);if(!s)return;starts.delete(e.pointerId);const dx=e.clientX-s.x,dy=e.clientY-s.y;if(Math.hypot(dx,dy)<=14)void cycle(s.card,e)},true);
+  document.addEventListener('pointercancel',e=>starts.delete(e.pointerId),true);
+  document.addEventListener('click',event=>{const target=event.target;if(!(target instanceof Element))return;const card=target.closest('.lv4-detail,.ynot-selected');if(!card)return;if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){void cycle(card,event);return}if(target===card.querySelector(':scope > img')){void cycle(card,event);return}if(card.classList.contains('ynot-selected')){if(target.closest('button,a,input,select,textarea,video,.ynot-deal-thumb-gallery,.ynot-selected-copy,.ynot-variants'))return;void cycle(card,event)}},true);
 })();
