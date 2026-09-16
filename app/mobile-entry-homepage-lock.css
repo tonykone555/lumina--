@@ -1,8 +1,23 @@
 /* Final mobile entry-page overrides. Loaded after every other mobile stylesheet. */
 @media (max-width:599px){
-  /* The two mode controls share one exact viewport center line. The top control is intentionally much shorter. */
-  .ynot-top-mode{
+  /*
+    IMPORTANT: older responsive files target `.ynot-reference-header .ynot-top-mode`
+    with !important rules. A plain `.ynot-top-mode` rule cannot beat that selector,
+    which is why the SHOP / DISCOVER pill kept being positioned inside the offset
+    top-line container instead of on the viewport center.
+
+    Both header pills below now use the SAME viewport anchor (50vw). Their position
+    is therefore independent of the profile orb, right-side controls and the old
+    top-line flex geometry.
+  */
+  .ynot-reference-header .ynot-reference-center,
+  .ynot-reference-header .ynot-reference-topline{
+    transform:none!important;
+  }
+
+  .ynot-reference-header .ynot-top-mode{
     position:fixed!important;
+    inset:auto!important;
     left:50vw!important;
     right:auto!important;
     top:1.55vw!important;
@@ -11,11 +26,15 @@
     max-width:142px!important;
     height:8vw!important;
     max-height:33px!important;
+    min-width:0!important;
+    min-height:0!important;
+    flex:none!important;
     margin:0!important;
     padding:.62vw!important;
     z-index:712!important;
+    box-sizing:border-box!important;
   }
-  .ynot-top-mode button{
+  .ynot-reference-header .ynot-top-mode button{
     display:flex!important;
     align-items:center!important;
     justify-content:center!important;
@@ -31,25 +50,31 @@
     white-space:nowrap!important;
   }
 
-  /* WORLD / YNOT stays on the same center axis and is visibly larger than SHOP / DISCOVER. */
-  .ynot-world-controls{
-    position:absolute!important;
-    left:50%!important;
+  /* WORLD / YNOT is locked to the exact same 50vw center axis. */
+  .ynot-reference-header .ynot-world-controls{
+    position:fixed!important;
+    inset:auto!important;
+    left:50vw!important;
     right:auto!important;
     top:12.3vw!important;
     transform:translateX(-50%)!important;
     width:72vw!important;
+    height:auto!important;
     margin:0!important;
     padding:0!important;
+    display:grid!important;
     justify-items:center!important;
+    z-index:711!important;
+    box-sizing:border-box!important;
   }
-  .ynot-world-row{
+  .ynot-reference-header .ynot-world-row{
     width:72vw!important;
     height:11.6vw!important;
     max-height:48px!important;
     margin:0!important;
+    box-sizing:border-box!important;
   }
-  .ynot-world-row button{
+  .ynot-reference-header .ynot-world-row button{
     display:flex!important;
     align-items:center!important;
     justify-content:center!important;
