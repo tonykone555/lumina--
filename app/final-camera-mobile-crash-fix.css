@@ -1,12 +1,11 @@
 /* Final home-camera + mobile interaction stability pass. */
 @media(min-width:900px){
-  /* The desktop entry world should live in the usable canvas BETWEEN the header
-     stack and the bottom search bar, not at the mathematical 50vh line. The stage
-     itself is anchored at 50vw/50vh; WORLD_CX/WORLD_CY at START_ZOOM .22 is 22000px.
-     Adding 6vh to the Y translation moves the mic/category ring into the visual
-     middle of the free canvas while keeping X perfectly centered. */
+  /* The stage is anchored at 50vw/50vh. The category ring is roughly 760 world px
+     in radius at START_ZOOM .22, so one full opposite-bubble span is about 334px
+     on screen. Move the entire entry world down by roughly that amount so the mic
+     and category ring sit clearly between the header stack and bottom search bar. */
   .lv4-shell.depth-worlds .lv4-stage{
-    transform:translate(-22000px,calc(-22000px + 6vh)) scale(.22)!important;
+    transform:translate(-22000px,calc(-22000px + clamp(290px,34vh,350px))) scale(.22)!important;
     transform-origin:0 0!important;
   }
 }
