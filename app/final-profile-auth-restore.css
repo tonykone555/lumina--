@@ -1,0 +1,36 @@
+/* Keep the profile control visible on every layout and restore the original avatar treatment. */
+.ynot-reference-right{display:flex!important;align-items:center!important;gap:8px!important}
+.ynot-reference-avatar{
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 42px!important;
+  width:42px!important;
+  height:42px!important;
+  min-width:42px!important;
+  padding:0!important;
+  border-radius:50%!important;
+  overflow:hidden!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  background:rgba(255,255,255,.08)!important;
+  color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.13),0 10px 28px rgba(0,0,0,.2)!important;
+  backdrop-filter:blur(16px)!important;
+  -webkit-backdrop-filter:blur(16px)!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+}
+.ynot-reference-avatar img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
+.ynot-reference-avatar svg{width:19px!important;height:19px!important}
+.ynot-reference-signin{white-space:nowrap!important}
+
+@media(max-width:899px){
+  .ynot-reference-right{gap:6px!important}
+  .ynot-reference-avatar{display:grid!important;position:relative!important;right:auto!important;top:auto!important;flex-basis:38px!important;width:38px!important;height:38px!important;min-width:38px!important;z-index:900!important}
+  .ynot-reference-signin{display:none!important}
+}
+
+@media(min-width:900px){
+  .ynot-reference-avatar{display:grid!important}
+  .ynot-reference-signin{display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:40px!important}
+}
