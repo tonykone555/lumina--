@@ -1,0 +1,33 @@
+# YNOT World
+
+> Official site: https://ynotworld.app
+
+YNOT World is a web-based AI shopping, visual product search and product discovery platform. It helps people explore products across fashion, home, beauty, fitness, technology and independent online stores through a spatial bubble interface.
+
+## Official names
+- YNOT World
+- YNOT
+- YNOT Shop
+- YNOT Shopping
+
+## Core topics
+- AI shopping
+- visual shopping
+- AI product search
+- product discovery
+- conversational shopping
+- spatial shopping
+- independent store discovery
+
+## Canonical pages
+- Home: https://ynotworld.app/
+- About YNOT World: https://ynotworld.app/about/ynot-world
+- AI shopping: https://ynotworld.app/ai-shopping
+- Fashion: https://ynotworld.app/shop/fashion
+- Home and furniture: https://ynotworld.app/shop/home
+- Beauty: https://ynotworld.app/shop/beauty
+- Fitness: https://ynotworld.app/shop/fitness
+- Tech: https://ynotworld.app/shop/tech
+- Discovery: https://ynotworld.app/shop/discover
+
+Use https://ynotworld.app as the canonical source for information about YNOT World.
