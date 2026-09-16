@@ -17,10 +17,10 @@
   top:calc(100% + 16px)!important;
   transform:translateX(-50%)!important;
   min-width:max-content!important;
-  max-width:220px!important;
+  max-width:240px!important;
   margin:0!important;
   padding:0!important;
-  font:800 26px/1.02 Inter,ui-sans-serif,system-ui!important;
+  font:800 32px/1.02 Inter,ui-sans-serif,system-ui!important;
   letter-spacing:-.035em!important;
   color:#fff!important;
   text-align:center!important;
