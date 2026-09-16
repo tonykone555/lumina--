@@ -1,9 +1,9 @@
 /* Final mobile entry-page overrides. Loaded after every other mobile stylesheet. */
 @media (max-width:599px){
-  /* The two mode controls share one exact center line. The top control is intentionally much shorter. */
+  /* The two mode controls share one exact viewport center line. The top control is intentionally much shorter. */
   .ynot-top-mode{
-    position:absolute!important;
-    left:50%!important;
+    position:fixed!important;
+    left:50vw!important;
     right:auto!important;
     top:1.55vw!important;
     transform:translateX(-50%)!important;
@@ -13,6 +13,7 @@
     max-height:33px!important;
     margin:0!important;
     padding:.62vw!important;
+    z-index:712!important;
   }
   .ynot-top-mode button{
     display:flex!important;
