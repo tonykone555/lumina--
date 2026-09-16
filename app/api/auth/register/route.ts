@@ -27,7 +27,7 @@ export async function POST(req:NextRequest){
   const userId=String(authUser.id||authUser.user?.id||"");
   if(!userId)throw new Error("ACCOUNT_CREATION_FAILED");
 
-  const now=new Date().toISOString(),record={auth_user_id:userId,email,display_name:name,avatar_data:avatar||null,auth_provider:"email",email_verified_at:now,referral_code:code(),last_seen_at:now};
+  const now=new Date().toISOString(),record={id:userId,auth_user_id:userId,email,display_name:name,avatar_data:avatar||null,auth_provider:"email",email_verified_at:now,referral_code:code(),last_seen_at:now};
   const db=await fetch(`${base()}/rest/v1/ynot_users`,{method:"POST",headers:{...serviceHeaders(),Prefer:"return=minimal"},body:JSON.stringify(record),cache:"no-store"});
   if(!db.ok){
    const text=await db.text();
