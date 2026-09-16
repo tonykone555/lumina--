@@ -1,11 +1,14 @@
 /* YNOT deal marketplace, description and bag glass polish. Loaded last. */
 
-.ynot-marketplace-control{position:absolute!important;left:14px!important;top:-2px!important;z-index:30!important;pointer-events:auto!important}
-.ynot-marketplace-trigger{height:28px!important;padding:0 10px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:999px!important;background:rgba(255,255,255,.07)!important;color:#fff!important;font:700 8px/1 Inter,ui-sans-serif,sans-serif!important;backdrop-filter:blur(18px) saturate(1.08)!important;-webkit-backdrop-filter:blur(18px) saturate(1.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 24px rgba(0,0,0,.14)!important}
-.ynot-marketplace-menu{position:absolute!important;left:0!important;top:34px!important;display:none!important;min-width:112px!important;padding:5px!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:14px!important;background:rgba(15,17,17,.64)!important;backdrop-filter:blur(24px) saturate(1.12)!important;-webkit-backdrop-filter:blur(24px) saturate(1.12)!important;box-shadow:0 16px 42px rgba(0,0,0,.24)!important}
+/* Marketplace chooser must sit above the blurred YNOT canopy/search/category ribbon. */
+.ynot-drawer.open .ynot-head{z-index:90!important;overflow:visible!important}
+.ynot-marketplace-control{position:absolute!important;left:14px!important;top:-2px!important;z-index:110!important;pointer-events:auto!important;overflow:visible!important}
+.ynot-marketplace-trigger{position:relative!important;z-index:112!important;height:28px!important;padding:0 10px!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:999px!important;background:rgba(255,255,255,.07)!important;color:#fff!important;font:700 8px/1 Inter,ui-sans-serif,sans-serif!important;backdrop-filter:blur(18px) saturate(1.08)!important;-webkit-backdrop-filter:blur(18px) saturate(1.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 8px 24px rgba(0,0,0,.14)!important}
+.ynot-marketplace-menu{position:absolute!important;z-index:999!important;left:0!important;top:34px!important;display:none!important;min-width:132px!important;padding:6px!important;border:1px solid rgba(255,255,255,.24)!important;border-radius:15px!important;background:rgba(10,12,12,.88)!important;backdrop-filter:blur(30px) saturate(1.14)!important;-webkit-backdrop-filter:blur(30px) saturate(1.14)!important;box-shadow:0 22px 60px rgba(0,0,0,.46),inset 0 1px 0 rgba(255,255,255,.12)!important;isolation:isolate!important}
+.ynot-marketplace-control.open{z-index:998!important}
 .ynot-marketplace-control.open .ynot-marketplace-menu{display:grid!important;gap:4px!important}
-.ynot-marketplace-menu button{height:28px!important;padding:0 10px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:rgba(255,255,255,.72)!important;text-align:left!important;font:700 9px/1 Inter,ui-sans-serif,sans-serif!important}
-.ynot-marketplace-menu button.active{background:rgba(255,255,255,.13)!important;color:#fff!important}
+.ynot-marketplace-menu button{position:relative!important;z-index:1000!important;height:32px!important;padding:0 11px!important;border:0!important;border-radius:10px!important;background:transparent!important;color:rgba(255,255,255,.78)!important;text-align:left!important;font:730 9px/1 Inter,ui-sans-serif,sans-serif!important;pointer-events:auto!important}
+.ynot-marketplace-menu button:hover,.ynot-marketplace-menu button.active{background:rgba(255,255,255,.14)!important;color:#fff!important}
 
 .ynot-description-toggle{display:inline-flex!important;align-items:center!important;height:24px!important;margin:0 0 8px!important;padding:0 9px!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:999px!important;background:rgba(255,255,255,.065)!important;color:rgba(255,255,255,.82)!important;font:730 8px/1 Inter,ui-sans-serif,sans-serif!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
 .ynot-description-toggle.active{background:rgba(255,255,255,.14)!important;color:#fff!important}
@@ -22,7 +25,7 @@
 @media(max-width:760px){
  .ynot-marketplace-control{left:10px!important;top:-1px!important}
  .ynot-marketplace-trigger{height:26px!important;padding:0 9px!important;font-size:7.5px!important}
- .ynot-marketplace-menu{top:31px!important}
+ .ynot-marketplace-menu{top:31px!important;min-width:128px!important}
  .ynot-cart{left:8px!important;right:8px!important;border-radius:22px!important}
  .ynot-description-panel{font-size:10px!important}
 }
