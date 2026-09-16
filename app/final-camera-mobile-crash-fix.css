@@ -1,9 +1,12 @@
 /* Final home-camera + mobile interaction stability pass. */
 @media(min-width:900px){
-  /* The stage itself is anchored at 50vw/50vh. At START_ZOOM .22, translating
-     WORLD_CX/WORLD_CY by -22000 maps the world origin to the physical viewport centre. */
+  /* The desktop entry world should live in the usable canvas BETWEEN the header
+     stack and the bottom search bar, not at the mathematical 50vh line. The stage
+     itself is anchored at 50vw/50vh; WORLD_CX/WORLD_CY at START_ZOOM .22 is 22000px.
+     Adding 6vh to the Y translation moves the mic/category ring into the visual
+     middle of the free canvas while keeping X perfectly centered. */
   .lv4-shell.depth-worlds .lv4-stage{
-    transform:translate(-22000px,-22000px) scale(.22)!important;
+    transform:translate(-22000px,calc(-22000px + 6vh)) scale(.22)!important;
     transform-origin:0 0!important;
   }
 }
