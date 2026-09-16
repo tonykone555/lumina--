@@ -33,63 +33,60 @@
   .ynot-deal-desktop-prev.visible,.ynot-deal-desktop-next.visible{display:grid!important;pointer-events:auto!important;opacity:1!important;visibility:visible!important}
 
   .ynot-world-desktop-prev.board-mode,.ynot-world-desktop-next.board-mode{
-    z-index:420!important;
-    opacity:.72!important;
-    width:46px!important;height:46px!important;
+    z-index:420!important;opacity:.72!important;width:46px!important;height:46px!important;
   }
   .ynot-world-desktop-prev.board-mode:hover,.ynot-world-desktop-next.board-mode:hover{opacity:1!important;transform:translateY(-50%) scale(1.07)!important}
 
   body:has(.ynot-drawer.open) .ynot-world-desktop-prev,
   body:has(.ynot-drawer.open) .ynot-world-desktop-next{display:none!important;pointer-events:none!important}
-  body:has(.ynot-drawer.open:not(:has(.ynot-selected))) .ynot-deal-desktop-prev,
-  body:has(.ynot-drawer.open:not(:has(.ynot-selected))) .ynot-deal-desktop-next{display:none!important;pointer-events:none!important}
+  body:has(.ynot-drawer.open:not(:has(.ynot-selected)):not(:has(.ynot-story))) .ynot-deal-desktop-prev,
+  body:has(.ynot-drawer.open:not(:has(.ynot-selected)):not(:has(.ynot-story))) .ynot-deal-desktop-next{display:none!important;pointer-events:none!important}
 
   .ynot-app-shell.chrome-hidden .ynot-reference-header,
   .ynot-drawer.open~* .ynot-reference-header{transform:none!important}
   .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-reference-topline{
-    position:fixed!important;left:50%!important;right:auto!important;top:12px!important;
-    width:max-content!important;transform:translateX(-50%)!important;margin:0!important;
+    position:fixed!important;left:50%!important;right:auto!important;top:12px!important;width:max-content!important;transform:translateX(-50%)!important;margin:0!important;
   }
   .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-world-controls{
-    position:fixed!important;left:50%!important;right:auto!important;top:64px!important;
-    width:315px!important;transform:translateX(-50%)!important;margin:0!important;
+    position:fixed!important;left:50%!important;right:auto!important;top:64px!important;width:315px!important;transform:translateX(-50%)!important;margin:0!important;
   }
   .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-view-source{
-    position:absolute!important;left:50%!important;right:auto!important;top:50px!important;
-    transform:translateX(-50%)!important;margin:0!important;
+    position:absolute!important;left:50%!important;right:auto!important;top:50px!important;transform:translateX(-50%)!important;margin:0!important;
   }
   .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-reference-right{
-    position:fixed!important;top:17px!important;right:28px!important;left:auto!important;
-    transform:none!important;margin:0!important;opacity:1!important;visibility:visible!important;
+    position:fixed!important;top:17px!important;right:28px!important;left:auto!important;transform:none!important;margin:0!important;opacity:1!important;visibility:visible!important;
   }
   .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-world-row,
-  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-top-mode{
-    transform:none!important;margin:0!important;
-  }
+  .ynot-app-shell.chrome-hidden .ynot-reference-header .ynot-top-mode{transform:none!important;margin:0!important}
 
   .lv4-shell .lv4-stage{transition:transform .12s ease-out!important;will-change:transform!important}
   .lv4-shell.depth-worlds .ynot-voice-orb,
   .lv4-shell.depth-worlds .lv4-category-bubble{transition:opacity .12s ease,transform .12s ease!important}
 
-  /* Keep the desktop search out of the way while exploring. A thin invisible
-     bottom edge remains hoverable, so moving the pointer to the bottom reveals it. */
+  /* Search is normally always visible on desktop. Only an open product card tucks it
+     down to a 10px hover target; hovering/focusing the bottom edge reveals it. */
   .ynot-bottom-search{
-    opacity:.02!important;
-    transform:translate(-50%,calc(100% - 10px))!important;
+    opacity:1!important;
+    transform:translate(-50%,0)!important;
     transition:transform .18s ease,opacity .14s ease!important;
     pointer-events:auto!important;
   }
-  .ynot-bottom-search:hover,
-  .ynot-bottom-search:focus-within{
+  body:has(.lv4-detail) .ynot-bottom-search,
+  body:has(.ynot-selected) .ynot-bottom-search,
+  body:has(.ynot-story) .ynot-bottom-search,
+  html.ynot-step-switching .ynot-bottom-search{
+    opacity:.02!important;
+    transform:translate(-50%,calc(100% - 10px))!important;
+    pointer-events:auto!important;
+  }
+  body:has(.lv4-detail) .ynot-bottom-search:hover,
+  body:has(.lv4-detail) .ynot-bottom-search:focus-within,
+  body:has(.ynot-selected) .ynot-bottom-search:hover,
+  body:has(.ynot-selected) .ynot-bottom-search:focus-within,
+  body:has(.ynot-story) .ynot-bottom-search:hover,
+  body:has(.ynot-story) .ynot-bottom-search:focus-within{
     opacity:1!important;
     transform:translate(-50%,0)!important;
-  }
-  .ynot-app-shell.chrome-hidden .ynot-bottom-search,
-  html.ynot-step-switching .ynot-bottom-search{
-    opacity:0!important;
-    transform:translate(-50%,110%)!important;
-    pointer-events:none!important;
-    transition:none!important;
   }
 }
 
