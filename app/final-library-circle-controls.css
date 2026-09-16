@@ -1,0 +1,97 @@
+/* Final library / compass / Circle interaction and readability pass. Loaded last. */
+
+/* --- Reliable mobile close targets --- */
+.ynot-notebook-close,.ynot-compass-close,.ynot-circle-close{
+  touch-action:manipulation!important;
+  pointer-events:auto!important;
+  cursor:pointer!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.ynot-notebook-close{z-index:4200!important}
+.ynot-compass-close{position:relative!important;z-index:4200!important;min-width:44px!important;min-height:44px!important}
+.ynot-circle-close{z-index:4200!important}
+
+/* --- Saves: simple top-left edit/+ controls and clean product-opening grid --- */
+.ynot-saves-tools{
+  position:absolute!important;z-index:31!important;left:18px!important;top:18px!important;
+  display:flex!important;gap:8px!important;align-items:center!important;
+}
+.ynot-saves-tools button,
+.ynot-notebook-close{
+  width:40px!important;height:40px!important;border-radius:50%!important;
+  border:1px solid rgba(255,255,255,.22)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.055))!important;
+  color:#fff!important;display:grid!important;place-items:center!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 10px 28px rgba(0,0,0,.24)!important;
+  backdrop-filter:blur(18px) saturate(1.15)!important;-webkit-backdrop-filter:blur(18px) saturate(1.15)!important;
+}
+.ynot-saves-tools button svg,.ynot-notebook-close svg{width:16px!important;height:16px!important}
+.ynot-saves-tools button:hover,.ynot-notebook-close:hover{background:rgba(255,255,255,.18)!important}
+.ynot-world-empty,.ynot-world-create{display:none!important}
+.ynot-save-orb{cursor:pointer!important;transition:transform .16s ease,box-shadow .16s ease!important}
+.ynot-save-orb:hover{transform:translateY(-3px) scale(1.025)!important;box-shadow:inset -16px -18px 28px rgba(0,0,0,.24),inset 11px 12px 20px rgba(255,255,255,.42),0 20px 42px rgba(0,0,0,.34)!important}
+.ynot-save-orb:focus-visible{outline:2px solid #fff!important;outline-offset:4px!important}
+
+.ynot-saves-mini-backdrop{
+  position:fixed!important;z-index:4100!important;inset:0!important;display:grid!important;place-items:center!important;
+  padding:18px!important;background:rgba(0,0,0,.46)!important;backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;
+}
+.ynot-saves-mini{
+  width:min(390px,calc(100vw - 32px))!important;padding:22px!important;border-radius:25px!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  background:linear-gradient(145deg,rgba(34,38,42,.88),rgba(9,11,13,.92))!important;
+  color:#fff!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 30px 80px rgba(0,0,0,.48)!important;
+  backdrop-filter:blur(30px) saturate(1.2)!important;-webkit-backdrop-filter:blur(30px) saturate(1.2)!important;
+}
+.ynot-saves-mini small{display:block;margin-bottom:10px;font:800 9px/1 Inter,system-ui;letter-spacing:.16em;color:rgba(255,255,255,.58)}
+.ynot-saves-mini input{width:100%;height:48px;padding:0 14px;border-radius:15px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.09);color:#fff;font:650 14px/1 Inter,system-ui;outline:none}
+.ynot-saves-mini input:focus{border-color:rgba(255,255,255,.5);box-shadow:0 0 0 3px rgba(255,255,255,.08)}
+.ynot-saves-mini p{margin:10px 2px 0;font:500 11px/1.45 Inter,system-ui;color:rgba(255,255,255,.62)}
+.ynot-saves-mini>button{width:100%;height:46px;margin-top:14px;border-radius:15px;border:1px solid rgba(255,255,255,.75);background:#f5f5f5;color:#101112;font:800 11px/1 Inter,system-ui;cursor:pointer}
+.ynot-saves-mini>button:disabled{opacity:.45;cursor:default}
+
+/* --- Circle: same hard-glass family as login --- */
+html.ynot-circle-open .ynot-reference-header{opacity:0!important;visibility:hidden!important;pointer-events:none!important}
+.ynot-circle-shell{z-index:3600!important;padding:clamp(14px,3vw,28px)!important}
+.ynot-circle-backdrop{background:rgba(2,4,5,.72)!important;backdrop-filter:blur(24px) brightness(.72)!important;-webkit-backdrop-filter:blur(24px) brightness(.72)!important}
+.ynot-circle-panel{
+  width:min(540px,calc(100vw - 28px))!important;max-height:min(790px,90dvh)!important;
+  padding:104px 26px 28px!important;border-radius:30px!important;border:1px solid rgba(255,255,255,.22)!important;
+  background:linear-gradient(145deg,rgba(34,38,42,.78),rgba(9,11,13,.86))!important;color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 -1px 0 rgba(255,255,255,.05),0 34px 100px rgba(0,0,0,.52)!important;
+  backdrop-filter:blur(38px) saturate(1.22)!important;-webkit-backdrop-filter:blur(38px) saturate(1.22)!important;
+}
+.ynot-circle-worldmark{
+  position:absolute;z-index:5;left:50%;top:16px;transform:translateX(-50%);width:72px;height:72px;border-radius:50%;
+  display:grid;place-items:center;border:1px solid rgba(255,255,255,.30);
+  background:radial-gradient(circle at 32% 24%,rgba(255,255,255,.6) 0 2%,rgba(255,255,255,.16) 5%,transparent 19%),linear-gradient(145deg,rgba(255,255,255,.18),rgba(255,255,255,.035) 42%,rgba(0,0,0,.34));
+  box-shadow:inset 8px 10px 20px rgba(255,255,255,.10),inset -12px -14px 24px rgba(0,0,0,.38),0 18px 42px rgba(0,0,0,.36);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)
+}
+.ynot-circle-worldmark span{font:800 10px/1 Inter,system-ui;letter-spacing:.02em;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.ynot-circle-close{right:16px!important;top:16px!important;width:40px!important;height:40px!important;border-radius:50%!important;border:1px solid rgba(255,255,255,.18)!important;background:rgba(255,255,255,.08)!important;color:#fff!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
+.ynot-circle-panel header{padding:0!important;text-align:center!important}
+.ynot-circle-panel header small{font-size:9px!important;letter-spacing:.17em!important;color:rgba(255,255,255,.55)!important;opacity:1!important}
+.ynot-circle-panel h2{margin:10px auto 9px!important;font:760 clamp(28px,5vw,39px)/.98 Inter,system-ui!important;letter-spacing:-.045em!important;max-width:420px}
+.ynot-circle-panel header p{margin:0 auto!important;max-width:420px!important;font:500 12px/1.55 Inter,system-ui!important;color:rgba(255,255,255,.68)!important}
+.ynot-circle-balance,.ynot-circle-try-card,.ynot-circle-stats div,.ynot-circle-link,.ynot-circle-error,.ynot-circle-loading{
+  border:1px solid rgba(255,255,255,.14)!important;background:rgba(255,255,255,.075)!important;color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
+}
+.ynot-circle-balance{border-radius:20px!important}.ynot-circle-balance span{font-size:11px!important;color:rgba(255,255,255,.72)!important;opacity:1!important}.ynot-circle-balance small{font-size:9px!important;line-height:1.4!important;color:rgba(255,255,255,.54)!important;opacity:1!important}.ynot-circle-balance strong{font-size:28px!important}
+.ynot-circle-try-card{margin-top:10px;padding:14px 16px;border-radius:18px;display:flex;align-items:center;gap:11px}.ynot-circle-try-card svg{width:18px;flex:none}.ynot-circle-try-card b{display:block;font:760 11px/1.2 Inter,system-ui}.ynot-circle-try-card span{display:block;margin-top:4px;font:500 10px/1.35 Inter,system-ui;color:rgba(255,255,255,.58)}
+.ynot-circle-invite,.ynot-circle-link{cursor:pointer!important;transition:transform .15s ease,background .15s ease!important}
+.ynot-circle-invite{height:50px!important;border-radius:16px!important;background:#f5f5f5!important;color:#111!important;font-size:11px!important;letter-spacing:.02em!important}
+.ynot-circle-invite:hover{transform:translateY(-1px)!important;background:#fff!important}
+.ynot-circle-link{height:44px!important;border-radius:15px!important;padding:0 14px!important}.ynot-circle-link code{max-width:86%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px!important;letter-spacing:.03em!important}
+.ynot-circle-stats span,.ynot-circle-bubbles p,.ynot-circle-history p{font-size:9px!important;color:rgba(255,255,255,.56)!important;opacity:1!important}
+.ynot-circle-members,.ynot-circle-history{border-top-color:rgba(255,255,255,.11)!important}.ynot-circle-history>div span{font-size:10px!important;color:rgba(255,255,255,.68)!important;opacity:1!important}.ynot-circle-history strong{font-size:10px!important}
+.ynot-circle-loading{margin-top:18px;padding:16px;border-radius:16px;font:600 11px/1.4 Inter,system-ui;text-align:center}
+
+@media(max-width:700px){
+  .ynot-saves-tools{left:13px!important;top:13px!important;gap:6px!important}.ynot-saves-tools button,.ynot-notebook-close{width:42px!important;height:42px!important}
+  .ynot-notebook-close{right:13px!important;top:13px!important}
+  .ynot-notebook-head{padding-top:10px!important}
+  .ynot-compass-close{width:46px!important;height:46px!important;display:grid!important;place-items:center!important}
+  .ynot-circle-shell{padding:8px!important}.ynot-circle-panel{width:calc(100vw - 16px)!important;max-height:calc(100dvh - 16px)!important;padding:94px 17px 22px!important;border-radius:26px!important}.ynot-circle-worldmark{top:12px;width:66px;height:66px}.ynot-circle-close{top:12px!important;right:12px!important;width:44px!important;height:44px!important}.ynot-circle-panel h2{font-size:30px!important}.ynot-circle-panel header p{font-size:11px!important}.ynot-circle-stats{grid-template-columns:1fr!important}.ynot-circle-stats div{min-height:58px!important}.ynot-circle-balance{grid-template-columns:1fr!important}.ynot-circle-balance strong{grid-row:auto!important;grid-column:auto!important;margin-top:4px}.ynot-circle-link code{font-size:9px!important}
+}
