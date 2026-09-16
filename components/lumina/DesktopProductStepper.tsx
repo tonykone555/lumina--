@@ -16,109 +16,67 @@ function parseCamera(stage:HTMLElement){
 export default function DesktopProductStepper():null{
  useEffect(()=>{
   let frame=0;
-  let prev:HTMLButtonElement|null=null;
-  let next:HTMLButtonElement|null=null;
+  let prev:HTMLButtonElement|null=null,next:HTMLButtonElement|null=null;
+  let dealPrev:HTMLButtonElement|null=null,dealNext:HTMLButtonElement|null=null;
 
   const cards=()=>[...document.querySelectorAll<HTMLElement>(".lv4-stage > .lv4-product")];
+  const dealCards=()=>[...document.querySelectorAll<HTMLElement>(".ynot-drawer.open .ynot-grid .ynot-orb")];
   const titleOf=(card:HTMLElement)=>norm(card.querySelector(".lv4-product-tooltip b,.lv4-orbmeta b")?.textContent||card.getAttribute("aria-label")||"");
+  const dealTitleOf=(card:HTMLElement)=>norm(card.querySelector(".ynot-orb-copy b")?.textContent||card.getAttribute("aria-label")||"");
   const activeTitle=()=>norm(document.querySelector(".lv4-detail .lv4-detailcopy h2")?.textContent||"");
+  const activeDealTitle=()=>norm(document.querySelector(".ynot-selected .ynot-selected-copy h3,.ynot-story .ynot-story-copy h2")?.textContent||"");
   const drawerOpen=()=>Boolean(document.querySelector(".ynot-drawer.open"));
 
   const warmDirection=(direction:number)=>{
-    const list=cards();
-    const ordered=direction>0?list:[...list].reverse();
-    ordered.slice(0,100).forEach(card=>{
-      const image=card.querySelector<HTMLImageElement>("img");
-      if(!image)return;
-      image.loading="eager";
-      image.setAttribute("fetchpriority","high");
-      void image.decode?.().catch(()=>{});
-    });
+    const list=cards(),ordered=direction>0?list:[...list].reverse();
+    ordered.slice(0,100).forEach(card=>{const image=card.querySelector<HTMLImageElement>("img");if(!image)return;image.loading="eager";image.setAttribute("fetchpriority","high");void image.decode?.().catch(()=>{})});
   };
 
   const moveProduct=(direction:number)=>{
-    const list=cards();
-    if(list.length<2)return;
-    const current=activeTitle();
-    let index=list.findIndex(card=>titleOf(card)===current);
-    if(index<0)index=0;
-    const target=list[(index+direction+list.length)%list.length];
-    if(!target)return;
-    document.documentElement.classList.add("ynot-step-switching");
-    warmDirection(direction);
-    /* A programmatic card click updates React's selected product in place. Keeping
-       the existing detail mounted prevents the bottom search from flashing between products. */
-    target.click();
+    const list=cards();if(list.length<2)return;
+    const current=activeTitle();let index=list.findIndex(card=>titleOf(card)===current);if(index<0)index=0;
+    const target=list[(index+direction+list.length)%list.length];if(!target)return;
+    document.documentElement.classList.add("ynot-step-switching");warmDirection(direction);target.click();
     window.setTimeout(()=>document.documentElement.classList.remove("ynot-step-switching"),180);
   };
 
+  const moveDeal=(direction:number)=>{
+    const list=dealCards();if(list.length<2)return;
+    const current=activeDealTitle();let index=list.findIndex(card=>dealTitleOf(card)===current);if(index<0)index=0;
+    const target=list[(index+direction+list.length)%list.length];if(!target)return;
+    const image=target.querySelector<HTMLImageElement>("img");if(image){image.loading="eager";void image.decode?.().catch(()=>{})}
+    target.click();
+  };
+
   const panBoard=(direction:number)=>{
-    const stage=document.querySelector<HTMLElement>(".lv4-stage");
-    if(!stage)return;
-    warmDirection(direction);
-    const camera=parseCamera(stage);
-    const amount=Math.max(520,window.innerWidth*.52);
-    const panX=camera.panX-direction*amount;
+    const stage=document.querySelector<HTMLElement>(".lv4-stage");if(!stage)return;
+    warmDirection(direction);const camera=parseCamera(stage),amount=Math.max(520,window.innerWidth*.52),panX=camera.panX-direction*amount;
     stage.style.setProperty("transform",`translate(${panX}px, ${camera.panY}px) scale(${camera.zoom})`,`important`);
     stage.style.setProperty("transition","transform .26s cubic-bezier(.22,.86,.24,1)","important");
     window.setTimeout(()=>stage.style.removeProperty("transition"),300);
     window.dispatchEvent(new CustomEvent("ynot:world-focus",{detail:{direction:direction>0?"right":"left",panX,prefetch:true}}));
   };
 
-  const activate=(direction:number)=>{
-    if(drawerOpen())return;
-    if(document.querySelector(".lv4-detail"))moveProduct(direction);
-    else panBoard(direction);
+  const make=(cls:string,label:string,direction:number,handler:(d:number)=>void)=>{
+    const button=document.createElement("button");button.type="button";button.className=cls;button.setAttribute("aria-label",label);button.innerHTML="<span></span>";
+    button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();handler(direction)});document.body.appendChild(button);return button;
   };
 
-  const make=(cls:string,label:string,direction:number)=>{
-    const button=document.createElement("button");
-    button.type="button";
-    button.className=cls;
-    button.setAttribute("aria-label",label);
-    button.innerHTML="<span></span>";
-    button.addEventListener("click",event=>{
-      event.preventDefault();
-      event.stopPropagation();
-      activate(direction);
-    });
-    document.body.appendChild(button);
-    return button;
-  };
-
-  prev=make("ynot-world-desktop-prev","Move left / previous product",-1);
-  next=make("ynot-world-desktop-next","Move right / next product",1);
+  prev=make("ynot-world-desktop-prev","Move left / previous product",-1,d=>{if(drawerOpen())return;document.querySelector(".lv4-detail")?moveProduct(d):panBoard(d)});
+  next=make("ynot-world-desktop-next","Move right / next product",1,d=>{if(drawerOpen())return;document.querySelector(".lv4-detail")?moveProduct(d):panBoard(d)});
+  dealPrev=make("ynot-deal-desktop-prev","Previous YNOT Deal product",-1,moveDeal);
+  dealNext=make("ynot-deal-desktop-next","Next YNOT Deal product",1,moveDeal);
 
   const sync=()=>{
-    frame=0;
-    const desktop=window.innerWidth>=900;
-    const detail=Boolean(document.querySelector(".lv4-detail"));
-    const drawer=drawerOpen();
-    const board=desktop&&!detail&&!drawer&&cards().length>0;
-    const show=desktop&&!drawer&&(detail?cards().length>1:board);
-    prev?.classList.toggle("visible",show);
-    next?.classList.toggle("visible",show);
-    prev?.classList.toggle("board-mode",board);
-    next?.classList.toggle("board-mode",board);
-    if(prev)prev.disabled=!show;
-    if(next)next.disabled=!show;
+    frame=0;const desktop=window.innerWidth>=900,detail=Boolean(document.querySelector(".lv4-detail")),drawer=drawerOpen(),dealOpen=drawer&&Boolean(document.querySelector(".ynot-selected,.ynot-story"));
+    const board=desktop&&!detail&&!drawer&&cards().length>0,worldShow=desktop&&!drawer&&(detail?cards().length>1:board),dealShow=desktop&&dealOpen&&dealCards().length>1;
+    prev?.classList.toggle("visible",worldShow);next?.classList.toggle("visible",worldShow);prev?.classList.toggle("board-mode",board);next?.classList.toggle("board-mode",board);
+    dealPrev?.classList.toggle("visible",dealShow);dealNext?.classList.toggle("visible",dealShow);
+    if(prev)prev.disabled=!worldShow;if(next)next.disabled=!worldShow;if(dealPrev)dealPrev.disabled=!dealShow;if(dealNext)dealNext.disabled=!dealShow;
   };
-  const queue=()=>{
-    if(frame)cancelAnimationFrame(frame);
-    frame=requestAnimationFrame(sync);
-  };
-  const observer=new MutationObserver(queue);
-  observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["class"]});
-  window.addEventListener("resize",queue);
-  queue();
-  return()=>{
-    observer.disconnect();
-    if(frame)cancelAnimationFrame(frame);
-    window.removeEventListener("resize",queue);
-    document.documentElement.classList.remove("ynot-step-switching");
-    prev?.remove();
-    next?.remove();
-  };
+  const queue=()=>{if(frame)cancelAnimationFrame(frame);frame=requestAnimationFrame(sync)};
+  const observer=new MutationObserver(queue);observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["class"]});window.addEventListener("resize",queue);queue();
+  return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame);window.removeEventListener("resize",queue);document.documentElement.classList.remove("ynot-step-switching");prev?.remove();next?.remove();dealPrev?.remove();dealNext?.remove()};
  },[]);
  return null;
 }
