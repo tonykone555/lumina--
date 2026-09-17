@@ -36,18 +36,17 @@ function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
 
 function warmImages(products:HTMLElement[],stage:HTMLElement){
  if(window.innerWidth<900)return;
- const rect=stage.getBoundingClientRect(),transform=getComputedStyle(stage).transform;
+ const transform=getComputedStyle(stage).transform;
  let scale=1,tx=0,ty=0;
  const match=transform.match(/matrix\(([^)]+)\)/);
  if(match){const values=match[1].split(',').map(Number);scale=Math.abs(values[0])||1;tx=values[4]||0;ty=values[5]||0}
- const viewport={left:-tx/scale-900,right:(window.innerWidth-tx)/scale+900,top:-ty/scale-900,bottom:(window.innerHeight-ty)/scale+900};
+ const viewport={left:-tx/scale-1100,right:(window.innerWidth-tx)/scale+1100,top:-ty/scale-1500,bottom:(window.innerHeight-ty)/scale+1100};
  products.forEach((product,index)=>{
   const image=product.querySelector<HTMLImageElement>("img");if(!image)return;
   const left=parseFloat(product.style.left)||0,top=parseFloat(product.style.top)||0,near=left>=viewport.left&&left<=viewport.right&&top>=viewport.top&&top<=viewport.bottom;
   if(near||index<18){image.loading="eager";image.setAttribute("fetchpriority",index<8?"high":"auto");image.decoding="async";void image.decode?.().catch(()=>{})}
   else{image.loading="lazy";image.setAttribute("fetchpriority","low");image.decoding="async"}
  });
- void rect;
 }
 
 function renderSlots(stage:HTMLElement,count:number){
@@ -55,10 +54,9 @@ function renderSlots(stage:HTMLElement,count:number){
  if(window.innerWidth<900||count<=0)return;
  const fragment=document.createDocumentFragment();
  for(let i=0;i<count;i++){
-  const index=i,position=cellPosition(index),slot=document.createElement("span");
-  slot.className="ynot-bubble-slot";
-  slot.setAttribute("aria-hidden","true");
-  slot.style.left=`${position.x}px`;slot.style.top=`${position.y}px`;slot.style.width=`${position.size}px`;slot.style.height=`${position.size}px`;
+  const position=cellPosition(i),slot=document.createElement("span");
+  slot.className="ynot-bubble-slot";slot.setAttribute("aria-hidden","true");
+  Object.assign(slot.style,{position:"absolute",left:`${position.x}px`,top:`${position.y}px`,width:`${position.size}px`,height:`${position.size}px`,transform:"translate(-50%,-50%)",borderRadius:"50%",pointerEvents:"none",zIndex:"2",border:"1px solid rgba(255,255,255,.12)",background:"radial-gradient(circle at 32% 24%,rgba(255,255,255,.10),rgba(255,255,255,.025) 52%,rgba(0,0,0,.10))",boxShadow:"inset 0 0 18px rgba(255,255,255,.04),0 12px 28px rgba(0,0,0,.08)",opacity:".38"});
   fragment.appendChild(slot);
  }
  stage.insertBefore(fragment,stage.firstChild);
