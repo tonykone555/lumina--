@@ -13,9 +13,11 @@ const TAGS:Record<string,string[]>={
  "Bags & Travel":["Backpacks","Gym Bags","Duffel Bags","Laptop Bags","Crossbody","Travel Bags","Luggage","Messenger Bags","Handbags","Shoulder Bags","Tote Bags","Pouches"],
  "Beauty & Personal Care":["Skincare","Men's Grooming","Shaving","Beard Care","Fragrance","Deodorant","Body Care","Hair Care","Makeup","Bath & Body","Beauty Tools","Self-Care Sets"],
  Hair:["Men's Hair","Shampoo","Conditioner","Repair","Scalp Care","Styling","Hair Tools","Volume","Curl Care","Hair Oils","Hair Accessories"],
+ Wellness:["Self Care","Massage","Sleep","Meditation","Aromatherapy","Recovery","Wellness Accessories","Hydration","Posture","Mobility","Supplements","Wellness Tech"],
  "Home & Living":["Furniture","Home Decor","Lighting","Kitchen","Dining","Bedding","Bathroom","Storage","Rugs","Wall Art","Mirrors","Candles","Garden"],
  "Fitness & Sports":["Gym Equipment","Gym Nutrition","Protein","Creatine","Supplements","Pre-Workout","Recovery","Shakers","Weight Training","Bodybuilding","Strength Training","Home Gym","Dumbbells","Kettlebells","Benches","Resistance Bands","Gym Clothing","Men's Activewear","Training Shoes","Running","Football","Basketball","Boxing","Cycling","Swimming","Outdoor Sports","Sports Accessories","Nike","adidas","Under Armour","Puma","Gymshark"],
  "Tech & Gadgets":["Phones","Phone Accessories","Computers","Computer Accessories","Audio","Headphones","Speakers","Gaming","Smart Home","Wearables","Cameras","Desk Tech","Charging","Gadgets"],
+ "Digital Products":["Ebooks","Guides","Printables","Digital Planners","Notion Templates","Canva Templates","Spreadsheets","Presets","Fonts","Icons","Mockups","Website Templates","Shopify Themes","App Templates","Stock Photos","Video Assets","Music & SFX","SVG & Cricut Files","AI Tools","Creator Tools"],
  "Auto & Mobility":["Car Accessories","Car Care","Interior Accessories","Exterior Accessories","Motorcycle","Cycling Accessories","EV Accessories","Dash Cams","Car Tech","Travel Safety"],
  "Outdoor & Adventure":["Camping","Hiking","Travel Gear","Outdoor Clothing","Outdoor Cooking","Hydration","Backpacks","Survival Gear","Beach","Fishing"],
  Gifts:["Gifts for Him","Gifts for Her","Couples","Birthday","Wedding","Anniversary","Baby","Housewarming","Personalized Gifts","Handmade Gifts","Gift Boxes"],
@@ -56,6 +58,10 @@ const QUERY_GROUPS:{test:RegExp;tags:string[]}[]=[
  {test:/\b(bag|backpack|duffel|luggage)\b/i,tags:["Men","Women","Leather","Waterproof","Laptop","Travel","Gym","Carry-On","Minimal","Black","Premium","Large Capacity"]}
 ];
 
+const ENTRY_CATEGORY_MAP:Record<string,string>={
+ fashion:"fashion",fitness:"fitness",skin:"beauty",hair:"wellness",home:"home",tech:"tech",retail:"digital"
+};
+
 function fallbackFor(category:ShopCategory,subcategory:string){const exact=DETAIL[subcategory];if(exact)return exact;const root=category.root;if(root==="fashion")return["Men","Women","Casual","Streetwear","Premium","Minimal","Sportswear","Occasion"];if(root==="fitness")return["Men","Gym","Strength","Protein","Creatine","Equipment","Performance","Recovery","Training","Sports Brands"];if(root==="tech")return["Portable","Wireless","Smart","Compact","Premium","Budget","Top Rated","New"];if(root==="home")return["Modern","Minimal","Small Space","Storage","Natural","Premium","Smart","Best Sellers"];return["Best Value","Premium","Popular","Under €25","Under €50","New Arrivals"]}
 function normalize(v:string){return v.toLowerCase().replace(/[^a-z0-9€]+/g," ").replace(/\s+/g," ").trim()}
 function queryAwareTags(query:string,category:ShopCategory,subcategory:string){const q=normalize(query);const exact=QUERY_GROUPS.find(group=>group.test.test(query))?.tags||[];const base=[...exact,...fallbackFor(category,subcategory)];const seen=new Set<string>();return base.filter(tag=>{const n=normalize(tag);if(!n||seen.has(n))return false;seen.add(n);if(q.includes(n))return false;return true}).slice(0,24)}
@@ -65,9 +71,31 @@ export default function TaxonomyRailClean(){
  const category=useMemo(()=>taxonomyCategory(categoryId),[categoryId]);
  const options=useMemo(()=>{if(stage==="category")return SHOP_TAXONOMY.map(x=>x.label);if(stage==="subcategory")return TAGS[category.label]||category.sub;return queryAwareTags(typedQuery,category,subcategory)},[stage,category,subcategory,typedQuery]);
  useEffect(()=>{const input=document.querySelector<HTMLInputElement>(".ynot-bottom-search input");if(!input)return;const sync=()=>setTypedQuery(input.value);sync();input.addEventListener("input",sync);return()=>input.removeEventListener("input",sync)},[]);
- useEffect(()=>{let frame=0;const polish=()=>{frame=0;const hair=document.querySelector<HTMLElement>(".lv4-category-bubble.cat-hair"),retail=document.querySelector<HTMLElement>(".lv4-category-bubble.cat-retail");if(hair){const b=hair.querySelector("b"),s=hair.querySelector("span");if(b)b.textContent="Health & Wellness";if(s)s.textContent="Recovery · sleep · wellness"}if(retail){const b=retail.querySelector("b"),s=retail.querySelector("span");if(b)b.textContent="Digital Product";if(s)s.textContent="Software · templates · courses"}};const schedule=()=>{if(!frame)frame=requestAnimationFrame(polish)};schedule();const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true});return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame)}},[]);
+ useEffect(()=>{
+  const onEntryClick=(event:MouseEvent)=>{
+   const target=event.target instanceof Element?event.target.closest<HTMLElement>(".lv4-category-bubble"):null;if(!target)return;
+   const cls=[...target.classList].find(name=>name.startsWith("cat-"));const root=cls?.replace("cat-","")||"";let nextId=ENTRY_CATEGORY_MAP[root]||"";
+   const label=(target.querySelector("b")?.textContent||"").toLowerCase();
+   if(label.includes("health")||label.includes("wellness"))nextId="wellness";else if(label.includes("digital"))nextId="digital";else if(label.includes("fitness"))nextId="fitness";else if(label.includes("tech"))nextId="tech";else if(label.includes("fashion"))nextId="fashion";else if(label.includes("beauty"))nextId="beauty";else if(label.includes("home"))nextId="home";
+   if(!nextId)return;
+   const next=taxonomyCategory(nextId);setCategoryId(next.id);setSubcategory("");setSelected([]);setStage("subcategory");window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags:[],root:next.root,categoryId:next.id,category:next.label,path:[]}}));
+  };
+  document.addEventListener("click",onEntryClick,true);return()=>document.removeEventListener("click",onEntryClick,true)
+ },[]);
+ useEffect(()=>{let frame=0;const polish=()=>{frame=0;
+  const rename=(selector:string,title:string,subtitle:string)=>{const el=document.querySelector<HTMLElement>(selector);if(!el)return;const b=el.querySelector("b"),s=el.querySelector("span");if(b)b.textContent=title;if(s)s.textContent=subtitle};
+  rename(".lv4-category-bubble.cat-fashion","Fashion Men & Women","Menswear · womenswear · style");
+  rename(".lv4-category-bubble.cat-fitness","Fitness & Sports","Gym · nutrition · equipment · sport");
+  rename(".lv4-category-bubble.cat-tech","Tech & Electronics","Devices · gaming · audio · smart tech");
+  rename(".lv4-category-bubble.cat-hair","Health & Wellness","Recovery · sleep · wellness");
+  rename(".lv4-category-bubble.cat-retail","Digital Product","Software · templates · courses");
+ };const schedule=()=>{if(!frame)frame=requestAnimationFrame(polish)};schedule();const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true});return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame)}},[]);
  function emit(tags:string[]){window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags,root:category.root,categoryId:category.id,category:category.label,path:[subcategory,...tags].filter(Boolean)}}))}
  function choose(label:string){if(stage==="category"){const next=SHOP_TAXONOMY.find(x=>x.label===label);if(!next)return;setCategoryId(next.id);setSubcategory("");setSelected([]);setStage("subcategory");return}if(stage==="subcategory"){setSubcategory(label);setSelected([]);setStage("attributes");emit([label]);return}const next=selected.includes(label)?selected.filter(x=>x!==label):[...selected,label].slice(-8);setSelected(next);emit([subcategory,...next].filter(Boolean))}
  function back(){if(stage==="attributes"){setStage("subcategory");setSelected([]);emit([]);return}if(stage==="subcategory"){setStage("category");setSubcategory("");setSelected([]);emit([])}}
- return <><ProductGalleryStability/><style>{`.lv4-category-bubble>b{font-size:clamp(28px,2.45vw,46px)!important;line-height:.98!important;letter-spacing:-.035em!important}.lv4-category-bubble>span{font-size:clamp(13px,1vw,18px)!important;line-height:1.15!important;margin-top:8px!important}.ynot-subcat-bubbles button.selected{border-color:rgba(255,255,255,.7)!important;background:rgba(255,255,255,.16)!important}@media(max-width:899px){.lv4-category-bubble>b{font-size:clamp(25px,7vw,36px)!important}.lv4-category-bubble>span{font-size:12px!important;max-width:170px!important}}`}</style><div className="ynot-taxonomy-progressive ynot-subcat ynot-taxonomy-inline" aria-label="Shopping category navigator"><div className="ynot-subcat-bubbles">{stage!=="category"&&<button className="ynot-taxonomy-inline-back" onClick={back} aria-label="Back">←</button>}{options.map((label,index)=><button key={`${stage}-${categoryId}-${subcategory}-${label}-${index}`} className={stage==="attributes"&&selected.includes(label)?"selected":""} onClick={()=>choose(label)}>{label}</button>)}</div></div></>
+ return <><ProductGalleryStability/><style>{`
+ @media(min-width:900px){.lv4-category-bubble>b{font-size:clamp(56px,4.9vw,92px)!important;line-height:.90!important;letter-spacing:-.05em!important;max-width:90%!important;text-wrap:balance!important}.lv4-category-bubble>span{font-size:clamp(15px,1.1vw,20px)!important;line-height:1.15!important;margin-top:12px!important;max-width:76%!important}}
+ .ynot-subcat-bubbles button.selected{border-color:rgba(255,255,255,.7)!important;background:rgba(255,255,255,.16)!important}
+ @media(max-width:899px){.lv4-category-bubble>b{font-size:clamp(25px,7vw,36px)!important}.lv4-category-bubble>span{font-size:12px!important;max-width:170px!important}}
+ `}</style><div className="ynot-taxonomy-progressive ynot-subcat ynot-taxonomy-inline" aria-label="Shopping category navigator"><div className="ynot-subcat-bubbles">{stage!=="category"&&<button className="ynot-taxonomy-inline-back" onClick={back} aria-label="Back">←</button>}{options.map((label,index)=><button key={`${stage}-${categoryId}-${subcategory}-${label}-${index}`} className={stage==="attributes"&&selected.includes(label)?"selected":""} onClick={()=>choose(label)}>{label}</button>)}</div></div></>
 }
