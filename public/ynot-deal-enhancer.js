@@ -1,6 +1,6 @@
 (()=>{
   let etsyOnly=false;
-  const galleryCache=new Map();
+  const productCache=new Map();
   const nativeInputValue=(input,value)=>{const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;setter?.call(input,value);input.dispatchEvent(new Event('input',{bubbles:true}))};
   const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 
@@ -32,38 +32,46 @@
     menu.append(all,etsy);wrap.append(trigger,menu);head.appendChild(wrap);
   }
 
-  function decorateDescription(copy){
-    const h3=copy.querySelector('h3');
-    if(!h3||copy.querySelector('.ynot-description-toggle'))return;
-    const source=copy.querySelector('p');
-    const button=document.createElement('button');button.type='button';button.className='ynot-description-toggle';button.textContent='Description';
-    const panel=document.createElement('div');panel.className='ynot-description-panel';panel.textContent=(source?.textContent||'Product details from the marketplace listing.').trim();
-    button.addEventListener('click',()=>{const open=panel.classList.toggle('open');button.classList.toggle('active',open);button.setAttribute('aria-expanded',String(open))});
+  async function productDetails(title){
+    const cacheKey=`${etsyOnly?'etsy':'all'}:${norm(title)}`;
+    if(productCache.has(cacheKey))return productCache.get(cacheKey);
+    const promise=(async()=>{
+      try{
+        const params=new URLSearchParams({q:title,market:'lumina',source:'all',page:'0'});
+        const response=await fetch(`/api/catalog?${params.toString()}`,{cache:'no-store'}),data=await response.json();
+        const products=Array.isArray(data?.products)?data.products:[];
+        let exact=products.find(p=>norm(p?.title)===norm(title))||products.find(p=>norm(p?.title).includes(norm(title))||norm(title).includes(norm(p?.title)))||products[0]||null;
+        if(exact&&String(exact.source||'').toLowerCase().includes('shopify')){
+          try{const r=await fetch('/api/commerce/product-link',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(exact),cache:'no-store'}),d=await r.json();if(r.ok&&d?.product)exact={...exact,...d.product,url:d.url||d.product.url||exact.url}}catch{}
+        }
+        return exact;
+      }catch{return null}
+    })();
+    productCache.set(cacheKey,promise);return promise;
+  }
+
+  function mediaFor(product,current){
+    const list=[current,product?.image,...(Array.isArray(product?.images)?product.images:[]),...(Array.isArray(product?.variants)?product.variants.map(v=>v?.image):[])].filter(Boolean).map(String);
+    return [...new Set(list)];
+  }
+
+  async function decorateDescription(copy,title){
+    const h3=copy.querySelector('h3');if(!h3)return;
+    const key=norm(title),existing=copy.querySelector('.ynot-description-toggle');
+    if(existing?.dataset.productKey===key)return;
+    copy.querySelectorAll('.ynot-description-toggle,.ynot-description-panel').forEach(n=>n.remove());
+    const product=await productDetails(title);if(!document.body.contains(copy)||norm(copy.querySelector('h3')?.textContent)!==key)return;
+    const fallback=copy.querySelector('p')?.textContent||'Product details from the marketplace listing.';
+    const description=String(product?.description||fallback||'').trim();
+    const button=document.createElement('button');button.type='button';button.className='ynot-description-toggle';button.textContent='Description';button.dataset.productKey=key;
+    const panel=document.createElement('div');panel.className='ynot-description-panel';panel.textContent=description;panel.setAttribute('aria-hidden','true');
+    button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();const open=panel.classList.toggle('open');button.classList.toggle('active',open);button.setAttribute('aria-expanded',String(open));panel.setAttribute('aria-hidden',String(!open))});
     button.setAttribute('aria-expanded','false');
     copy.insertBefore(button,h3);copy.insertBefore(panel,h3);
   }
 
-  async function productImages(title,current){
-    const cacheKey=`${etsyOnly?'etsy':'all'}:${norm(title)}`;
-    if(galleryCache.has(cacheKey))return galleryCache.get(cacheKey);
-    const promise=(async()=>{
-      try{
-        const params=new URLSearchParams({q:title,market:'lumina',source:'all',page:'0'});
-        const response=await fetch(`/api/catalog?${params.toString()}`,{cache:'no-store'});
-        const data=await response.json();
-        const products=Array.isArray(data?.products)?data.products:[];
-        const exact=products.find(p=>norm(p?.title)===norm(title))||products.find(p=>norm(p?.title).includes(norm(title))||norm(title).includes(norm(p?.title)))||products[0];
-        const list=[current,exact?.image,...(exact?.images||[]),...(exact?.variants||[]).map(v=>v?.image)].filter(Boolean);
-        return [...new Set(list)];
-      }catch{return current?[current]:[]}
-    })();
-    galleryCache.set(cacheKey,promise);
-    return promise;
-  }
-
   function openViewer(images,start=0){
-    document.querySelector('.ynot-deal-gallery-viewer')?.remove();
-    if(!images.length)return;
+    document.querySelector('.ynot-deal-gallery-viewer')?.remove();if(!images.length)return;
     let index=Math.max(0,Math.min(start,images.length-1));
     const viewer=document.createElement('section');viewer.className='ynot-deal-gallery-viewer';
     const image=document.createElement('img');image.alt='Product view';
@@ -73,56 +81,32 @@
     const count=document.createElement('span');count.className='ynot-deal-gallery-count';
     const render=()=>{image.src=images[index];count.textContent=`${index+1} / ${images.length}`};
     const move=delta=>{index=(index+delta+images.length)%images.length;render()};
-    close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();viewer.remove()});
-    prev.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();move(-1)});
-    next.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();move(1)});
-    viewer.addEventListener('click',e=>e.stopPropagation());
-    viewer.append(image,close,prev,next,count);document.body.appendChild(viewer);render();
+    close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();viewer.remove()});prev.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();move(-1)});next.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();move(1)});viewer.addEventListener('click',e=>e.stopPropagation());viewer.append(image,close,prev,next,count);document.body.appendChild(viewer);render();
   }
 
   async function decorateGallery(selected,title){
-    const main=selected.querySelector(':scope > img');
-    if(!main||!main.src)return;
-    const signature=`${etsyOnly?'etsy':'all'}:${norm(title)}`;
-    const old=selected.querySelector('.ynot-deal-thumb-gallery');
-    if(old?.dataset.signature===signature)return;
-    old?.remove();
-    const images=await productImages(title,main.src);
-    if(!document.body.contains(selected)||!images||images.length<2)return;
-    const currentTitle=selected.querySelector('.ynot-selected-copy h3')?.textContent||'';
-    if(norm(currentTitle)!==norm(title))return;
+    const main=selected.querySelector(':scope > img');if(!main||!main.src)return;
+    const signature=`${etsyOnly?'etsy':'all'}:${norm(title)}`,old=selected.querySelector('.ynot-deal-thumb-gallery');if(old?.dataset.signature===signature)return;old?.remove();
+    const product=await productDetails(title),images=mediaFor(product,main.src);
+    if(!document.body.contains(selected)||images.length<2)return;
+    const currentTitle=selected.querySelector('.ynot-selected-copy h3')?.textContent||'';if(norm(currentTitle)!==norm(title))return;
+    selected.dataset.ynotFinalMedia=JSON.stringify(images);
     const gallery=document.createElement('div');gallery.className='ynot-deal-thumb-gallery';gallery.dataset.signature=signature;
     const visible=Math.min(images.length,4);
     images.slice(0,visible).forEach((src,index)=>{
-      const button=document.createElement('button');button.type='button';
-      const img=document.createElement('img');img.src=src;img.alt=`${title} view ${index+1}`;button.appendChild(img);
+      const button=document.createElement('button');button.type='button';button.dataset.mediaUrl=src;const img=document.createElement('img');img.src=src;img.alt=`${title} view ${index+1}`;button.appendChild(img);
       const more=images.length>4&&index===visible-1;
-      if(more){
-        button.classList.add('ynot-deal-thumb-more');button.dataset.more=`+${images.length-visible+1}`;
-        button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openViewer(images,index)});
-      }else{
-        button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();main.src=src;gallery.querySelectorAll('button').forEach(node=>node.classList.toggle('active',node===button))});
-      }
-      if(src===main.src)button.classList.add('active');
-      gallery.appendChild(button);
+      if(more){button.classList.add('ynot-deal-thumb-more');button.dataset.more=`+${images.length-3}`;button.setAttribute('aria-label',`Open all ${images.length} product images`);button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();openViewer(images,index)})}
+      else button.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();main.src=src;selected.dataset.ynotFullMediaUrl=src;gallery.querySelectorAll('button').forEach(node=>node.classList.toggle('active',node===button))});
+      if(src===main.src)button.classList.add('active');gallery.appendChild(button);
     });
     main.insertAdjacentElement('afterend',gallery);
   }
 
   function decorateProduct(){
-    const selected=document.querySelector('.ynot-drawer.open .ynot-selected');
-    const copy=selected?.querySelector('.ynot-selected-copy');
-    if(!selected||!copy)return;
-    const h3=copy.querySelector('h3');
-    if(!h3)return;
-    decorateDescription(copy);
-    void decorateGallery(selected,(h3.textContent||'').trim());
+    const selected=document.querySelector('.ynot-drawer.open .ynot-selected'),copy=selected?.querySelector('.ynot-selected-copy');if(!selected||!copy)return;
+    const h3=copy.querySelector('h3');if(!h3)return;const title=(h3.textContent||'').trim();void decorateDescription(copy,title);void decorateGallery(selected,title);
   }
 
-  function sync(){decorateHeader();decorateProduct()}
-  let frame=0;
-  const queue=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;sync()})};
-  const observer=new MutationObserver(queue);
-  const start=()=>{observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','src']});sync()};
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  function sync(){decorateHeader();decorateProduct()}let frame=0;const queue=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;sync()})};const observer=new MutationObserver(queue);const start=()=>{observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','src']});sync()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
