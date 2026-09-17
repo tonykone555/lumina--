@@ -1,6 +1,6 @@
 (()=>{
   let used=false,active=false,startedAt=0,observer=null,maxTimer=null,minTimer=null;
-  const MIN_MS=1100,MAX_MS=2000;
+  const MIN_MS=260,MAX_MS=1200;
   const root=document.documentElement;
   const ready=()=>Boolean(document.querySelector('.lv4-product,.ynot-orb,.lv4-product-bubble'));
   function ensureOverlay(){
@@ -26,12 +26,12 @@
     if(!force&&(elapsed<MIN_MS||!productsReady))return;
     active=false;
     root.classList.remove('ynot-initial-world-loading');
-    if(productsReady)root.classList.remove('ynot-initial-world-await-products');
+    if(productsReady||force)root.classList.remove('ynot-initial-world-await-products');
     const overlay=document.getElementById('ynot-initial-world-transition');
-    if(overlay){overlay.classList.add('leaving');setTimeout(()=>overlay.remove(),160)}
+    if(overlay){overlay.classList.add('leaving');setTimeout(()=>overlay.remove(),140)}
     if(minTimer){clearTimeout(minTimer);minTimer=null}
     if(maxTimer){clearTimeout(maxTimer);maxTimer=null}
-    if(productsReady&&observer){observer.disconnect();observer=null}
+    if(observer){observer.disconnect();observer=null}
   }
   function start(){
     if(used||active)return;
@@ -39,7 +39,7 @@
     ensureOverlay();
     root.classList.add('ynot-initial-world-loading','ynot-initial-world-await-products');
     observer=new MutationObserver(()=>{releaseWorldWhenReady();finishOverlay(false)});
-    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+    observer.observe(document.body,{subtree:true,childList:true});
     minTimer=setTimeout(()=>finishOverlay(false),MIN_MS);
     maxTimer=setTimeout(()=>finishOverlay(true),MAX_MS);
   }
