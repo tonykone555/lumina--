@@ -143,7 +143,7 @@ function renderMedia(root:HTMLElement,product:Product){
      button.classList.add("ynot-gallery-more");
      button.dataset.more=`+${images.length-visibleCount+1}`;
      button.setAttribute("aria-label",`Open all ${images.length} product images`);
-     button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();openFullSlider(shell,images,0)});
+     button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();openFullSlider(shell,images,index)});
     }else{
      button.addEventListener("click",event=>{
       event.preventDefault();event.stopPropagation();
