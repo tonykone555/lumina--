@@ -41,14 +41,29 @@ function score(products:Product[],novelty:number){const prices=products.map(p=>N
 export async function POST(req:NextRequest){
  try{
   await requireYnotAdmin(req);
-  const body=await req.json().catch(()=>({}));const origin=req.nextUrl.origin;
-  const seedName=String(body?.seedName||"Specialist market").slice(0,120);const seedQuery=String(body?.seedQuery||"").trim().slice(0,500);if(!seedQuery)return NextResponse.json({ok:false,error:"SEED_QUERY_REQUIRED"},{status:400});
-  const depth=Math.max(1,Math.min(4,Number(body?.depth||1)));const maxBranches=Math.max(4,Math.min(10,Number(body?.maxBranches||8)));
-  const rootProducts=await catalog(origin,seedQuery);const rootTerms=keywords(rootProducts);const selectedAxes=AXES.slice((depth-1)*5).concat(AXES.slice(0,(depth-1)*5)).slice(0,maxBranches);
+  const body=await req.json().catch(()=>({}));
+  const origin=req.nextUrl.origin;
+  const seedName=String(body?.seedName||"Specialist market").slice(0,120);
+  const seedQuery=String(body?.seedQuery||"").trim().slice(0,500);
+  if(!seedQuery)return NextResponse.json({ok:false,error:"SEED_QUERY_REQUIRED"},{status:400});
+  const depth=Math.max(1,Math.min(4,Number(body?.depth||1)));
+  const maxBranches=Math.max(4,Math.min(10,Number(body?.maxBranches||8)));
+  const rootProducts=await catalog(origin,seedQuery);
+  const rootTerms=keywords(rootProducts);
+  const selectedAxes=AXES.slice((depth-1)*5).concat(AXES.slice(0,(depth-1)*5)).slice(0,maxBranches);
   const branches=await Promise.all(selectedAxes.map(async(axis,index)=>{
-   const signal=rootTerms[index%Math.max(1,rootTerms.length)]||"";const q=`${seedQuery} ${signal} ${axis.terms}`.replace(/\s+/g," ").trim();
-   try{const products=await catalog(origin,q);const novelty=clamp(68+depth*6+(index%5)*4+(products.length<8?8:0));const metrics=score(products,novelty);return {id:`${axis.id}-${depth}-${index}`,parent:seedName,depth,name:`${seedName} → ${axis.label}${signal?` · ${signal}`:""}`,query:q,axis:axis.id,axisLabel:axis.label,why:axis.why,signal,products:products.slice(0,10),metrics,strategy:{content:axis.id==="repair"||axis.id==="measure"?"Reveal a hidden problem, then demonstrate the specialist tool.":axis.id==="luxury"?"Lead with the visual difference and craftsmanship, then explain why the premium exists.":"Teach the use case first, then reveal the product ecosystem.",paid:metrics.ticket==="high"?"Education/proof creative → engaged-viewer retargeting → product/world conversion.":"Problem/use-case hook → product collection → YNOT world → retargeting.",ynot:"Keep the YNOT interface constant while swapping this specialist branch into the product world.",next:`If evidence is strong, recurse again from this branch using adjacent ownership problems.`}}catch(error){return {id:`${axis.id}-${depth}-${index}`,parent:seedName,depth,name:`${seedName} → ${axis.label}`,query:q,axis:axis.id,axisLabel:axis.label,why:axis.why,signal,products:[],metrics:{inventory:0,visual:0,diversity:0,evidence:0,opportunity:0,ticket:"unknown",price:{min:0,median:0,max:0},productCount:0,brandCount:0},error:error instanceof Error?error.message:"BRANCH_FAILED"}}
+   const signal=rootTerms[index%Math.max(1,rootTerms.length)]||"";
+   const q=`${seedQuery} ${signal} ${axis.terms}`.replace(/\s+/g," ").trim();
+   try{
+    const products=await catalog(origin,q);
+    const novelty=clamp(68+depth*6+(index%5)*4+(products.length<8?8:0));
+    const metrics=score(products,novelty);
+    return {id:`${axis.id}-${depth}-${index}`,parent:seedName,depth,name:`${seedName} → ${axis.label}${signal?` · ${signal}`:""}`,query:q,axis:axis.id,axisLabel:axis.label,why:axis.why,signal,products:products.slice(0,10),metrics,strategy:{content:axis.id==="repair"||axis.id==="measure"?"Reveal a hidden problem, then demonstrate the specialist tool.":axis.id==="luxury"?"Lead with the visual difference and craftsmanship, then explain why the premium exists.":"Teach the use case first, then reveal the product ecosystem.",paid:metrics.ticket==="high"?"Education/proof creative → engaged-viewer retargeting → product/world conversion.":"Problem/use-case hook → product collection → YNOT world → retargeting.",ynot:"Keep the YNOT interface constant while swapping this specialist branch into the product world.",next:"If evidence is strong, recurse again from this branch using adjacent ownership problems."}};
+   }catch(error){
+    return {id:`${axis.id}-${depth}-${index}`,parent:seedName,depth,name:`${seedName} → ${axis.label}`,query:q,axis:axis.id,axisLabel:axis.label,why:axis.why,signal,products:[],metrics:{inventory:0,visual:0,diversity:0,evidence:0,opportunity:0,ticket:"unknown",price:{min:0,median:0,max:0},productCount:0,brandCount:0},error:error instanceof Error?error.message:"BRANCH_FAILED"};
+   }
   }));
-  const ranked=branches.sort((a,b)=>b.metrics.opportunity-a.metrics.opportunity);return NextResponse.json({ok:true,seed:{name:seedName,query:seedQuery,depth,rootProductCount:rootProducts.length,rootTerms},branches:ranked,summary:{tested:branches.length,live:branches.filter(x=>x.metrics.productCount>0).length,highEvidence:branches.filter(x=>x.metrics.evidence>=65).length,best:ranked[0]?.name||null}})
+  const ranked=branches.sort((a,b)=>b.metrics.opportunity-a.metrics.opportunity);
+  return NextResponse.json({ok:true,seed:{name:seedName,query:seedQuery,depth,rootProductCount:rootProducts.length,rootTerms},branches:ranked,summary:{tested:branches.length,live:branches.filter(x=>x.metrics.productCount>0).length,highEvidence:branches.filter(x=>x.metrics.evidence>=65).length,best:ranked[0]?.name||null}});
  }catch(error){return NextResponse.json({ok:false,error:error instanceof Error?error.message:"RECURSIVE_INTELLIGENCE_ERROR"},{status:adminErrorStatus(error)})}
 }
