@@ -82,7 +82,15 @@ function fallbackFor(category:ShopCategory,subcategory:string){
 }
 
 function setInput(input:HTMLInputElement,value:string){const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;setter?.call(input,value);input.dispatchEvent(new Event("input",{bubbles:true}))}
-function searchNow(category:ShopCategory,subcategory?:string,attributes:string[]=[]){const terms=[category.query,subcategory,...attributes].filter(Boolean).join(" ");const tags=[subcategory,...attributes].filter(Boolean) as string[];window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags,root:category.root,categoryId:category.id,category:category.label,path:subcategory?[subcategory,...attributes]:[]}}));const input=document.querySelector<HTMLInputElement>(".lv4-search input");if(input){setInput(input,terms);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".lv4-search button")?.click())}}
+function esc(value:string){return value.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+function removeTerms(text:string,terms:string[]){let out=` ${text} `;for(const term of [...terms].sort((a,b)=>b.length-a.length)){out=out.replace(new RegExp(`\\s${esc(term)}(?=\\s|$)`,`ig`)," ")}return out.replace(/\s+/g," ").trim()}
+function searchNow(category:ShopCategory,subcategory?:string,attributes:string[]=[],previousTags:string[]=[]){
+ const tags=[subcategory,...attributes].filter(Boolean) as string[];window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags,root:category.root,categoryId:category.id,category:category.label,path:subcategory?[subcategory,...attributes]:[]}}));
+ const native=document.querySelector<HTMLInputElement>(".lv4-search input");
+ if(!subcategory&&!attributes.length){if(native){setInput(native,category.query);requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".lv4-search button")?.click())}return}
+ const bottom=document.querySelector<HTMLInputElement>(".ynot-bottom-search input"),base=removeTerms(bottom?.value||"",previousTags),combined=[base,...tags].filter(Boolean).join(" ").replace(/\s+/g," ").trim();
+ if(bottom)setInput(bottom,combined);if(native)setInput(native,combined);if(native&&combined.length>=2)requestAnimationFrame(()=>document.querySelector<HTMLButtonElement>(".lv4-search button")?.click())
+}
 
 export default function TaxonomyRailClean(){
   const[stage,setStage]=useState<Stage>("category"),[categoryId,setCategoryId]=useState("fashion"),[subcategory,setSubcategory]=useState(""),[selected,setSelected]=useState<string[]>([]);
@@ -90,15 +98,15 @@ export default function TaxonomyRailClean(){
   const options=useMemo(()=>stage==="category"?SHOP_TAXONOMY.map(x=>x.label):stage==="subcategory"?(TAGS[category.label]||category.sub):fallbackFor(category,subcategory),[stage,category,subcategory]);
   useEffect(()=>{
     let frame=0;
-    const polish=()=>{frame=0;const hair=document.querySelector<HTMLElement>(".lv4-category-bubble.cat-hair"),retail=document.querySelector<HTMLElement>(".lv4-category-bubble.cat-retail");if(hair){const b=hair.querySelector("b"),s=hair.querySelector("span");if(b)b.textContent="Grooming";if(s)s.textContent="Hair · shaving · men's care"}if(retail){const b=retail.querySelector("b"),s=retail.querySelector("span");if(b)b.textContent="Trending";if(s)s.textContent="New · popular · worth discovering"};const ynot=[...document.querySelectorAll<HTMLButtonElement>(".ynot-world-row button")].find(x=>x.textContent?.trim().toUpperCase()==="YNOT");if(ynot&&!ynot.dataset.ynotPointerGuard){ynot.dataset.ynotPointerGuard="1";ynot.addEventListener("pointerup",e=>e.stopImmediatePropagation(),true)}};
+    const polish=()=>{frame=0;const hair=document.querySelector<HTMLElement>(".lv4-category-bubble.cat-hair"),retail=document.querySelector<HTMLElement>(".lv4-category-bubble.cat-retail");if(hair){const b=hair.querySelector("b"),s=hair.querySelector("span");if(b)b.textContent="Health & Wellness";if(s)s.textContent="Recovery · sleep · wellness"}if(retail){const b=retail.querySelector("b"),s=retail.querySelector("span");if(b)b.textContent="Digital Product";if(s)s.textContent="Software · templates · courses"};const ynot=[...document.querySelectorAll<HTMLButtonElement>(".ynot-world-row button")].find(x=>x.textContent?.trim().toUpperCase()==="YNOT");if(ynot&&!ynot.dataset.ynotPointerGuard){ynot.dataset.ynotPointerGuard="1";ynot.addEventListener("pointerup",e=>e.stopImmediatePropagation(),true)}};
     const schedule=()=>{if(!frame)frame=requestAnimationFrame(polish)};schedule();const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true});return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame)}
   },[]);
   function choose(label:string){
     if(stage==="category"){const next=SHOP_TAXONOMY.find(x=>x.label===label);if(!next)return;setCategoryId(next.id);setSubcategory("");setSelected([]);setStage("subcategory");searchNow(next);return}
-    if(stage==="subcategory"){setSubcategory(label);setSelected([]);setStage("attributes");searchNow(category,label);return}
-    const next=selected.includes(label)?selected.filter(x=>x!==label):[...selected,label].slice(-4);setSelected(next);searchNow(category,subcategory,next)
+    if(stage==="subcategory"){const previous=[subcategory,...selected].filter(Boolean);setSubcategory(label);setSelected([]);setStage("attributes");searchNow(category,label,[],previous);return}
+    const previous=[subcategory,...selected].filter(Boolean),next=selected.includes(label)?selected.filter(x=>x!==label):[...selected,label].slice(-8);setSelected(next);searchNow(category,subcategory,next,previous)
   }
-  function back(){if(stage==="attributes"){setStage("subcategory");setSelected([]);searchNow(category);return}if(stage==="subcategory"){setStage("category");setSubcategory("");setSelected([]);window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags:[],root:"",categoryId:"",category:"",path:[]}}))}}
+  function back(){if(stage==="attributes"){const previous=[subcategory,...selected].filter(Boolean);setStage("subcategory");setSelected([]);searchNow(category,undefined,[],previous);return}if(stage==="subcategory"){setStage("category");setSubcategory("");setSelected([]);window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags:[],root:"",categoryId:"",category:"",path:[]}}))}}
   return <><ProductGalleryStability/><style>{`
     .lv4-category-bubble>b{font-size:clamp(28px,2.45vw,46px)!important;line-height:.98!important;letter-spacing:-.035em!important}.lv4-category-bubble>span{font-size:clamp(13px,1vw,18px)!important;line-height:1.15!important;margin-top:8px!important}
     @media(max-width:899px){.lv4-category-bubble>b{font-size:clamp(25px,7vw,36px)!important}.lv4-category-bubble>span{font-size:12px!important;max-width:170px!important}}
