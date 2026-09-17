@@ -3,80 +3,36 @@
  const norm=v=>String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
  const products=()=>Object.values(window.__ynotEtsyProducts||{}).filter((p,i,a)=>p&&p.id&&a.findIndex(x=>x&&x.id===p.id)===i);
  const isEtsy=p=>String(p?.source||'').toLowerCase().includes('etsy');
- function matchProduct(node){
-  const text=norm(node?.textContent||'');if(!text)return null;
-  let best=null,bestLen=0;
-  for(const product of products()){
-   if(!isEtsy(product))continue;
-   const title=norm(product.title);if(title&&title.length>bestLen&&text.includes(title)){best=product;bestLen=title.length}
-  }
-  return best;
- }
+ function matchProduct(node){const text=norm(node?.textContent||'');if(!text)return null;let best=null,bestLen=0;for(const product of products()){if(!isEtsy(product))continue;const title=norm(product.title);if(title&&title.length>bestLen&&text.includes(title)){best=product;bestLen=title.length}}return best}
  function stars(rating){const n=Math.max(1,Math.min(5,Math.round(Number(rating)||0)));return '★'.repeat(n)}
  async function reviewsFor(product){
-  const id=Number(product?.listingId||String(product?.id||'').replace(/\D+/g,''));if(!id)return{rating:null,reviewCount:0,reviews:[]};
-  if(reviewCache.has(id))return reviewCache.get(id);
-  const promise=fetch(`/api/etsy?mode=reviews&listingId=${id}`,{cache:'no-store'}).then(r=>r.ok?r.json():{}).then(data=>({rating:Number(data.rating)||null,reviewCount:Number(data.reviewCount)||0,reviews:Array.isArray(data.reviews)?data.reviews:[],error:data?.error||null})).catch(()=>({rating:null,reviewCount:0,reviews:[],error:'REVIEWS_UNAVAILABLE'}));
-  reviewCache.set(id,promise);return promise;
+  const id=Number(product?.listingId||String(product?.id||'').replace(/\D+/g,''));if(!id)return{rating:null,reviewCount:0,reviews:[]};if(reviewCache.has(id))return reviewCache.get(id);
+  const promise=fetch(`/api/etsy?mode=reviews&listingId=${id}`,{cache:'force-cache'}).then(r=>r.ok?r.json():{}).then(data=>({rating:Number(data.rating)||null,reviewCount:Number(data.reviewCount)||0,reviews:Array.isArray(data.reviews)?data.reviews.slice(0,5):[],error:data?.error||null})).catch(()=>({rating:null,reviewCount:0,reviews:[],error:'REVIEWS_UNAVAILABLE'}));reviewCache.set(id,promise);return promise;
  }
  function removeBubbleRatings(){document.querySelectorAll('.ynot-etsy-bubble-rating').forEach(node=>node.remove())}
- function clearDetail(detail){detail.querySelectorAll('.ynot-etsy-rating,.ynot-etsy-description-toggle,.ynot-etsy-description,.ynot-etsy-review-toggle,.ynot-etsy-reviews').forEach(node=>node.remove())}
+ function clearDetail(detail){detail.querySelectorAll('.ynot-etsy-rating,.ynot-etsy-description-toggle,.ynot-etsy-description,.ynot-etsy-review-toggle,.ynot-etsy-reviews,.ynot-description-toggle,.ynot-description-back').forEach(node=>node.remove());detail.classList.remove('ynot-description-flipped')}
  function removeFloatingClose(){document.querySelectorAll('.ynot-etsy-floating-close').forEach(node=>node.remove())}
- function ensureFloatingClose(detail){
-  removeFloatingClose();
-  const button=document.createElement('button');button.type='button';button.className='ynot-etsy-floating-close';button.setAttribute('aria-label','Close Etsy product');button.textContent='×';
-  const close=()=>{const native=detail.querySelector('.lv4-close,button[aria-label*="close" i],button[title*="close" i]');if(native instanceof HTMLButtonElement)native.click()};
-  button.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();close()});
-  button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();close()});
-  document.body.appendChild(button);
- }
- function reviewCard(review){
-  const card=document.createElement('article');card.className='ynot-etsy-review-card';
-  const rating=Number(review?.rating)||0,text=String(review?.text||'').trim(),image=String(review?.image||'').trim();
-  if(image){const img=document.createElement('img');img.src=image;img.alt='Customer review photo';img.loading='lazy';img.decoding='async';card.appendChild(img)}
-  if(rating>0){const s=document.createElement('div');s.className='ynot-etsy-review-stars';s.textContent=stars(rating);card.appendChild(s)}
-  if(text){const p=document.createElement('p');p.textContent=text;card.appendChild(p)}
-  return card;
- }
+ function ensureFloatingClose(detail){removeFloatingClose();const button=document.createElement('button');button.type='button';button.className='ynot-etsy-floating-close';button.setAttribute('aria-label','Close Etsy product');button.textContent='×';const close=()=>{const native=detail.querySelector('.lv4-close,button[aria-label*="close" i],button[title*="close" i]');if(native instanceof HTMLButtonElement)native.click()};button.addEventListener('pointerdown',event=>{event.preventDefault();event.stopPropagation();close()});button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();close()});document.body.appendChild(button)}
+ function reviewCard(review){const card=document.createElement('article');card.className='ynot-etsy-review-card';const rating=Number(review?.rating)||0,text=String(review?.text||'').trim(),image=String(review?.image||'').trim();if(image){const img=document.createElement('img');img.src=image;img.alt='Customer review photo';img.loading='lazy';img.decoding='async';card.appendChild(img)}if(rating>0){const s=document.createElement('div');s.className='ynot-etsy-review-stars';s.textContent=stars(rating);card.appendChild(s)}if(text){const p=document.createElement('p');p.textContent=text;card.appendChild(p)}return card}
  async function enhanceDetail(detail){
-  if(!(detail instanceof HTMLElement))return;
-  const product=matchProduct(detail);if(!product)return;
-  const key=String(product.id||product.listingId||norm(product.title));
-  document.body.classList.add('ynot-product-popup-open','ynot-any-product-popup-open','ynot-etsy-popup-open');
-  ensureFloatingClose(detail);
-  if(detail.dataset.etsyDetailProductKey===key)return;
-  detail.dataset.etsyDetailProductKey=key;detail.classList.add('ynot-etsy-detail');
-  clearDetail(detail);
+  if(!(detail instanceof HTMLElement))return;const product=matchProduct(detail);if(!product)return;const key=String(product.id||product.listingId||norm(product.title));
+  document.body.classList.add('ynot-product-popup-open','ynot-any-product-popup-open','ynot-etsy-popup-open');ensureFloatingClose(detail);
+  if(detail.dataset.etsyDetailProductKey===key)return;detail.dataset.etsyDetailProductKey=key;detail.classList.add('ynot-etsy-detail');clearDetail(detail);
   const copy=detail.querySelector('.lv4-detailcopy');if(!(copy instanceof HTMLElement))return;
-  if(String(product.description||'').trim()){
-   const button=document.createElement('button');button.type='button';button.className='ynot-etsy-description-toggle';button.textContent='Description';
-   const panel=document.createElement('div');panel.className='ynot-etsy-description';panel.hidden=true;panel.textContent=String(product.description||'').trim();
-   button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();panel.hidden=!panel.hidden;button.classList.toggle('active',!panel.hidden)});
-   copy.append(button,panel);
-  }
-  const toggle=document.createElement('button');toggle.type='button';toggle.className='ynot-etsy-review-toggle';toggle.textContent='Reviews';
-  const panel=document.createElement('div');panel.className='ynot-etsy-reviews';panel.hidden=true;
-  panel.innerHTML='<div class="ynot-etsy-review-loading">Loading Etsy reviews…</div>';
-  toggle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();panel.hidden=!panel.hidden;toggle.classList.toggle('active',!panel.hidden)});
-  copy.append(toggle,panel);
+  const description=String(product.description||'').trim();
+  const descriptionButton=document.createElement('button');descriptionButton.type='button';descriptionButton.className='ynot-etsy-description-toggle';descriptionButton.textContent='Description';descriptionButton.setAttribute('aria-expanded','false');
+  const descriptionPanel=document.createElement('div');descriptionPanel.className='ynot-etsy-description';descriptionPanel.hidden=true;descriptionPanel.textContent=description||'No seller description was supplied for this listing.';
+  descriptionButton.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const next=descriptionPanel.hidden;descriptionPanel.hidden=!next;descriptionButton.classList.toggle('active',next);descriptionButton.setAttribute('aria-expanded',String(next))});copy.append(descriptionButton,descriptionPanel);
+  const toggle=document.createElement('button');toggle.type='button';toggle.className='ynot-etsy-review-toggle';toggle.textContent='Reviews';toggle.setAttribute('aria-expanded','false');
+  const panel=document.createElement('div');panel.className='ynot-etsy-reviews';panel.hidden=true;panel.innerHTML='<div class="ynot-etsy-review-loading">Loading up to 5 Etsy reviews…</div>';
+  toggle.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();const next=panel.hidden;panel.hidden=!next;toggle.classList.toggle('active',next);toggle.setAttribute('aria-expanded',String(next))});copy.append(toggle,panel);
   const data=await reviewsFor(product);if(!detail.isConnected||detail.dataset.etsyDetailProductKey!==key)return;
-  const reviews=Array.isArray(data.reviews)?data.reviews.filter(r=>Number(r?.rating)>0||String(r?.text||'').trim()||String(r?.image||'').trim()):[];
-  const count=Number(data.reviewCount)||reviews.length,value=Number(data.rating)||0;
-  toggle.textContent=count?`Reviews (${count})`:'Reviews';
-  panel.innerHTML='';
+  const reviews=Array.isArray(data.reviews)?data.reviews.filter(r=>Number(r?.rating)>0||String(r?.text||'').trim()||String(r?.image||'').trim()).slice(0,5):[];const count=Number(data.reviewCount)||reviews.length,value=Number(data.rating)||0;
+  toggle.textContent=count?`Reviews (${count})`:'Reviews';panel.innerHTML='';
   if(value>0){const summary=document.createElement('div');summary.className='ynot-etsy-review-summary';summary.innerHTML=`<span>${stars(value)}</span><b>${value.toFixed(1)}</b>${count?`<small>${count} review${count===1?'':'s'}</small>`:''}`;panel.appendChild(summary)}
-  const photoReviews=reviews.filter(r=>String(r?.image||'').trim());
-  if(photoReviews.length){const strip=document.createElement('div');strip.className='ynot-etsy-review-photo-strip';for(const review of photoReviews.slice(0,8)){const img=document.createElement('img');img.src=String(review.image);img.alt='Customer review photo';img.loading='lazy';img.decoding='async';strip.appendChild(img)}panel.appendChild(strip)}
-  const list=document.createElement('div');list.className='ynot-etsy-review-list';reviews.slice(0,8).forEach(review=>list.appendChild(reviewCard(review)));if(reviews.length)panel.appendChild(list);
-  if(!reviews.length){const empty=document.createElement('div');empty.className='ynot-etsy-review-empty';empty.textContent=data.error?'Reviews are temporarily unavailable for this Etsy listing.':'No listing-specific reviews were returned by Etsy for this product.';panel.appendChild(empty)}
+  const photoReviews=reviews.filter(r=>String(r?.image||'').trim());if(photoReviews.length){const strip=document.createElement('div');strip.className='ynot-etsy-review-photo-strip';for(const review of photoReviews){const img=document.createElement('img');img.src=String(review.image);img.alt='Customer review photo';img.loading='lazy';img.decoding='async';strip.appendChild(img)}panel.appendChild(strip)}
+  const list=document.createElement('div');list.className='ynot-etsy-review-list';reviews.forEach(review=>list.appendChild(reviewCard(review)));if(reviews.length)panel.appendChild(list);if(!reviews.length){const empty=document.createElement('div');empty.className='ynot-etsy-review-empty';empty.textContent=data.error?'Reviews are temporarily unavailable for this Etsy listing.':'No listing-specific reviews were returned by Etsy for this product.';panel.appendChild(empty)}
  }
- function scan(){
-  removeBubbleRatings();
-  const detail=document.querySelector('.lv4-detail');
-  if(detail instanceof HTMLElement){const product=matchProduct(detail);if(product)enhanceDetail(detail);else{removeFloatingClose();document.body.classList.remove('ynot-etsy-popup-open')}}
-  else{removeFloatingClose();document.body.classList.remove('ynot-product-popup-open','ynot-any-product-popup-open','ynot-etsy-popup-open')}
- }
- let frame=0;const schedule=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;scan()})};
- const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true,characterData:true});
- window.addEventListener('ynot:catalog-source',schedule);schedule();
+ function scan(){removeBubbleRatings();const detail=document.querySelector('.lv4-detail');if(detail instanceof HTMLElement){const product=matchProduct(detail);if(product)enhanceDetail(detail);else{removeFloatingClose();document.body.classList.remove('ynot-etsy-popup-open')}}else{removeFloatingClose();document.body.classList.remove('ynot-product-popup-open','ynot-any-product-popup-open','ynot-etsy-popup-open')}}
+ let frame=0;const schedule=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;scan()})};const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true,characterData:true});window.addEventListener('ynot:catalog-source',schedule);schedule();
 })();
