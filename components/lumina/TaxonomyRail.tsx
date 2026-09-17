@@ -117,14 +117,12 @@ export default function TaxonomyRail(){
   const next=selected.includes(label)?selected.filter(x=>x!==label):[...selected,label].slice(-4);setSelected(next);searchNow(category,subcategory,next);
  }
  function back(){
-  if(stage==="attributes"){setStage("subcategory");setSelected([]);searchNow(category,subcategory);return}
+  if(stage==="attributes"){setStage("subcategory");setSelected([]);searchNow(category);return}
   if(stage==="subcategory"){setStage("category");setSubcategory("");setSelected([]);window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags:[],root:"",path:[]}}))}
  }
  return <div className="ynot-taxonomy-progressive ynot-subcat ynot-taxonomy-inline" aria-label="Shopping category navigator">
   <div className="ynot-subcat-bubbles">
    {stage!=="category"&&<button className="ynot-taxonomy-inline-back" onClick={back} aria-label="Back to previous category level">←</button>}
-   {stage==="subcategory"&&<button className="selected ynot-taxonomy-context" disabled>{category.label}</button>}
-   {stage==="attributes"&&<button className="selected ynot-taxonomy-context" disabled>{subcategory}</button>}
    {options.map((label,index)=><button key={`${stage}-${categoryId}-${subcategory}-${label}-${index}`} className={stage==="attributes"&&selected.includes(label)?"selected":""} onClick={()=>choose(label)}>{label}</button>)}
   </div>
  </div>
