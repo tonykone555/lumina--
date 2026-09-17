@@ -1,7 +1,6 @@
 "use client";
 
 import {useMemo,useState} from "react";
-import {ChevronLeft} from "lucide-react";
 import {SHOP_TAXONOMY,taxonomyCategory,type ShopCategory} from "./shopTaxonomy";
 
 type Stage="category"|"subcategory"|"attributes";
@@ -107,11 +106,26 @@ export default function TaxonomyRail(){
  const[stage,setStage]=useState<Stage>("category"),[categoryId,setCategoryId]=useState("fashion"),[subcategory,setSubcategory]=useState(""),[selected,setSelected]=useState<string[]>([]);
  const category=useMemo(()=>taxonomyCategory(categoryId),[categoryId]);
  const options=useMemo(()=>stage==="category"?SHOP_TAXONOMY.map(x=>x.label):stage==="subcategory"?category.sub:attributesFor(subcategory),[stage,category,subcategory]);
- function choose(label:string){if(stage==="category"){const next=SHOP_TAXONOMY.find(x=>x.label===label);if(!next)return;setCategoryId(next.id);setSubcategory("");setSelected([]);setStage("subcategory");searchNow(next);return}if(stage==="subcategory"){setSubcategory(label);setSelected([]);setStage("attributes");searchNow(category,label);return}const next=selected.includes(label)?selected.filter(x=>x!==label):[...selected,label].slice(-4);setSelected(next);searchNow(category,subcategory,next)}
- function back(){if(stage==="attributes"){setStage("subcategory");setSelected([]);searchNow(category,subcategory)}else if(stage==="subcategory"){setStage("category");setSubcategory("");setSelected([])}}
- return <div className="ynot-taxonomy-progressive ynot-subcat" aria-label="Shopping category navigator">
-  {stage!=="category"&&<div className="ynot-subcat-head"><button className="ynot-subcat-back" onClick={back} aria-label="Back"><ChevronLeft/></button><div><small>{stage==="subcategory"?"CATEGORY":"REFINE"}</small><b>{stage==="subcategory"?category.label:subcategory}</b><span>{stage==="subcategory"?"Choose a subcategory":"Add up to four attributes for more accurate results"}</span></div></div>}
-  {stage==="attributes"&&selected.length>0&&<div className="ynot-subcat-head ynot-subcat-head-minimal"><span className="ynot-subcat-count active">{selected.length}</span><b>{selected.join(" + ")}</b></div>}
-  <div className="ynot-subcat-bubbles">{options.map((label,index)=><button key={`${stage}-${categoryId}-${subcategory}-${label}-${index}`} className={stage==="attributes"&&selected.includes(label)?"selected":""} onClick={()=>choose(label)}>{label}</button>)}</div>
+ function choose(label:string){
+  if(stage==="category"){
+   const next=SHOP_TAXONOMY.find(x=>x.label===label);if(!next)return;
+   setCategoryId(next.id);setSubcategory("");setSelected([]);setStage("subcategory");searchNow(next);return;
+  }
+  if(stage==="subcategory"){
+   setSubcategory(label);setSelected([]);setStage("attributes");searchNow(category,label);return;
+  }
+  const next=selected.includes(label)?selected.filter(x=>x!==label):[...selected,label].slice(-4);setSelected(next);searchNow(category,subcategory,next);
+ }
+ function back(){
+  if(stage==="attributes"){setStage("subcategory");setSelected([]);searchNow(category,subcategory);return}
+  if(stage==="subcategory"){setStage("category");setSubcategory("");setSelected([]);window.dispatchEvent(new CustomEvent("shop:tags-changed",{detail:{tags:[],root:"",path:[]}}))}
+ }
+ return <div className="ynot-taxonomy-progressive ynot-subcat ynot-taxonomy-inline" aria-label="Shopping category navigator">
+  <div className="ynot-subcat-bubbles">
+   {stage!=="category"&&<button className="ynot-taxonomy-inline-back" onClick={back} aria-label="Back to previous category level">←</button>}
+   {stage==="subcategory"&&<button className="selected ynot-taxonomy-context" disabled>{category.label}</button>}
+   {stage==="attributes"&&<button className="selected ynot-taxonomy-context" disabled>{subcategory}</button>}
+   {options.map((label,index)=><button key={`${stage}-${categoryId}-${subcategory}-${label}-${index}`} className={stage==="attributes"&&selected.includes(label)?"selected":""} onClick={()=>choose(label)}>{label}</button>)}
+  </div>
  </div>
 }
