@@ -1,16 +1,20 @@
 import type {Metadata} from "next";
 import "./admin-scroll.css";
+import "./ynot-glass-theme.css";
 
 export const metadata:Metadata={title:"YNOT Ad Factory",robots:{index:false,follow:false,noarchive:true,nocache:true}};
 
 export default function AdFactoryLayout({children}:{children:React.ReactNode}){
  return <div className="ynot-admin-scroll-root">
-  <div style={{position:"sticky",top:0,zIndex:70,display:"flex",gap:8,alignItems:"center",padding:"8px 14px",background:"rgba(7,9,10,.92)",backdropFilter:"blur(16px)",borderBottom:"1px solid rgba(255,255,255,.07)",fontFamily:"Inter,system-ui,sans-serif",overflowX:"auto"}}>
-   <a href="/admin/ads" style={{color:"#f1f4f2",textDecoration:"none",fontSize:11,fontWeight:800,padding:"8px 10px",borderRadius:9,background:"rgba(255,255,255,.05)",whiteSpace:"nowrap"}}>Ad Factory</a>
-   <a href="/admin/ads/intelligence" style={{color:"#9be895",textDecoration:"none",fontSize:11,fontWeight:800,padding:"8px 10px",borderRadius:9,border:"1px solid rgba(148,232,141,.16)",background:"rgba(148,232,141,.05)",whiteSpace:"nowrap"}}>Deep Intelligence</a>
-   <a href="/admin/ads/brain" style={{color:"#d4f7d1",textDecoration:"none",fontSize:11,fontWeight:800,padding:"8px 10px",borderRadius:9,border:"1px solid rgba(148,232,141,.28)",background:"rgba(148,232,141,.1)",whiteSpace:"nowrap"}}>Intelligence Brain</a>
-   <span style={{marginLeft:"auto",color:"#667075",fontSize:9,letterSpacing:".1em",whiteSpace:"nowrap"}}>OWNER ONLY</span>
-  </div>
+  <nav className="ynot-admin-nav" aria-label="YNOT owner advertising tools">
+   <a className="ynot-admin-orb" href="/admin/ads" aria-label="YNOT Ad Factory">YNOT</a>
+   <a className="ynot-admin-link" href="/admin/ads">Ad Factory</a>
+   <a className="ynot-admin-link ynot-admin-link-ai" href="/admin/ads/intelligence">Deep Intelligence</a>
+   <a className="ynot-admin-link ynot-admin-link-ai" href="/admin/ads/brain">Intelligence Brain</a>
+   <a className="ynot-admin-link ynot-admin-link-ai" href="/admin/ads/automation">Automations</a>
+   <a className="ynot-admin-link ynot-admin-link-deals" href="/?deals=1">YNOT Deals</a>
+   <span className="ynot-admin-owner">OWNER CONTROL ROOM</span>
+  </nav>
   {children}
  </div>
 }
