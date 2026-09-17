@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppShell from "@/components/lumina/AppShell";
+import YnotDealsAutoOpen from "@/components/lumina/YnotDealsAutoOpen";
 import {SEO_CATEGORIES} from "@/lib/seo-categories";
 
 const BASE="https://ynotworld.app";
@@ -55,6 +56,7 @@ export default function Home(){
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
     <h1 style={{position:"absolute",width:1,height:1,padding:0,margin:-1,overflow:"hidden",clip:"rect(0,0,0,0)",whiteSpace:"nowrap",border:0}}>YNOT World — AI shopping, visual product search and product discovery</h1>
     <AppShell/>
+    <YnotDealsAutoOpen/>
     <section aria-label="Explore YNOT shopping categories" style={{background:"#080909",color:"#f6f6f2",padding:"44px clamp(24px,5vw,68px) 56px",fontFamily:"ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"}}>
       <div style={{maxWidth:1040,margin:"0 auto",borderTop:"1px solid rgba(255,255,255,.12)",paddingTop:30}}>
         <p style={{fontSize:12,textTransform:"uppercase",letterSpacing:".16em",opacity:.48,margin:"0 0 12px"}}>YNOT World · AI shopping · visual discovery</p>
