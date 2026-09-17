@@ -14,11 +14,11 @@ function score(ai:any,price:number){const ticket=price>=250?20:price>=80?12:0;re
 async function patch(id:string,body:any){return adminDb(`ynot_automation_jobs?id=eq.${encodeURIComponent(id)}`,{method:"PATCH",headers:{Prefer:"return=representation"},body:JSON.stringify({...body,updated_at:new Date().toISOString()})})}
 
 export async function GET(req:NextRequest){
- const ua=req.headers.get("user-agent")||"",cronSecret=String(process.env.CRON_SECRET||""),auth=req.headers.get("authorization")||"";
- if(cronSecret){if(auth!==`Bearer ${cronSecret}`)return NextResponse.json({ok:false,error:"UNAUTHORIZED"},{status:401})}
- else if(!ua.toLowerCase().includes("vercel-cron"))return NextResponse.json({ok:false,error:"CRON_ONLY"},{status:401});
  const queued=await adminDb("ynot_automation_jobs?status=eq.queued&select=*&order=created_at.asc&limit=1"),job=queued?.[0];
  if(!job)return NextResponse.json({ok:true,processed:false});
+ const ua=req.headers.get("user-agent")||"",cronSecret=String(process.env.CRON_SECRET||""),auth=req.headers.get("authorization")||"",manualToken=String(req.nextUrl.searchParams.get("token")||""),jobToken=String(job?.payload?.run_token||"");
+ const validManual=Boolean(manualToken&&jobToken&&manualToken===jobToken&&job.source==="chatgpt"),validCron=cronSecret?auth===`Bearer ${cronSecret}`:ua.toLowerCase().includes("vercel-cron");
+ if(!validManual&&!validCron)return NextResponse.json({ok:false,error:"UNAUTHORIZED"},{status:401});
  await patch(job.id,{status:"running",progress:8,started_at:new Date().toISOString(),error:null});
  try{
   const prompt=String(job.prompt||job.title||"").trim(),research=await researchMarketWithWeb(job.title||prompt,prompt,null);
