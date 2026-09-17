@@ -1,0 +1,23 @@
+"use client";
+
+import {FormEvent,useEffect,useMemo,useState} from "react";
+import {authedFetch,readSession} from "@/lib/ynot/supabase-browser";
+import styles from "./automation.module.css";
+
+type Job={id:string;created_at:string;updated_at:string;job_type:string;title:string;prompt:string;status:string;progress:number;result_summary?:string;result?:any;error?:string};
+const TYPES=[["high_ticket_radar","High-ticket radar"],["market_research","Market research"],["daily_radar","Broad opportunity radar"],["creative_research","Creative research"]] as const;
+
+export default function AutomationPage(){
+ const[jobs,setJobs]=useState<Job[]>([]),[access,setAccess]=useState<"loading"|"ok"|"signin"|"error">("loading"),[jobType,setJobType]=useState("high_ticket_radar"),[prompt,setPrompt]=useState("professional automotive diagnostic scanners and upgrade ecosystem"),[busy,setBusy]=useState(false),[notice,setNotice]=useState("");
+ async function load(){if(!readSession()){setAccess("signin");return}const r=await authedFetch("/api/admin/ads/automation"),d=await r.json().catch(()=>({}));if(!r.ok){setAccess(r.status===401?"signin":"error");return}setJobs(d.jobs||[]);setAccess("ok")}
+ useEffect(()=>{void load();const timer=window.setInterval(()=>void load(),8000);return()=>window.clearInterval(timer)},[]);
+ async function submit(e:FormEvent){e.preventDefault();if(!prompt.trim())return;setBusy(true);setNotice("");try{const r=await authedFetch("/api/admin/ads/automation",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({jobType,title:prompt.trim(),prompt:prompt.trim()})}),d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Unable to queue automation");setNotice("Queued. YNOT will persist the result here when the worker finishes.");await load()}catch(e){setNotice(e instanceof Error?e.message:"Unable to queue automation")}finally{setBusy(false)}}
+ const active=useMemo(()=>jobs.filter(j=>j.status==="queued"||j.status==="running"),[jobs]);
+ if(access==="loading")return <main className={styles.shell}><div className={styles.center}>Loading automation control room…</div></main>;
+ if(access!=="ok")return <main className={styles.shell}><div className={styles.center}><h1>Owner access required</h1><p>{access==="signin"?"Sign in to your YNOT owner account first.":"Automation status could not be loaded."}</p></div></main>;
+ return <main className={styles.shell}><div className={styles.wrap}>
+  <header className={styles.hero}><div><small>YNOT AUTOMATION</small><h1>Ask once. Come back to saved results.</h1><p>Queue commercial research from the admin or from ChatGPT. Jobs are persisted in Supabase, processed by the YNOT worker, and stay available after the browser is closed.</p></div><div className={styles.live}><i/>{active.length?`${active.length} active job${active.length===1?"":"s"}`:"Worker ready"}</div></header>
+  <section className={styles.composer}><form onSubmit={submit}><select value={jobType} onChange={e=>setJobType(e.target.value)}>{TYPES.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select><input value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="What should YNOT research?"/><button disabled={busy}>{busy?"Queuing…":"Run automation"}</button></form>{notice&&<p>{notice}</p>}<div className={styles.rules}><span>Results saved automatically</span><span>AI + web research</span><span>Shopify validation</span><span>No automatic ad spend</span></div></section>
+  <section className={styles.jobs}><div className={styles.head}><div><small>PERSISTENT RUNS</small><h2>Automation history</h2></div><button onClick={()=>void load()}>Refresh</button></div>{jobs.length?jobs.map(job=><article key={job.id} className={styles.job}><div className={styles.jobTop}><div><small>{job.job_type.replaceAll("_"," ")}</small><h3>{job.title}</h3></div><b data-status={job.status}>{job.status.replaceAll("_"," ")}</b></div><div className={styles.progress}><i style={{width:`${job.progress||0}%`}}/></div><p>{job.result_summary||job.error||"Waiting for the worker…"}</p>{job.result?.topProducts?.length?<details><summary>Top saved opportunities</summary><div className={styles.products}>{job.result.topProducts.slice(0,12).map((p:any)=><div key={String(p.id)}>{p.image?<img src={p.image} alt=""/>:null}<span><b>{p.title}</b><small>{p.brand||"Shopify"} · {p.price?`${p.price} ${p.currency||""}`:"price n/a"}</small><em>{p.ticket} ticket · score {p.commercialScore}</em></span></div>)}</div></details>:null}<footer><span>{new Date(job.created_at).toLocaleString()}</span><code>{job.id.slice(0,8)}</code></footer></article>):<div className={styles.empty}>No automation runs yet.</div>}</section>
+ </div></main>
+}
