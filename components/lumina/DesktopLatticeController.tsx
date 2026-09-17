@@ -1,7 +1,6 @@
 "use client";
 
 import {useEffect} from "react";
-import DesktopDetailStepper from "./DesktopDetailStepper";
 
 const WORLD_CX=100000;
 const WORLD_CY=100000;
@@ -76,7 +75,7 @@ function applyLattice(){
  warmImages(products,stage);
 }
 
-export default function DesktopLatticeController(){
+export default function DesktopLatticeController():null{
  useEffect(()=>{
   let frame=0,stageObserver:MutationObserver|null=null,rebindTimer:number|null=null;
   const schedule=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;applyLattice()})};
@@ -88,5 +87,5 @@ export default function DesktopLatticeController(){
   rebindTimer=window.setInterval(()=>{if(!document.querySelector(".lv4-stage")){stageObserver?.disconnect();stageObserver=null}else if(!stageObserver)bindStage()},2000);
   return()=>{stageObserver?.disconnect();if(frame)cancelAnimationFrame(frame);delayed.forEach(clearTimeout);if(rebindTimer)clearInterval(rebindTimer);window.removeEventListener("resize",onResize);window.removeEventListener("shop:tag-search",onSearch as EventListener);window.removeEventListener("ynot:world-focus",onFocus as EventListener);window.removeEventListener("pointerup",onPointer)}
  },[]);
- return <DesktopDetailStepper/>;
+ return null;
 }
