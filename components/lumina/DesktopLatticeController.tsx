@@ -4,10 +4,6 @@ import {useEffect} from "react";
 
 const WORLD_CX=100000;
 const WORLD_CY=100000;
-/* The entry camera already maps WORLD_CX/WORLD_CY to the physical viewport centre.
-   Keep the landing mic/category ring on that real origin instead of compensating
-   with a guessed world-space Y offset. Category/product worlds retain their own
-   lower visual landing position. */
 const HOME_Y_OFFSET=0;
 const PRODUCT_Y_OFFSET=340;
 const DESKTOP_COLUMNS=39;
@@ -36,7 +32,14 @@ function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
  categories.forEach((node,index)=>{const angle=index/categories.length*Math.PI*2-Math.PI/2;setImportant(node,"left",`${WORLD_CX+Math.cos(angle)*radius}px`);setImportant(node,"top",`${centerY+Math.sin(angle)*radius}px`)})
 }
 
-function warmImages(products:HTMLElement[]){if(window.innerWidth<900)return;products.slice(0,220).forEach(product=>{const image=product.querySelector<HTMLImageElement>("img");if(!image)return;image.loading="eager";image.setAttribute("fetchpriority","high");void image.decode?.().catch(()=>{})})}
+function warmImages(products:HTMLElement[]){
+ if(window.innerWidth<900)return;
+ products.forEach((product,index)=>{
+  const image=product.querySelector<HTMLImageElement>("img");if(!image)return;
+  if(index<12){image.loading="eager";image.setAttribute("fetchpriority","high");void image.decode?.().catch(()=>{})}
+  else{image.loading="lazy";image.setAttribute("fetchpriority","low")}
+ })
+}
 
 function applyLattice(){
  if(typeof window==="undefined")return;
@@ -47,10 +50,20 @@ function applyLattice(){
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");return}
  shell.classList.add("ynot-desktop-lattice-active");warmImages(products);
  const {stepX,stepY,size}=metrics();
- products.forEach((product,index)=>{const cell=horizontalCell(index),stagger=(Math.abs(cell.y)%2)*stepX*.5,x=WORLD_CX+cell.x*stepX+stagger,y=WORLD_CY+PRODUCT_Y_OFFSET+cell.y*stepY,signature=`wide4:${stepX}:${stepY}:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
+ products.forEach((product,index)=>{const cell=horizontalCell(index),stagger=(Math.abs(cell.y)%2)*stepX*.5,x=WORLD_CX+cell.x*stepX+stagger,y=WORLD_CY+PRODUCT_Y_OFFSET+cell.y*stepY,signature=`stable5:${stepX}:${stepY}:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
 }
 
 export default function DesktopLatticeController():null{
- useEffect(()=>{let frame=0;const schedule=()=>{if(frame)cancelAnimationFrame(frame);frame=requestAnimationFrame(()=>{frame=0;applyLattice()})};const observer=new MutationObserver(mutations=>{if(mutations.every(m=>m.target instanceof HTMLElement&&m.target.closest(".ynot-world-desktop-prev,.ynot-world-desktop-next,.ynot-deal-desktop-prev,.ynot-deal-desktop-next")))return;schedule()});observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class","style"]});window.addEventListener("resize",schedule);window.addEventListener("shop:tag-search",schedule as EventListener);window.addEventListener("ynot:world-focus",schedule as EventListener);window.addEventListener("pointerup",schedule,{passive:true});schedule();const delayed=[40,100,220,480,900,1500].map(ms=>window.setTimeout(schedule,ms));return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame);delayed.forEach(clearTimeout);window.removeEventListener("resize",schedule);window.removeEventListener("shop:tag-search",schedule as EventListener);window.removeEventListener("ynot:world-focus",schedule as EventListener);window.removeEventListener("pointerup",schedule)}},[]);
+ useEffect(()=>{
+  let frame=0,stageObserver:MutationObserver|null=null,rebindTimer:number|null=null;
+  const schedule=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;applyLattice()})};
+  const bindStage=()=>{stageObserver?.disconnect();const stage=document.querySelector<HTMLElement>(".lv4-stage");if(!stage)return false;stageObserver=new MutationObserver(mutations=>{if(mutations.some(m=>m.type==="childList"&&(m.addedNodes.length||m.removedNodes.length)))schedule()});stageObserver.observe(stage,{childList:true});return true};
+  schedule();bindStage();
+  const delayed=[80,260].map(ms=>window.setTimeout(()=>{bindStage();schedule()},ms));
+  const onResize=()=>schedule(),onSearch=()=>{window.setTimeout(()=>{bindStage();schedule()},0)},onFocus=()=>schedule();
+  window.addEventListener("resize",onResize,{passive:true});window.addEventListener("shop:tag-search",onSearch as EventListener);window.addEventListener("ynot:world-focus",onFocus as EventListener);
+  rebindTimer=window.setInterval(()=>{if(!document.querySelector(".lv4-stage")){stageObserver?.disconnect();stageObserver=null}else if(!stageObserver)bindStage()},2000);
+  return()=>{stageObserver?.disconnect();if(frame)cancelAnimationFrame(frame);delayed.forEach(clearTimeout);if(rebindTimer)clearInterval(rebindTimer);window.removeEventListener("resize",onResize);window.removeEventListener("shop:tag-search",onSearch as EventListener);window.removeEventListener("ynot:world-focus",onFocus as EventListener)}
+ },[]);
  return null;
 }
