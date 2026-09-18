@@ -1,7 +1,7 @@
 import type {DiscoveryEdge,InstagramProfile} from "./types";
 
 const API="https://api.apify.com/v2";
-const KEYWORD_ACTOR=process.env.APIFY_KEYWORD_ACTOR||"publicsignallabs~instagram-account-search";
+const KEYWORD_ACTOR=process.env.APIFY_KEYWORD_ACTOR||"apify~instagram-search-scraper";
 const FALLBACK_KEYWORD_ACTOR=process.env.APIFY_FALLBACK_KEYWORD_ACTOR||"apify~instagram-search-scraper";
 const SECONDARY_KEYWORD_ACTOR=process.env.APIFY_SECONDARY_KEYWORD_ACTOR||"maximedupre~instagram-user-search-scraper";
 const RELATED_ACTOR=process.env.APIFY_RELATED_ACTOR||"publicsignallabs~instagram-related-profiles";
@@ -61,7 +61,7 @@ function parseKeywordRows(rows:Record<string,unknown>[],fallbackQuery:string){co
 export async function keywordSearch(queries:string[],maxPagesPerQuery=10,enrichProfiles=false){
  const cleanQueries=queries.map(query=>query.trim()).filter(Boolean);if(!cleanQueries.length)return[];
  let rows:Record<string,unknown>[]=[];
- try{rows=await runActor(KEYWORD_ACTOR,{queries:cleanQueries,maxPagesPerQuery:Math.max(1,Math.min(10,maxPagesPerQuery)),enrichProfiles})}catch(error){console.warn("Primary Instagram keyword actor failed",error)}
+ try{rows=await runActor(KEYWORD_ACTOR,{search:cleanQueries.join(", "),searchType:"user",searchLimit:Math.max(40,Math.min(250,maxPagesPerQuery*40)),enhanceUserSearchWithFacebookPage:false,liveSearch:true},120000)}catch(error){console.warn("Primary Instagram keyword actor failed",error)}
  let profiles=parseKeywordRows(rows,cleanQueries[0]);if(profiles.length)return profiles;
  try{
   const fallbackRows=await runActor(FALLBACK_KEYWORD_ACTOR,{search:cleanQueries.join(", "),searchType:"user",searchLimit:10,enhanceUserSearchWithFacebookPage:false,liveSearch:true});
