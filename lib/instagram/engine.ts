@@ -15,7 +15,7 @@ export function deriveKeywordVariants(query:string,learned:string[]=[]){
 
 function profileKey(p:InstagramProfile){return p.username.toLowerCase()}
 function relevanceTerms(query:string){return normalizeQuery(query).split(/[^a-z0-9]+/).filter(t=>t.length>2&&!["the","and","for","brand","brands","find","some"].includes(t))}
-function contentMatch(p:InstagramProfile,query:string){const hay=`${p.fullName||""} ${p.biography||""} ${p.category||""} ${p.website||""} ${p.recentPostCaption||""}`.toLowerCase();return relevanceTerms(query).reduce((n,t)=>n+(hay.includes(t)?1:0),0)}
+function contentMatch(p:InstagramProfile,query:string){const hay=`${p.biography||""} ${p.category||""} ${p.website||""} ${p.recentPostCaption||""}`.toLowerCase();return relevanceTerms(query).reduce((n,t)=>n+(hay.includes(t)?1:0),0)}
 function baseScore(p:InstagramProfile,query=""){const rank=p.rank&&p.rank>0?Math.max(0,25-Math.min(25,p.rank)):8;return 20+rank+(p.profilePictureUrl?4:0)+(p.recentPostImageUrl?8:0)+(p.website?5:0)+(p.isBusiness?4:0)+contentMatch(p,query)*14}
 
 function mergeProfile(current:DiscoveryProfile|undefined,next:InstagramProfile,parent?:string,depth=0,query=""):DiscoveryProfile{
@@ -54,7 +54,11 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  const freshKeywords=keywords.filter(k=>!state.searchedKeywords.has(k.toLowerCase()));
  if(freshKeywords.length&&profiles.size<target){
   const keywordRows=await keywordSearch(freshKeywords,keywordPages,false);
-  const enrichedKeywordRows=await enrichProfiles(keywordRows,300);
+  // Tigerless-style qualification: discovery may produce broad candidates, but a handle/name match
+  // is never niche evidence. Only enriched profile/content fields can qualify an account.
+  // Enrich a bounded candidate pool once, then discard accounts whose bio/category/site/post content
+  // does not support the requested niche.
+  const enrichedKeywordRows=await enrichProfiles(keywordRows,120);
   const relevantKeywordRows=enrichedKeywordRows.filter(p=>contentMatch(p,query)>0);
   for(const p of relevantKeywordRows){const key=profileKey(p);profiles.set(key,mergeProfile(profiles.get(key),p,undefined,0,query))}
   await markKeywordsSearched(state.searchId,freshKeywords);
@@ -64,7 +68,8 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  const parentNames=[...new Set([...seedUsernames,...candidateParents.map(p=>p.username)])].slice(0,seedExpansionLimit+seedUsernames.length);
  if(candidateParents.length&&profiles.size<target){
   const related=await relatedSearch(candidateParents.map(p=>p.username),relatedPerSeed,Boolean(input.enrichProfiles));
-  const enrichedRelated=await enrichProfiles(related.profiles,300);related.profiles=enrichedRelated;
+  // Related profiles are also qualified through the same single enrichment source.
+  const enrichedRelated=await enrichProfiles(related.profiles,120);related.profiles=enrichedRelated;
   mergeRelated(profiles,edges,related,1,query);
  }
 
