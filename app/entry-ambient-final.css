@@ -214,3 +214,33 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
   .ynot-entry-color-slider::-webkit-scrollbar{display:none}
   .ynot-entry-color-slider button{width:23px;height:23px;min-width:23px}
 }
+
+/* Keep the colour bubble clearly above the mobile suggested chips/search.
+   Centering it avoids the left-side controls and makes it obvious on the entry screen. */
+@media(max-width:760px){
+  .ynot-entry-color-control{
+    left:50%!important;
+    right:auto!important;
+    bottom:calc(154px + env(safe-area-inset-bottom))!important;
+    transform:translateX(-50%)!important;
+    z-index:260!important;
+  }
+  .ynot-entry-color-slider{
+    position:absolute!important;
+    left:50%!important;
+    bottom:42px!important;
+    transform:translateX(-50%)!important;
+    transform-origin:center bottom!important;
+    max-width:min(330px,calc(100vw - 28px))!important;
+  }
+  .ynot-entry-color-trigger{
+    width:38px!important;
+    height:38px!important;
+    border-color:rgba(255,255,255,.48)!important;
+    box-shadow:
+      inset 4px 5px 8px rgba(255,255,255,.2),
+      inset -6px -7px 11px rgba(0,0,0,.28),
+      0 10px 28px rgba(0,0,0,.34),
+      0 0 22px rgb(var(--ynot-bubble-rgb) / .24)!important;
+  }
+}
