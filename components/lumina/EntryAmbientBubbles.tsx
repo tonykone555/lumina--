@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 
 const BUBBLES=[
  {x:"5%",y:"17%",s:112,d:12.5,delay:-2.4,depth:.82,blur:0},
@@ -15,28 +15,7 @@ const BUBBLES=[
  {x:"76%",y:"45%",s:38,d:10.2,delay:-2.8,depth:.4,blur:.42},
 ];
 
-const COLOURS=[
- {key:"silver",label:"Silver",rgb:"205 211 214",glow:"245 248 250"},
- {key:"ice",label:"Ice",rgb:"121 190 255",glow:"198 230 255"},
- {key:"violet",label:"Violet",rgb:"163 129 255",glow:"221 209 255"},
- {key:"pink",label:"Pink",rgb:"255 118 186",glow:"255 207 231"},
- {key:"amber",label:"Amber",rgb:"255 173 82",glow:"255 224 183"},
- {key:"brown",label:"Brown",rgb:"139 92 62",glow:"215 177 145"},
- {key:"emerald",label:"Emerald",rgb:"77 215 164",glow:"191 255 232"},
- {key:"red",label:"Red",rgb:"255 92 92",glow:"255 204 204"},
-] as const;
-
-const QUICK_SEARCHES=[
- {label:"Fashion",query:"fashion clothes shoes accessories"},
- {label:"Home",query:"home furniture decor lighting"},
- {label:"Fitness",query:"fitness gym gear activewear"},
- {label:"Beauty",query:"beauty skincare hair care"},
- {label:"Tech",query:"tech gadgets audio accessories"},
- {label:"Gifts",query:"gift ideas trending products"},
-] as const;
-
 const DISMISS_SELECTOR=[
- ".lv4-category-bubble",
  ".lv4-search button",
  ".lv4-search input",
  ".ynot-bottom-search button",
@@ -52,36 +31,39 @@ const DISMISS_SELECTOR=[
  ".ynot-compass-button",
 ].join(",");
 
+function categoryAtPoint(x:number,y:number){
+ const categories=[...document.querySelectorAll<HTMLButtonElement>(".lv4-category-bubble")];
+ return categories.find(button=>{
+  const rect=button.getBoundingClientRect();
+  const cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+  const radius=Math.max(rect.width,rect.height)*.52;
+  return Math.hypot(x-cx,y-cy)<=radius;
+ })||null;
+}
+
 export default function EntryAmbientBubbles(){
  const[home,setHome]=useState(true);
  const[dismissed,setDismissed]=useState(false);
- const[paletteOpen,setPaletteOpen]=useState(false);
- const[quickQuery,setQuickQuery]=useState("");
- const[colourKey,setColourKey]=useState<(typeof COLOURS)[number]["key"]>("silver");
- const colour=useMemo(()=>COLOURS.find(item=>item.key===colourKey)||COLOURS[0],[colourKey]);
-
- useEffect(()=>{
-  try{
-   const saved=localStorage.getItem("ynot-entry-bubble-colour") as (typeof COLOURS)[number]["key"]|null;
-   if(saved&&COLOURS.some(item=>item.key===saved))setColourKey(saved);
-  }catch{}
- },[]);
+ const[dragging,setDragging]=useState(false);
+ const[hoveredCategory,setHoveredCategory]=useState("");
+ const[position,setPosition]=useState<{x:number;y:number}|null>(null);
+ const pointerId=useRef<number|null>(null);
+ const lastHit=useRef<HTMLButtonElement|null>(null);
 
  useEffect(()=>{
   let frame=0;
   const sync=()=>{
    frame=0;
-   const landing=Boolean(document.querySelector(".lv4-shell.depth-worlds"));
-   setHome(landing);
+   setHome(Boolean(document.querySelector(".lv4-shell.depth-worlds")));
   };
   const queue=()=>{if(frame)return;frame=requestAnimationFrame(sync)};
   const observer=new MutationObserver(queue);
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class"]});
 
-  const dismiss=()=>{setDismissed(true);setPaletteOpen(false)};
+  const dismiss=()=>setDismissed(true);
   const onPointer=(event:PointerEvent)=>{
    const target=event.target as Element|null;
-   if(target?.closest(".ynot-entry-color-control"))return;
+   if(target?.closest(".ynot-entry-pointer"))return;
    if(target?.closest(DISMISS_SELECTOR))dismiss();
   };
   const onSubmit=(event:Event)=>{
@@ -117,36 +99,59 @@ export default function EntryAmbientBubbles(){
  },[]);
 
  const active=home&&!dismissed;
- const chooseColour=(key:(typeof COLOURS)[number]["key"])=>{
-  setColourKey(key);
-  try{localStorage.setItem("ynot-entry-bubble-colour",key)}catch{}
- };
 
- const runSearch=(value:string)=>{
-  const clean=value.trim();
-  if(clean.length<2)return;
-  const input=document.querySelector<HTMLInputElement>(".ynot-bottom-search.shop input,.ynot-bottom-search input");
-  const form=input?.closest("form");
-  if(input){
-   const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
-   setter?.call(input,clean);
-   input.dispatchEvent(new Event("input",{bubbles:true}));
+ function movePointer(x:number,y:number){
+  const margin=24;
+  const nx=Math.max(margin,Math.min(window.innerWidth-margin,x));
+  const ny=Math.max(120,Math.min(window.innerHeight-90,y));
+  setPosition({x:nx,y:ny});
+
+  const hit=categoryAtPoint(nx,ny);
+  if(lastHit.current&&lastHit.current!==hit)lastHit.current.classList.remove("ynot-pointer-target");
+  if(hit){
+   hit.classList.add("ynot-pointer-target");
+   lastHit.current=hit;
+   setHoveredCategory(hit.querySelector("b")?.textContent?.trim()||"Open");
+  }else{
+   lastHit.current=null;
+   setHoveredCategory("");
   }
-  setQuickQuery("");
-  setPaletteOpen(false);
-  if(form)form.requestSubmit();
-  else window.dispatchEvent(new CustomEvent("shop:tag-search",{detail:{query:clean,tags:[]}}));
- };
+ }
+
+ function startDrag(event:React.PointerEvent<HTMLButtonElement>){
+  event.preventDefault();
+  event.stopPropagation();
+  pointerId.current=event.pointerId;
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  setDragging(true);
+  movePointer(event.clientX,event.clientY);
+ }
+
+ function drag(event:React.PointerEvent<HTMLButtonElement>){
+  if(!dragging||pointerId.current!==event.pointerId)return;
+  event.preventDefault();
+  event.stopPropagation();
+  movePointer(event.clientX,event.clientY);
+ }
+
+ function endDrag(event:React.PointerEvent<HTMLButtonElement>){
+  if(pointerId.current!==event.pointerId)return;
+  event.preventDefault();
+  event.stopPropagation();
+  setDragging(false);
+  pointerId.current=null;
+  const hit=lastHit.current;
+  if(hit){
+   hit.classList.remove("ynot-pointer-target");
+   lastHit.current=null;
+   setHoveredCategory("");
+   setDismissed(true);
+   requestAnimationFrame(()=>hit.click());
+  }
+ }
 
  return <>
-  <div
-   className={`ynot-entry-ambient ${active?"active":""}`}
-   aria-hidden="true"
-   style={{
-    "--ynot-bubble-rgb":colour.rgb,
-    "--ynot-bubble-glow-rgb":colour.glow,
-   } as React.CSSProperties}
-  >
+  <div className={`ynot-entry-ambient ${active?"active":""}`} aria-hidden="true">
    {BUBBLES.map((bubble,index)=><i key={index} style={{
     left:bubble.x,
     top:bubble.y,
@@ -159,42 +164,18 @@ export default function EntryAmbientBubbles(){
    } as React.CSSProperties}/>)}
   </div>
 
-  {active&&<div
-   className={`ynot-entry-color-control ${paletteOpen?"open":""}`}
-   style={{
-    "--ynot-bubble-rgb":colour.rgb,
-    "--ynot-bubble-glow-rgb":colour.glow,
-   } as React.CSSProperties}
+  {active&&<button
+   type="button"
+   className={`ynot-entry-pointer ${dragging?"dragging":""} ${hoveredCategory?"over-category":""}`}
+   style={position?{left:position.x,top:position.y}:undefined}
+   aria-label={hoveredCategory?`Release to open ${hoveredCategory}`:"Drag to a category bubble"}
+   onPointerDown={startDrag}
+   onPointerMove={drag}
+   onPointerUp={endDrag}
+   onPointerCancel={endDrag}
   >
-   {paletteOpen&&<div className="ynot-entry-quick-panel">
-    <form className="ynot-entry-quick-search" onSubmit={event=>{event.preventDefault();runSearch(quickQuery)}}>
-     <span aria-hidden="true">⌕</span>
-     <input value={quickQuery} onChange={event=>setQuickQuery(event.target.value)} placeholder="What are you looking for?" autoFocus/>
-     <button type="submit" disabled={quickQuery.trim().length<2}>Go</button>
-    </form>
-    <div className="ynot-entry-quick-chips" aria-label="Quick searches">
-     {QUICK_SEARCHES.map(item=><button key={item.label} type="button" onClick={()=>runSearch(item.query)}>{item.label}</button>)}
-    </div>
-    <div className="ynot-entry-color-slider" role="listbox" aria-label="Bubble colour">
-     {COLOURS.map(item=><button
-      key={item.key}
-      type="button"
-      className={item.key===colourKey?"active":""}
-      onClick={()=>chooseColour(item.key)}
-      aria-label={item.label}
-      aria-selected={item.key===colourKey}
-      role="option"
-      style={{"--swatch-rgb":item.rgb} as React.CSSProperties}
-     />)}
-    </div>
-   </div>}
-   <button
-    type="button"
-    className="ynot-entry-color-trigger"
-    aria-label="Open quick search and bubble colour"
-    aria-expanded={paletteOpen}
-    onClick={()=>setPaletteOpen(open=>!open)}
-   ><span/></button>
-  </div>}
+   <span className="ynot-entry-pointer-core"/>
+   {hoveredCategory&&<em>{hoveredCategory}</em>}
+  </button>}
  </>;
 }
