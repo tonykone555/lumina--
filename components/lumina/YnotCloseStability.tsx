@@ -9,7 +9,7 @@ export default function YnotCloseStability(){
   let cleanupFrame=0;
 
   const wireGestureControls=()=>{
-   document.querySelectorAll<HTMLElement>(".ynot-selected-close,.ynot-story-close,.ynot-selected-heart,.ynot-story-heart,.ynot-final-save-heart,.ynot-close").forEach(button=>{
+   document.querySelectorAll<HTMLElement>(".lv4-close,.ynot-selected-close,.ynot-story-close,.ynot-selected-heart,.ynot-story-heart,.ynot-final-save-heart,.ynot-close").forEach(button=>{
     if(wired.has(button))return;
     wired.add(button);
     button.style.setProperty("pointer-events","auto","important");
@@ -31,7 +31,7 @@ export default function YnotCloseStability(){
 
   const onClick=(event:MouseEvent)=>{
    const target=event.target as HTMLElement|null;if(!target)return;
-   if(target.closest(".ynot-close,.ynot-selected-close,.ynot-story-close")||(target.classList.contains("ynot-backdrop")&&target.classList.contains("open")))clearVisualState();
+   if(target.closest(".lv4-close,.ynot-close,.ynot-selected-close,.ynot-story-close")||(target.classList.contains("ynot-backdrop")&&target.classList.contains("open")))clearVisualState();
   };
 
   const onOpen=()=>{document.documentElement.classList.remove("ynot-deal-product-open");document.body.classList.remove("ynot-deal-product-open")};
