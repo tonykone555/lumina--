@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect,useState} from "react";
+import {useEffect,useMemo,useState} from "react";
 
 const BUBBLES=[
  {x:"5%",y:"17%",s:112,d:12.5,delay:-2.4,depth:.82,blur:0},
@@ -14,6 +14,16 @@ const BUBBLES=[
  {x:"50%",y:"24%",s:31,d:9.6,delay:-4.9,depth:.36,blur:.5},
  {x:"76%",y:"45%",s:38,d:10.2,delay:-2.8,depth:.4,blur:.42},
 ];
+
+const COLOURS=[
+ {key:"silver",label:"Silver",rgb:"205 211 214",glow:"245 248 250"},
+ {key:"ice",label:"Ice",rgb:"121 190 255",glow:"198 230 255"},
+ {key:"violet",label:"Violet",rgb:"163 129 255",glow:"221 209 255"},
+ {key:"pink",label:"Pink",rgb:"255 118 186",glow:"255 207 231"},
+ {key:"amber",label:"Amber",rgb:"255 173 82",glow:"255 224 183"},
+ {key:"emerald",label:"Emerald",rgb:"77 215 164",glow:"191 255 232"},
+ {key:"red",label:"Red",rgb:"255 92 92",glow:"255 204 204"},
+] as const;
 
 const DISMISS_SELECTOR=[
  ".lv4-category-bubble",
@@ -35,6 +45,16 @@ const DISMISS_SELECTOR=[
 export default function EntryAmbientBubbles(){
  const[home,setHome]=useState(false);
  const[dismissed,setDismissed]=useState(false);
+ const[paletteOpen,setPaletteOpen]=useState(false);
+ const[colourKey,setColourKey]=useState<(typeof COLOURS)[number]["key"]>("silver");
+ const colour=useMemo(()=>COLOURS.find(item=>item.key===colourKey)||COLOURS[0],[colourKey]);
+
+ useEffect(()=>{
+  try{
+   const saved=localStorage.getItem("ynot-entry-bubble-colour") as (typeof COLOURS)[number]["key"]|null;
+   if(saved&&COLOURS.some(item=>item.key===saved))setColourKey(saved);
+  }catch{}
+ },[]);
 
  useEffect(()=>{
   let frame=0;
@@ -47,9 +67,10 @@ export default function EntryAmbientBubbles(){
   const observer=new MutationObserver(queue);
   observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class"]});
 
-  const dismiss=()=>setDismissed(true);
+  const dismiss=()=>{setDismissed(true);setPaletteOpen(false)};
   const onPointer=(event:PointerEvent)=>{
    const target=event.target as Element|null;
+   if(target?.closest(".ynot-entry-color-control"))return;
    if(target?.closest(DISMISS_SELECTOR))dismiss();
   };
   const onSubmit=(event:Event)=>{
@@ -85,16 +106,58 @@ export default function EntryAmbientBubbles(){
  },[]);
 
  const active=home&&!dismissed;
- return <div className={`ynot-entry-ambient ${active?"active":""}`} aria-hidden="true">
-  {BUBBLES.map((bubble,index)=><i key={index} style={{
-   left:bubble.x,
-   top:bubble.y,
-   width:bubble.s,
-   height:bubble.s,
-   "--ynot-float-duration":`${bubble.d}s`,
-   "--ynot-float-delay":`${bubble.delay}s`,
-   "--ynot-depth":bubble.depth,
-   "--ynot-blur":`${bubble.blur}px`,
-  } as React.CSSProperties}/>)}
- </div>
+ const chooseColour=(key:(typeof COLOURS)[number]["key"])=>{
+  setColourKey(key);
+  try{localStorage.setItem("ynot-entry-bubble-colour",key)}catch{}
+ };
+
+ return <>
+  <div
+   className={`ynot-entry-ambient ${active?"active":""}`}
+   aria-hidden="true"
+   style={{
+    "--ynot-bubble-rgb":colour.rgb,
+    "--ynot-bubble-glow-rgb":colour.glow,
+   } as React.CSSProperties}
+  >
+   {BUBBLES.map((bubble,index)=><i key={index} style={{
+    left:bubble.x,
+    top:bubble.y,
+    width:bubble.s,
+    height:bubble.s,
+    "--ynot-float-duration":`${bubble.d}s`,
+    "--ynot-float-delay":`${bubble.delay}s`,
+    "--ynot-depth":bubble.depth,
+    "--ynot-blur":`${bubble.blur}px`,
+   } as React.CSSProperties}/>)}
+  </div>
+
+  {active&&<div
+   className={`ynot-entry-color-control ${paletteOpen?"open":""}`}
+   style={{
+    "--ynot-bubble-rgb":colour.rgb,
+    "--ynot-bubble-glow-rgb":colour.glow,
+   } as React.CSSProperties}
+  >
+   {paletteOpen&&<div className="ynot-entry-color-slider" role="listbox" aria-label="Bubble colour">
+    {COLOURS.map(item=><button
+     key={item.key}
+     type="button"
+     className={item.key===colourKey?"active":""}
+     onClick={()=>chooseColour(item.key)}
+     aria-label={item.label}
+     aria-selected={item.key===colourKey}
+     role="option"
+     style={{"--swatch-rgb":item.rgb} as React.CSSProperties}
+    />)}
+   </div>}
+   <button
+    type="button"
+    className="ynot-entry-color-trigger"
+    aria-label="Change floating bubble colour"
+    aria-expanded={paletteOpen}
+    onClick={()=>setPaletteOpen(open=>!open)}
+   ><span/></button>
+  </div>}
+ </>;
 }
