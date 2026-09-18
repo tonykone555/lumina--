@@ -51,6 +51,17 @@ async function catalog(query: string, country: string, source: string, limit: nu
   return { query: data?.query || query, source: data?.source, products };
 }
 
+async function promotedProducts(niche: string, limit: number) {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return [];
+  const params = new URLSearchParams({ select: "id,source,source_product_id,merchant_name,source_url,title,description,image_urls,supplier_currency,ynot_price,category,variants,research_status,research_score,research_reasons,margin_pct,availability_status,tiktok_eligible,last_research_at", research_status: "eq.approved", order: "research_score.desc.nullslast,last_research_at.desc.nullslast", limit: String(Math.min(12, limit)) });
+  if (niche.trim()) params.set("or", `(category.ilike.*${niche.replace(/[^a-z0-9 _-]/gi, "")}*,title.ilike.*${niche.replace(/[^a-z0-9 _-]/gi, "")}*)`);
+  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/ynot_sellable_products?${params}`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" });
+  if (!res.ok) throw new Error(`PROMOTION_CATALOG_${res.status}`);
+  return res.json();
+}
+
 function safeProduct(p: Product) {
   return {
     id: p.id,
@@ -131,8 +142,10 @@ function makeHandler() {
           limit: z.number().int().min(1).max(12).default(6),
         },
         async ({ niche, country, limit }) => {
+          const researched = await promotedProducts(niche, limit);
+          if (researched.length) return text({ niche, source: "ynot-researched-products", candidates: researched });
           const data = await catalog(niche, country.toUpperCase(), "shopify", limit);
-          return text({ niche, candidates: data.products.map((p: Product) => safeProduct(p)) });
+          return text({ niche, source: "shopify-fallback", note: "No approved researched YNOT products matched yet; returning bounded live catalogue candidates for research.", candidates: data.products.map((p: Product) => safeProduct(p)) });
         }
       );
     },
