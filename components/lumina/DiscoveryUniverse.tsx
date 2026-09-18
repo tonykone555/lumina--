@@ -56,7 +56,7 @@ export default function DiscoveryUniverse(){
   setLoading(true);setError("");setActiveQuery(clean);
   try{
    const learned=options.seed?discoveryTerms(options.seed):[];
-   const r=await fetch("/api/instagram/discover",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:clean,target:180,keywordPages:3,relatedPerSeed:40,seedExpansionLimit:8,learnedKeywords:learned,seedUsernames:options.seed?[options.seed.username]:[]})});
+   const r=await fetch("/api/instagram/discover",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:clean,target:300,keywordPages:3,relatedPerSeed:15,seedExpansionLimit:20,learnedKeywords:learned,seedUsernames:options.seed?[options.seed.username]:[]})});
    const data:Response=await r.json();
    if(!r.ok)throw new Error(data.error||"Instagram discovery is unavailable");
    const incoming=data.profiles||[];
