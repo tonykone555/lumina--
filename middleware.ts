@@ -17,7 +17,7 @@ export async function middleware(req: NextRequest) {
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
   if (!supabaseUrl || !serviceKey || !anonKey) return deny(req);
 
-  const bearer = req.cookies.get("sb-access-token")?.value || req.cookies.get("supabase-auth-token")?.value;
+  const bearer = req.cookies.get("ynot-admin-session")?.value || req.cookies.get("sb-access-token")?.value || req.cookies.get("supabase-auth-token")?.value;
   if (!bearer) return deny(req);
 
   const userRes = await fetch(`${supabaseUrl.replace(/\/$/, "")}/auth/v1/user`, {
