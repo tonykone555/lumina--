@@ -4,7 +4,7 @@ import {FormEvent,useEffect,useMemo,useState} from "react";
 import {createPortal} from "react-dom";
 import {ExternalLink,Heart,Search,Sparkles,X} from "lucide-react";
 
-type Profile={id:string;username:string;fullName?:string;profileUrl?:string;profilePictureUrl?:string;followers?:number|null;biography?:string|null;website?:string|null;category?:string|null;sharedParentCount:number;relevanceScore:number;parentUsernames:string[]};
+type Profile={id:string;username:string;fullName?:string;profileUrl?:string;profilePictureUrl?:string;recentPostImageUrl?:string;recentPostCaption?:string|null;followers?:number|null;biography?:string|null;website?:string|null;category?:string|null;sharedParentCount:number;relevanceScore:number;parentUsernames:string[]};
 type Response={profiles?:Profile[];error?:string;uniqueCount?:number;newCount?:number;reusedCount?:number;persistence?:"supabase"|"none";learnedKeywords?:string[]};
 type Health={apifyConfigured?:boolean;persistenceConfigured?:boolean};
 type PartnerLead={username:string;displayName?:string;profileUrl?:string;avatar?:string;followers?:number;engagementRate?:number;email?:string;category?:string;shopUrl?:string;source?:string;metadata?:{showcaseProductCount?:number;showcaseProducts?:Array<{title?:string;price?:string|number;shopName?:string;url?:string}>;affiliateProductCount?:number;affiliateProducts?:Array<{name?:string;price?:string|number;salesCount?:number;creatorSales?:number;url?:string}>;creatorSales?:number}};
@@ -18,7 +18,9 @@ function discoveryTerms(profile:Profile){const source=`${profile.category||""} $
 
 export default function DiscoveryUniverse(){
  const [profiles,setProfiles]=useState<Profile[]>([]);
- const [loading,setLoading]=useState(false);\n const [searchStartedAt,setSearchStartedAt]=useState<number|null>(null);\n const [searchElapsed,setSearchElapsed]=useState(0);
+ const [loading,setLoading]=useState(false);
+ const [searchStartedAt,setSearchStartedAt]=useState<number|null>(null);
+ const [searchElapsed,setSearchElapsed]=useState(0);
  const [selected,setSelected]=useState<Profile|null>(null);
  const [query,setQuery]=useState("");
  const [activeQuery,setActiveQuery]=useState("");
@@ -48,7 +50,8 @@ export default function DiscoveryUniverse(){
   ];
  },[profiles]);
 
- useEffect(()=>{setPortalReady(true);return()=>setPortalReady(false)},[]);\n useEffect(()=>{if(!loading||!searchStartedAt){setSearchElapsed(0);return}const tick=()=>setSearchElapsed(Math.max(0,Math.floor((Date.now()-searchStartedAt)/1000)));tick();const id=window.setInterval(tick,1000);return()=>window.clearInterval(id)},[loading,searchStartedAt]);
+ useEffect(()=>{setPortalReady(true);return()=>setPortalReady(false)},[]);
+ useEffect(()=>{if(!loading||!searchStartedAt){setSearchElapsed(0);return}const tick=()=>setSearchElapsed(Math.max(0,Math.floor((Date.now()-searchStartedAt)/1000)));tick();const id=window.setInterval(tick,1000);return()=>window.clearInterval(id)},[loading,searchStartedAt]);
  useEffect(()=>{fetch("/api/discovery/worlds",{cache:"no-store"}).then(r=>r.json()).then(d=>setWorlds(d.worlds||[])).catch(()=>{});setSaved(new Set(savedProfiles().map(p=>p.username)));fetch("/api/instagram/discover",{cache:"no-store"}).then(r=>r.json()).then((data:Health)=>setHealth(data)).catch(()=>{})},[]);
 
  async function runSearch(term:string,options:{seed?:Profile;append?:boolean}={}){
@@ -56,7 +59,7 @@ export default function DiscoveryUniverse(){
   setLoading(true);setError("");setActiveQuery(clean);
   try{
    const learned=options.seed?discoveryTerms(options.seed):[];
-   const r=await fetch("/api/instagram/discover",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:clean,target:300,keywordPages:3,relatedPerSeed:15,seedExpansionLimit:20,learnedKeywords:learned,seedUsernames:options.seed?[options.seed.username]:[]})});
+   const r=await fetch("/api/instagram/discover",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:clean,target:300,keywordPages:3,relatedPerSeed:15,seedExpansionLimit:20,learnedKeywords:learned,seedUsernames:options.seed?[options.seed.username]:[],enrichProfiles:true})});
    const data:Response=await r.json();
    if(!r.ok)throw new Error(data.error||"Instagram discovery is unavailable");
    const incoming=data.profiles||[];
@@ -89,11 +92,13 @@ export default function DiscoveryUniverse(){
    <h1>Discover brands through brands.</h1>
    <p>Search a niche, open a profile, then use Find Similar to expand through Instagram’s related-account graph instead of scrolling a flat list.</p>
    <form className="discover-search" onSubmit={submit}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Try: independent swimwear brands, minimal jewelry, activewear UK…"/><button type="submit" disabled={loading}>{loading?"Discovering…":"Discover"}<Sparkles/></button></form>
-   <div className="discover-example-row">{EXAMPLES.map(example=><button key={example} onClick={()=>{setQuery(example);void runSearch(example)}}>{example}</button>)}</div>\n
-   {loading&&<div className="discover-profile-count" role="status" aria-live="polite"><strong>{profiles.length}</strong><span>profiles found</span></div>}\n   <div className="discover-stats"><span>{health.apifyConfigured===false?"Provider needs API key":health.apifyConfigured?"Apify connected":"Checking provider…"}</span><span>{stats.unique?`${stats.unique} profiles`:"Graph-first search"}</span>{stats.newCount>0&&<span>{stats.newCount} new</span>}{stats.reused>0&&<span>{stats.reused} reused</span>}{saved.size>0&&<span>{saved.size} saved</span>}{profiles.length>0&&<button className="discover-expand" onClick={expand} disabled={loading}>Expand graph</button>}</div>
+   <div className="discover-example-row">{EXAMPLES.map(example=><button key={example} onClick={()=>{setQuery(example);void runSearch(example)}}>{example}</button>)}</div>
+
+   {loading&&<div className="discover-profile-count" role="status" aria-live="polite"><strong>{profiles.length}</strong><span>profiles found</span></div>}
+   <div className="discover-stats"><span>{health.apifyConfigured===false?"Provider needs API key":health.apifyConfigured?"Apify connected":"Checking provider…"}</span><span>{stats.unique?`${stats.unique} profiles`:"Graph-first search"}</span>{stats.newCount>0&&<span>{stats.newCount} new</span>}{stats.reused>0&&<span>{stats.reused} reused</span>}{saved.size>0&&<span>{saved.size} saved</span>}{profiles.length>0&&<button className="discover-expand" onClick={expand} disabled={loading}>Expand graph</button>}</div>
    {error&&<p className="discover-error">{error}</p>}
   </section>
-  <section className="discover-rows">{displayRows.map((row,rowIndex)=><div className="discover-row-wrap" key={rowIndex}><div className="discover-row-label"><span>{rowNames[rowIndex]}</span><small>{profiles.length?(row as Profile[]).length:""}</small></div><div className="discover-row"><div className="discover-track">{profiles.length?(row as Profile[]).map((p,index)=><button className="discover-bubble" style={{"--bubble-i":index} as React.CSSProperties} key={p.username} onClick={()=>setSelected(p)} title={`@${p.username}`}><span className="discover-bubble-media">{p.profilePictureUrl?<img src={p.profilePictureUrl} alt=""/>:<span>{p.username.slice(0,2).toUpperCase()}</span>}</span><i className="discover-avatar">{p.profilePictureUrl?<img src={p.profilePictureUrl} alt=""/>:p.username.slice(0,1).toUpperCase()}</i>{p.sharedParentCount>1&&<b>{p.sharedParentCount}×</b>}</button>):(row as number[]).map(i=><span className="discover-bubble discover-bubble-ghost" style={{"--bubble-i":i} as React.CSSProperties} key={`${rowIndex}-${i}`}/>)}</div></div></div>)}</section>
+  <section className="discover-rows">{displayRows.map((row,rowIndex)=><div className="discover-row-wrap" key={rowIndex}><div className="discover-row-label"><span>{rowNames[rowIndex]}</span><small>{profiles.length?(row as Profile[]).length:""}</small></div><div className="discover-row" onScroll={e=>{const el=e.currentTarget;if(profiles.length&&activeQuery&&!loading&&el.scrollLeft+el.clientWidth>=el.scrollWidth-500)expand()}}><div className="discover-track">{profiles.length?(row as Profile[]).map((p,index)=><button className="discover-bubble" style={{"--bubble-i":index} as React.CSSProperties} key={p.username} onClick={()=>setSelected(p)} title={`@${p.username}`}><span className="discover-bubble-media">{(p.recentPostImageUrl||p.profilePictureUrl)?<img src={p.recentPostImageUrl||p.profilePictureUrl} alt=""/>:<span>{p.username.slice(0,2).toUpperCase()}</span>}</span><i className="discover-avatar">{p.profilePictureUrl?<img src={p.profilePictureUrl} alt=""/>:p.username.slice(0,1).toUpperCase()}</i>{p.sharedParentCount>1&&<b>{p.sharedParentCount}×</b>}</button>):(row as number[]).map(i=><span className="discover-bubble discover-bubble-ghost" style={{"--bubble-i":i} as React.CSSProperties} key={`${rowIndex}-${i}`}/>)}</div></div></div>)}</section>
   {selected&&<div className="discover-profile-backdrop" onClick={()=>setSelected(null)}><article className="discover-profile-card" onClick={e=>e.stopPropagation()}><button className="discover-profile-close" onClick={()=>setSelected(null)}><X/></button><header>{selected.profilePictureUrl?<img src={selected.profilePictureUrl} alt=""/>:<span>{selected.username.slice(0,1).toUpperCase()}</span>}<div><small>{selected.category||"Instagram profile"}</small><h2>{selected.fullName||`@${selected.username}`}</h2><p>@{selected.username}{selected.followers?` · ${fmt(selected.followers)} followers`:""}</p></div></header>{selected.biography&&<p className="discover-bio">{selected.biography}</p>}<div className="discover-profile-actions"><button className={saved.has(selected.username)?"discover-save active":"discover-save"} onClick={()=>toggleSave(selected)}><Heart/>{saved.has(selected.username)?"Saved":"Save"}</button>{selected.profileUrl&&<a href={selected.profileUrl} target="_blank" rel="noreferrer">Instagram <ExternalLink/></a>}{selected.website&&<a href={selected.website} target="_blank" rel="noreferrer">Website <ExternalLink/></a>}<button onClick={()=>findSimilar(selected)}>Find similar <Sparkles/></button></div><footer><span>{selected.sharedParentCount} related-parent match{selected.sharedParentCount===1?"":"es"}</span><strong>Relevance {Math.round(selected.relevanceScore)}</strong></footer></article></div>}
  </main>;
 }
