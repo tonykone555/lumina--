@@ -46,3 +46,8 @@
 .discover-worlds-backdrop .discover-worlds-menu{position:fixed!important;z-index:1!important;top:76px!important;right:72px!important;left:auto!important;transform:none!important;display:block!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
 .discover-worlds-menu header>div{display:flex;gap:5px;align-items:center}.discover-worlds-menu header>div button:last-child{width:27px;height:27px;padding:0;display:grid;place-items:center}.discover-worlds-menu header svg{width:11px}.discover-worlds-empty{display:grid;gap:5px;text-align:center;padding:34px 12px}.discover-worlds-empty strong{font:760 11px ui-sans-serif}.discover-worlds-empty span{font:600 9px/1.4 ui-sans-serif;opacity:.5}
 @media(max-width:600px){.discover-worlds-backdrop .discover-worlds-menu{top:max(66px,calc(env(safe-area-inset-top) + 54px))!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;width:min(340px,calc(100vw - 24px))!important;max-height:70dvh!important}}
+
+html[data-partner-open="true"] body{overflow:hidden!important}
+html[data-partner-open="true"] .discover-partner-backdrop{display:flex!important;opacity:1!important;visibility:visible!important}
+.discover-partner-launch{-webkit-tap-highlight-color:transparent!important;cursor:pointer!important}
+@media(max-width:640px){.discover-partner-panel{background:#e8e6e1!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;color:#181614!important}}
