@@ -90,7 +90,7 @@ async function fetchAmazon(query:string,country:string,page=0){
  return usable((Array.isArray(raw?.search_results)?raw.search_results:[]).map((r:any)=>({id:`amazon-${r.asin}`,title:cleanTitle(r.title||"Amazon product"),brand:r.brand||r?.manufacturer||"Amazon",price:amazonPrice(r),currency:amazonCurrency(r,domain),image:amazonImage(r),url:r?.link||r?.url||(r?.asin?`https://${domain}/dp/${r.asin}`:"#"),description:cleanTitle(r?.description||r?.snippet||r?.feature_bullets?.join(" ")||`${r.brand||"Amazon"} product. Full details are available from the original merchant.`),tags:["Amazon",...(r?.is_prime?["Prime"]:[]),...(typeof r?.rating==="number"?[`${r.rating}★`]:[])].slice(0,6),source:"amazon-rainforest",asin:r.asin})));
 }
 
-async function fetchShopify(query:string,country:string,cursor?:string){
+async function fetchShopifyOnce(query:string,country:string,cursor?:string){
  const clean=stripPriceLanguage(query)||query;
  const payload={jsonrpc:"2.0",method:"tools/call",id:1,params:{name:"search_catalog",arguments:{meta:{"ucp-agent":{profile:"https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json"}},catalog:{query:clean,filters:{available:true,ships_to:{country}},context:{address_country:country,intent:query},pagination:{limit:50,...(cursor?{cursor}:{})}}}}};
  const response=await fetch("https://catalog.shopify.com/api/ucp/mcp",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
@@ -98,6 +98,18 @@ async function fetchShopify(query:string,country:string,cursor?:string){
  if(!response.ok||!content?.products)throw new Error("Catalog unavailable");
  const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price,images=[...new Set<string>((p?.media||[]).filter((m:any)=>m.type==="image"||m.url).map((m:any)=>m.url).filter(Boolean))];const variants=(p?.variants||[]).map((v:any)=>{const vp=v?.price||price;return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:v?.image?.url||v?.media?.[0]?.url||images[0]||"",url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"}}).filter((v:any)=>v.id);const gallery=[...new Set<string>([...images,...variants.map((v:any)=>v.image).filter(Boolean)])].slice(0,10);const merchant=p?.seller?.name||p?.variants?.[0]?.seller?.name||"the original Shopify merchant";return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:gallery[0]||"",images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description:descriptionText(p?.description)||descriptionText(p?.descriptionHtml)||descriptionText(p?.description_html)||descriptionText(p?.body_html)||`${p?.title||"This product"} from ${merchant}.`,descriptionHydrated:false,tags:[...new Set<string>((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))].slice(0,6),source:"shopify-global-catalog"}}));
  return{products,pagination:normalizeShopifyPagination(content.pagination||{})};
+}
+
+async function fetchShopify(query:string,country:string,cursor?:string){
+ let lastError:unknown=null;
+ for(let attempt=0;attempt<3;attempt++){
+  try{return await fetchShopifyOnce(query,country,cursor)}
+  catch(error){
+   lastError=error;
+   if(attempt<2)await new Promise(resolve=>setTimeout(resolve,180*(attempt+1)));
+  }
+ }
+ throw lastError instanceof Error?lastError:new Error("Catalog unavailable");
 }
 
 async function getEbayApplicationToken(){
