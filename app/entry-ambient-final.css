@@ -221,17 +221,17 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
   .ynot-entry-color-control{
     left:50%!important;
     right:auto!important;
-    bottom:calc(154px + env(safe-area-inset-bottom))!important;
+    bottom:calc(126px + env(safe-area-inset-bottom))!important;
     transform:translateX(-50%)!important;
     z-index:260!important;
   }
-  .ynot-entry-color-slider{
+  .ynot-entry-quick-panel{
     position:absolute!important;
     left:50%!important;
-    bottom:42px!important;
+    bottom:46px!important;
     transform:translateX(-50%)!important;
     transform-origin:center bottom!important;
-    max-width:min(330px,calc(100vw - 28px))!important;
+    width:min(338px,calc(100vw - 24px))!important;
   }
   .ynot-entry-color-trigger{
     width:38px!important;
@@ -243,4 +243,93 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
       0 10px 28px rgba(0,0,0,.34),
       0 0 22px rgb(var(--ynot-bubble-rgb) / .24)!important;
   }
+}
+
+
+.ynot-entry-quick-panel{
+  width:min(420px,calc(100vw - 32px));
+  padding:9px;
+  display:grid;
+  gap:8px;
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:22px;
+  background:rgba(15,16,16,.56);
+  box-shadow:inset 0 1px rgba(255,255,255,.12),0 14px 34px rgba(0,0,0,.28);
+  backdrop-filter:blur(22px) saturate(1.15);
+  -webkit-backdrop-filter:blur(22px) saturate(1.15);
+  animation:ynotEntryPaletteIn .2s cubic-bezier(.2,.8,.2,1);
+}
+.ynot-entry-quick-search{
+  display:grid;
+  grid-template-columns:24px minmax(0,1fr) auto;
+  align-items:center;
+  gap:7px;
+  min-height:42px;
+  padding:4px 5px 4px 9px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.055);
+}
+.ynot-entry-quick-search>span{font-size:18px;opacity:.62}
+.ynot-entry-quick-search input{
+  min-width:0;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#fff;
+  font:600 12px/1.2 Inter,ui-sans-serif,system-ui,sans-serif;
+}
+.ynot-entry-quick-search input::placeholder{color:rgba(255,255,255,.48)}
+.ynot-entry-quick-search button{
+  height:32px;
+  padding:0 12px;
+  border:1px solid rgba(255,255,255,.23);
+  border-radius:12px;
+  background:rgba(255,255,255,.11);
+  color:#fff;
+  font:700 10px/1 Inter,ui-sans-serif,system-ui,sans-serif;
+}
+.ynot-entry-quick-search button:disabled{opacity:.35}
+.ynot-entry-quick-chips{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.ynot-entry-quick-chips::-webkit-scrollbar{display:none}
+.ynot-entry-quick-chips button{
+  flex:0 0 auto;
+  height:28px;
+  padding:0 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.06);
+  color:rgba(255,255,255,.86);
+  font:650 9px/1 Inter,ui-sans-serif,system-ui,sans-serif;
+}
+.ynot-entry-quick-panel .ynot-entry-color-slider{
+  height:34px;
+  padding:3px 5px;
+  justify-content:center;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  animation:none;
+}
+.ynot-entry-quick-panel .ynot-entry-color-slider button{
+  width:22px;
+  height:22px;
+  min-width:22px;
+}
+
+@media(max-width:760px){
+  .ynot-entry-color-control{
+    bottom:calc(126px + env(safe-area-inset-bottom))!important;
+  }
+  .ynot-entry-quick-panel{
+    width:min(338px,calc(100vw - 24px))!important;
+  }
+  .ynot-entry-quick-chips{justify-content:flex-start}
 }
