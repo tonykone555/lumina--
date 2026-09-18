@@ -1,7 +1,7 @@
 "use client";
 
 import {FormEvent,useEffect,useMemo,useState} from "react";
-import {ExternalLink,Heart,Search,Sparkles,X} from "lucide-react";
+import {AtSign,ExternalLink,Heart,Search,Sparkles,X} from "lucide-react";
 
 type Profile={id:string;username:string;fullName?:string;profileUrl?:string;profilePictureUrl?:string;followers?:number|null;biography?:string|null;website?:string|null;category?:string|null;sharedParentCount:number;relevanceScore:number;parentUsernames:string[]};
 type Response={profiles?:Profile[];error?:string;uniqueCount?:number;newCount?:number;reusedCount?:number;persistence?:"supabase"|"none";learnedKeywords?:string[]};
@@ -24,6 +24,9 @@ export default function DiscoveryUniverse(){
  const [stats,setStats]=useState<{unique:number;newCount:number;reused:number}>({unique:0,newCount:0,reused:0});
  const [saved,setSaved]=useState<Set<string>>(new Set());
  const [health,setHealth]=useState<Health>({});
+ const [partnerOpen,setPartnerOpen]=useState(false);
+ const [partnerSource,setPartnerSource]=useState("all");
+ const [partnerQuery,setPartnerQuery]=useState("home decor furniture lifestyle");
  const rows=useMemo(()=>{
   const ranked=[...profiles].sort((a,b)=>b.relevanceScore-a.relevanceScore);
   return [
@@ -64,6 +67,8 @@ export default function DiscoveryUniverse(){
  const rowNames=["Closest matches","Suggested by seed brands","Fresh + adjacent"];
 
  return <main className={`discover-universe ${loading?"is-loading":""}`}>
+  <button className="discover-partner-launch" onClick={()=>setPartnerOpen(true)} aria-label="Open YNOT Partner Finder"><AtSign/></button>
+  {partnerOpen&&<div className="discover-partner-backdrop" onClick={()=>setPartnerOpen(false)}><aside className="discover-partner-panel" onClick={e=>e.stopPropagation()}><header><div><small>YNOT PARTNER FINDER</small><h2>Find creators who already sell.</h2><p>Research social creators and affiliate-first partners, then move eligible profiles into YNOT outreach.</p></div><button onClick={()=>setPartnerOpen(false)}><X/></button></header><div className="partner-source-tabs">{[["all","All"],["instagram","Instagram"],["tiktok","TikTok"],["tiktok_shop","TikTok Shop"],["youtube","YouTube"],["pinterest","Pinterest"],["web","Web"]].map(([id,label])=><button key={id} className={partnerSource===id?"active":""} onClick={()=>setPartnerSource(id)}>{label}</button>)}</div><label className="partner-query"><Search/><input value={partnerQuery} onChange={e=>setPartnerQuery(e.target.value)} placeholder="e.g. home decor affiliates"/></label><div className="partner-settings"><span><b>20</b> seed profiles</span><span><b>15</b> related / seed</span><span><b>3K–250K</b> followers</span><span><b>300</b> target</span></div><button className="partner-run" onClick={()=>{setPartnerOpen(false);setQuery(partnerQuery);void runSearch(partnerQuery)}}><Sparkles/> Start research</button><footer><strong>TikTok Shop included</strong><span>Affiliate signals · shop activity · public contact data · referral readiness</span></footer></aside></div>}
   <section className="discover-hero">
    <small>INSTAGRAM DISCOVERY GRAPH</small>
    <h1>Discover brands through brands.</h1>
