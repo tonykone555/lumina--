@@ -27,8 +27,8 @@ export default function DiscoveryUniverse(){
  const [saved,setSaved]=useState<Set<string>>(new Set());
  const [health,setHealth]=useState<Health>({});
  const [partnerOpen,setPartnerOpen]=useState(false);
- const openPartner=()=>{openPartner();if(typeof document!=="undefined")document.documentElement.setAttribute("data-partner-open","true")};
- const closePartner=()=>{closePartner();if(typeof document!=="undefined")document.documentElement.removeAttribute("data-partner-open")};
+ const openPartner=()=>{setPartnerOpen(true);if(typeof document!=="undefined")document.documentElement.setAttribute("data-partner-open","true")};
+ const closePartner=()=>{setPartnerOpen(false);if(typeof document!=="undefined")document.documentElement.removeAttribute("data-partner-open")};
  const [portalReady,setPortalReady]=useState(false);
  const [partnerSource,setPartnerSource]=useState("all");
  const [partnerQuery,setPartnerQuery]=useState("home decor furniture lifestyle");
