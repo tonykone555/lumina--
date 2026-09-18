@@ -21,6 +21,7 @@ const COLOURS=[
  {key:"violet",label:"Violet",rgb:"163 129 255",glow:"221 209 255"},
  {key:"pink",label:"Pink",rgb:"255 118 186",glow:"255 207 231"},
  {key:"amber",label:"Amber",rgb:"255 173 82",glow:"255 224 183"},
+ {key:"brown",label:"Brown",rgb:"139 92 62",glow:"215 177 145"},
  {key:"emerald",label:"Emerald",rgb:"77 215 164",glow:"191 255 232"},
  {key:"red",label:"Red",rgb:"255 92 92",glow:"255 204 204"},
 ] as const;
@@ -43,7 +44,7 @@ const DISMISS_SELECTOR=[
 ].join(",");
 
 export default function EntryAmbientBubbles(){
- const[home,setHome]=useState(false);
+ const[home,setHome]=useState(true);
  const[dismissed,setDismissed]=useState(false);
  const[paletteOpen,setPaletteOpen]=useState(false);
  const[colourKey,setColourKey]=useState<(typeof COLOURS)[number]["key"]>("silver");
