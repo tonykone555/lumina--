@@ -66,3 +66,9 @@ html[data-partner-open="true"] .discover-partner-backdrop{display:flex!important
  .ynot-app-shell .ynot-search-partner{top:calc(env(safe-area-inset-top) + 12px)!important;right:12px!important;left:auto!important;bottom:auto!important;transform:none!important;width:42px!important;height:42px!important}
  .discover-partner-panel{background:rgba(224,228,230,.72)!important;-webkit-backdrop-filter:blur(28px) saturate(1.15)!important;backdrop-filter:blur(28px) saturate(1.15)!important}
 }
+
+/* Stability pass: Partner Finder uses solid grey surfaces, no backdrop compositing. */
+.discover-partner-backdrop{background:rgba(22,24,26,.28)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.discover-partner-panel{background:#dfe3e5!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:0 24px 70px rgba(20,24,26,.16)!important}
+.partner-source-tabs button,.partner-query,.partner-settings span,.partner-flow,.partner-channels,.partner-priority,.partner-status,.partner-card-face,.partner-card-actions a,.partner-card-actions button,.partner-flip-back{ -webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+@media(max-width:899px){.discover-partner-panel{background:#dfe3e5!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important}}
