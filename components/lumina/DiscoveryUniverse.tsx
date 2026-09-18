@@ -2,7 +2,7 @@
 
 import {FormEvent,useEffect,useMemo,useState} from "react";
 import {createPortal} from "react-dom";
-import {AtSign,ExternalLink,Heart,Search,X} from "lucide-react";
+import {ExternalLink,Heart,Search,Sparkles,X} from "lucide-react";
 
 type Profile={id:string;username:string;fullName?:string;profileUrl?:string;profilePictureUrl?:string;followers?:number|null;biography?:string|null;website?:string|null;category?:string|null;sharedParentCount:number;relevanceScore:number;parentUsernames:string[]};
 type Response={profiles?:Profile[];error?:string;uniqueCount?:number;newCount?:number;reusedCount?:number;persistence?:"supabase"|"none";learnedKeywords?:string[]};
