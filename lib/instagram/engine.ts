@@ -43,7 +43,7 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  // "Find similar" starts from the actual selected Instagram node rather than merely
  // searching its display name. This preserves the graph-first strategy.
  if(seedUsernames.length&&profiles.size<target){
-  const related=await relatedSearch(seedUsernames,relatedPerSeed);
+  const related=await relatedSearch(seedUsernames,relatedPerSeed,Boolean(input.enrichProfiles));
   mergeRelated(profiles,edges,related,1);
  }
 
@@ -51,7 +51,7 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  // Repeating a search therefore moves into new graph territory instead of starting over.
  const freshKeywords=keywords.filter(k=>!state.searchedKeywords.has(k.toLowerCase()));
  if(freshKeywords.length&&profiles.size<target){
-  const keywordRows=await keywordSearch(freshKeywords,keywordPages);
+  const keywordRows=await keywordSearch(freshKeywords,keywordPages,Boolean(input.enrichProfiles));
   for(const p of keywordRows){const key=profileKey(p);profiles.set(key,mergeProfile(profiles.get(key),p,undefined,0))}
   await markKeywordsSearched(state.searchId,freshKeywords);
  }
@@ -59,7 +59,7 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  const candidateParents=[...profiles.values()].filter(p=>!expanded.has(p.username)&&!seedUsernames.includes(p.username)&&!p.isPrivate).sort((a,b)=>b.relevanceScore-a.relevanceScore).slice(0,seedExpansionLimit);
  const parentNames=[...new Set([...seedUsernames,...candidateParents.map(p=>p.username)])].slice(0,seedExpansionLimit+seedUsernames.length);
  if(candidateParents.length&&profiles.size<target){
-  const related=await relatedSearch(candidateParents.map(p=>p.username),relatedPerSeed);
+  const related=await relatedSearch(candidateParents.map(p=>p.username),relatedPerSeed,Boolean(input.enrichProfiles));
   mergeRelated(profiles,edges,related,1);
  }
 
