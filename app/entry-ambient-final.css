@@ -77,21 +77,30 @@
   }
 }
 
-/* The spatial stage sits above the decorative bubbles. */
+/* The spatial stage sits above the decorative bubbles, while the untouched
+   WORLD landing canvas stays transparent so the fixed bubble layer can be seen. */
 .lv4-shell{position:relative;z-index:4}
+body:has(.lv4-shell.depth-worlds){background:#000!important}
+body:has(.lv4-shell.depth-worlds) .ynot-app-shell,
+body:has(.lv4-shell.depth-worlds) .lv4-shell,
+body:has(.lv4-shell.depth-worlds) .lv4-bg,
+body:has(.lv4-shell.depth-worlds) .lv4-scene,
+body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
+  background-color:transparent!important;
+}
 .ynot-reference-header,.ynot-bottom-search{z-index:30}
 
 @media(max-width:899px){
-  body:has(.lv4-shell.depth-worlds),
-  body:has(.lv4-shell.depth-worlds) .ynot-app-shell,
-  body:has(.lv4-shell.depth-worlds) .lv4-shell{
+  body:has(.lv4-shell.depth-worlds){
     background:#000!important;
     background-image:none!important;
   }
+  body:has(.lv4-shell.depth-worlds) .ynot-app-shell,
+  body:has(.lv4-shell.depth-worlds) .lv4-shell,
   body:has(.lv4-shell.depth-worlds) .lv4-bg,
   body:has(.lv4-shell.depth-worlds) .lv4-scene,
   body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
-    background:#000!important;
+    background:transparent!important;
     background-image:none!important;
   }
   .ynot-entry-ambient i{
