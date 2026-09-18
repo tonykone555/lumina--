@@ -26,6 +26,15 @@ const COLOURS=[
  {key:"red",label:"Red",rgb:"255 92 92",glow:"255 204 204"},
 ] as const;
 
+const QUICK_SEARCHES=[
+ {label:"Fashion",query:"fashion clothes shoes accessories"},
+ {label:"Home",query:"home furniture decor lighting"},
+ {label:"Fitness",query:"fitness gym gear activewear"},
+ {label:"Beauty",query:"beauty skincare hair care"},
+ {label:"Tech",query:"tech gadgets audio accessories"},
+ {label:"Gifts",query:"gift ideas trending products"},
+] as const;
+
 const DISMISS_SELECTOR=[
  ".lv4-category-bubble",
  ".lv4-search button",
@@ -47,6 +56,7 @@ export default function EntryAmbientBubbles(){
  const[home,setHome]=useState(true);
  const[dismissed,setDismissed]=useState(false);
  const[paletteOpen,setPaletteOpen]=useState(false);
+ const[quickQuery,setQuickQuery]=useState("");
  const[colourKey,setColourKey]=useState<(typeof COLOURS)[number]["key"]>("silver");
  const colour=useMemo(()=>COLOURS.find(item=>item.key===colourKey)||COLOURS[0],[colourKey]);
 
@@ -112,6 +122,22 @@ export default function EntryAmbientBubbles(){
   try{localStorage.setItem("ynot-entry-bubble-colour",key)}catch{}
  };
 
+ const runSearch=(value:string)=>{
+  const clean=value.trim();
+  if(clean.length<2)return;
+  const input=document.querySelector<HTMLInputElement>(".ynot-bottom-search.shop input,.ynot-bottom-search input");
+  const form=input?.closest("form");
+  if(input){
+   const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;
+   setter?.call(input,clean);
+   input.dispatchEvent(new Event("input",{bubbles:true}));
+  }
+  setQuickQuery("");
+  setPaletteOpen(false);
+  if(form)form.requestSubmit();
+  else window.dispatchEvent(new CustomEvent("shop:tag-search",{detail:{query:clean,tags:[]}}));
+ };
+
  return <>
   <div
    className={`ynot-entry-ambient ${active?"active":""}`}
@@ -140,22 +166,32 @@ export default function EntryAmbientBubbles(){
     "--ynot-bubble-glow-rgb":colour.glow,
    } as React.CSSProperties}
   >
-   {paletteOpen&&<div className="ynot-entry-color-slider" role="listbox" aria-label="Bubble colour">
-    {COLOURS.map(item=><button
-     key={item.key}
-     type="button"
-     className={item.key===colourKey?"active":""}
-     onClick={()=>chooseColour(item.key)}
-     aria-label={item.label}
-     aria-selected={item.key===colourKey}
-     role="option"
-     style={{"--swatch-rgb":item.rgb} as React.CSSProperties}
-    />)}
+   {paletteOpen&&<div className="ynot-entry-quick-panel">
+    <form className="ynot-entry-quick-search" onSubmit={event=>{event.preventDefault();runSearch(quickQuery)}}>
+     <span aria-hidden="true">⌕</span>
+     <input value={quickQuery} onChange={event=>setQuickQuery(event.target.value)} placeholder="What are you looking for?" autoFocus/>
+     <button type="submit" disabled={quickQuery.trim().length<2}>Go</button>
+    </form>
+    <div className="ynot-entry-quick-chips" aria-label="Quick searches">
+     {QUICK_SEARCHES.map(item=><button key={item.label} type="button" onClick={()=>runSearch(item.query)}>{item.label}</button>)}
+    </div>
+    <div className="ynot-entry-color-slider" role="listbox" aria-label="Bubble colour">
+     {COLOURS.map(item=><button
+      key={item.key}
+      type="button"
+      className={item.key===colourKey?"active":""}
+      onClick={()=>chooseColour(item.key)}
+      aria-label={item.label}
+      aria-selected={item.key===colourKey}
+      role="option"
+      style={{"--swatch-rgb":item.rgb} as React.CSSProperties}
+     />)}
+    </div>
    </div>}
    <button
     type="button"
     className="ynot-entry-color-trigger"
-    aria-label="Change floating bubble colour"
+    aria-label="Open quick search and bubble colour"
     aria-expanded={paletteOpen}
     onClick={()=>setPaletteOpen(open=>!open)}
    ><span/></button>
