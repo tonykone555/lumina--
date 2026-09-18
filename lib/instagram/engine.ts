@@ -1,4 +1,4 @@
-import {keywordSearch,relatedSearch} from "./apify";
+import {enrichProfiles,keywordSearch,relatedSearch} from "./apify";
 import {getOrCreateSearch,instagramStoreEnabled,loadProfilesForSearch,markKeywordsSearched,persistBatch} from "./store";
 import type {DiscoveryEdge,DiscoveryProfile,DiscoveryRequest,DiscoveryResponse,InstagramProfile} from "./types";
 
@@ -14,17 +14,19 @@ export function deriveKeywordVariants(query:string,learned:string[]=[]){
 }
 
 function profileKey(p:InstagramProfile){return p.username.toLowerCase()}
-function baseScore(p:InstagramProfile){const rank=p.rank&&p.rank>0?Math.max(0,25-Math.min(25,p.rank)):8;return 20+rank+(p.profilePictureUrl?4:0)+(p.website?5:0)+(p.isBusiness?4:0)}
+function relevanceTerms(query:string){return normalizeQuery(query).split(/[^a-z0-9]+/).filter(t=>t.length>2&&!["the","and","for","brand","brands","find","some"].includes(t))}
+function contentMatch(p:InstagramProfile,query:string){const hay=`${p.fullName||""} ${p.biography||""} ${p.category||""} ${p.website||""} ${p.recentPostCaption||""}`.toLowerCase();return relevanceTerms(query).reduce((n,t)=>n+(hay.includes(t)?1:0),0)}
+function baseScore(p:InstagramProfile,query=""){const rank=p.rank&&p.rank>0?Math.max(0,25-Math.min(25,p.rank)):8;return 20+rank+(p.profilePictureUrl?4:0)+(p.recentPostImageUrl?8:0)+(p.website?5:0)+(p.isBusiness?4:0)+contentMatch(p,query)*14}
 
-function mergeProfile(current:DiscoveryProfile|undefined,next:InstagramProfile,parent?:string,depth=0):DiscoveryProfile{
+function mergeProfile(current:DiscoveryProfile|undefined,next:InstagramProfile,parent?:string,depth=0,query=""):DiscoveryProfile{
  const parents=new Set(current?.parentUsernames||[]);if(parent)parents.add(parent.toLowerCase());const shared=parents.size;
- return {...(current||{}),...next,id:next.id||current?.id||next.username,username:next.username.toLowerCase(),fullName:next.fullName||current?.fullName,profileUrl:next.profileUrl||current?.profileUrl,profilePictureUrl:next.profilePictureUrl||current?.profilePictureUrl,followers:next.followers??current?.followers??null,following:next.following??current?.following??null,postsCount:next.postsCount??current?.postsCount??null,biography:next.biography??current?.biography??null,website:next.website??current?.website??null,category:next.category??current?.category??null,isPrivate:next.isPrivate??current?.isPrivate??null,isVerified:next.isVerified??current?.isVerified??null,isBusiness:next.isBusiness??current?.isBusiness??null,publicEmail:next.publicEmail??current?.publicEmail??null,publicPhone:next.publicPhone??current?.publicPhone??null,source:current?.source==="keyword"?"keyword":next.source,sourceQuery:next.sourceQuery||current?.sourceQuery,rank:next.rank??current?.rank??null,parentUsernames:[...parents],sharedParentCount:shared,discoveryDepth:current?Math.min(current.discoveryDepth,depth):depth,relevanceScore:Math.round(Math.max(current?.relevanceScore||0,baseScore(next))+shared*12+(depth===0?8:0))};
+ return {...(current||{}),...next,id:next.id||current?.id||next.username,username:next.username.toLowerCase(),fullName:next.fullName||current?.fullName,profileUrl:next.profileUrl||current?.profileUrl,profilePictureUrl:next.profilePictureUrl||current?.profilePictureUrl,recentPostImageUrl:next.recentPostImageUrl||current?.recentPostImageUrl,recentPostCaption:next.recentPostCaption??current?.recentPostCaption??null,followers:next.followers??current?.followers??null,following:next.following??current?.following??null,postsCount:next.postsCount??current?.postsCount??null,biography:next.biography??current?.biography??null,website:next.website??current?.website??null,category:next.category??current?.category??null,isPrivate:next.isPrivate??current?.isPrivate??null,isVerified:next.isVerified??current?.isVerified??null,isBusiness:next.isBusiness??current?.isBusiness??null,publicEmail:next.publicEmail??current?.publicEmail??null,publicPhone:next.publicPhone??current?.publicPhone??null,source:current?.source==="keyword"?"keyword":next.source,sourceQuery:next.sourceQuery||current?.sourceQuery,rank:next.rank??current?.rank??null,parentUsernames:[...parents],sharedParentCount:shared,discoveryDepth:current?Math.min(current.discoveryDepth,depth):depth,relevanceScore:Math.round(Math.max(current?.relevanceScore||0,baseScore(next,query))+shared*12+(depth===0?8:0))};
 }
 
-function mergeRelated(profiles:Map<string,DiscoveryProfile>,edges:DiscoveryEdge[],rows:Awaited<ReturnType<typeof relatedSearch>>,depth=1){
+function mergeRelated(profiles:Map<string,DiscoveryProfile>,edges:DiscoveryEdge[],rows:Awaited<ReturnType<typeof relatedSearch>>,depth=1,query=""){
  edges.push(...rows.edges);
  const parentByChild=new Map<string,string[]>();for(const edge of rows.edges){const list=parentByChild.get(edge.childUsername)||[];list.push(edge.parentUsername);parentByChild.set(edge.childUsername,list)}
- for(const p of rows.profiles){const parents=parentByChild.get(p.username)||[];let merged=profiles.get(profileKey(p));if(!parents.length)merged=mergeProfile(merged,p,undefined,depth);else for(const parent of parents)merged=mergeProfile(merged,p,parent,depth);profiles.set(profileKey(p),merged!)}
+ for(const p of rows.profiles){const parents=parentByChild.get(p.username)||[];let merged=profiles.get(profileKey(p));if(!parents.length)merged=mergeProfile(merged,p,undefined,depth,query);else for(const parent of parents)merged=mergeProfile(merged,p,parent,depth,query);profiles.set(profileKey(p),merged!)}
 }
 
 export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<DiscoveryResponse>{
@@ -44,15 +46,16 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  // searching its display name. This preserves the graph-first strategy.
  if(seedUsernames.length&&profiles.size<target){
   const related=await relatedSearch(seedUsernames,relatedPerSeed,Boolean(input.enrichProfiles));
-  mergeRelated(profiles,edges,related,1);
+  mergeRelated(profiles,edges,related,1,query);
  }
 
  // Only pay for keyword phrases this living niche has not searched before.
  // Repeating a search therefore moves into new graph territory instead of starting over.
  const freshKeywords=keywords.filter(k=>!state.searchedKeywords.has(k.toLowerCase()));
  if(freshKeywords.length&&profiles.size<target){
-  const keywordRows=await keywordSearch(freshKeywords,keywordPages,Boolean(input.enrichProfiles));
-  for(const p of keywordRows){const key=profileKey(p);profiles.set(key,mergeProfile(profiles.get(key),p,undefined,0))}
+  const keywordRows=await keywordSearch(freshKeywords,keywordPages,false);
+  const enrichedKeywordRows=await enrichProfiles(keywordRows,60);
+  for(const p of enrichedKeywordRows){const key=profileKey(p);profiles.set(key,mergeProfile(profiles.get(key),p,undefined,0,query))}
   await markKeywordsSearched(state.searchId,freshKeywords);
  }
 
@@ -60,7 +63,8 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  const parentNames=[...new Set([...seedUsernames,...candidateParents.map(p=>p.username)])].slice(0,seedExpansionLimit+seedUsernames.length);
  if(candidateParents.length&&profiles.size<target){
   const related=await relatedSearch(candidateParents.map(p=>p.username),relatedPerSeed,Boolean(input.enrichProfiles));
-  mergeRelated(profiles,edges,related,1);
+  const enrichedRelated=await enrichProfiles(related.profiles,60);related.profiles=enrichedRelated;
+  mergeRelated(profiles,edges,related,1,query);
  }
 
  const ranked=[...profiles.values()].sort((a,b)=>b.relevanceScore-a.relevanceScore||b.sharedParentCount-a.sharedParentCount||(a.rank??999)-(b.rank??999)).slice(0,target);
