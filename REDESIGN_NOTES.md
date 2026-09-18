@@ -18,3 +18,6 @@ Natural-language searches are classified into Fashion, Fitness, Hair, Skin, Smil
 ## Preserved Stage 3 behavior
 
 Pan and zoom, semantic branches, live Shopify Catalog search, draggable product tags, negative preferences, product-level @ refinement, product pinning and blending, breadcrumbs, taste memory, discovery pockets, Drop Anything and retailer links.
+
+
+<!-- deployment trigger: sync latest entry pointer/subcategory navigation to Vercel production -->
