@@ -1,0 +1,4 @@
+import {NextRequest,NextResponse} from "next/server";
+import {creatorByCode,recordClick} from "@/lib/creators/store";
+export const runtime="nodejs";
+export async function GET(req:NextRequest,{params}:{params:Promise<{code:string}>}){const {code}=await params;const creator=await creatorByCode(code);const destination=new URL(req.nextUrl.searchParams.get("to")||"/",req.nextUrl.origin);if(destination.origin!==req.nextUrl.origin)destination.pathname="/";const res=NextResponse.redirect(destination);if(!creator)return res;res.cookies.set("ynot-creator-ref",creator.referral_code,{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",maxAge:60*60*24*30,path:"/"});res.cookies.set("ynot-creator-id",creator.id,{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",maxAge:60*60*24*30,path:"/"});await recordClick(creator,destination.pathname,req.headers.get("user-agent")||"");return res}
