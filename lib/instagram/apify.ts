@@ -63,15 +63,51 @@ function profileFromRow(row:Record<string,unknown>,source:"keyword"|"related",fa
 
 function parseKeywordRows(rows:Record<string,unknown>[],fallbackQuery:string){const profiles:InstagramProfile[]=[];const seen=new Set<string>();for(const row of rows){const profile=profileFromRow(row,"keyword",fallbackQuery);if(!profile||seen.has(profile.username))continue;seen.add(profile.username);profiles.push(profile)}return profiles}
 
+function profileFromContentRow(row:Record<string,unknown>,fallbackQuery:string):InstagramProfile|null{
+ const owner=(row.owner && typeof row.owner==="object"?row.owner:null) as Record<string,unknown>|null;
+ const username=normalizedUsername(row.ownerUsername||row.owner_username||row.username||owner?.username);
+ if(!username)return null;
+ const caption=firstString(row.caption,row.text);
+ const image=firstString(row.displayUrl,row.display_url,row.imageUrl,row.image_url,row.thumbnailUrl,row.thumbnail_url);
+ return{
+  id:firstString(row.ownerId,row.owner_id,row.userId,row.user_id,owner?.id,row.id)||username,
+  username,
+  fullName:firstString(row.ownerFullName,row.owner_full_name,owner?.fullName,owner?.full_name,row.fullName,row.full_name)||undefined,
+  profileUrl:`https://www.instagram.com/${username}/`,
+  profilePictureUrl:firstString(row.ownerProfilePicUrl,row.owner_profile_pic_url,owner?.profilePicUrl,owner?.profile_pic_url)||undefined,
+  recentPostImageUrl:image||undefined,
+  recentPostCaption:caption||null,
+  source:"keyword",
+  sourceQuery:fallbackQuery
+ };
+}
+
+function parseContentRows(rows:Record<string,unknown>[],fallbackQuery:string){
+ const profiles:InstagramProfile[]=[];const seen=new Set<string>();
+ for(const row of rows){const profile=profileFromContentRow(row,fallbackQuery);if(!profile||seen.has(profile.username))continue;seen.add(profile.username);profiles.push(profile)}
+ return profiles;
+}
+
 export async function keywordSearch(queries:string[],maxPagesPerQuery=10,enrichProfiles=false){
  const cleanQueries=queries.map(query=>query.trim()).filter(Boolean);if(!cleanQueries.length)return[];
+ const searchLimit=Math.max(20,Math.min(120,maxPagesPerQuery*20));
+ // Content-first discovery: Instagram's user search is name/handle driven, so it is no longer
+ // the primary source. Popular reels return captions/hashtags plus the creator username.
  let rows:Record<string,unknown>[]=[];
- try{rows=await runActor(KEYWORD_ACTOR,{search:cleanQueries.join(", "),searchType:"user",searchLimit:Math.max(40,Math.min(250,maxPagesPerQuery*40)),enhanceUserSearchWithFacebookPage:false,liveSearch:true},120000)}catch(error){console.warn("Primary Instagram keyword actor failed",error)}
- let profiles=parseKeywordRows(rows,cleanQueries[0]);if(profiles.length)return profiles;
+ try{rows=await runActor(KEYWORD_ACTOR,{search:cleanQueries.join(", "),searchType:"popular",searchLimit,liveSearch:true},120000)}catch(error){console.warn("Instagram popular-content discovery failed",error)}
+ let profiles=parseContentRows(rows,cleanQueries[0]);if(profiles.length)return profiles;
+
+ // Fallback to hashtag discovery. This remains topic/content driven rather than username driven.
  try{
-  const fallbackRows=await runActor(FALLBACK_KEYWORD_ACTOR,{search:cleanQueries.join(", "),searchType:"user",searchLimit:10,enhanceUserSearchWithFacebookPage:false,liveSearch:true});
-  profiles=parseKeywordRows(fallbackRows,cleanQueries[0]);if(profiles.length)return profiles;
- }catch(error){console.warn("Fast Instagram keyword fallback failed",error)}
+  const hashtagRows=await runActor(FALLBACK_KEYWORD_ACTOR,{search:cleanQueries.join(", "),searchType:"hashtag",searchLimit,liveSearch:true},120000);
+  // Hashtag search returns tags rather than creators, so only accept rows that actually include
+  // creator/post ownership data. Otherwise continue to the secondary content source below.
+  profiles=parseContentRows(hashtagRows,cleanQueries[0]);if(profiles.length)return profiles;
+ }catch(error){console.warn("Instagram hashtag discovery fallback failed",error)}
+
+ // Legacy user-search actor is retained only as a last-resort availability fallback. Downstream
+ // qualification gives username/display-name zero relevance, so lexical handle matches cannot pass
+ // unless their enriched bio/category/site/post content supports the niche.
  const secondaryRows=await runActor(SECONDARY_KEYWORD_ACTOR,{keywords:cleanQueries,maxItems:40},120000);
  profiles=parseKeywordRows(secondaryRows,cleanQueries[0]);
  if(!profiles.length)throw new Error("Instagram discovery actors returned no usable profile rows");
