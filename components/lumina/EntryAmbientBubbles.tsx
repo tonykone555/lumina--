@@ -32,17 +32,6 @@ const DISMISS_SELECTOR=[
  ".ynot-compass-button",
 ].join(",");
 
-const OPEN_UI_SELECTOR=[
- ".lv4-detail",
- ".ynot-drawer.open",
- ".ynot-unified-bag",
- ".ynot-notebook-shell",
- ".ynot-auth-shell",
- ".discover-profile-backdrop",
- ".ynot-source-list",
- ".lv4-refine-panel",
-].join(",");
-
 export default function EntryAmbientBubbles(){
  const[home,setHome]=useState(false);
  const[dismissed,setDismissed]=useState(false);
@@ -53,7 +42,6 @@ export default function EntryAmbientBubbles(){
    frame=0;
    const landing=Boolean(document.querySelector(".lv4-shell.depth-worlds"));
    setHome(landing);
-   if(document.querySelector(OPEN_UI_SELECTOR))setDismissed(true);
   };
   const queue=()=>{if(frame)return;frame=requestAnimationFrame(sync)};
   const observer=new MutationObserver(queue);
