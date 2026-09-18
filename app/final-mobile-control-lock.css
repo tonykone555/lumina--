@@ -67,3 +67,26 @@
     transform-origin:center center!important;
   }
 }
+
+/* Discover control layer must sit above the locked mobile shopping world. */
+@media(max-width:899px){
+  .ynot-app-shell .ynot-search-partner{
+    display:grid!important;visibility:visible!important;opacity:1!important;
+    position:fixed!important;left:50%!important;right:auto!important;
+    top:auto!important;bottom:calc(88px + env(safe-area-inset-bottom))!important;
+    transform:translateX(-50%)!important;
+    z-index:2147483646!important;pointer-events:auto!important;
+    width:44px!important;height:44px!important;
+  }
+  body>.discover-partner-backdrop,
+  body>.discover-worlds-backdrop{
+    display:flex!important;visibility:visible!important;opacity:1!important;
+    position:fixed!important;inset:0!important;
+    z-index:2147483647!important;pointer-events:auto!important;
+  }
+  body>.discover-partner-backdrop .discover-partner-panel{
+    display:flex!important;visibility:visible!important;opacity:1!important;
+    position:fixed!important;inset:0!important;
+    z-index:2147483647!important;pointer-events:auto!important;
+  }
+}
