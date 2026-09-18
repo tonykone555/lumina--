@@ -67,7 +67,7 @@ export default function DiscoveryUniverse(){
 
  function submit(event:FormEvent){event.preventDefault();void runSearch(query)}
  useEffect(()=>{const onSearch=(event:Event)=>{const term=String((event as CustomEvent<string>).detail||"");setQuery(term);void runSearch(term)};window.addEventListener("discover:search",onSearch);return()=>window.removeEventListener("discover:search",onSearch)},[]);
- useEffect(()=>{const onPartner=()=>openPartner();window.addEventListener("ynot:open-partner",onPartner);return()=>window.removeEventListener("ynot:open-partner",onPartner)},[]);
+ useEffect(()=>{const onPartner=()=>{setPartnerOpen(true);document.documentElement.setAttribute("data-partner-open","true")};window.addEventListener("ynot:open-partner",onPartner);return()=>window.removeEventListener("ynot:open-partner",onPartner)},[]);
 
  function findSimilar(profile:Profile){
   setSelected(null);
