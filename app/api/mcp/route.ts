@@ -67,9 +67,32 @@ async function catalog(query: string, country: string, source: string, limit: nu
   url.searchParams.set("q", query);
   url.searchParams.set("country", country);
   url.searchParams.set("source", source);
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`CATALOG_${response.status}`);
-  const data = await response.json();
+  // Shopify Global Catalog can occasionally return a transient service error. Retry the
+  // same canonical YNOT catalogue path before reporting an empty search so search_catalogue
+  // and get_products_to_promote have identical live-source behaviour.
+  let data: any = null;
+  let lastStatus = 0;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const response = await fetch(url, { cache: "no-store" });
+    lastStatus = response.status;
+    if (!response.ok) {
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+        continue;
+      }
+      throw new Error(`CATALOG_${response.status}`);
+    }
+    data = await response.json();
+    const products = Array.isArray(data?.products) ? data.products : [];
+    const transientShopifyError =
+      source === "shopify" &&
+      products.length === 0 &&
+      typeof data?.error === "string" &&
+      /temporarily unavailable|catalog unavailable|service error/i.test(data.error);
+    if (!transientShopifyError || attempt === 2) break;
+    await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+  }
+  if (!data) throw new Error(`CATALOG_${lastStatus || "UNAVAILABLE"}`);
   const isFallback = data?.source === "fallback" || (Array.isArray(data?.sources) && data.sources.includes("fallback"));
   const rawProducts = isFallback ? [] : (Array.isArray(data?.products) ? data.products : []);
   return {
