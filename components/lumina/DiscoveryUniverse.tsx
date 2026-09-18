@@ -53,7 +53,7 @@ export default function DiscoveryUniverse(){
 
  async function runSearch(term:string,options:{seed?:Profile;append?:boolean}={}){
   const clean=term.trim();if(clean.length<2)return;
-  setLoading(true);setSearchStartedAt(Date.now());setSearchElapsed(0);setError("");setActiveQuery(clean);
+  setLoading(true);setError("");setActiveQuery(clean);
   try{
    const learned=options.seed?discoveryTerms(options.seed):[];
    const r=await fetch("/api/instagram/discover",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:clean,target:300,keywordPages:3,relatedPerSeed:15,seedExpansionLimit:20,learnedKeywords:learned,seedUsernames:options.seed?[options.seed.username]:[]})});
@@ -62,7 +62,7 @@ export default function DiscoveryUniverse(){
    const incoming=data.profiles||[];
    setProfiles(current=>dedupe(options.append?[...current,...incoming]:incoming));
    setStats({unique:Number(data.uniqueCount||incoming.length),newCount:Number(data.newCount||incoming.length),reused:Number(data.reusedCount||0)});
-  }catch(e){setError(e instanceof Error?e.message:"Instagram discovery is unavailable")}finally{setLoading(false);setSearchStartedAt(null)}
+  }catch(e){setError(e instanceof Error?e.message:"Instagram discovery is unavailable")}finally{setLoading(false)}
  }
 
  function submit(event:FormEvent){event.preventDefault();void runSearch(query)}
@@ -89,8 +89,8 @@ export default function DiscoveryUniverse(){
    <h1>Discover brands through brands.</h1>
    <p>Search a niche, open a profile, then use Find Similar to expand through Instagram’s related-account graph instead of scrolling a flat list.</p>
    <form className="discover-search" onSubmit={submit}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Try: independent swimwear brands, minimal jewelry, activewear UK…"/><button type="submit" disabled={loading}>{loading?"Discovering…":"Discover"}<Sparkles/></button></form>
-   <div className="discover-example-row">{EXAMPLES.map(example=><button key={example} onClick={()=>{setQuery(example);void runSearch(example)}}>{example}</button>)}</div>\n   {loading&&<div className="discover-search-progress" role="status" aria-live="polite"><div className="discover-search-progress-head"><span className="discover-search-spinner" aria-hidden="true"/><div><strong>{searchElapsed<4?"Search started":searchElapsed<12?"Finding seed Instagram profiles":searchElapsed<30?"Expanding through related accounts":"Still searching Instagram’s graph"}</strong><small>{searchElapsed}s elapsed · searching up to 20 seeds × 15 related profiles</small></div></div><div className="discover-search-progress-track"><i/></div><p>{searchElapsed<8?"Connecting to the discovery provider and finding strong starting profiles…":searchElapsed<25?"The related-account graph can take a little longer while profiles are collected and deduplicated…":"The search is still active. Keep this page open — results will appear here when the graph finishes."}</p></div>}
-   <div className="discover-stats"><span>{health.apifyConfigured===false?"Provider needs API key":health.apifyConfigured?"Apify connected":"Checking provider…"}</span><span>{stats.unique?`${stats.unique} profiles`:"Graph-first search"}</span>{stats.newCount>0&&<span>{stats.newCount} new</span>}{stats.reused>0&&<span>{stats.reused} reused</span>}{saved.size>0&&<span>{saved.size} saved</span>}{profiles.length>0&&<button className="discover-expand" onClick={expand} disabled={loading}>Expand graph</button>}</div>
+   <div className="discover-example-row">{EXAMPLES.map(example=><button key={example} onClick={()=>{setQuery(example);void runSearch(example)}}>{example}</button>)}</div>\n
+   {loading&&<div className="discover-profile-count" role="status" aria-live="polite"><strong>{profiles.length}</strong><span>profiles found</span></div>}\n   <div className="discover-stats"><span>{health.apifyConfigured===false?"Provider needs API key":health.apifyConfigured?"Apify connected":"Checking provider…"}</span><span>{stats.unique?`${stats.unique} profiles`:"Graph-first search"}</span>{stats.newCount>0&&<span>{stats.newCount} new</span>}{stats.reused>0&&<span>{stats.reused} reused</span>}{saved.size>0&&<span>{saved.size} saved</span>}{profiles.length>0&&<button className="discover-expand" onClick={expand} disabled={loading}>Expand graph</button>}</div>
    {error&&<p className="discover-error">{error}</p>}
   </section>
   <section className="discover-rows">{displayRows.map((row,rowIndex)=><div className="discover-row-wrap" key={rowIndex}><div className="discover-row-label"><span>{rowNames[rowIndex]}</span><small>{profiles.length?(row as Profile[]).length:""}</small></div><div className="discover-row"><div className="discover-track">{profiles.length?(row as Profile[]).map((p,index)=><button className="discover-bubble" style={{"--bubble-i":index} as React.CSSProperties} key={p.username} onClick={()=>setSelected(p)} title={`@${p.username}`}><span className="discover-bubble-media">{p.profilePictureUrl?<img src={p.profilePictureUrl} alt=""/>:<span>{p.username.slice(0,2).toUpperCase()}</span>}</span><i className="discover-avatar">{p.profilePictureUrl?<img src={p.profilePictureUrl} alt=""/>:p.username.slice(0,1).toUpperCase()}</i>{p.sharedParentCount>1&&<b>{p.sharedParentCount}×</b>}</button>):(row as number[]).map(i=><span className="discover-bubble discover-bubble-ghost" style={{"--bubble-i":i} as React.CSSProperties} key={`${rowIndex}-${i}`}/>)}</div></div></div>)}</section>
