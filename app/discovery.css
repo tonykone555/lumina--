@@ -31,3 +31,13 @@
  .discover-partner-backdrop{padding:0!important;align-items:stretch;justify-content:center!important}
  .discover-partner-panel{width:100%!important;height:100dvh!important;border-radius:0!important;padding:72px 16px 24px!important}
 }
+
+/* Partner launcher: top-right on every viewport; modal forced above all app layers */
+.discover-partner-launch{position:fixed!important;top:max(12px,env(safe-area-inset-top))!important;right:max(12px,env(safe-area-inset-right))!important;left:auto!important;transform:none!important;z-index:2147483646!important;display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+.discover-partner-backdrop{position:fixed!important;inset:0!important;z-index:2147483647!important;display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;background:rgba(12,11,10,.42)!important;-webkit-backdrop-filter:blur(16px)!important;backdrop-filter:blur(16px)!important}
+.discover-partner-panel{position:relative!important;z-index:1!important;pointer-events:auto!important}
+@media(max-width:640px){
+ .discover-partner-launch{top:max(10px,env(safe-area-inset-top))!important;right:max(10px,env(safe-area-inset-right))!important}
+ .discover-partner-backdrop{padding:0!important;align-items:stretch!important;justify-content:center!important}
+ .discover-partner-panel{position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;border-radius:0!important;padding:calc(max(62px,env(safe-area-inset-top) + 48px)) 16px max(20px,env(safe-area-inset-bottom))!important;overflow-y:auto!important}
+}
