@@ -1,5 +1,6 @@
 import Link from "next/link";
 import "./growth.css";
+import CreativeActions from "./CreativeActions";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ async function adminData() {
     return r.ok ? r.json() : [];
   };
   const [creatives, performance, campaigns, products] = await Promise.all([
-    get("ynot_ad_creatives?select=id,source_product_ids,hook,headline,status,quality_score,render_url,thumbnail_url,created_at&order=created_at.desc&limit=12"),
+    get("ynot_ad_creatives?select=id,source_product_ids,hook,headline,status,quality_score,render_url,thumbnail_url,payload,voice_script,created_at&order=created_at.desc&limit=12"),
     get("ynot_ad_performance?select=platform,impressions,clicks,spend,saves,product_opens,add_to_bag,purchases,revenue,date&order=date.desc&limit=500"),
     get("ynot_ad_campaigns?select=id,name,platform,status,daily_budget,currency,created_at&order=created_at.desc&limit=12"),
     get("ynot_ad_product_scores?select=product_id,title,image_url,price,currency,advertability_score,scored_at&order=advertability_score.desc.nullslast&limit=8"),
@@ -46,7 +47,7 @@ export default async function GrowthAdminPage() {
     </section>
     <div className="grid">
       <section className="panel wide"><div className="panelHead"><div><span>CREATIVE QUEUE</span><h2>Review before anything moves</h2></div><b>{creatives.filter((c:any)=>c.status==="review").length} waiting</b></div>
-        <div className="rows">{creatives.length ? creatives.map((c:any)=><article className="row" key={c.id}><div className="thumb">{c.thumbnail_url?<img src={c.thumbnail_url} alt=""/>:<span>Y</span>}</div><div className="grow"><strong>{c.headline||c.hook||"Untitled creative"}</strong><small>{c.hook||"No hook yet"}</small></div><em className={"status "+c.status}>{c.status||"draft"}</em></article>) : <Empty text="No creative hypotheses yet. Grok can save the first one through YNOT MCP."/ >}</div>
+        <div className="rows">{creatives.length ? creatives.map((c:any)=><article className="row" key={c.id}><div className="thumb">{c.thumbnail_url?<img src={c.thumbnail_url} alt=""/>:<span>Y</span>}</div><div className="grow"><strong>{c.headline||c.hook||"Untitled creative"}</strong><small>{c.hook||"No hook yet"}</small></div><em className={"status "+c.status}>{c.status||"draft"}</em><CreativeActions id={c.id} status={c.status||"review"}/></article>) : <Empty text="No creative hypotheses yet. Grok can save the first one through YNOT MCP."/ >}</div>
       </section>
       <section className="panel"><div className="panelHead"><div><span>PIPELINE</span><h2>Safety state</h2></div></div>
         <div className="flow"><Flow n="01" t="Research" d="Catalogue + opportunity signals"/><Flow n="02" t="Creative" d="Grok saves structured hypothesis"/><Flow n="03" t="Review" d="Human approval required"/><Flow n="04" t="Generate" d="Asset generation after approval"/><Flow n="05" t="Distribute" d="TryPost draft / schedule"/><Flow n="06" t="Learn" d="Performance returns to YNOT"/></div>
@@ -58,7 +59,7 @@ export default async function GrowthAdminPage() {
         <div className="rows">{campaigns.length?campaigns.map((c:any)=><article className="campaign" key={c.id}><div><strong>{c.name}</strong><small>{c.platform} · {c.currency||"EUR"} {c.daily_budget||0}/day</small></div><em className={"status "+c.status}>{c.status}</em></article>):<Empty text="No campaigns connected yet."/ >}</div>
       </section>
     </div>
-    <footer><span>YNOT Growth OS</span><span>Publishing remains disabled from MCP until approval workflow is connected.</span><Link href="/">Back to YNOT</Link></footer>
+    <footer><span>YNOT Growth OS</span><span>Creative approval is live. Video generation remains gated until a provider is connected.</span><Link href="/">Back to YNOT</Link></footer>
   </main>;
 }
 
