@@ -54,16 +54,17 @@ export async function discoverInstagramGraph(input:DiscoveryRequest):Promise<Dis
  const freshKeywords=keywords.filter(k=>!state.searchedKeywords.has(k.toLowerCase()));
  if(freshKeywords.length&&profiles.size<target){
   const keywordRows=await keywordSearch(freshKeywords,keywordPages,false);
-  const enrichedKeywordRows=await enrichProfiles(keywordRows,60);
-  for(const p of enrichedKeywordRows){const key=profileKey(p);profiles.set(key,mergeProfile(profiles.get(key),p,undefined,0,query))}
+  const enrichedKeywordRows=await enrichProfiles(keywordRows,300);
+  const relevantKeywordRows=enrichedKeywordRows.filter(p=>contentMatch(p,query)>0);
+  for(const p of relevantKeywordRows){const key=profileKey(p);profiles.set(key,mergeProfile(profiles.get(key),p,undefined,0,query))}
   await markKeywordsSearched(state.searchId,freshKeywords);
  }
 
- const candidateParents=[...profiles.values()].filter(p=>!expanded.has(p.username)&&!seedUsernames.includes(p.username)&&!p.isPrivate).sort((a,b)=>b.relevanceScore-a.relevanceScore).slice(0,seedExpansionLimit);
+ const candidateParents=[...profiles.values()].filter(p=>!expanded.has(p.username)&&!seedUsernames.includes(p.username)&&!p.isPrivate&&(contentMatch(p,query)>0||p.sharedParentCount>0)).sort((a,b)=>b.relevanceScore-a.relevanceScore).slice(0,seedExpansionLimit);
  const parentNames=[...new Set([...seedUsernames,...candidateParents.map(p=>p.username)])].slice(0,seedExpansionLimit+seedUsernames.length);
  if(candidateParents.length&&profiles.size<target){
   const related=await relatedSearch(candidateParents.map(p=>p.username),relatedPerSeed,Boolean(input.enrichProfiles));
-  const enrichedRelated=await enrichProfiles(related.profiles,60);related.profiles=enrichedRelated;
+  const enrichedRelated=await enrichProfiles(related.profiles,300);related.profiles=enrichedRelated;
   mergeRelated(profiles,edges,related,1,query);
  }
 
