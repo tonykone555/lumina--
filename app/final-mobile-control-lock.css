@@ -90,3 +90,7 @@
     z-index:2147483647!important;pointer-events:auto!important;
   }
 }
+
+@media(max-width:899px){
+ .ynot-app-shell .ynot-search-partner{bottom:calc(62px + env(safe-area-inset-bottom))!important}
+}
