@@ -6,6 +6,8 @@ export type InstagramProfile={
   fullName?:string;
   profileUrl?:string;
   profilePictureUrl?:string;
+  recentPostImageUrl?:string;
+  recentPostCaption?:string|null;
   followers?:number|null;
   following?:number|null;
   postsCount?:number|null;
