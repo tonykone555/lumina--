@@ -58,10 +58,10 @@ function profileFromRow(row:Record<string,unknown>,source:"keyword"|"related",fa
 
 function parseKeywordRows(rows:Record<string,unknown>[],fallbackQuery:string){const profiles:InstagramProfile[]=[];const seen=new Set<string>();for(const row of rows){const profile=profileFromRow(row,"keyword",fallbackQuery);if(!profile||seen.has(profile.username))continue;seen.add(profile.username);profiles.push(profile)}return profiles}
 
-export async function keywordSearch(queries:string[],maxPagesPerQuery=10){
+export async function keywordSearch(queries:string[],maxPagesPerQuery=10,enrichProfiles=false){
  const cleanQueries=queries.map(query=>query.trim()).filter(Boolean);if(!cleanQueries.length)return[];
  let rows:Record<string,unknown>[]=[];
- try{rows=await runActor(KEYWORD_ACTOR,{queries:cleanQueries,maxPagesPerQuery:Math.max(1,Math.min(10,maxPagesPerQuery)),enrichProfiles:false})}catch(error){console.warn("Primary Instagram keyword actor failed",error)}
+ try{rows=await runActor(KEYWORD_ACTOR,{queries:cleanQueries,maxPagesPerQuery:Math.max(1,Math.min(10,maxPagesPerQuery)),enrichProfiles})}catch(error){console.warn("Primary Instagram keyword actor failed",error)}
  let profiles=parseKeywordRows(rows,cleanQueries[0]);if(profiles.length)return profiles;
  try{
   const fallbackRows=await runActor(FALLBACK_KEYWORD_ACTOR,{search:cleanQueries.join(", "),searchType:"user",searchLimit:10,enhanceUserSearchWithFacebookPage:false,liveSearch:true});
@@ -73,9 +73,9 @@ export async function keywordSearch(queries:string[],maxPagesPerQuery=10){
  return profiles;
 }
 
-export async function relatedSearch(seeds:string[],maxResultsPerProfile=80){
+export async function relatedSearch(seeds:string[],maxResultsPerProfile=80,enrichProfiles=false){
  if(!seeds.length)return{profiles:[] as InstagramProfile[],edges:[] as DiscoveryEdge[]};
- const rows=await runActor(RELATED_ACTOR,{profiles:seeds,maxResultsPerProfile:Math.max(1,Math.min(80,maxResultsPerProfile)),enrichProfiles:false});
+ const rows=await runActor(RELATED_ACTOR,{profiles:seeds,maxResultsPerProfile:Math.max(1,Math.min(80,maxResultsPerProfile)),enrichProfiles});
  const profiles:InstagramProfile[]=[];const edges:DiscoveryEdge[]=[];const seen=new Set<string>();
  for(const row of rows){const profile=profileFromRow(row,"related");const parent=normalizedUsername(row.seed_username||row.seedUsername||row.seed_profile||row.seedProfile||row.seed);if(!profile||!parent||seen.has(`${parent}:${profile.username}`))continue;seen.add(`${parent}:${profile.username}`);profiles.push(profile);edges.push({parentUsername:parent,childUsername:profile.username,edgeType:"instagram_suggested",rank:profile.rank})}
  return{profiles,edges};
