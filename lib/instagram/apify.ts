@@ -5,8 +5,7 @@ const KEYWORD_ACTOR=process.env.APIFY_KEYWORD_ACTOR||"apify~instagram-search-scr
 const FALLBACK_KEYWORD_ACTOR=process.env.APIFY_FALLBACK_KEYWORD_ACTOR||"apify~instagram-search-scraper";
 const SECONDARY_KEYWORD_ACTOR=process.env.APIFY_SECONDARY_KEYWORD_ACTOR||"maximedupre~instagram-user-search-scraper";
 const RELATED_ACTOR=process.env.APIFY_RELATED_ACTOR||"publicsignallabs~instagram-related-profiles";
-const PROFILE_ACTOR=process.env.APIFY_PROFILE_ACTOR||"apify~instagram-profile-scraper";
-const POSTS_ACTOR=process.env.APIFY_POSTS_ACTOR||"receptional_blender~instagram-recent-posts";
+const PROFILE_ACTOR=process.env.APIFY_PROFILE_ACTOR||"insta_scrapper~instagram-profile-scraper";
 
 function token(){const value=process.env.APIFY_API_TOKEN;if(!value)throw new Error("APIFY_API_TOKEN is not configured");return value}
 function actorId(id:string){return id.replace("/","~")}
@@ -81,17 +80,15 @@ export async function keywordSearch(queries:string[],maxPagesPerQuery=10,enrichP
 
 export async function enrichProfiles(profiles:InstagramProfile[],limit=300){
  const selected=profiles.filter(p=>p.username&&!p.isPrivate).slice(0,Math.max(1,Math.min(300,limit)));if(!selected.length)return profiles;
- const chunks:InstagramProfile[][]=[];for(let i=0;i<selected.length;i+=60)chunks.push(selected.slice(i,i+60));
+ const chunks:InstagramProfile[][]=[];for(let i=0;i<selected.length;i+=100)chunks.push(selected.slice(i,i+100));
  try{
-  const [profileGroups,postGroups]=await Promise.all([
-   Promise.all(chunks.map(chunk=>runActor(PROFILE_ACTOR,{usernames:chunk.map(p=>p.username),includeAboutSection:false},180000).catch(()=>[]))),
-   Promise.all(chunks.map(chunk=>runActor(POSTS_ACTOR,{usernames:chunk.map(p=>p.username),maxPosts:1},180000).catch(()=>[])))
-  ]);
+  // One enrichment source only. The low-cost profile actor returns profile metadata
+  // and recent posts in the same profile result, so we do not pay for a second posts actor.
+  const groups=await Promise.all(chunks.map(chunk=>runActor(PROFILE_ACTOR,{usernames:chunk.map(p=>p.username)},180000).catch(()=>[])));
   const enriched=new Map<string,InstagramProfile>();
-  for(const row of profileGroups.flat()){const p=profileFromRow(row,"keyword");if(p)enriched.set(p.username,p)}
-  for(const row of postGroups.flat()){const username=normalizedUsername(row.username||row.profile_username||row.ownerUsername);if(!username)continue;const current=enriched.get(username);const image=firstString(row.displayUrl,row.display_url,row.thumbnailSrc,row.thumbnail_url);const caption=firstString(row.caption,row.text)||null;if(current)enriched.set(username,{...current,recentPostImageUrl:image||current.recentPostImageUrl,recentPostCaption:caption||current.recentPostCaption});else{const base=profiles.find(p=>p.username===username);if(base)enriched.set(username,{...base,recentPostImageUrl:image||base.recentPostImageUrl,recentPostCaption:caption||base.recentPostCaption})}}
+  for(const row of groups.flat()){const p=profileFromRow(row,"keyword");if(p)enriched.set(p.username,p)}
   return profiles.map(p=>{const e=enriched.get(p.username);return e?{...p,...e,source:p.source,sourceQuery:p.sourceQuery||e.sourceQuery,rank:p.rank??e.rank}:p})
- }catch(error){console.warn("Instagram profile/post enrichment failed",error);return profiles}
+ }catch(error){console.warn("Instagram single-source profile enrichment failed",error);return profiles}
 }
 
 export async function relatedSearch(seeds:string[],maxResultsPerProfile=80,enrichProfiles=false){
