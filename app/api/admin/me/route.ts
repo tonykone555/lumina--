@@ -13,7 +13,7 @@ export async function GET(req:NextRequest){
   if(!ur.ok)return NextResponse.json({admin:false},{status:200});
   const user=await ur.json();
   if(!user?.id)return NextResponse.json({admin:false},{status:200});
-  const ar=await fetch(`${url}/rest/v1/ynot_admin_access_requests?auth_user_id=eq.${encodeURIComponent(user.id)}&status=eq.approved&select=id&limit=1`,{headers:{apikey:service,Authorization:`Bearer ${service}`},cache:"no-store"});
+  const ar=await fetch(`${url}/rest/v1/ynot_admin_access_requests?auth_user_id=eq.${encodeURIComponent(user.id)}&status=eq.approved&select=id&limit=1`,{headers:{apikey:service,...(service.startsWith("sb_")?{}:{Authorization:`Bearer ${service}`})},cache:"no-store"});
   if(!ar.ok)return NextResponse.json({admin:false},{status:200});
   const rows=await ar.json();
   return NextResponse.json({admin:Array.isArray(rows)&&rows.length>0},{headers:{"Cache-Control":"no-store"}});
