@@ -5,6 +5,7 @@ const KEYWORD_ACTOR=process.env.APIFY_KEYWORD_ACTOR||"apify~instagram-search-scr
 const FALLBACK_KEYWORD_ACTOR=process.env.APIFY_FALLBACK_KEYWORD_ACTOR||"apify~instagram-search-scraper";
 const SECONDARY_KEYWORD_ACTOR=process.env.APIFY_SECONDARY_KEYWORD_ACTOR||"maximedupre~instagram-user-search-scraper";
 const RELATED_ACTOR=process.env.APIFY_RELATED_ACTOR||"publicsignallabs~instagram-related-profiles";
+const PROFILE_ACTOR=process.env.APIFY_PROFILE_ACTOR||"apify~instagram-profile-scraper";
 
 function token(){const value=process.env.APIFY_API_TOKEN;if(!value)throw new Error("APIFY_API_TOKEN is not configured");return value}
 function actorId(id:string){return id.replace("/","~")}
@@ -29,16 +30,20 @@ function firstString(...values:unknown[]){for(const value of values){const text=
 function firstNumber(...values:unknown[]){for(const value of values){const result=n(value);if(result!==null)return result}return null}
 function firstBoolean(...values:unknown[]){for(const value of values){const result=b(value);if(result!==null)return result}return null}
 function normalizedUsername(value:unknown){return s(value).replace(/^@/,"").trim().toLowerCase()}
+function recentPost(row:Record<string,unknown>){const candidates=[row.latestPosts,row.latest_posts,row.posts,row.recentPosts].find(Array.isArray) as Record<string,unknown>[]|undefined;const post=candidates?.[0];if(!post)return{};const images=post.images;const image=firstString(post.displayUrl,post.display_url,post.imageUrl,post.image_url,post.thumbnailUrl,post.thumbnail_url,Array.isArray(images)?images[0]:undefined);return{recentPostImageUrl:image||undefined,recentPostCaption:firstString(post.caption,post.text)||null}}
 function matchedKeyword(row:Record<string,unknown>,fallback:string){const list=row.matchedKeywords;if(Array.isArray(list)&&list.length)return s(list[0])||fallback;return firstString(row.query,row.search_query,row.sourceQuery,row.searchTerm,fallback)}
 
 function profileFromRow(row:Record<string,unknown>,source:"keyword"|"related",fallbackQuery?:string):InstagramProfile|null{
  const username=normalizedUsername(row.username||row.userName||row.handle);if(!username)return null;
+ const recent=recentPost(row);
  return{
   id:firstString(row.id,row.userId,row.user_id,row.pk)||username,
   username,
   fullName:firstString(row.full_name,row.fullName,row.name)||undefined,
   profileUrl:firstString(row.profile_url,row.profileUrl,row.url)||`https://www.instagram.com/${username}/`,
-  profilePictureUrl:firstString(row.profile_pic_url,row.profile_picture_url,row.profilePictureUrl,row.profilePicUrl,row.profileImage)||undefined,
+  profilePictureUrl:firstString(row.profile_pic_url,row.profile_picture_url,row.profilePictureUrl,row.profilePicUrl,row.profileImage,row.profilePicUrlHD)||undefined,
+  recentPostImageUrl:recent.recentPostImageUrl,
+  recentPostCaption:recent.recentPostCaption,
   isPrivate:firstBoolean(row.is_private,row.isPrivate,row.private),
   isVerified:firstBoolean(row.is_verified,row.isVerified,row.verified),
   followers:firstNumber(row.follower_count,row.followersCount,row.followerCount,row.followers),
@@ -71,6 +76,11 @@ export async function keywordSearch(queries:string[],maxPagesPerQuery=10,enrichP
  profiles=parseKeywordRows(secondaryRows,cleanQueries[0]);
  if(!profiles.length)throw new Error("Instagram discovery actors returned no usable profile rows");
  return profiles;
+}
+
+export async function enrichProfiles(profiles:InstagramProfile[],limit=60){
+ const selected=profiles.filter(p=>p.username&&!p.isPrivate).slice(0,Math.max(1,Math.min(100,limit)));if(!selected.length)return profiles;
+ try{const rows=await runActor(PROFILE_ACTOR,{usernames:selected.map(p=>p.username),includeAboutSection:false},180000);const enriched=new Map<string,InstagramProfile>();for(const row of rows){const p=profileFromRow(row,"keyword");if(p)enriched.set(p.username,p)}return profiles.map(p=>{const e=enriched.get(p.username);return e?{...p,...e,source:p.source,sourceQuery:p.sourceQuery||e.sourceQuery,rank:p.rank??e.rank}:p})}catch(error){console.warn("Instagram profile enrichment failed",error);return profiles}
 }
 
 export async function relatedSearch(seeds:string[],maxResultsPerProfile=80,enrichProfiles=false){
