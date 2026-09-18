@@ -12,7 +12,8 @@ export async function GET(){
   provider:"apify",
   apifyConfigured:Boolean(process.env.APIFY_API_TOKEN),
   persistenceConfigured:instagramStoreEnabled(),
-  keywordActor:process.env.APIFY_KEYWORD_ACTOR||"publicsignallabs~instagram-account-search",
+  keywordActor:process.env.APIFY_KEYWORD_ACTOR||"apify~instagram-search-scraper",
+  profileActor:process.env.APIFY_PROFILE_ACTOR||"apify~instagram-profile-scraper",
   fallbackKeywordActor:process.env.APIFY_FALLBACK_KEYWORD_ACTOR||"apify~instagram-search-scraper",
   secondaryKeywordActor:process.env.APIFY_SECONDARY_KEYWORD_ACTOR||"maximedupre~instagram-user-search-scraper",
   relatedActor:process.env.APIFY_RELATED_ACTOR||"publicsignallabs~instagram-related-profiles"
