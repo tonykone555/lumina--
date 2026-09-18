@@ -333,3 +333,101 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
   }
   .ynot-entry-quick-chips{justify-content:flex-start}
 }
+
+
+/* Draggable entry pointer: the previous colour/search launcher is retired.
+   Drag the glass orb onto a category bubble and release to open it. */
+.ynot-entry-color-control,
+.ynot-entry-quick-panel{display:none!important}
+
+.ynot-entry-pointer{
+  position:fixed;
+  z-index:270;
+  left:50%;
+  top:auto;
+  bottom:calc(126px + env(safe-area-inset-bottom));
+  transform:translate(-50%,0);
+  width:42px;
+  height:42px;
+  padding:0;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.42);
+  background:
+    radial-gradient(circle at 30% 22%,rgba(255,255,255,.78) 0 6%,rgba(255,255,255,.23) 15%,rgba(185,198,208,.16) 42%,rgba(90,100,108,.12) 67%,rgba(0,0,0,.40) 100%);
+  box-shadow:
+    inset 5px 6px 10px rgba(255,255,255,.18),
+    inset -7px -8px 13px rgba(0,0,0,.28),
+    0 10px 30px rgba(0,0,0,.34),
+    0 0 20px rgba(210,225,235,.12);
+  backdrop-filter:blur(12px) saturate(1.15);
+  -webkit-backdrop-filter:blur(12px) saturate(1.15);
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+  cursor:grab;
+  transition:box-shadow .16s ease,border-color .16s ease,transform .16s ease;
+}
+.ynot-entry-pointer.dragging{
+  transform:translate(-50%,-50%) scale(1.08);
+  cursor:grabbing;
+  transition:none;
+}
+.ynot-entry-pointer:not(.dragging)[style]{
+  transform:translate(-50%,-50%);
+}
+.ynot-entry-pointer-core{
+  position:absolute;
+  inset:13px;
+  border-radius:50%;
+  background:rgba(255,255,255,.88);
+  box-shadow:0 0 11px rgba(255,255,255,.8);
+}
+.ynot-entry-pointer::after{
+  content:"";
+  position:absolute;
+  inset:-8px;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.10);
+  opacity:.7;
+}
+.ynot-entry-pointer.over-category{
+  border-color:rgba(255,255,255,.85);
+  box-shadow:
+    inset 5px 6px 10px rgba(255,255,255,.24),
+    inset -7px -8px 13px rgba(0,0,0,.24),
+    0 0 0 7px rgba(255,255,255,.08),
+    0 0 30px rgba(255,255,255,.30);
+}
+.ynot-entry-pointer em{
+  position:absolute;
+  left:50%;
+  bottom:50px;
+  transform:translateX(-50%);
+  max-width:150px;
+  padding:6px 9px;
+  border-radius:999px;
+  background:rgba(12,13,13,.70);
+  border:1px solid rgba(255,255,255,.2);
+  color:#fff;
+  font:700 9px/1 Inter,ui-sans-serif,system-ui,sans-serif;
+  font-style:normal;
+  white-space:nowrap;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.lv4-category-bubble.ynot-pointer-target{
+  border-color:rgba(255,255,255,.88)!important;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.30),
+    0 0 0 7px rgba(255,255,255,.08),
+    0 0 34px rgba(255,255,255,.25)!important;
+  transform:translate(-50%,-50%) scale(1.06)!important;
+}
+
+@media(max-width:760px){
+  .ynot-entry-pointer{
+    width:40px;
+    height:40px;
+    bottom:calc(126px + env(safe-area-inset-bottom));
+  }
+}
