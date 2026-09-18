@@ -44,6 +44,7 @@ export type DiscoveryRequest={
   seedExpansionLimit?:number;
   learnedKeywords?:string[];
   seedUsernames?:string[];
+  enrichProfiles?:boolean;
 };
 
 export type DiscoveryResponse={
