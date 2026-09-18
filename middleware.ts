@@ -30,7 +30,7 @@ export async function middleware(req: NextRequest) {
 
   const access = await fetch(
     `${supabaseUrl.replace(/\/$/, "")}/rest/v1/ynot_admin_access_requests?auth_user_id=eq.${encodeURIComponent(user.id)}&status=eq.approved&select=id&limit=1`,
-    { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` }, cache: "no-store" }
+    { headers: { apikey: serviceKey, ...(serviceKey.startsWith("sb_") ? {} : { Authorization: `Bearer ${serviceKey}` }) }, cache: "no-store" }
   );
   if (!access.ok) return deny(req);
   const rows = await access.json();
