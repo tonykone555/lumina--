@@ -1,4 +1,5 @@
 import Link from "next/link";
+import "./growth.css";
 
 export const dynamic = "force-dynamic";
 
