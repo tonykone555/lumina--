@@ -493,3 +493,41 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
     font-size:7px;
   }
 }
+
+
+/* Make every product-card top-right corner a dependable mobile close target. */
+.lv4-detail .lv4-close,
+.ynot-selected .ynot-selected-close,
+.ynot-story .ynot-story-close{
+  position:absolute!important;
+  top:0!important;
+  right:0!important;
+  width:64px!important;
+  height:64px!important;
+  min-width:64px!important;
+  min-height:64px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  z-index:999!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.lv4-detail .lv4-close svg,
+.ynot-selected .ynot-selected-close svg,
+.ynot-story .ynot-story-close svg{
+  width:20px!important;
+  height:20px!important;
+  pointer-events:none!important;
+}
+@media(max-width:760px){
+  .lv4-detail .lv4-close,
+  .ynot-selected .ynot-selected-close,
+  .ynot-story .ynot-story-close{
+    width:72px!important;
+    height:72px!important;
+    min-width:72px!important;
+    min-height:72px!important;
+  }
+}
