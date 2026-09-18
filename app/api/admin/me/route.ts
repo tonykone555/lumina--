@@ -28,6 +28,6 @@ export async function POST(req:NextRequest){
   const body=await check.json().catch(()=>({admin:false}));
   if(!body?.admin)return NextResponse.json({error:"ADMIN_REQUIRED"},{status:403});
   const response=NextResponse.json({admin:true,ready:true});
-  response.cookies.set("sb-access-token",token,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:60*60});
+  response.cookies.set("ynot-admin-session",token,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:60*60});
   return response;
 }
