@@ -1,0 +1,5 @@
+import {NextRequest,NextResponse} from "next/server";
+import {discoverTikTokShop} from "@/lib/creators/tiktok-shop";
+import {operatorAuthorized} from "@/lib/commerce/stripe";
+export const runtime="nodejs";export const maxDuration=300;
+export async function POST(req:NextRequest){if(!operatorAuthorized(req.headers.get("authorization")))return NextResponse.json({error:"UNAUTHORIZED"},{status:401});try{const body=await req.json();const query=String(body.query||"home decor furniture lifestyle");const target=Math.max(10,Math.min(300,Number(body.target)||100));const min=Math.max(0,Number(body.minFollowers)||3000),max=Math.max(min,Number(body.maxFollowers)||250000);const rows=await discoverTikTokShop(query,target);const profiles=rows.filter(p=>(p.followers??0)>=min&&(p.followers??0)<=max);return NextResponse.json({ok:true,source:"tiktok_shop",discovered:rows.length,eligible:profiles.length,profiles})}catch(e){return NextResponse.json({error:e instanceof Error?e.message:"TIKTOK_SHOP_DISCOVERY_FAILED"},{status:400})}}
