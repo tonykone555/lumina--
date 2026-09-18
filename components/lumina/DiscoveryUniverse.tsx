@@ -18,7 +18,7 @@ function discoveryTerms(profile:Profile){const source=`${profile.category||""} $
 
 export default function DiscoveryUniverse(){
  const [profiles,setProfiles]=useState<Profile[]>([]);
- const [loading,setLoading]=useState(false);
+ const [loading,setLoading]=useState(false);\n const [searchStartedAt,setSearchStartedAt]=useState<number|null>(null);\n const [searchElapsed,setSearchElapsed]=useState(0);
  const [selected,setSelected]=useState<Profile|null>(null);
  const [query,setQuery]=useState("");
  const [activeQuery,setActiveQuery]=useState("");
@@ -48,12 +48,12 @@ export default function DiscoveryUniverse(){
   ];
  },[profiles]);
 
- useEffect(()=>{setPortalReady(true);return()=>setPortalReady(false)},[]);
+ useEffect(()=>{setPortalReady(true);return()=>setPortalReady(false)},[]);\n useEffect(()=>{if(!loading||!searchStartedAt){setSearchElapsed(0);return}const tick=()=>setSearchElapsed(Math.max(0,Math.floor((Date.now()-searchStartedAt)/1000)));tick();const id=window.setInterval(tick,1000);return()=>window.clearInterval(id)},[loading,searchStartedAt]);
  useEffect(()=>{fetch("/api/discovery/worlds",{cache:"no-store"}).then(r=>r.json()).then(d=>setWorlds(d.worlds||[])).catch(()=>{});setSaved(new Set(savedProfiles().map(p=>p.username)));fetch("/api/instagram/discover",{cache:"no-store"}).then(r=>r.json()).then((data:Health)=>setHealth(data)).catch(()=>{})},[]);
 
  async function runSearch(term:string,options:{seed?:Profile;append?:boolean}={}){
   const clean=term.trim();if(clean.length<2)return;
-  setLoading(true);setError("");setActiveQuery(clean);
+  setLoading(true);setSearchStartedAt(Date.now());setSearchElapsed(0);setError("");setActiveQuery(clean);
   try{
    const learned=options.seed?discoveryTerms(options.seed):[];
    const r=await fetch("/api/instagram/discover",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query:clean,target:300,keywordPages:3,relatedPerSeed:15,seedExpansionLimit:20,learnedKeywords:learned,seedUsernames:options.seed?[options.seed.username]:[]})});
@@ -62,7 +62,7 @@ export default function DiscoveryUniverse(){
    const incoming=data.profiles||[];
    setProfiles(current=>dedupe(options.append?[...current,...incoming]:incoming));
    setStats({unique:Number(data.uniqueCount||incoming.length),newCount:Number(data.newCount||incoming.length),reused:Number(data.reusedCount||0)});
-  }catch(e){setError(e instanceof Error?e.message:"Instagram discovery is unavailable")}finally{setLoading(false)}
+  }catch(e){setError(e instanceof Error?e.message:"Instagram discovery is unavailable")}finally{setLoading(false);setSearchStartedAt(null)}
  }
 
  function submit(event:FormEvent){event.preventDefault();void runSearch(query)}
@@ -89,7 +89,7 @@ export default function DiscoveryUniverse(){
    <h1>Discover brands through brands.</h1>
    <p>Search a niche, open a profile, then use Find Similar to expand through Instagram’s related-account graph instead of scrolling a flat list.</p>
    <form className="discover-search" onSubmit={submit}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Try: independent swimwear brands, minimal jewelry, activewear UK…"/><button type="submit" disabled={loading}>{loading?"Discovering…":"Discover"}<Sparkles/></button></form>
-   <div className="discover-example-row">{EXAMPLES.map(example=><button key={example} onClick={()=>{setQuery(example);void runSearch(example)}}>{example}</button>)}</div>
+   <div className="discover-example-row">{EXAMPLES.map(example=><button key={example} onClick={()=>{setQuery(example);void runSearch(example)}}>{example}</button>)}</div>\n   {loading&&<div className="discover-search-progress" role="status" aria-live="polite"><div className="discover-search-progress-head"><span className="discover-search-spinner" aria-hidden="true"/><div><strong>{searchElapsed<4?"Search started":searchElapsed<12?"Finding seed Instagram profiles":searchElapsed<30?"Expanding through related accounts":"Still searching Instagram’s graph"}</strong><small>{searchElapsed}s elapsed · searching up to 20 seeds × 15 related profiles</small></div></div><div className="discover-search-progress-track"><i/></div><p>{searchElapsed<8?"Connecting to the discovery provider and finding strong starting profiles…":searchElapsed<25?"The related-account graph can take a little longer while profiles are collected and deduplicated…":"The search is still active. Keep this page open — results will appear here when the graph finishes."}</p></div>}
    <div className="discover-stats"><span>{health.apifyConfigured===false?"Provider needs API key":health.apifyConfigured?"Apify connected":"Checking provider…"}</span><span>{stats.unique?`${stats.unique} profiles`:"Graph-first search"}</span>{stats.newCount>0&&<span>{stats.newCount} new</span>}{stats.reused>0&&<span>{stats.reused} reused</span>}{saved.size>0&&<span>{saved.size} saved</span>}{profiles.length>0&&<button className="discover-expand" onClick={expand} disabled={loading}>Expand graph</button>}</div>
    {error&&<p className="discover-error">{error}</p>}
   </section>
