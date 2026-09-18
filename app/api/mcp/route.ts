@@ -5,21 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Product = {
-  id: string;
-  title?: string;
-  brand?: string;
-  price?: number | null;
-  supplierPrice?: number | null;
-  retailPrice?: number | null;
-  currency?: string;
-  image?: string;
-  images?: string[];
-  url?: string;
-  description?: string;
-  tags?: string[];
-  source?: string;
-  category?: string;
-  [key: string]: unknown;
+  id: string; title?: string; brand?: string; price?: number | null; currency?: string;
+  image?: string; images?: string[]; url?: string; description?: string; tags?: string[];
+  source?: string; category?: string; variants?: unknown[]; [key: string]: unknown;
 };
 
 function text(value: unknown) {
@@ -27,14 +15,49 @@ function text(value: unknown) {
 }
 
 function appUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL || "").replace(/^([^h])/, "https://$1").replace(/\/$/, "");
+  // Always prefer Vercel's canonical production URL. NEXT_PUBLIC_APP_URL can point at
+  // an older/preview deployment and previously caused MCP catalogue calls to see stale demo data.
+  const raw = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.NEXT_PUBLIC_APP_URL || "";
+  if (!raw) return "";
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  return withProtocol.replace(/\/$/, "");
 }
 
 function authorized(request: Request) {
   const secret = process.env.YNOT_MCP_TOKEN;
   if (!secret) return false;
-  const auth = request.headers.get("authorization") || "";
-  return auth === `Bearer ${secret}`;
+  return (request.headers.get("authorization") || "") === `Bearer ${secret}`;
+}
+
+function inferCategory(p: Product) {
+  const s = `${p.category || ""} ${p.title || ""} ${(p.tags || []).join(" ")} ${p.description || ""}`.toLowerCase();
+  if (/sofa|sectional|chair|table|bench|bedroom|living room|dining|furniture|home|decor|lamp|kitchen|bedding/.test(s)) return "home";
+  if (/dress|fashion|shirt|shoe|bag|jewel|accessor|apparel|clothing/.test(s)) return "fashion";
+  if (/fitness|gym|training|running|recovery|sport/.test(s)) return "fitness";
+  if (/skin|beauty|serum|cream|spf|cleanser/.test(s)) return "skin";
+  if (/hair|scalp|shampoo|conditioner/.test(s)) return "hair";
+  if (/tech|phone|audio|headphone|charger|gaming|smart/.test(s)) return "tech";
+  return p.category || "other";
+}
+
+function safeProduct(p: Product) {
+  const variants = Array.isArray(p.variants) ? p.variants : [];
+  const variantUrl = variants.map((v: any) => v?.url).find((v: unknown) => typeof v === "string" && v.startsWith("http"));
+  return {
+    id: p.id,
+    title: p.title,
+    brand: p.brand,
+    description: p.description || null,
+    category: inferCategory(p),
+    price: p.price,
+    currency: p.currency,
+    image: p.image,
+    images: p.images?.length ? p.images : p.image ? [p.image] : [],
+    variants,
+    url: variantUrl || p.url || null,
+    tags: p.tags || [],
+    source: p.source,
+  };
 }
 
 async function catalog(query: string, country: string, source: string, limit: number) {
@@ -47,35 +70,56 @@ async function catalog(query: string, country: string, source: string, limit: nu
   const response = await fetch(url, { cache: "no-store" });
   if (!response.ok) throw new Error(`CATALOG_${response.status}`);
   const data = await response.json();
-  const products = (Array.isArray(data?.products) ? data.products : []).slice(0, Math.min(20, limit));
-  return { query: data?.query || query, source: data?.source, products };
+  const isFallback = data?.source === "fallback" || (Array.isArray(data?.sources) && data.sources.includes("fallback"));
+  const rawProducts = isFallback ? [] : (Array.isArray(data?.products) ? data.products : []);
+  return {
+    query: data?.query || query,
+    source: data?.source,
+    error: data?.error,
+    products: rawProducts.slice(0, Math.min(20, limit)).map((p: Product) => safeProduct(p)),
+  };
 }
 
 async function promotedProducts(niche: string, limit: number) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return [];
-  const params = new URLSearchParams({ select: "id,source,source_product_id,merchant_name,source_url,title,description,image_urls,supplier_currency,ynot_price,category,variants,research_status,research_score,research_reasons,margin_pct,availability_status,tiktok_eligible,last_research_at", research_status: "eq.approved", order: "research_score.desc.nullslast,last_research_at.desc.nullslast", limit: String(Math.min(12, limit)) });
-  if (niche.trim()) params.set("or", `(category.ilike.*${niche.replace(/[^a-z0-9 _-]/gi, "")}*,title.ilike.*${niche.replace(/[^a-z0-9 _-]/gi, "")}*)`);
-  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/ynot_sellable_products?${params}`, { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" });
+  const clean = niche.replace(/[^a-z0-9 _-]/gi, "");
+  const params = new URLSearchParams({
+    select: "id,source,source_product_id,merchant_name,source_url,title,description,image_urls,supplier_currency,ynot_price,category,variants,research_status,research_score,research_reasons,availability_status,tiktok_eligible,last_research_at",
+    research_status: "eq.approved",
+    order: "research_score.desc.nullslast,last_research_at.desc.nullslast",
+    limit: String(Math.min(12, limit)),
+  });
+  if (clean.trim()) params.set("or", `(category.ilike.*${clean}*,title.ilike.*${clean}*)`);
+  const res = await fetch(`${url.replace(/\/$/, "")}/rest/v1/ynot_sellable_products?${params}`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store",
+  });
   if (!res.ok) throw new Error(`PROMOTION_CATALOG_${res.status}`);
   return res.json();
 }
 
-function safeProduct(p: Product) {
+function researchedDto(p: any) {
   return {
     id: p.id,
+    source_product_id: p.source_product_id,
     title: p.title,
-    brand: p.brand,
-    price: p.price,
-    currency: p.currency,
-    image: p.image,
-    images: p.images || (p.image ? [p.image] : []),
-    url: p.url,
-    description: p.description,
-    tags: p.tags || [],
+    brand: p.merchant_name,
+    description: p.description || null,
+    category: p.category || "other",
+    price: p.ynot_price,
+    currency: p.supplier_currency,
+    images: Array.isArray(p.image_urls) ? p.image_urls : [],
+    image: Array.isArray(p.image_urls) ? p.image_urls[0] : null,
+    variants: Array.isArray(p.variants) ? p.variants : [],
+    url: p.source_url,
     source: p.source,
-    category: p.category,
+    research_status: p.research_status,
+    research_score: p.research_score,
+    research_reasons: p.research_reasons,
+    availability_status: p.availability_status,
+    tiktok_eligible: p.tiktok_eligible,
+    last_research_at: p.last_research_at,
   };
 }
 
@@ -84,7 +128,7 @@ function makeHandler() {
     (server) => {
       server.tool(
         "search_catalogue",
-        "Search YNOT's live commerce catalogue. Returns at most 20 bounded product results; use this before selecting a product for marketing.",
+        "Search YNOT's live commerce catalogue. Returns only real live-source products, never UI demo products.",
         {
           query: z.string().min(2).max(200),
           country: z.string().length(2).default("FR"),
@@ -96,7 +140,7 @@ function makeHandler() {
 
       server.tool(
         "get_product",
-        "Get a specific product from a bounded YNOT catalogue search. Supply the product id plus the search query that found it.",
+        "Get one real YNOT product from a bounded catalogue search, including description, category, variants, images and merchant URL.",
         {
           product_id: z.string().min(1),
           query: z.string().min(2).max(200),
@@ -106,13 +150,13 @@ function makeHandler() {
         async ({ product_id, query, country, source }) => {
           const data = await catalog(query, country.toUpperCase(), source, 20);
           const product = data.products.find((p: Product) => String(p.id) === product_id);
-          return text(product ? safeProduct(product) : { error: "PRODUCT_NOT_FOUND", product_id });
+          return text(product || { error: "PRODUCT_NOT_FOUND", product_id });
         }
       );
 
       server.tool(
         "get_product_images",
-        "Return the original product image URLs for a product selected from YNOT. Use these as source material for approved marketing creatives.",
+        "Return original product image URLs and merchant product URL for a real YNOT product.",
         {
           product_id: z.string().min(1),
           query: z.string().min(2).max(200),
@@ -135,7 +179,7 @@ function makeHandler() {
 
       server.tool(
         "get_products_to_promote",
-        "Find a small set of YNOT products suitable for creative exploration. This is a bounded candidate finder, not an unrestricted catalogue dump.",
+        "Find bounded real YNOT products for creative exploration: approved researched products first, then live Shopify candidates. Never returns demo merchandise.",
         {
           niche: z.string().min(2).max(100),
           country: z.string().length(2).default("FR"),
@@ -143,9 +187,24 @@ function makeHandler() {
         },
         async ({ niche, country, limit }) => {
           const researched = await promotedProducts(niche, limit);
-          if (researched.length) return text({ niche, source: "ynot-researched-products", candidates: researched });
+          if (researched.length) {
+            return text({ niche, source: "ynot-researched-products", candidates: researched.map(researchedDto) });
+          }
           const data = await catalog(niche, country.toUpperCase(), "shopify", limit);
-          return text({ niche, source: "shopify-fallback", note: "No approved researched YNOT products matched yet; returning bounded live catalogue candidates for research.", candidates: data.products.map((p: Product) => safeProduct(p)) });
+          if (!data.products.length) {
+            return text({
+              niche,
+              source: "none",
+              note: "No approved researched YNOT products or live Shopify candidates matched this niche.",
+              candidates: [],
+            });
+          }
+          return text({
+            niche,
+            source: "shopify-global-catalog",
+            note: "No approved researched YNOT products matched yet; returning bounded real Shopify candidates for research.",
+            candidates: data.products,
+          });
         }
       );
     },
@@ -161,8 +220,7 @@ async function dispatch(request: Request) {
       headers: { "content-type": "application/json", "www-authenticate": 'Bearer realm="YNOT MCP"' },
     });
   }
-  const handler = makeHandler();
-  return handler(request);
+  return makeHandler()(request);
 }
 
 export const GET = dispatch;
