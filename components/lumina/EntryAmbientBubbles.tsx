@@ -38,6 +38,7 @@ const DISMISS_SELECTOR=[
  ".ynot-reference-right button",
  ".ynot-reference-left button",
  ".lv4-product",
+ ".lv4-category-bubble",
  ".lv4-refine",
  ".ynot-peek",
  ".ynot-far-button",
@@ -104,6 +105,7 @@ export default function EntryAmbientBubbles(){
    if(target?.closest(".lv4-search,.ynot-bottom-search"))dismiss();
   };
   const onSearch=()=>dismiss();
+  const onReset=()=>{setDismissed(false);setPosition(null);setActiveCategory("");setActiveCategoryCenter(null)};
 
   document.addEventListener("pointerdown",onPointer,true);
   document.addEventListener("submit",onSubmit,true);
@@ -114,6 +116,8 @@ export default function EntryAmbientBubbles(){
   window.addEventListener("ynot:open-circle",onSearch);
   window.addEventListener("ynot:open-auth",onSearch);
   window.addEventListener("ynot:open-partner",onSearch);
+  window.addEventListener("ynot:world-active",onSearch);
+  window.addEventListener("ynot:world-reset",onReset);
 
   sync();
   return()=>{
@@ -129,6 +133,8 @@ export default function EntryAmbientBubbles(){
    window.removeEventListener("ynot:open-circle",onSearch);
    window.removeEventListener("ynot:open-auth",onSearch);
    window.removeEventListener("ynot:open-partner",onSearch);
+   window.removeEventListener("ynot:world-active",onSearch);
+   window.removeEventListener("ynot:world-reset",onReset);
   };
  },[]);
 
