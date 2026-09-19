@@ -96,7 +96,7 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
  const response=await fetch("https://catalog.shopify.com/api/ucp/mcp",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
  const raw:any=await response.json();const content=raw?.result?.structuredContent;
  if(!response.ok||!content?.products)throw new Error("Catalog unavailable");
- const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price,images=[...new Set<string>((p?.media||[]).filter((m:any)=>m.type==="image"||m.url).map((m:any)=>m.url).filter(Boolean))];const variants=(p?.variants||[]).map((v:any)=>{const vp=v?.price||price;return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:v?.image?.url||v?.media?.[0]?.url||images[0]||"",url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"}}).filter((v:any)=>v.id);const gallery=[...new Set<string>([...images,...variants.map((v:any)=>v.image).filter(Boolean)])].slice(0,10);const merchant=p?.seller?.name||p?.variants?.[0]?.seller?.name||"the original Shopify merchant";const description=descriptionText(p?.description)||descriptionText(p?.descriptionHtml)||descriptionText(p?.description_html)||descriptionText(p?.body_html)||`${p?.title||"This product"} from ${merchant}.`;const rawTags=[...new Set<string>((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))];return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:gallery[0]||"",images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(cleanTitle(p.title),description,rawTags),source:"shopify-global-catalog"}}));
+ const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price,images=[...new Set<string>((p?.media||[]).filter((m:any)=>m.type==="image"||m.url).map((m:any)=>m.url).filter(Boolean))];const variants=(p?.variants||[]).map((v:any)=>{const vp=v?.price||price;return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:v?.image?.url||v?.media?.[0]?.url||images[0]||"",url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"}}).filter((v:any)=>v.id);const gallery=[...new Set<string>([...images,...variants.map((v:any)=>v.image).filter(Boolean)])].slice(0,10);const merchant=p?.seller?.name||p?.variants?.[0]?.seller?.name||"the original Shopify merchant";const description=descriptionText(p?.description)||descriptionText(p?.descriptionHtml)||descriptionText(p?.description_html)||descriptionText(p?.body_html)||`${p?.title||"This product"} from ${merchant}.`;return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:gallery[0]||"",images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(cleanTitle(p.title),description),source:"shopify-global-catalog"}}));
  return{products,pagination:normalizeShopifyPagination(content.pagination||{})};
 }
 
@@ -143,7 +143,7 @@ function inferSearchDomain(query:string){
  return"fashion";
 }
 function productDomainText(p:Product){
- return `${p.title||""} ${p.brand||""} ${String(p.description||"")} ${(p.tags||[]).join(" ")}`.toLowerCase();
+ return `${String(p.description||"")} ${p.title||""}`.toLowerCase();
 }
 function categoryCompatible(domain:string,p:Product){
  const text=productDomainText(p);
@@ -187,12 +187,12 @@ function expandCatalogQueries(query:string){
  }
  return [...new Set(queries.map(q=>q.replace(/\s+/g," ").trim()).filter(Boolean))].slice(0,14);
 }
-function enrichedTags(title:string,description:string,current:string[]){
- const hay=`${title} ${description} ${current.join(" ")}`.toLowerCase();
+function enrichedTags(title:string,description:string){
+ const hay=`${description} ${title}`.toLowerCase();
  const domain=inferSearchDomain(hay);
  const set=SEARCH_ATTRIBUTE_SETS[domain];
  const attrs=[...set.modifiers,...set.materials,...set.nouns].filter(x=>hay.includes(x.toLowerCase()));
- return [...new Set([...current,...attrs.map(x=>x.replace(/\b\w/g,m=>m.toUpperCase()))])].slice(0,12);
+ return [...new Set(attrs.map(x=>x.replace(/\b\w/g,m=>m.toUpperCase())))].slice(0,12);
 }
 
 function broadFashionIntent(query:string){
