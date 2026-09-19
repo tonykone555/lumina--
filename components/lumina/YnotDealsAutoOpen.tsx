@@ -20,7 +20,7 @@ export default function YnotDealsAutoOpen(){
   const onPress=(event:Event)=>{
    const target=event.target as Element|null;
    const button=target?.closest<HTMLButtonElement>("button");
-   if(!button||button.matches(".ynot-peek")||button.closest(".ynot-drawer"))return;
+   if(!button||button.matches(".ynot-peek,[data-source-only=\"true\"],.ynot-source-trigger-clean")||button.closest(".ynot-drawer,.ynot-view-source"))return;
    const text=(button.textContent||"").replace(/\s+/g," ").trim().toUpperCase();
    const isYnot=text==="YNOT"||(text.includes("WORLD")&&text.includes("YNOT"));
    if(!isYnot||text.includes("BAG"))return;
