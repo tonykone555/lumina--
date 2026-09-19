@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/ads/automation/run",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/admin/growth/threads/auto/run",
+      "schedule": "*/15 * * * *"
     }
   ]
 }
