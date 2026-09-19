@@ -1,3 +1,4 @@
+import { createHash } from "crypto";
 import { buildQuote } from "./engine";
 import { clusterByIdentity, productFingerprint, shopperTitle } from "./product-identity";
 
@@ -83,6 +84,10 @@ function domainOf(raw:string){
   try{return new URL(raw).hostname.toLowerCase().replace(/^www\./,"")}catch{return""}
 }
 function rounded(n:number){return Math.round(n*100)/100}
+function stableYnotId(country:FeedCountry,fingerprint:string){
+  const hash=createHash("sha256").update(country+"|"+fingerprint).digest("hex").slice(0,24);
+  return "ynot-"+country.toLowerCase()+"-"+hash;
+}
 
 function inferCategory(query:string):FeedCategory{
   const q=query.toLowerCase();
@@ -189,7 +194,7 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
   });
 
   const fp=productFingerprint({title:originalTitle,brand:sourceBrand,category,sourcePrice:amount,merchantDomain,image});
-  const ynotId="ynot-"+Buffer.from(country+"|"+fp).toString("base64url").slice(0,32);
+  const ynotId=stableYnotId(country,fp);
   const images=[...new Set(
     (Array.isArray(raw?.media)?raw.media:[])
       .map((m:any)=>String(m?.url||m?.image?.url||""))
@@ -268,7 +273,7 @@ function collapseSupplierOffers(products:CatalogFeedProduct[]){
       .sort((a,b)=>(b.routingScore-a.routingScore)||(b.grossContribution-a.grossContribution));
     return{
       ...best,
-      ynotId:"ynot-"+Buffer.from(best.country+"|"+best.fingerprint).toString("base64url").slice(0,32),
+      ynotId:stableYnotId(best.country,best.fingerprint),
       supplierOfferCount:supplierOffers.length,
       supplierOffers:supplierOffers.slice(0,12)
     };
