@@ -226,12 +226,12 @@ function broadFashionIntent(query:string){
  const men=/\b(?:men|mens|men's|male|menswear)\b/.test(q);
  return{broad,men};
 }
-function diversifyBrands(products:Product[],limit=72){
+function diversifyBrands(products:Product[],limit=72,maxPerBrand=5){
  const counts=new Map<string,number>(),out:Product[]=[];
  for(const p of dedupeProducts(products)){
   const brand=(p.brand||"").trim().toLowerCase()||"unknown";
   const count=counts.get(brand)||0;
-  if(count>=3)continue;
+  if(count>=maxPerBrand)continue;
   counts.set(brand,count+1);out.push(p);
   if(out.length>=limit)break;
  }
@@ -239,13 +239,42 @@ function diversifyBrands(products:Product[],limit=72){
 }
 async function fetchShopifyDiscovery(query:string,country:string,cursor?:string){
  if(cursor)return fetchShopify(query,country,cursor);
- const queries=expandCatalogQueries(query);
+
+ // Fast path: always ask Shopify for the exact user intent first.
+ // If it already gives us a healthy world, return immediately instead of waiting
+ // for a large fan-out of catalogue searches.
+ let exact:{products:Product[];pagination:any}|null=null;
+ try{exact=await fetchShopify(query,country)}catch{}
+ const exactMatched=exact?strictCategoryFilter(query,exact.products):[];
+ const exactDiverse=diversifyBrands(exactMatched,80,5);
+ if(exactDiverse.length>=24){
+  return{
+   products:exactDiverse,
+   pagination:{...(exact?.pagination||{}),fast_exact:true,queries_used:[query]}
+  };
+ }
+
+ // Only deepen sparse searches. Keep the expansion tight and same-intent so the
+ // first bubbles arrive quickly and unrelated sibling products never flood the world.
+ const queries=expandCatalogQueries(query).filter(q=>q.toLowerCase()!==query.toLowerCase()).slice(0,4);
  const settled=await Promise.allSettled(queries.map(q=>fetchShopify(q,country)));
  const fulfilled=settled.filter((r):r is PromiseFulfilledResult<{products:Product[];pagination:any}>=>r.status==="fulfilled");
- const categoryMatched=strictCategoryFilter(query,fulfilled.flatMap(r=>r.value.products));
- const merged=diversifyBrands(categoryMatched,120);
- if(!merged.length)return fetchShopify(query,country);
- return{products:merged,pagination:{has_next_page:false,next_cursor:null,discovery_seeded:true,queries_used:queries}};
+ const combined=[...(exact?.products||[]),...fulfilled.flatMap(r=>r.value.products)];
+ const categoryMatched=strictCategoryFilter(query,combined);
+ const merged=diversifyBrands(categoryMatched,120,5);
+
+ if(merged.length){
+  return{
+   products:merged,
+   pagination:{
+    ...(exact?.pagination||{}),
+    discovery_seeded:true,
+    queries_used:[query,...queries]
+   }
+  };
+ }
+ if(exact)return exact;
+ return fetchShopify(query,country);
 }
 
 async function fetchShopify(query:string,country:string,cursor?:string){
