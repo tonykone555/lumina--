@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchCatalogIntent, type FeedCountry } from "@/lib/commerce/catalog-feed";
+import { persistCatalogProducts } from "@/lib/commerce/catalog-store";
 
 export const runtime="nodejs";
 export const maxDuration=45;
@@ -16,6 +17,7 @@ export async function GET(req:NextRequest){
 
   try{
     const result=await searchCatalogIntent(q,country,limit);
+    try{await persistCatalogProducts(result.products)}catch(error){console.error("YNOT recommendation persistence failed",error)}
     return NextResponse.json({
       brand:"YNOT",
       generatedAt:new Date().toISOString(),
