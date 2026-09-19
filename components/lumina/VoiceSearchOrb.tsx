@@ -12,6 +12,30 @@ const supabaseUrl=()=>String(process.env.NEXT_PUBLIC_SUPABASE_URL||"").replace(/
 
 function setInput(input:HTMLInputElement,value:string){const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;setter?.call(input,value);input.dispatchEvent(new Event("input",{bubbles:true}))}
 
+function normalizeVoiceQuery(value:string){
+ let q=String(value||"").trim().replace(/^["'“”]+|["'“”]+$/g,"");
+ q=q
+  .replace(/^(?:hey\s+ynot[, ]*|ynot[, ]*)/i,"")
+  .replace(/^(?:can you|could you|please)\s+(?:find|show|get)\s+(?:me\s+)?/i,"")
+  .replace(/^(?:find|show|get)\s+(?:me\s+)?/i,"")
+  .replace(/\b(?:less than|no more than|maximum of|max(?:imum)?|below)\s+/gi,"under ")
+  .replace(/\b(?:more than|at least|minimum of|min(?:imum)?|above)\s+/gi,"over ")
+  .replace(/\b(\d+(?:[.,]\d+)?)\s*euros?\b/gi,"€$1")
+  .replace(/\b(\d+(?:[.,]\d+)?)\s*(?:pounds?|quid)\b/gi,"£$1")
+  .replace(/\b(\d+(?:[.,]\d+)?)\s*dollars?\b/gi,"$$1")
+  .replace(/\s+/g," ")
+  .trim();
+ return q;
+}
+
+function detectVoiceSource(value:string){
+ const q=value.toLowerCase();
+ if(/\b(?:etsy|commerce)\b/.test(q))return"commerce";
+ if(/\b(?:ebay|marketplace)\b/.test(q))return"marketplace";
+ if(/\b(?:ynot|shopify)\b/.test(q))return"ynot";
+ return"";
+}
+
 function speak(text:string,onEnd?:()=>void){
  if(!("speechSynthesis" in window)){onEnd?.();return}
  window.speechSynthesis.cancel();
@@ -44,7 +68,7 @@ export default function VoiceSearchOrb({left,top}:{left:number;top:number}){
  function cleanup(){clearTimer();stopTracks()}
  useEffect(()=>()=>{cleanup();try{recognition.current?.abort?.()}catch{}try{if(recorder.current?.state==="recording")recorder.current.stop()}catch{}window.speechSynthesis?.cancel()},[]);
  function resetLater(){clearTimer();timer.current=window.setTimeout(()=>{setState("idle");setCaption("Tap to ask YNOT")},2200)}
- function search(query:string){const clean=query.trim().replace(/^["'“”]+|["'“”]+$/g,"");if(clean.length<2){setState("error");setCaption("I didn’t catch that. Tap again.");resetLater();return}setState("searching");setCaption(`Searching “${clean}”`);const input=document.querySelector<HTMLInputElement>(".lv4-search input"),button=document.querySelector<HTMLButtonElement>(".lv4-search button");if(!input||!button){setState("error");setCaption("Search is still loading. Tap again.");resetLater();return}setInput(input,clean);requestAnimationFrame(()=>button.click());resetLater()}
+ function search(query:string){const clean=normalizeVoiceQuery(query),source=detectVoiceSource(query);if(clean.length<2){setState("error");setCaption("I didn’t catch that. Tap again.");resetLater();return}setState("searching");setCaption(`Searching “${clean}”`);window.dispatchEvent(new CustomEvent("ynot:voice-query",{detail:{query:clean,raw:query,source}}));const input=document.querySelector<HTMLInputElement>(".lv4-search input"),button=document.querySelector<HTMLButtonElement>(".lv4-search button");if(!input||!button){setState("error");setCaption("Search is still loading. Tap again.");resetLater();return}setInput(input,clean);requestAnimationFrame(()=>button.click());resetLater()}
  async function transcribeRecording(blob:Blob){try{setState("preparing");setCaption("Understanding…");const base=supabaseUrl();if(!base)throw new Error("Voice service unavailable");const audio=await blobToBase64(blob);const response=await fetch(`${base}/functions/v1/voice-transcribe`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({audio,mime_type:blob.type||"audio/mp4",language:navigator.language||"en-US"})});const data=await response.json().catch(()=>({}));if(!response.ok||!data?.text)throw new Error(data?.error||"Unable to understand recording");search(String(data.text))}catch{setState("error");setCaption("I couldn’t understand that. Tap to retry.");resetLater()}}
  async function recordFallback(){try{if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined")throw new Error("recording_unavailable");setState("asking");setCaption("Allow microphone access…");const media=await navigator.mediaDevices.getUserMedia({audio:{channelCount:1,echoCancellation:true,noiseSuppression:true,autoGainControl:true}});stream.current=media;const formats=["audio/mp4","audio/webm;codecs=opus","audio/webm"],mimeType=formats.find(type=>MediaRecorder.isTypeSupported(type)),rec=new MediaRecorder(media,mimeType?{mimeType}:undefined);recorder.current=rec;const chunks:BlobPart[]=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onerror=()=>{cleanup();recorder.current=null;setState("error");setCaption("Microphone unavailable. Tap to retry.");resetLater()};rec.onstop=()=>{clearTimer();stopTracks();recorder.current=null;const blob=new Blob(chunks,{type:rec.mimeType||mimeType||"audio/mp4"});if(blob.size<600){setState("error");setCaption("I didn’t hear anything. Tap again.");resetLater();return}void transcribeRecording(blob)};rec.start(250);setState("listening");setCaption("Listening… tap again when done");timer.current=window.setTimeout(()=>{timer.current=null;if(rec.state==="recording")rec.stop()},5200)}catch{cleanup();recorder.current=null;setState("error");setCaption("Microphone unavailable. Check permission and retry.");resetLater()}}
  function browserRecognition(VoiceRecognition:Constructor){const listener=new VoiceRecognition();recognition.current=listener;listener.lang=navigator.language||"en-US";listener.interimResults=false;listener.continuous=false;if("maxAlternatives" in listener)listener.maxAlternatives=1;listener.onresult=event=>{clearTimer();recognition.current=null;const words=event.results[0]?.[0]?.transcript||"";speak(`Searching for ${words}`,()=>search(words))};listener.onerror=event=>{recognition.current=null;const blocked=event?.error==="not-allowed"||event?.error==="service-not-allowed";setState("error");setCaption(blocked?"Allow microphone access and tap again":"I didn’t catch that. Tap to retry.");resetLater()};listener.onend=()=>{if(recognition.current){recognition.current=null;setState("idle");setCaption("Tap to ask YNOT")}};setState("asking");setCaption("YNOT is asking…");speak("What would you like me to find?",()=>{try{setState("listening");setCaption("Listening…");listener.start();timer.current=window.setTimeout(()=>{try{listener.stop?.()}catch{}},12000)}catch{setState("error");setCaption("Allow microphone access and tap again");resetLater()}})}
