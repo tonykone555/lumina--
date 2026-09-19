@@ -338,3 +338,22 @@ body:not(:has(.lv4-shell.depth-worlds)) .ynot-entry-ambient{
     padding-top:calc(128px + env(safe-area-inset-top))!important;
   }
 }
+
+
+/* Final YNOT Deals header close: keep the X next to YNOT DEAL WORLD above every drawer layer. */
+.ynot-drawer.open .ynot-head{overflow:visible!important}
+.ynot-drawer.open .ynot-head-actions{position:relative!important;z-index:2147483500!important;pointer-events:auto!important}
+.ynot-drawer.open .ynot-close{
+  position:relative!important;
+  z-index:2147483647!important;
+  display:grid!important;
+  place-items:center!important;
+  width:44px!important;
+  height:44px!important;
+  min-width:44px!important;
+  min-height:44px!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.ynot-drawer.open .ynot-close svg{pointer-events:none!important}
