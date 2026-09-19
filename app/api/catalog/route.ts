@@ -100,6 +100,48 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
  return{products,pagination:normalizeShopifyPagination(content.pagination||{})};
 }
 
+function broadFashionIntent(query:string){
+ const q=stripPriceLanguage(query).toLowerCase();
+ const broad=/^(?:men'?s?\s+)?(?:clothes|clothing|fashion|apparel|menswear|men'?s? wear|outfits?)$/.test(q.trim())||/\b(?:clothes|clothing|fashion|apparel|menswear)\b/.test(q)&&q.split(/\s+/).length<=5;
+ const men=/\b(?:men|mens|men's|male|menswear)\b/.test(q);
+ return{broad,men};
+}
+function diversifyBrands(products:Product[],limit=72){
+ const counts=new Map<string,number>(),out:Product[]=[];
+ for(const p of dedupeProducts(products)){
+  const brand=(p.brand||"").trim().toLowerCase()||"unknown";
+  const count=counts.get(brand)||0;
+  if(count>=3)continue;
+  counts.set(brand,count+1);out.push(p);
+  if(out.length>=limit)break;
+ }
+ return out;
+}
+async function fetchShopifyDiscovery(query:string,country:string,cursor?:string){
+ const intent=broadFashionIntent(query);
+ if(cursor||!intent.broad)return fetchShopify(query,country,cursor);
+ const seeds=intent.men?[
+  "men heavyweight hoodies premium streetwear",
+  "men premium joggers sweatpants",
+  "men overshirts jackets streetwear",
+  "men relaxed trousers cargo pants",
+  "men knitwear sweaters premium",
+  "men graphic tees elevated basics"
+ ]:[
+  "premium independent fashion brands",
+  "heavyweight hoodies premium streetwear",
+  "premium joggers sweatpants",
+  "modern jackets overshirts",
+  "premium knitwear sweaters",
+  "elevated basics clothing"
+ ];
+ const settled=await Promise.allSettled(seeds.map(seed=>fetchShopify(seed,country)));
+ const fulfilled=settled.filter((r):r is PromiseFulfilledResult<{products:Product[];pagination:any}>=>r.status==="fulfilled");
+ const merged=diversifyBrands(fulfilled.flatMap(r=>r.value.products),90);
+ if(!merged.length)return fetchShopify(query,country);
+ return{products:merged,pagination:{has_next_page:false,next_cursor:null,discovery_seeded:true}};
+}
+
 async function fetchShopify(query:string,country:string,cursor?:string){
  let lastError:unknown=null;
  for(let attempt=0;attempt<3;attempt++){
@@ -156,7 +198,7 @@ export async function GET(req:NextRequest){
  }
 
  if(luminaSource==="shopify"){
-  try{const result=await fetchShopify(query,country,cursor);const products=applyPriceIntent(result.products,priceIntent);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products,pagination:result.pagination,error:products.length?undefined:"No Shopify products found for this search yet."},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
+  try{const result=await fetchShopifyDiscovery(query,country,cursor);const products=applyPriceIntent(result.products,priceIntent);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products,pagination:result.pagination,error:products.length?undefined:"No Shopify products found for this search yet."},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
   catch(error){console.error("Shopify catalog error",error);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Shopify products are temporarily unavailable in YNOT."},{status:200})}
  }
 
@@ -165,7 +207,7 @@ export async function GET(req:NextRequest){
   catch(error){console.error("Amazon catalog error",error);return NextResponse.json({source:"amazon-rainforest",sources:["amazon-rainforest"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Amazon products are temporarily unavailable in YNOT."},{status:200})}
  }
 
- const [shopifyResult,amazonResult]=await Promise.allSettled([fetchShopify(query,country,cursor),fetchAmazon(query,country,page)]);
+ const [shopifyResult,amazonResult]=await Promise.allSettled([fetchShopifyDiscovery(query,country,cursor),fetchAmazon(query,country,page)]);
  const shopify=shopifyResult.status==="fulfilled"?shopifyResult.value:{products:[],pagination:{has_next_page:false,next_cursor:null}};
  const amazon=amazonResult.status==="fulfilled"?amazonResult.value:[];
  const shopifyProducts=applyPriceIntent(shopify.products,priceIntent);
