@@ -211,3 +211,55 @@ body:not(:has(.lv4-shell.depth-worlds)) .ynot-entry-ambient{
     white-space:nowrap!important;
   }
 }
+
+
+/* Mobile header interaction shield.
+   Keep decorative/header containers click-through, but force every real control
+   above world/canvas gesture layers. This fixes Safari taps being intercepted
+   by transformed world layers near the top edge. */
+@media(max-width:899px){
+  .ynot-reference-header{
+    position:fixed!important;
+    z-index:2147482000!important;
+    pointer-events:none!important;
+    isolation:isolate!important;
+  }
+  .ynot-reference-header .ynot-reference-center,
+  .ynot-reference-header .ynot-reference-topline,
+  .ynot-reference-header .ynot-reference-left,
+  .ynot-reference-header .ynot-reference-right{
+    pointer-events:none!important;
+  }
+  .ynot-reference-header button,
+  .ynot-reference-header [role="button"],
+  .ynot-reference-header .ynot-top-mode,
+  .ynot-reference-header .ynot-world-controls,
+  .ynot-reference-header .ynot-world-row,
+  .ynot-reference-header .ynot-view-source,
+  .ynot-reference-header .ynot-source-trigger-clean,
+  .ynot-reference-header .ynot-reference-nav-tools{
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  .ynot-reference-header button{
+    position:relative!important;
+    z-index:2147482200!important;
+  }
+  .ynot-reference-header .ynot-top-mode,
+  .ynot-reference-header .ynot-reference-nav-tools,
+  .ynot-reference-header .ynot-world-controls,
+  .ynot-reference-header .ynot-reference-right{
+    z-index:2147482100!important;
+  }
+  .ynot-reference-header .ynot-view-source,
+  .ynot-reference-header .ynot-source-list{
+    z-index:2147482300!important;
+  }
+
+  /* Do not allow full-screen world/canvas pseudo layers to consume taps in the
+     header band; their visual appearance remains unchanged. */
+  .ynot-app-shell::before{
+    pointer-events:none!important;
+  }
+}
