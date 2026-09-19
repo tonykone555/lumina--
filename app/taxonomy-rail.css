@@ -152,3 +152,62 @@ body:not(:has(.lv4-shell.depth-worlds)) .ynot-entry-ambient{
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
+
+
+/* YNOT Deal interaction lock: keep search + category rail above world gesture layers. */
+.ynot-drawer.open{
+  pointer-events:auto!important;
+  touch-action:auto!important;
+}
+.ynot-drawer.open .ynot-head,
+.ynot-drawer.open .ynot-search,
+.ynot-drawer.open .ynot-workspace,
+.ynot-drawer.open .ynot-dock,
+.ynot-drawer.open .ynot-body{
+  position:relative;
+  pointer-events:auto!important;
+}
+.ynot-drawer.open .ynot-search{
+  z-index:160!important;
+  touch-action:manipulation!important;
+}
+.ynot-drawer.open .ynot-search input{
+  position:relative!important;
+  z-index:162!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-user-select:text!important;
+  user-select:text!important;
+}
+.ynot-drawer.open .ynot-workspace{z-index:120!important}
+.ynot-drawer.open .ynot-dock{
+  z-index:140!important;
+  pointer-events:auto!important;
+}
+.ynot-drawer.open .ynot-dock button{
+  position:relative!important;
+  z-index:142!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+@media(max-width:760px){
+  .ynot-drawer.open .ynot-dock{
+    display:flex!important;
+    flex-direction:row!important;
+    flex-wrap:nowrap!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    overscroll-behavior-x:contain!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-x!important;
+    scrollbar-width:none!important;
+  }
+  .ynot-drawer.open .ynot-dock::-webkit-scrollbar{display:none!important}
+  .ynot-drawer.open .ynot-dock button{
+    flex:0 0 auto!important;
+    white-space:nowrap!important;
+  }
+}
