@@ -54,7 +54,18 @@ function checkoutCopy(p:Product){const source=sourceShort(p);return source==="St
 const DETAIL_WORDS=["wireless","leather","cotton","linen","silk","waterproof","portable","minimal","vintage","organic","recycled","black","white","blue","small","large","premium","lightweight","smart","adjustable","sensitive","repair","running","casual"];
 const MATERIAL_WORDS=["cotton","organic cotton","fleece","french terry","wool","merino","linen","denim","nylon","polyester","silk","leather","suede","cashmere","viscose","rayon","spandex","elastane","jersey","ribbed","knit","knitted","boucle","velvet","oak","walnut","marble","glass","metal","ceramic"];
 const TYPE_WORDS=["hoodie","jogger","joggers","sweatpants","t-shirt","tee","shirt","sweater","knitwear","jacket","overshirt","trousers","pants","cargo","jeans","dress","skirt","shorts","leggings","shoe","shoes","sneaker","bag","sofa","chair","table","lamp","rug","serum","cleanser","cream","mask","shampoo","conditioner","headphones","speaker","charger"];
-function productSemanticText(p:Product){return `${p.description||""} ${cleanTitle(p.title)}`.toLowerCase()}
+function variantAttributeText(p:Product){
+ const colours=new Set(COLOURS);
+ const sizePattern=/^(?:xxxs|xxs|xs|s|m|l|xl|xxl|xxxl|[0-9]{1,3}(?:\.[05])?|[0-9]{1,2}\s*(?:uk|us|eu)|[0-9]{2,3}\s*(?:cm|mm|in|inch|inches))$/i;
+ const weightPattern=/\b\d+(?:\.\d+)?\s*(?:g|kg|gsm|oz|lb|lbs)\b/i;
+ const optionCue=/\b(?:color|colour|size|weight|waist|length|inseam)\b/i;
+ const values=(p.variants||[]).flatMap(v=>cleanTitle(v.label).split(/[·|,/]/).map(x=>x.trim()).filter(Boolean));
+ return [...new Set(values.filter(value=>{
+  const lower=value.toLowerCase();
+  return colours.has(lower)||sizePattern.test(value)||weightPattern.test(value)||optionCue.test(value);
+ }))].join(" ");
+}
+function productSemanticText(p:Product){return `${p.description||""} ${cleanTitle(p.title)} ${variantAttributeText(p)}`.toLowerCase()}
 function semanticAttributes(p:Product){
  const text=productSemanticText(p);
  const colours=COLOURS.filter(x=>text.includes(x));
