@@ -605,3 +605,37 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
     min-height:72px!important;
   }
 }
+
+
+/* Must stay last: later legacy close rules exist above, so this is the
+   authoritative mobile hit target for every product popup. */
+.lv4-detail .lv4-close,
+.ynot-selected .ynot-selected-close,
+.ynot-story .ynot-story-close{
+  top:0!important;
+  right:0!important;
+  width:76px!important;
+  height:76px!important;
+  min-width:76px!important;
+  min-height:76px!important;
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+  display:grid!important;
+  place-items:start end!important;
+  padding:16px 16px 0 0!important;
+  z-index:2147483000!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+}
+@media(max-width:760px){
+  .lv4-detail .lv4-close,
+  .ynot-selected .ynot-selected-close,
+  .ynot-story .ynot-story-close{
+    width:88px!important;
+    height:88px!important;
+    min-width:88px!important;
+    min-height:88px!important;
+    padding:18px 18px 0 0!important;
+  }
+}
