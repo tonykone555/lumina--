@@ -34,55 +34,68 @@ function chunks<T>(items:T[],size=200){
 export async function persistCatalogProducts(products:CatalogFeedProduct[]){
   if(!products.length)return{products:0,offers:0};
   const now=new Date().toISOString();
-  const productRows=products.map(p=>({
-    ynot_id:p.ynotId,
-    country:p.country,
-    category:p.category,
-    title:p.title,
-    original_title:p.originalTitle,
-    brand:p.brand,
-    source_brand:p.sourceBrand||null,
-    image_url:p.image,
-    image_urls:p.images,
-    ynot_price:p.ynotPrice,
-    currency:p.sourceCurrency,
-    ad_eligible:p.adEligible,
-    intent_tags:p.intentTags,
-    price_position:p.pricePosition||null,
-    active:true,
-    source_product_id:p.sourceProductId,
-    source_variant_id:p.sourceVariantId||null,
-    best_source_url:p.sourceUrl,
-    best_supplier_domain:p.merchantDomain,
-    source_price:p.sourcePrice,
-    shipping_reserve:p.shippingReserve,
-    gross_contribution:p.grossContribution,
-    margin_pct:p.marginPct,
-    reliability_score:p.reliabilityScore,
-    routing_score:p.routingScore,
-    supplier_offer_count:p.supplierOfferCount,
-    fingerprint:p.fingerprint,
-    last_seen_at:now,
-    updated_at:now
-  }));
 
-  const offerRows=products.flatMap(p=>p.supplierOffers.map(o=>({
-    ynot_id:p.ynotId,
-    merchant_domain:o.merchantDomain,
-    merchant_name:o.merchantName,
-    source_url:o.sourceUrl,
-    source_product_id:o.sourceProductId,
-    source_variant_id:o.sourceVariantId||"",
-    source_price:o.sourcePrice,
-    source_currency:o.sourceCurrency,
-    shipping_reserve:o.shippingReserve,
-    ynot_price:o.ynotPrice,
-    gross_contribution:o.grossContribution,
-    margin_pct:o.marginPct,
-    reliability_score:o.reliabilityScore,
-    routing_score:o.routingScore,
-    updated_at:now
-  })));
+  const productMap=new Map<string,Record<string,unknown>>();
+  const offerMap=new Map<string,Record<string,unknown>>();
+
+  for(const p of products){
+    productMap.set(p.ynotId,{
+      ynot_id:p.ynotId,
+      country:p.country,
+      category:p.category,
+      title:p.title,
+      original_title:p.originalTitle,
+      brand:p.brand,
+      source_brand:p.sourceBrand||null,
+      image_url:p.image,
+      image_urls:p.images,
+      ynot_price:p.ynotPrice,
+      currency:p.sourceCurrency,
+      ad_eligible:p.adEligible,
+      intent_tags:p.intentTags,
+      price_position:p.pricePosition||null,
+      active:true,
+      source_product_id:p.sourceProductId,
+      source_variant_id:p.sourceVariantId||null,
+      best_source_url:p.sourceUrl,
+      best_supplier_domain:p.merchantDomain,
+      source_price:p.sourcePrice,
+      shipping_reserve:p.shippingReserve,
+      gross_contribution:p.grossContribution,
+      margin_pct:p.marginPct,
+      reliability_score:p.reliabilityScore,
+      routing_score:p.routingScore,
+      supplier_offer_count:p.supplierOfferCount,
+      fingerprint:p.fingerprint,
+      last_seen_at:now,
+      updated_at:now
+    });
+
+    for(const o of p.supplierOffers){
+      const variant=o.sourceVariantId||"";
+      const key=`${p.ynotId}|${o.sourceProductId}|${variant}`;
+      offerMap.set(key,{
+        ynot_id:p.ynotId,
+        merchant_domain:o.merchantDomain,
+        merchant_name:o.merchantName,
+        source_url:o.sourceUrl,
+        source_product_id:o.sourceProductId,
+        source_variant_id:variant,
+        source_price:o.sourcePrice,
+        source_currency:o.sourceCurrency,
+        shipping_reserve:o.shippingReserve,
+        ynot_price:o.ynotPrice,
+        gross_contribution:o.grossContribution,
+        margin_pct:o.marginPct,
+        reliability_score:o.reliabilityScore,
+        routing_score:o.routingScore,
+        updated_at:now
+      });
+    }
+  }
+
+  const productRows=[...productMap.values()];
+  const offerRows=[...offerMap.values()];
 
   for(const batch of chunks(productRows)){
     await request("ynot_catalog_products?on_conflict=ynot_id",{method:"POST",body:JSON.stringify(batch)});
