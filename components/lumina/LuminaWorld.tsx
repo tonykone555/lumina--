@@ -52,6 +52,17 @@ function sourceKind(p:Product){const source=productSource(p);if(source==="amazon
 function sourceShort(p:Product){const source=productSource(p);if(source==="amazon")return"Amazon";if(source==="shopify")return"Shopify";if(source==="ebay")return"eBay";return"Store"}
 function checkoutCopy(p:Product){const source=sourceShort(p);return source==="Store"?"Checkout securely with the seller":`Checkout securely on ${source}`}
 const DETAIL_WORDS=["wireless","leather","cotton","linen","silk","waterproof","portable","minimal","vintage","organic","recycled","black","white","blue","small","large","premium","lightweight","smart","adjustable","sensitive","repair","running","casual"];
+const MATERIAL_WORDS=["cotton","organic cotton","fleece","french terry","wool","merino","linen","denim","nylon","polyester","silk","leather","suede","cashmere","viscose","rayon","spandex","elastane","jersey","ribbed","knit","knitted","boucle","velvet","oak","walnut","marble","glass","metal","ceramic"];
+const TYPE_WORDS=["hoodie","jogger","joggers","sweatpants","t-shirt","tee","shirt","sweater","knitwear","jacket","overshirt","trousers","pants","cargo","jeans","dress","skirt","shorts","leggings","shoe","shoes","sneaker","bag","sofa","chair","table","lamp","rug","serum","cleanser","cream","mask","shampoo","conditioner","headphones","speaker","charger"];
+function productSemanticText(p:Product){return `${cleanTitle(p.title)} ${p.description||""} ${(p.tags||[]).join(" ")} ${(p.variants||[]).map(v=>v.label).join(" ")}`.toLowerCase()}
+function semanticAttributes(p:Product){
+ const text=productSemanticText(p);
+ const colours=COLOURS.filter(x=>text.includes(x));
+ const materials=MATERIAL_WORDS.filter(x=>text.includes(x));
+ const types=TYPE_WORDS.filter(x=>text.includes(x));
+ const shapes=SHAPES.filter(s=>s.words.some(w=>text.includes(w))).map(s=>s.label.toLowerCase());
+ return{colours,materials,types,shapes};
+}
 const COLOURS=["black","white","blue","red","green","brown","beige","pink","purple","orange","yellow","grey","silver","gold"];
 const SHAPES:{label:string;words:string[]}[]=[{label:"Round",words:["round","circle","orb"]},{label:"Slim",words:["slim","narrow","skinny","column"]},{label:"Oversized",words:["oversized","wide","maxi","large"]},{label:"Compact",words:["compact","mini","small","portable"]},{label:"Structured",words:["structured","boxy","square","tailored"]},{label:"Soft",words:["soft","draped","relaxed","flowy"]}];
 function productDetails(p:Product){const title=cleanTitle(p.title).toLowerCase();const variants=(p.variants||[]).map(v=>v.label);return[...(p.tags||[]),...variants,...DETAIL_WORDS.filter(word=>title.includes(word))].map(cleanTitle).filter(t=>t&&!/^(shopify|amazon|ebay)$/i.test(t))}
@@ -177,19 +188,30 @@ export default function LuminaWorld(){
   if(!selected)return[];
   const targetDetails=new Set(productDetails(selected).map(v=>v.toLowerCase()));
   const targetWords=new Set(cleanTitle(selected.title).toLowerCase().split(/\s+/).filter(w=>w.length>3));
+  const targetAttrs=semanticAttributes(selected);
   const targetPrice=selected.price??0;
   return products
    .filter(p=>p.id!==selected.id&&p.brand!==selected.brand)
    .map(p=>{
     const details=productDetails(p).map(v=>v.toLowerCase());
     const words=cleanTitle(p.title).toLowerCase().split(/\s+/).filter(w=>w.length>3);
-    const detailScore=details.filter(v=>targetDetails.has(v)).length*5;
-    const wordScore=words.filter(v=>targetWords.has(v)).length*2;
-    const categoryScore=(p.tags||[]).some(t=>(selected.tags||[]).includes(t))?4:0;
-    const priceScore=targetPrice&&p.price?Math.max(0,3-Math.abs(p.price-targetPrice)/Math.max(1,targetPrice)*3):0;
-    return{p,score:detailScore+wordScore+categoryScore+priceScore};
+    const attrs=semanticAttributes(p);
+    const sameType=attrs.types.filter(v=>targetAttrs.types.includes(v)).length;
+    const sameMaterial=attrs.materials.filter(v=>targetAttrs.materials.includes(v)).length;
+    const sameColour=attrs.colours.filter(v=>targetAttrs.colours.includes(v)).length;
+    const sameShape=attrs.shapes.filter(v=>targetAttrs.shapes.includes(v)).length;
+    const detailScore=details.filter(v=>targetDetails.has(v)).length*2;
+    const wordScore=words.filter(v=>targetWords.has(v)).length;
+    const typeScore=sameType*14;
+    const materialScore=sameMaterial*10;
+    const colourScore=sameColour*7;
+    const shapeScore=sameShape*4;
+    const categoryScore=(p.tags||[]).some(t=>(selected.tags||[]).includes(t))?3:0;
+    const priceScore=targetPrice&&p.price?Math.max(0,2-Math.abs(p.price-targetPrice)/Math.max(1,targetPrice)*2):0;
+    const semanticGate=(targetAttrs.types.length?sameType>0:true)&&(targetAttrs.materials.length?sameMaterial>0||sameType>0:true);
+    return{p,score:typeScore+materialScore+colourScore+shapeScore+detailScore+wordScore+categoryScore+priceScore,semanticGate};
    })
-   .sort((a,b)=>b.score-a.score)
+   .sort((a,b)=>(Number(b.semanticGate)-Number(a.semanticGate))||b.score-a.score)
    .slice(0,18)
    .map(x=>x.p);
  },[products,selected]);
