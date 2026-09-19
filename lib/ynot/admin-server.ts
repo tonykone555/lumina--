@@ -16,7 +16,7 @@ export async function adminDb(path:string,init:RequestInit={}){
 export type AdminContext={authUser:{id:string;email?:string};profile:{id:string;display_name?:string;email?:string;is_admin:boolean}};
 
 export async function requireYnotUser(req:NextRequest):Promise<AdminContext>{
- const token=req.headers.get("authorization")?.replace(/^Bearer\s+/i,"");
+ const token=req.headers.get("authorization")?.replace(/^Bearer\s+/i,"") || req.cookies.get("ynot-admin-session")?.value || req.cookies.get("sb-access-token")?.value || req.cookies.get("supabase-auth-token")?.value;
  if(!token)throw new Error("SIGN_IN_REQUIRED");
  const userResponse=await fetch(`${supabaseBase()}/auth/v1/user`,{headers:{apikey:publishableKey(),Authorization:`Bearer ${token}`},cache:"no-store"});
  const authUser=await userResponse.json().catch(()=>({}));
