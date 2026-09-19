@@ -4,8 +4,12 @@ import { buildCatalogFeed, type FeedCategory, type FeedCountry } from "@/lib/com
 export const runtime="nodejs";
 export const maxDuration=60;
 
+type FeedBuildCategory=Exclude<FeedCategory,"general">;
+
 const COUNTRIES=new Set<FeedCountry>(["FR","DE","ES","IT","NL","BE","GB","US","CA","AU"]);
-const CATEGORIES=new Set<FeedCategory>(["home","fashion","beauty","tech","fitness","kitchen","pets"]);
+const CATEGORIES=new Set<FeedBuildCategory>([
+  "home","fashion","beauty","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
+]);
 
 function csvList<T extends string>(value:string|null,allowed:Set<T>):T[]{
   if(!value)return[];
@@ -31,11 +35,17 @@ export async function GET(req:NextRequest){
   });
 
   if(format==="csv"){
-    const headers=["ynot_id","title","brand","category","country","source_price","currency","shipping_reserve","ynot_price","gross_contribution","margin_pct","routing_score","source_url","image","intent_tags"];
+    const headers=[
+      "ynot_id","title","category","country","price_position","source_price","currency",
+      "shipping_reserve","ynot_price","gross_contribution","margin_pct","routing_score",
+      "supplier_offer_count","source_url","image","intent_tags"
+    ];
     const body=[
       headers.join(","),
       ...products.map(p=>[
-        p.ynotId,p.title,p.brand,p.category,p.country,p.sourcePrice,p.sourceCurrency,p.shippingReserve,p.ynotPrice,p.grossContribution,p.marginPct,p.routingScore,p.sourceUrl,p.image,p.intentTags.join("|")
+        p.ynotId,p.title,p.category,p.country,p.pricePosition||"",p.sourcePrice,p.sourceCurrency,
+        p.shippingReserve,p.ynotPrice,p.grossContribution,p.marginPct,p.routingScore,
+        p.supplierOfferCount,p.sourceUrl,p.image,p.intentTags.join("|")
       ].map(csvEscape).join(","))
     ].join("\n");
 
