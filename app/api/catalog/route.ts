@@ -123,9 +123,12 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
     return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:variantImage,url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"};
   }).filter((v:any)=>v.id);
 
-  const variantImages=[...new Set<string>(variants.map((v:any)=>v.image).filter(Boolean))];
-  const gallery=[...new Set<string>([...variantImages,...mediaImages])].slice(0,10);
-  const primary=variantImages[0]||mediaImages[0]||"";
+  // The popup gallery must only contain the product's own media.
+  // Variant images can be selected from the variant controls, but mixing every
+  // variant image into the gallery caused unrelated/stale-looking photos to
+  // appear while swiping through a product.
+  const gallery=mediaImages.slice(0,10);
+  const primary=mediaImages[0]||variants.find((v:any)=>v.image)?.image||"";
 
   return{id:p.id,title,brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:primary,images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(title,description),source:"shopify-global-catalog"};
 }));
