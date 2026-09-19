@@ -1,5 +1,6 @@
 import { createHash } from "crypto";
 import { buildQuote } from "./engine";
+import { fxRate } from "./currency";
 import { clusterByIdentity, productFingerprint, shopperTitle } from "./product-identity";
 
 export type FeedCountry = "FR"|"DE"|"ES"|"IT"|"NL"|"BE"|"GB"|"US"|"CA"|"AU";
@@ -87,6 +88,79 @@ function rounded(n:number){return Math.round(n*100)/100}
 function stableYnotId(country:FeedCountry,fingerprint:string){
   const hash=createHash("sha256").update(country+"|"+fingerprint).digest("hex").slice(0,24);
   return "ynot-"+country.toLowerCase()+"-"+hash;
+}
+
+const FX_CACHE=new Map<string,Promise<number>>();
+function cachedFx(from:string,to:string){
+  const source=String(from||"EUR").toUpperCase(),target=String(to||"EUR").toUpperCase();
+  if(source===target)return Promise.resolve(1);
+  const key=source+"->"+target;
+  let pending=FX_CACHE.get(key);
+  if(!pending){
+    pending=fxRate(source,target).catch(error=>{FX_CACHE.delete(key);throw error});
+    FX_CACHE.set(key,pending);
+  }
+  return pending;
+}
+
+async function marketizeProducts(products:CatalogFeedProduct[],country:FeedCountry){
+  const target=COUNTRY_CURRENCY[country];
+  const currencies=[...new Set(products.map(p=>String(p.sourceCurrency||target).toUpperCase()))];
+  const rates=new Map<string,number>();
+  await Promise.all(currencies.map(async currency=>{
+    try{rates.set(currency,await cachedFx(currency,target))}
+    catch{if(currency===target)rates.set(currency,1)}
+  }));
+
+  return products.flatMap(product=>{
+    const sourceCurrency=String(product.sourceCurrency||target).toUpperCase();
+    const rate=rates.get(sourceCurrency);
+    if(!rate)return[];
+    const sourcePrice=rounded(product.sourcePrice*rate);
+    const quote=buildQuote({
+      sourceId:product.source,
+      merchantId:product.merchantDomain||product.brand,
+      productId:product.sourceProductId,
+      title:product.originalTitle,
+      category:product.category,
+      price:sourcePrice,
+      currency:target,
+      shipping:product.shippingReserve,
+      stockConfidence:.78,
+      returnPolicyScore:.72,
+      regionMatch:.82,
+      paymentFeePct:.029
+    });
+    const offerBase=product.supplierOffers[0];
+    const offer:SupplierOffer={
+      ...offerBase,
+      sourcePrice,
+      sourceCurrency:target,
+      shippingReserve:product.shippingReserve,
+      ynotPrice:rounded(quote.luminaPrice),
+      grossContribution:rounded(quote.grossContribution),
+      marginPct:rounded(quote.marginPct),
+      reliabilityScore:rounded(quote.reliabilityScore),
+      routingScore:rounded(quote.routingScore)
+    };
+    const adEligible=
+      quote.state==="buy-with-lumina" &&
+      quote.grossContribution>=8 &&
+      quote.marginPct>=12 &&
+      quote.reliabilityScore>=60;
+    return [{
+      ...product,
+      sourcePrice,
+      sourceCurrency:target,
+      ynotPrice:offer.ynotPrice,
+      grossContribution:offer.grossContribution,
+      marginPct:offer.marginPct,
+      reliabilityScore:offer.reliabilityScore,
+      routingScore:offer.routingScore,
+      adEligible,
+      supplierOffers:[offer]
+    }];
+  });
 }
 
 function inferCategory(query:string):FeedCategory{
@@ -386,9 +460,10 @@ export async function searchCatalogIntent(query:string,country:FeedCountry,limit
   // request out into sibling category terms: "protein powder" must not become joggers,
   // and "crossbody bag" must not become belts or backpacks.
   const raw=await shopifySearch(query,country);
-  const mapped=raw
+  const mappedRaw=raw
     .map(item=>mapProduct(item,category,country,query))
     .filter(Boolean) as CatalogFeedProduct[];
+  const mapped=await marketizeProducts(mappedRaw,country);
 
   const anchors=queryAnchorTokens(query);
   const ranked=mapped
@@ -416,7 +491,7 @@ export async function searchCatalogIntent(query:string,country:FeedCountry,limit
   const supplierSearches=await Promise.allSettled(
     identitySeeds.map(seed=>shopifySearch(seed.originalTitle,country))
   );
-  const supplierMatches:CatalogFeedProduct[]=[];
+  const supplierMatchesRaw:CatalogFeedProduct[]=[];
   supplierSearches.forEach((result,index)=>{
     if(result.status!=="fulfilled")return;
     const seed=identitySeeds[index];
@@ -424,10 +499,11 @@ export async function searchCatalogIntent(query:string,country:FeedCountry,limit
     for(const rawItem of result.value){
       const candidate=mapProduct(rawItem,category,country,query);
       if(!candidate||!candidate.adEligible)continue;
-      if(exactSupplierTitle(candidate.originalTitle)===wanted)supplierMatches.push(candidate);
+      if(exactSupplierTitle(candidate.originalTitle)===wanted)supplierMatchesRaw.push(candidate);
     }
   });
 
+  const supplierMatches=await marketizeProducts(supplierMatchesRaw,country);
   const collapsed=collapseExactTitleOffers([...initial,...supplierMatches])
     .filter(p=>p.adEligible)
     .filter(p=>!anchors.length||intentRelevance(query,p)>=Math.min(.5,1/anchors.length))
@@ -462,11 +538,12 @@ export async function buildCatalogFeed(opts:{
   const groups=await mapLimit(jobs,Math.max(1,Math.min(10,opts.concurrency||6)),async({country,category})=>{
     const queries=CATEGORY_QUERIES[category];
     const settled=await Promise.allSettled(queries.map(q=>shopifySearch(q,country)));
-    const mapped=settled.flatMap(result=>
+    const mappedRaw=settled.flatMap(result=>
       result.status==="fulfilled"
         ? result.value.map(raw=>mapProduct(raw,category,country)).filter(Boolean) as CatalogFeedProduct[]
         : []
     );
+    const mapped=await marketizeProducts(mappedRaw,country);
 
     return collapseSupplierOffers(mapped)
       .filter(p=>!opts.adEligibleOnly||p.adEligible)
