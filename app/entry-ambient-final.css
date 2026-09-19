@@ -490,8 +490,8 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
 .lv4-detail .lv4-close svg,
 .ynot-selected .ynot-selected-close svg,
 .ynot-story .ynot-story-close svg{
-  width:21px!important;
-  height:21px!important;
+  width:17px!important;
+  height:17px!important;
   pointer-events:none!important;
 }
 @media(max-width:760px){
@@ -623,7 +623,7 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
   background:transparent!important;
   display:grid!important;
   place-items:start end!important;
-  padding:16px 16px 0 0!important;
+  padding:14px 14px 0 0!important;
   z-index:2147483000!important;
   pointer-events:auto!important;
   touch-action:manipulation!important;
@@ -636,6 +636,6 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
     height:88px!important;
     min-width:88px!important;
     min-height:88px!important;
-    padding:18px 18px 0 0!important;
+    padding:14px 14px 0 0!important;
   }
 }
