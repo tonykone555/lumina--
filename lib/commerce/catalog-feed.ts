@@ -29,6 +29,8 @@ export type CatalogFeedProduct = {
   title:string;
   originalTitle:string;
   brand:string;
+  sourceBrand?:string|null;
+  sellerName:"YNOT";
   category:FeedCategory;
   country:FeedCountry;
   source:"shopify-global-catalog";
@@ -147,7 +149,8 @@ async function shopifySearch(query:string,country:FeedCountry){
     method:"POST",
     headers:{"Content-Type":"application/json"},
     body:JSON.stringify(payload),
-    cache:"no-store"
+    cache:"no-store",
+    signal:AbortSignal.timeout(10000)
   });
   const raw:any=await response.json();
   const content=raw?.result?.structuredContent;
@@ -167,11 +170,12 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
   const image=String(raw?.media?.[0]?.url||variant?.image?.url||variant?.media?.[0]?.url||"");
   if(!originalTitle||!sourceUrl.startsWith("https://")||!image)return null;
 
-  const brand=cleanText(variant?.seller?.name||raw?.seller?.name||merchantDomain||"Shopify merchant");
+  const merchantName=cleanText(variant?.seller?.name||raw?.seller?.name||merchantDomain||"Shopify merchant");
+  const sourceBrand=cleanText(raw?.brand||raw?.vendor||raw?.manufacturer||merchantName)||merchantName;
   const shipping=shippingReserve(country,merchantDomain);
   const quote=buildQuote({
     sourceId:"shopify-global-catalog",
-    merchantId:merchantDomain||brand,
+    merchantId:merchantDomain||merchantName,
     productId:String(raw?.id||variant?.id||sourceUrl),
     title:originalTitle,
     category,
@@ -184,7 +188,7 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
     paymentFeePct:.029
   });
 
-  const fp=productFingerprint({title:originalTitle,brand,category,sourcePrice:amount,merchantDomain,image});
+  const fp=productFingerprint({title:originalTitle,brand:sourceBrand,category,sourcePrice:amount,merchantDomain,image});
   const ynotId="ynot-"+Buffer.from(country+"|"+fp).toString("base64url").slice(0,32);
   const images=[...new Set(
     (Array.isArray(raw?.media)?raw.media:[])
@@ -200,7 +204,7 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
 
   const offer:SupplierOffer={
     merchantDomain,
-    merchantName:brand,
+    merchantName,
     sourceUrl,
     sourceProductId:String(raw?.id||sourceUrl),
     sourceVariantId:variant?.id?String(variant.id):null,
@@ -220,7 +224,9 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
     sourceVariantId:offer.sourceVariantId,
     title:shopperTitle(originalTitle),
     originalTitle,
-    brand:"YNOT",
+    brand:sourceBrand||"YNOT",
+    sourceBrand:sourceBrand||null,
+    sellerName:"YNOT",
     category,
     country,
     source:"shopify-global-catalog",
@@ -264,7 +270,7 @@ function collapseSupplierOffers(products:CatalogFeedProduct[]){
       ...best,
       ynotId:"ynot-"+Buffer.from(best.country+"|"+best.fingerprint).toString("base64url").slice(0,32),
       supplierOfferCount:supplierOffers.length,
-      supplierOffers:supplierOffers.slice(0,8)
+      supplierOffers:supplierOffers.slice(0,12)
     };
   });
 }
@@ -288,11 +294,25 @@ function applyPriceLadder(products:CatalogFeedProduct[],limit:number){
   return [...candidates,...rest].slice(0,limit);
 }
 
+async function mapLimit<T,R>(items:T[],limit:number,fn:(item:T,index:number)=>Promise<R>){
+  const out=new Array<R>(items.length);
+  let cursor=0;
+  async function worker(){
+    while(true){
+      const index=cursor++;
+      if(index>=items.length)return;
+      out[index]=await fn(items[index],index);
+    }
+  }
+  await Promise.all(Array.from({length:Math.min(limit,items.length)},()=>worker()));
+  return out;
+}
+
 export async function searchCatalogIntent(query:string,country:FeedCountry,limit=12){
   const category=inferCategory(query);
   const expansion=category==="general"
     ? [query]
-    : [query,...CATEGORY_QUERIES[category].filter(seed=>!query.toLowerCase().includes(seed.toLowerCase())).slice(0,3)];
+    : [query,...CATEGORY_QUERIES[category].filter(seed=>!query.toLowerCase().includes(seed.toLowerCase())).slice(0,4)];
   const settled=await Promise.allSettled(expansion.map(q=>shopifySearch(q,country)));
   const mapped=settled.flatMap(result=>
     result.status==="fulfilled"
@@ -316,35 +336,33 @@ export async function buildCatalogFeed(opts:{
   categories?:Exclude<FeedCategory,"general">[];
   perCategory?:number;
   adEligibleOnly?:boolean;
+  concurrency?:number;
 }={}){
   const countries=opts.countries?.length?opts.countries:["FR","DE","ES","IT","NL","BE","GB","US","CA"];
   const categories=opts.categories?.length?opts.categories:[
     "home","fashion","beauty","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
   ];
   const perCategory=Math.max(20,Math.min(300,opts.perCategory||120));
-  const rows:CatalogFeedProduct[]=[];
+  const jobs=countries.flatMap(country=>categories.map(category=>({country,category})));
 
-  for(const country of countries){
-    for(const category of categories){
-      const queries=CATEGORY_QUERIES[category];
-      const settled=await Promise.allSettled(queries.map(q=>shopifySearch(q,country)));
-      const mapped=settled.flatMap(result=>
-        result.status==="fulfilled"
-          ? result.value.map(raw=>mapProduct(raw,category,country)).filter(Boolean) as CatalogFeedProduct[]
-          : []
-      );
+  const groups=await mapLimit(jobs,Math.max(1,Math.min(10,opts.concurrency||6)),async({country,category})=>{
+    const queries=CATEGORY_QUERIES[category];
+    const settled=await Promise.allSettled(queries.map(q=>shopifySearch(q,country)));
+    const mapped=settled.flatMap(result=>
+      result.status==="fulfilled"
+        ? result.value.map(raw=>mapProduct(raw,category,country)).filter(Boolean) as CatalogFeedProduct[]
+        : []
+    );
 
-      const collapsed=collapseSupplierOffers(mapped)
-        .filter(p=>!opts.adEligibleOnly||p.adEligible)
-        .sort((a,b)=>
-          (Number(b.adEligible)-Number(a.adEligible)) ||
-          (b.routingScore-a.routingScore) ||
-          (b.grossContribution-a.grossContribution)
-        )
-        .slice(0,perCategory);
+    return collapseSupplierOffers(mapped)
+      .filter(p=>!opts.adEligibleOnly||p.adEligible)
+      .sort((a,b)=>
+        (Number(b.adEligible)-Number(a.adEligible)) ||
+        (b.routingScore-a.routingScore) ||
+        (b.grossContribution-a.grossContribution)
+      )
+      .slice(0,perCategory);
+  });
 
-      rows.push(...collapsed);
-    }
-  }
-  return rows;
+  return groups.flat();
 }
