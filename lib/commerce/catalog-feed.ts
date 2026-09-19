@@ -340,7 +340,7 @@ function intentRelevance(query:string,product:CatalogFeedProduct){
   const hits=anchors.filter(token=>title.has(token)).length;
   const phrase=query.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   const normalizedTitle=(product.originalTitle||product.title).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
-  const phraseBonus=phrase.length>3&&(normalizedTitle.includes(phrase)||phrase.includes(normalizedTitle))?.35:0;
+  const phraseBonus=phrase.length>3&&(normalizedTitle.includes(phrase)||phrase.includes(normalizedTitle)) ? .35 : 0;
   return Math.min(1,hits/anchors.length+phraseBonus);
 }
 function exactSupplierTitle(title:string){
