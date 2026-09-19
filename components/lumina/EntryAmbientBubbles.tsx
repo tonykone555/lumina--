@@ -135,6 +135,27 @@ export default function EntryAmbientBubbles(){
  const active=home&&!dismissed;
  const subcategories=activeCategory?SUBCATEGORIES[activeCategory]||[]:[];
 
+ // Rest the white draggable light exactly in the visual center of the microphone.
+ // Use the rendered microphone bounds instead of hard-coded viewport coordinates so
+ // it stays aligned across iPhone sizes, Safari chrome changes and desktop.
+ useEffect(()=>{
+  if(!active||dragging||position)return;
+  let frame=0;
+  const centerOnMic=()=>{
+   frame=0;
+   const mic=document.querySelector<HTMLElement>(".ynot-voice-orb");
+   if(!mic)return;
+   const rect=mic.getBoundingClientRect();
+   if(rect.width<1||rect.height<1)return;
+   setPosition({x:rect.left+rect.width/2,y:rect.top+rect.height/2});
+  };
+  const queue=()=>{if(frame)return;frame=requestAnimationFrame(centerOnMic)};
+  queue();
+  window.addEventListener("resize",queue);
+  window.addEventListener("orientationchange",queue);
+  return()=>{if(frame)cancelAnimationFrame(frame);window.removeEventListener("resize",queue);window.removeEventListener("orientationchange",queue)};
+ },[active,dragging,position]);
+
  function armCategory(button:HTMLButtonElement){
   if(activeButton.current===button||lastHit.current===button)return;
   if(dwellTimer.current)window.clearTimeout(dwellTimer.current);
@@ -240,6 +261,7 @@ export default function EntryAmbientBubbles(){
   }
 
   resetTarget();
+  setPosition(null);
  }
 
  return <>
