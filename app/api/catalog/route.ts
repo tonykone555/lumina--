@@ -126,6 +126,11 @@ const SEARCH_ATTRIBUTE_SETS={
   modifiers:["stretch","compressive","breathable","sweat-wicking","heavyweight","lightweight","seamless","supportive","oversized","performance"],
   materials:["nylon","spandex","cotton","mesh","ribbed","technical fabric","recycled polyester"]
  },
+ nutrition:{
+  nouns:["protein powder","whey protein","plant protein","creatine","pre workout","electrolytes","protein bar","mass gainer","collagen powder"],
+  modifiers:["high protein","low sugar","unflavoured","chocolate","vanilla","vegan","grass fed","isolate","concentrate","recovery"],
+  materials:["whey isolate","whey concentrate","pea protein","rice protein","casein","creatine monohydrate","electrolytes","collagen peptides"]
+ },
  tech:{
   nouns:["headphones","speaker","charger","power bank","keyboard","mouse","phone case","stand","camera accessory","smart light"],
   modifiers:["wireless","compact","premium","portable","minimal","fast charging","noise cancelling","smart","ergonomic","rugged"],
@@ -137,6 +142,7 @@ function inferSearchDomain(query:string){
  const q=query.toLowerCase();
  if(/hair|scalp|shampoo|conditioner|curl|frizz/.test(q))return"hair";
  if(/skin|serum|cream|spf|cleanser|acne|beauty|moistur/.test(q))return"skin";
+ if(/protein|whey|creatine|pre[- ]?workout|electrolyte|mass gainer|collagen powder|protein bar|supplement/.test(q))return"nutrition";
  if(/fitness|gym|training|workout|legging|sports bra|recovery|lifting/.test(q))return"fitness";
  if(/sofa|chair|furniture|lamp|rug|decor|table|home|bed|desk|mirror/.test(q))return"home";
  if(/headphone|speaker|charger|keyboard|mouse|phone|tech|camera|smart/.test(q))return"tech";
@@ -150,6 +156,7 @@ function categoryCompatible(domain:string,p:Product){
  const rules:Record<string,RegExp>={
   fashion:/\b(hoodie|jogger|sweatpant|t-?shirt|tee|shirt|sweater|knitwear|jacket|overshirt|trouser|pants|cargo|jeans|dress|skirt|shorts|leggings|shoe|sneaker|bag|apparel|clothing|fashion|streetwear|menswear|womenswear|denim|fleece|jersey|cotton|linen|wool)\b/i,
   fitness:/\b(gym|fitness|training|workout|activewear|sports bra|legging|running|lifting|recovery|compression|performance|athletic|exercise|yoga|shorts|jogger)\b/i,
+  nutrition:/\b(protein|whey|casein|creatine|pre[- ]?workout|electrolyte|mass gainer|collagen|supplement|protein bar|pea protein|rice protein)\b/i,
   home:/\b(sofa|chair|table|lamp|rug|storage|shelf|bed|desk|mirror|decor|furniture|home|boucle|oak|walnut|marble|ceramic|lighting)\b/i,
   skin:/\b(skin|skincare|serum|cleanser|moistur|cream|mask|toner|spf|retinol|niacinamide|ceramide|peptide|hyaluronic|acne|beauty)\b/i,
   hair:/\b(hair|scalp|shampoo|conditioner|leave-in|curl|frizz|styling|keratin|biotin|rosemary|argan|castor)\b/i,
@@ -161,7 +168,7 @@ function strictCategoryFilter(query:string,products:Product[]){
  const domain=inferSearchDomain(query);
  const filtered=products.filter(p=>categoryCompatible(domain,p));
  // Keep recall if merchant metadata is sparse, but never let unrelated products dominate.
- return filtered.length>=Math.min(8,Math.max(3,Math.floor(products.length*.2)))?filtered:products.filter(p=>categoryCompatible(domain,p)||inferCategory(p)===(domain==="fashion"?"fashion":domain));
+ return filtered.length>=Math.min(8,Math.max(3,Math.floor(products.length*.2)))?filtered:products.filter(p=>categoryCompatible(domain,p));
 }
 
 function significantWords(query:string){
@@ -172,21 +179,39 @@ function expandCatalogQueries(query:string){
  const clean=stripPriceLanguage(query)||query;
  const domain=inferSearchDomain(clean);
  const set=SEARCH_ATTRIBUTE_SETS[domain];
+ const lower=clean.toLowerCase().trim();
  const words=significantWords(clean);
- const foundNoun=set.nouns.find(n=>clean.toLowerCase().includes(n.toLowerCase()));
- const base=foundNoun||words.slice(-2).join(" ")||set.nouns[0];
+ const foundNoun=[...set.nouns].sort((a,b)=>b.length-a.length).find(n=>lower.includes(n.toLowerCase()));
+ const broadTerms:Record<string,RegExp>={
+  fashion:/^(?:men'?s?|women'?s?|unisex)?\s*(?:clothes|clothing|fashion|apparel|menswear|womenswear|outfits?)$/i,
+  fitness:/^(?:fitness|gym|workout|training|activewear|sportswear|gym clothes|fitness clothes)$/i,
+  nutrition:/^(?:supplements?|sports nutrition|nutrition|protein|workout supplements?)$/i,
+  home:/^(?:home|furniture|home decor|decor)$/i,
+  skin:/^(?:skin|skincare|beauty|skin care)$/i,
+  hair:/^(?:hair|haircare|hair care)$/i,
+  tech:/^(?:tech|technology|gadgets|electronics)$/i
+ };
+ const isBroad=broadTerms[domain]?.test(lower)??false;
+
+ // Specific searches stay specific. Never replace "protein powder" with joggers,
+ // furniture, skincare, or other sibling products just because they share a category.
+ if(!isBroad&&!foundNoun)return[clean];
+
+ const base=foundNoun||clean;
  const queries:string[]=[clean];
- const userHasModifier=set.modifiers.some(x=>clean.toLowerCase().includes(x.toLowerCase()));
- const userHasMaterial=set.materials.some(x=>clean.toLowerCase().includes(x.toLowerCase()));
- if(!userHasModifier)queries.push(...set.modifiers.slice(0,6).map(m=>`${m} ${base}`));
- if(!userHasMaterial)queries.push(...set.materials.slice(0,6).map(m=>`${m} ${base}`));
+
  if(foundNoun){
-  queries.push(...set.nouns.filter(n=>n!==foundNoun).slice(0,5).map(n=>words.length?`${words.slice(0,-1).join(" ")} ${n}`.trim():n));
- }else{
-  queries.push(...set.nouns.slice(0,6).map(n=>words.length?`${clean} ${n}`:n));
+  const userHasModifier=set.modifiers.some(x=>lower.includes(x.toLowerCase()));
+  const userHasMaterial=set.materials.some(x=>lower.includes(x.toLowerCase()));
+  if(!userHasModifier)queries.push(...set.modifiers.slice(0,5).map(m=>`${m} ${base}`));
+  if(!userHasMaterial)queries.push(...set.materials.slice(0,5).map(m=>`${m} ${base}`));
+ }else if(isBroad){
+  // Broad category searches may fan out, but only to products inside that category.
+  queries.push(...set.nouns.slice(0,10));
  }
- return [...new Set(queries.map(q=>q.replace(/\s+/g," ").trim()).filter(Boolean))].slice(0,14);
+ return [...new Set(queries.map(q=>q.replace(/\s+/g," ").trim()).filter(Boolean))].slice(0,12);
 }
+
 function enrichedTags(title:string,description:string){
  const hay=`${description} ${title}`.toLowerCase();
  const domain=inferSearchDomain(hay);
