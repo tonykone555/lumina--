@@ -350,25 +350,18 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
   width:42px;
   height:42px;
   padding:0;
+  border:0;
   border-radius:50%;
-  border:1px solid rgba(255,255,255,.42);
-  background:
-    radial-gradient(circle at 30% 22%,rgba(255,255,255,.78) 0 6%,rgba(255,255,255,.23) 15%,rgba(185,198,208,.16) 42%,rgba(90,100,108,.12) 67%,rgba(0,0,0,.40) 100%);
-  box-shadow:
-    inset 5px 6px 10px rgba(255,255,255,.18),
-    inset -7px -8px 13px rgba(0,0,0,.28),
-    0 10px 30px rgba(0,0,0,.34),
-    0 0 20px rgba(210,225,235,.12);
-  backdrop-filter:blur(12px) saturate(1.15);
-  -webkit-backdrop-filter:blur(12px) saturate(1.15);
+  background:transparent;
+  box-shadow:none;
   touch-action:none;
   user-select:none;
   -webkit-user-select:none;
   cursor:grab;
-  transition:box-shadow .16s ease,border-color .16s ease,transform .16s ease;
+  transition:transform .16s ease;
 }
 .ynot-entry-pointer.dragging{
-  transform:translate(-50%,-50%) scale(1.08);
+  transform:translate(-50%,-50%) scale(1.04);
   cursor:grabbing;
   transition:none;
 }
@@ -377,31 +370,59 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
 }
 .ynot-entry-pointer-core{
   position:absolute;
-  inset:13px;
+  left:50%;
+  top:50%;
+  width:12px;
+  height:12px;
+  transform:translate(-50%,-50%);
   border-radius:50%;
-  background:rgba(255,255,255,.88);
-  box-shadow:0 0 11px rgba(255,255,255,.8);
+  background:#fff;
+  box-shadow:
+    0 0 8px rgba(255,255,255,.98),
+    0 0 18px rgba(255,255,255,.62),
+    0 0 30px rgba(255,255,255,.24);
 }
+.ynot-entry-pointer::before,
 .ynot-entry-pointer::after{
   content:"";
   position:absolute;
-  inset:-8px;
+  left:50%;
+  top:50%;
   border-radius:50%;
-  border:1px solid rgba(255,255,255,.10);
-  opacity:.7;
+  pointer-events:none;
+  transform:translate(-50%,-50%);
 }
-.ynot-entry-pointer.over-category{
-  border-color:rgba(255,255,255,.85);
+.ynot-entry-pointer::before{
+  width:24px;
+  height:24px;
+  border:1px solid rgba(255,255,255,.34);
+  box-shadow:0 0 18px rgba(255,255,255,.18);
+  animation:ynotPointerPulse 1.6s ease-out infinite;
+}
+.ynot-entry-pointer::after{
+  width:34px;
+  height:34px;
+  border:1px solid rgba(255,255,255,.12);
+  animation:ynotPointerPulse 1.6s .45s ease-out infinite;
+}
+@keyframes ynotPointerPulse{
+  0%{opacity:.88;transform:translate(-50%,-50%) scale(.7)}
+  65%{opacity:.12}
+  100%{opacity:0;transform:translate(-50%,-50%) scale(1.35)}
+}
+.ynot-entry-pointer.over-category .ynot-entry-pointer-core{
   box-shadow:
-    inset 5px 6px 10px rgba(255,255,255,.24),
-    inset -7px -8px 13px rgba(0,0,0,.24),
-    0 0 0 7px rgba(255,255,255,.08),
-    0 0 30px rgba(255,255,255,.30);
+    0 0 10px rgba(255,255,255,1),
+    0 0 24px rgba(255,255,255,.9),
+    0 0 42px rgba(255,255,255,.46);
+}
+.ynot-entry-pointer.over-category::before{
+  border-color:rgba(255,255,255,.72);
 }
 .ynot-entry-pointer em{
   position:absolute;
   left:50%;
-  bottom:50px;
+  bottom:42px;
   transform:translateX(-50%);
   max-width:150px;
   padding:6px 9px;
@@ -426,12 +447,65 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
 
 @media(max-width:760px){
   .ynot-entry-pointer{
-    width:40px;
-    height:40px;
+    width:44px;
+    height:44px;
     bottom:calc(126px + env(safe-area-inset-bottom));
+  }
+  .ynot-entry-pointer-core{
+    width:13px;
+    height:13px;
   }
 }
 
+/* Final mobile close targets: keep the visible X small but make the whole
+   upper-right card corner respond immediately to touch. */
+.lv4-detail,
+.ynot-selected,
+.ynot-story{
+  isolation:isolate;
+}
+.lv4-detail .lv4-close,
+.ynot-selected .ynot-selected-close,
+.ynot-story .ynot-story-close{
+  position:absolute!important;
+  top:0!important;
+  right:0!important;
+  width:76px!important;
+  height:76px!important;
+  min-width:76px!important;
+  min-height:76px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  display:grid!important;
+  place-items:start end!important;
+  padding-top:16px!important;
+  padding-right:16px!important;
+  z-index:2147483000!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.lv4-detail .lv4-close svg,
+.ynot-selected .ynot-selected-close svg,
+.ynot-story .ynot-story-close svg{
+  width:21px!important;
+  height:21px!important;
+  pointer-events:none!important;
+}
+@media(max-width:760px){
+  .lv4-detail .lv4-close,
+  .ynot-selected .ynot-selected-close,
+  .ynot-story .ynot-story-close{
+    width:88px!important;
+    height:88px!important;
+    min-width:88px!important;
+    min-height:88px!important;
+    padding-top:18px!important;
+    padding-right:18px!important;
+  }
+}
 
 /* Hold the drag pointer over a main category to bloom its nearby subcategories. */
 .ynot-entry-subcategory-ring{
