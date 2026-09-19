@@ -351,6 +351,29 @@ function exactSupplierTitle(title:string){
     .trim();
 }
 
+function collapseExactTitleOffers(products:CatalogFeedProduct[]){
+  const groups=new Map<string,CatalogFeedProduct[]>();
+  for(const product of products){
+    const key=exactSupplierTitle(product.originalTitle||product.title);
+    const group=groups.get(key)||[];
+    group.push(product);
+    groups.set(key,group);
+  }
+  return [...groups.values()].map(group=>{
+    const best=bestOffer(group);
+    const seen=new Set<string>();
+    const supplierOffers=group
+      .map(p=>p.supplierOffers[0])
+      .filter(offer=>{
+        const key=`${offer.merchantDomain}|${offer.sourceProductId}|${offer.sourceVariantId||""}`;
+        if(seen.has(key))return false;
+        seen.add(key);return true;
+      })
+      .sort((a,b)=>(b.routingScore-a.routingScore)||(b.grossContribution-a.grossContribution));
+    return{...best,supplierOfferCount:supplierOffers.length,supplierOffers:supplierOffers.slice(0,12)};
+  });
+}
+
 export async function searchCatalogIntent(query:string,country:FeedCountry,limit=12){
   const category=inferCategory(query);
 
@@ -381,7 +404,7 @@ export async function searchCatalogIntent(query:string,country:FeedCountry,limit
   // This is the supplier-discovery pass: Shopify frequently returns many merchants
   // using the same title, so YNOT can compare those offers without changing what
   // the shopper sees.
-  const identitySeeds=collapseSupplierOffers(initial)
+  const identitySeeds=collapseExactTitleOffers(initial)
     .sort((a,b)=>(b.routingScore-a.routingScore)||(b.grossContribution-a.grossContribution))
     .slice(0,Math.min(8,Math.max(4,limit)));
 
@@ -400,7 +423,7 @@ export async function searchCatalogIntent(query:string,country:FeedCountry,limit
     }
   });
 
-  const collapsed=collapseSupplierOffers([...initial,...supplierMatches])
+  const collapsed=collapseExactTitleOffers([...initial,...supplierMatches])
     .filter(p=>p.adEligible)
     .filter(p=>!anchors.length||intentRelevance(query,p)>=Math.min(.5,1/anchors.length))
     .sort((a,b)=>
