@@ -189,6 +189,26 @@ export default function LuminaWorld(){
    if(append||requestId===replaceRequestRef.current){loadingRef.current=false;setLoading(false);setLoadingMore(false)}
   }
  },[scene.query,market,luminaSource]);
+ useEffect(()=>{
+  const onCatalogSource=(event:Event)=>{
+   const requested=String((event as CustomEvent<{source?:string}>).detail?.source||"shopify").toLowerCase();
+   const term=(submitted||query.trim()||scene.query).trim();
+   setSelected(null);setSuggestionsOpen(false);setHovered(null);setProducts([]);setMarketError("");resetPaging();centerWorld(.95);
+   if(requested==="ebay"){
+    setMarket("ebay");
+    window.setTimeout(()=>void fetchProducts(term,"",false,"ebay",0,luminaSource),0);
+    return;
+   }
+   setMarket("lumina");
+   setLuminaSource("shopify");
+   // EtsyCatalogBridge observes the same event and swaps the /api/catalog response
+   // before this deferred fetch runs.
+   window.setTimeout(()=>void fetchProducts(term,"",false,"lumina",0,"shopify"),0);
+  };
+  window.addEventListener("ynot:catalog-source",onCatalogSource as EventListener);
+  return()=>window.removeEventListener("ynot:catalog-source",onCatalogSource as EventListener);
+ },[submitted,query,scene.query,fetchProducts,luminaSource]);
+
 
  function centerWorld(z:number){setZoom(z);setPan({x:-WORLD_CX*z,y:-WORLD_CY*z})}
  function resetPaging(){waveRef.current=0;shopifyCursorRef.current="";shopifyPageDirectionRef.current="";deepProductRef.current=""}
