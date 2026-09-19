@@ -263,3 +263,78 @@ body:not(:has(.lv4-shell.depth-worlds)) .ynot-entry-ambient{
     pointer-events:none!important;
   }
 }
+
+
+/* YNOT Deal mobile header interaction lock: keep controls floating above the feed. */
+@media(max-width:899px){
+  .ynot-drawer.open .ynot-head{
+    position:fixed!important;
+    left:0!important;
+    right:0!important;
+    top:calc(6px + env(safe-area-inset-top))!important;
+    z-index:2147483600!important;
+    pointer-events:none!important;
+    transform:none!important;
+  }
+  .ynot-drawer.open .ynot-head h2{
+    position:relative!important;
+    z-index:1!important;
+    pointer-events:none!important;
+  }
+  .ynot-drawer.open .ynot-head-actions{
+    position:fixed!important;
+    top:calc(4px + env(safe-area-inset-top))!important;
+    right:10px!important;
+    z-index:2147483646!important;
+    pointer-events:auto!important;
+    display:flex!important;
+    gap:6px!important;
+  }
+  .ynot-drawer.open .ynot-head-actions .ynot-cart-trigger,
+  .ynot-drawer.open .ynot-head-actions .ynot-close{
+    position:relative!important;
+    z-index:2147483647!important;
+    width:36px!important;
+    height:36px!important;
+    min-width:36px!important;
+    min-height:36px!important;
+    display:grid!important;
+    place-items:center!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  .ynot-drawer.open .ynot-head-actions .ynot-close svg,
+  .ynot-drawer.open .ynot-head-actions .ynot-cart-trigger svg{
+    pointer-events:none!important;
+  }
+  .ynot-drawer.open .ynot-dock{
+    position:fixed!important;
+    top:calc(42px + env(safe-area-inset-top))!important;
+    left:0!important;
+    right:0!important;
+    z-index:2147483500!important;
+    pointer-events:auto!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    touch-action:pan-x!important;
+    overscroll-behavior-x:contain!important;
+    scroll-snap-type:x proximity!important;
+    -webkit-overflow-scrolling:touch!important;
+  }
+  .ynot-drawer.open .ynot-dock button{
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+    scroll-snap-align:start!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  .ynot-drawer.open .ynot-search{
+    position:fixed!important;
+    top:calc(78px + env(safe-area-inset-top))!important;
+    z-index:2147483400!important;
+    pointer-events:auto!important;
+  }
+  .ynot-drawer.open .ynot-body{
+    padding-top:calc(128px + env(safe-area-inset-top))!important;
+  }
+}
