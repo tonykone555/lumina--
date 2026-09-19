@@ -41,10 +41,10 @@ export default function ProductActions({product}:Props){
     setBusy(true);setError("");
     void track({eventType:"checkout_start",ynotId:product.ynotId,source:"product-page",country:product.country,value:product.price,currency:product.currency});
     try{
-      const quoteRes=await fetch("/api/checkout/quote",{
+      const quoteRes=await fetch("/api/checkout/ynot-quote",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ynotId:product.ynotId,region:{country:product.country},quantity:1})
+        body:JSON.stringify({ynotId:product.ynotId,country:product.country,quantity:1})
       });
       const quote=await quoteRes.json();
       if(!quoteRes.ok||!quote?.token)throw new Error(quote?.error||"Unable to prepare checkout");
