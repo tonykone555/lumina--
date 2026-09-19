@@ -142,6 +142,28 @@ function inferSearchDomain(query:string){
  if(/headphone|speaker|charger|keyboard|mouse|phone|tech|camera|smart/.test(q))return"tech";
  return"fashion";
 }
+function productDomainText(p:Product){
+ return `${p.title||""} ${p.brand||""} ${String(p.description||"")} ${(p.tags||[]).join(" ")}`.toLowerCase();
+}
+function categoryCompatible(domain:string,p:Product){
+ const text=productDomainText(p);
+ const rules:Record<string,RegExp>={
+  fashion:/\b(hoodie|jogger|sweatpant|t-?shirt|tee|shirt|sweater|knitwear|jacket|overshirt|trouser|pants|cargo|jeans|dress|skirt|shorts|leggings|shoe|sneaker|bag|apparel|clothing|fashion|streetwear|menswear|womenswear|denim|fleece|jersey|cotton|linen|wool)\b/i,
+  fitness:/\b(gym|fitness|training|workout|activewear|sports bra|legging|running|lifting|recovery|compression|performance|athletic|exercise|yoga|shorts|jogger)\b/i,
+  home:/\b(sofa|chair|table|lamp|rug|storage|shelf|bed|desk|mirror|decor|furniture|home|boucle|oak|walnut|marble|ceramic|lighting)\b/i,
+  skin:/\b(skin|skincare|serum|cleanser|moistur|cream|mask|toner|spf|retinol|niacinamide|ceramide|peptide|hyaluronic|acne|beauty)\b/i,
+  hair:/\b(hair|scalp|shampoo|conditioner|leave-in|curl|frizz|styling|keratin|biotin|rosemary|argan|castor)\b/i,
+  tech:/\b(headphone|earbud|speaker|charger|power bank|keyboard|mouse|phone case|usb-c|bluetooth|camera|smart light|tech|wireless|electronic)\b/i
+ };
+ return rules[domain]?.test(text)??true;
+}
+function strictCategoryFilter(query:string,products:Product[]){
+ const domain=inferSearchDomain(query);
+ const filtered=products.filter(p=>categoryCompatible(domain,p));
+ // Keep recall if merchant metadata is sparse, but never let unrelated products dominate.
+ return filtered.length>=Math.min(8,Math.max(3,Math.floor(products.length*.2)))?filtered:products.filter(p=>categoryCompatible(domain,p)||inferCategory(p)===(domain==="fashion"?"fashion":domain));
+}
+
 function significantWords(query:string){
  const stop=new Set(["find","show","me","the","a","an","for","with","and","or","under","over","below","above","less","than","more","to","of","some","something","clothes","clothing","fashion","products","product"]);
  return stripPriceLanguage(query).toLowerCase().replace(/[^a-z0-9' -]+/g," ").split(/\s+/).filter(w=>w.length>2&&!stop.has(w));
@@ -195,7 +217,8 @@ async function fetchShopifyDiscovery(query:string,country:string,cursor?:string)
  const queries=expandCatalogQueries(query);
  const settled=await Promise.allSettled(queries.map(q=>fetchShopify(q,country)));
  const fulfilled=settled.filter((r):r is PromiseFulfilledResult<{products:Product[];pagination:any}>=>r.status==="fulfilled");
- const merged=diversifyBrands(fulfilled.flatMap(r=>r.value.products),120);
+ const categoryMatched=strictCategoryFilter(query,fulfilled.flatMap(r=>r.value.products));
+ const merged=diversifyBrands(categoryMatched,120);
  if(!merged.length)return fetchShopify(query,country);
  return{products:merged,pagination:{has_next_page:false,next_cursor:null,discovery_seeded:true,queries_used:queries}};
 }
@@ -256,7 +279,7 @@ export async function GET(req:NextRequest){
  }
 
  if(luminaSource==="shopify"){
-  try{const result=await fetchShopifyDiscovery(query,country,cursor);const products=applyPriceIntent(result.products,priceIntent);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products,pagination:result.pagination,error:products.length?undefined:"No Shopify products found for this search yet."},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
+  try{const result=await fetchShopifyDiscovery(query,country,cursor);const products=applyPriceIntent(strictCategoryFilter(query,result.products),priceIntent);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products,pagination:result.pagination,error:products.length?undefined:"No Shopify products found for this search yet."},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
   catch(error){console.error("Shopify catalog error",error);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Shopify products are temporarily unavailable in YNOT."},{status:200})}
  }
 
@@ -268,7 +291,7 @@ export async function GET(req:NextRequest){
  const [shopifyResult,amazonResult]=await Promise.allSettled([fetchShopifyDiscovery(query,country,cursor),fetchAmazon(query,country,page)]);
  const shopify=shopifyResult.status==="fulfilled"?shopifyResult.value:{products:[],pagination:{has_next_page:false,next_cursor:null}};
  const amazon=amazonResult.status==="fulfilled"?amazonResult.value:[];
- const shopifyProducts=applyPriceIntent(shopify.products,priceIntent);
+ const shopifyProducts=applyPriceIntent(strictCategoryFilter(query,shopify.products),priceIntent);
  const amazonProducts=applyPriceIntent(amazon,priceIntent);
  const products=groupedProducts(shopifyProducts,amazonProducts);
  if(products.length){return NextResponse.json({source:"lumina-multi-source",sources:[...(shopifyProducts.length?["shopify-global-catalog"]:[]),...(amazonProducts.length?["amazon-rainforest"]:[])],market:"lumina",luminaSource:"all",query,filters:{price:priceIntent},products,pagination:{...shopify.pagination,amazon_has_next_page:amazon.length>=20}},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
