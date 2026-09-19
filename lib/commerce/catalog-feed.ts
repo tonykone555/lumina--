@@ -308,20 +308,129 @@ async function mapLimit<T,R>(items:T[],limit:number,fn:(item:T,index:number)=>Pr
   return out;
 }
 
+const QUERY_STOP=new Set([
+  "find","show","looking","look","need","want","best","good","great","cheap","cheaper","premium",
+  "recommend","recommendation","please","for","with","that","this","from","under","below","over",
+  "above","less","than","more","around","about","between","and","the","some","any","option","options",
+  "product","products","buy","purchase","euro","euros","eur","usd","gbp","dollar","dollars"
+]);
+const COLOR_WORDS=new Set([
+  "black","white","grey","gray","beige","cream","brown","blue","navy","green","red","pink",
+  "purple","orange","yellow","gold","silver","khaki","tan","burgundy"
+]);
+
+function stemToken(token:string){
+  const t=token.toLowerCase();
+  return t.length>4&&t.endsWith("s")?t.slice(0,-1):t;
+}
+function queryAnchorTokens(query:string){
+  return query.toLowerCase()
+    .replace(/[^a-z0-9]+/g," ")
+    .split(/\s+/)
+    .map(stemToken)
+    .filter(t=>t.length>2&&!QUERY_STOP.has(t)&&!COLOR_WORDS.has(t)&&!/^\d+$/.test(t));
+}
+function titleTokenSet(title:string){
+  return new Set(title.toLowerCase().replace(/[^a-z0-9]+/g," ").split(/\s+/).filter(Boolean).map(stemToken));
+}
+function intentRelevance(query:string,product:CatalogFeedProduct){
+  const anchors=queryAnchorTokens(query);
+  if(!anchors.length)return 1;
+  const title=titleTokenSet(product.originalTitle||product.title);
+  const hits=anchors.filter(token=>title.has(token)).length;
+  const phrase=query.toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const normalizedTitle=(product.originalTitle||product.title).toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  const phraseBonus=phrase.length>3&&(normalizedTitle.includes(phrase)||phrase.includes(normalizedTitle)) ? .35 : 0;
+  return Math.min(1,hits/anchors.length+phraseBonus);
+}
+function exactSupplierTitle(title:string){
+  return title.toLowerCase()
+    .replace(/\b(pack|set)\s+of\s+\d+\b/g," ")
+    .replace(/[^a-z0-9]+/g," ")
+    .replace(/\s+/g," ")
+    .trim();
+}
+
+function collapseExactTitleOffers(products:CatalogFeedProduct[]){
+  const groups=new Map<string,CatalogFeedProduct[]>();
+  for(const product of products){
+    const key=exactSupplierTitle(product.originalTitle||product.title);
+    const group=groups.get(key)||[];
+    group.push(product);
+    groups.set(key,group);
+  }
+  return [...groups.values()].map(group=>{
+    const best=bestOffer(group);
+    const seen=new Set<string>();
+    const supplierOffers=group
+      .map(p=>p.supplierOffers[0])
+      .filter(offer=>{
+        const key=`${offer.merchantDomain}|${offer.sourceProductId}|${offer.sourceVariantId||""}`;
+        if(seen.has(key))return false;
+        seen.add(key);return true;
+      })
+      .sort((a,b)=>(b.routingScore-a.routingScore)||(b.grossContribution-a.grossContribution));
+    return{...best,supplierOfferCount:supplierOffers.length,supplierOffers:supplierOffers.slice(0,12)};
+  });
+}
+
 export async function searchCatalogIntent(query:string,country:FeedCountry,limit=12){
   const category=inferCategory(query);
-  const expansion=category==="general"
-    ? [query]
-    : [query,...CATEGORY_QUERIES[category].filter(seed=>!query.toLowerCase().includes(seed.toLowerCase())).slice(0,4)];
-  const settled=await Promise.allSettled(expansion.map(q=>shopifySearch(q,country)));
-  const mapped=settled.flatMap(result=>
-    result.status==="fulfilled"
-      ? result.value.map(raw=>mapProduct(raw,category,country,query)).filter(Boolean) as CatalogFeedProduct[]
-      : []
+
+  // Search the shopper's exact request first. We deliberately do not fan a precise
+  // request out into sibling category terms: "protein powder" must not become joggers,
+  // and "crossbody bag" must not become belts or backpacks.
+  const raw=await shopifySearch(query,country);
+  const mapped=raw
+    .map(item=>mapProduct(item,category,country,query))
+    .filter(Boolean) as CatalogFeedProduct[];
+
+  const anchors=queryAnchorTokens(query);
+  const ranked=mapped
+    .map(product=>({product,relevance:intentRelevance(query,product)}))
+    .sort((a,b)=>(b.relevance-a.relevance)||(b.product.routingScore-a.product.routingScore));
+
+  // Require a meaningful title anchor when the shopper supplied a concrete product noun.
+  // If Shopify metadata is sparse, retain a small exact-search fallback rather than
+  // widening into unrelated category products.
+  const strict=anchors.length
+    ? ranked.filter(x=>x.relevance>=Math.min(.5,1/anchors.length))
+    : ranked;
+  const initial=(strict.length>=3?strict:ranked.slice(0,Math.max(3,limit*2)))
+    .map(x=>x.product)
+    .filter(p=>p.adEligible);
+
+  // For the strongest product identities, search the exact Shopify title again.
+  // This is the supplier-discovery pass: Shopify frequently returns many merchants
+  // using the same title, so YNOT can compare those offers without changing what
+  // the shopper sees.
+  const identitySeeds=collapseExactTitleOffers(initial)
+    .sort((a,b)=>(b.routingScore-a.routingScore)||(b.grossContribution-a.grossContribution))
+    .slice(0,Math.min(8,Math.max(4,limit)));
+
+  const supplierSearches=await Promise.allSettled(
+    identitySeeds.map(seed=>shopifySearch(seed.originalTitle,country))
   );
-  const collapsed=collapseSupplierOffers(mapped)
+  const supplierMatches:CatalogFeedProduct[]=[];
+  supplierSearches.forEach((result,index)=>{
+    if(result.status!=="fulfilled")return;
+    const seed=identitySeeds[index];
+    const wanted=exactSupplierTitle(seed.originalTitle);
+    for(const rawItem of result.value){
+      const candidate=mapProduct(rawItem,category,country,query);
+      if(!candidate||!candidate.adEligible)continue;
+      if(exactSupplierTitle(candidate.originalTitle)===wanted)supplierMatches.push(candidate);
+    }
+  });
+
+  const collapsed=collapseExactTitleOffers([...initial,...supplierMatches])
     .filter(p=>p.adEligible)
-    .sort((a,b)=>(b.routingScore-a.routingScore)||(b.grossContribution-a.grossContribution));
+    .filter(p=>!anchors.length||intentRelevance(query,p)>=Math.min(.5,1/anchors.length))
+    .sort((a,b)=>
+      (intentRelevance(query,b)-intentRelevance(query,a)) ||
+      (b.routingScore-a.routingScore) ||
+      (b.grossContribution-a.grossContribution)
+    );
 
   return{
     query,
