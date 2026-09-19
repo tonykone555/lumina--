@@ -47,7 +47,7 @@ function productSize(p:Product){const variation=1.08+(hash(p.id||p.title)%19)/10
 function cleanTitle(s:string){return String(s||"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,"").replace(/\s{2,}/g," ").replace(/^\s*[|·—–-]+\s*|\s*[|·—–-]+\s*$/g,"").trim()}
 function dedupe(list:Product[]){const seen=new Set<string>();return list.filter(p=>{const k=p.id||`${p.title}|${p.brand}`;if(seen.has(k))return false;seen.add(k);return true})}
 function productSource(p:Product){const s=(p.source||"").toLowerCase();if(s.includes("amazon"))return"amazon";if(s.includes("shopify"))return"shopify";if(s.includes("ebay"))return"ebay";return"store"}
-function sourceKind(p:Product){const source=productSource(p);if(source==="ebay")return"eBay Marketplace";if(source==="amazon")return"Amazon · YNOT";if(source==="shopify")return"Shopify · YNOT";return"Store"}
+function sourceKind(p:Product){const source=productSource(p);if(source==="amazon"||source==="ebay")return"YNOT · Marketplace";if(source==="shopify")return"YNOT · Commerce";return"YNOT · Commerce"}
 function sourceShort(p:Product){const source=productSource(p);if(source==="amazon")return"Amazon";if(source==="shopify")return"Shopify";if(source==="ebay")return"eBay";return"Store"}
 function checkoutCopy(p:Product){const source=sourceShort(p);return source==="Store"?"Checkout securely with the seller":`Checkout securely on ${source}`}
 const DETAIL_WORDS=["wireless","leather","cotton","linen","silk","waterproof","portable","minimal","vintage","organic","recycled","black","white","blue","small","large","premium","lightweight","smart","adjustable","sensitive","repair","running","casual"];
