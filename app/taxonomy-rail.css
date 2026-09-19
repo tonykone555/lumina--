@@ -37,3 +37,33 @@
     pointer-events:none!important;
   }
 }
+
+
+/* Endless world prefill: occupy future product slots while catalog pages stream in. */
+.lv4-product-placeholder{
+  position:absolute;
+  width:var(--ps);
+  height:var(--ps);
+  transform:translate(-50%,-50%);
+  border-radius:999px;
+  pointer-events:none;
+  z-index:2;
+  background:
+    radial-gradient(circle at 35% 28%,rgba(255,255,255,.38),rgba(255,255,255,.13) 35%,rgba(255,255,255,.055) 64%,rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.16);
+  box-shadow:0 16px 38px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.24);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  opacity:.72;
+  animation:ynotFutureBubble 1.6s ease-in-out var(--delay) infinite alternate;
+}
+@keyframes ynotFutureBubble{
+  from{opacity:.42;transform:translate(-50%,-50%) scale(.94)}
+  to{opacity:.78;transform:translate(-50%,-50%) scale(1.025)}
+}
+@media(max-width:899px){
+  .lv4-product-placeholder{opacity:.62}
+}
+@media(prefers-reduced-motion:reduce){
+  .lv4-product-placeholder{animation:none}
+}
