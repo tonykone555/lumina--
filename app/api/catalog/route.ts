@@ -47,6 +47,7 @@ const EBAY_MARKETPLACES:Record<string,string>={US:"EBAY_US",GB:"EBAY_GB",UK:"EBA
 const DEFAULT_CURRENCY:Record<string,string>={US:"USD",GB:"GBP",UK:"GBP",FR:"EUR",DE:"EUR",ES:"EUR",IT:"EUR",CA:"CAD",AU:"AUD",NL:"EUR",PL:"PLN",BE:"EUR"};
 const EBAY_LANGUAGES:Record<string,string>={US:"en-US",GB:"en-GB",UK:"en-GB",FR:"fr-FR",DE:"de-DE",ES:"es-ES",IT:"it-IT",CA:"fr-CA",AU:"en-AU",NL:"nl-NL",PL:"pl-PL",BE:"fr-BE"};
 let ebayTokenCache:{token:string;expiresAt:number}|null=null;
+const INITIAL_PRODUCT_TARGET=160; // 20 visual rows × 8 products
 
 function cleanTitle(text:string){return String(text||"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,"").replace(/\s{2,}/g," ").replace(/^\s*[|·—–-]+\s*|\s*[|·—–-]+\s*$/g,"").trim()}
 function descriptionText(value:unknown){if(typeof value==="string")return cleanTitle(value.replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;/gi,"'"));if(value&&typeof value==="object"){const v=value as Record<string,unknown>;return descriptionText(v.html??v.plain??v.text??v.value)}return""}
@@ -278,25 +279,25 @@ async function fetchShopifyDiscovery(query:string,country:string,cursor?:string)
  try{exact=await fetchShopify(query,country)}catch{}
  const exactMatched=exact?strictCategoryFilter(query,exact.products):[];
  const exactDiverse=diversifyBrands(exactMatched,80,5);
- if(exactDiverse.length>=24){
+ if(exactDiverse.length>=INITIAL_PRODUCT_TARGET){
   return{
-   products:exactDiverse,
+   products:exactDiverse.slice(0,INITIAL_PRODUCT_TARGET),
    pagination:{...(exact?.pagination||{}),fast_exact:true,queries_used:[query]}
   };
  }
 
  // Only deepen sparse searches. Keep the expansion tight and same-intent so the
  // first bubbles arrive quickly and unrelated sibling products never flood the world.
- const queries=expandCatalogQueries(query).filter(q=>q.toLowerCase()!==query.toLowerCase()).slice(0,4);
+ const queries=expandCatalogQueries(query).filter(q=>q.toLowerCase()!==query.toLowerCase()).slice(0,8);
  const settled=await Promise.allSettled(queries.map(q=>fetchShopify(q,country)));
  const fulfilled=settled.filter((r):r is PromiseFulfilledResult<{products:Product[];pagination:any}>=>r.status==="fulfilled");
  const combined=[...(exact?.products||[]),...fulfilled.flatMap(r=>r.value.products)];
  const categoryMatched=strictCategoryFilter(query,combined);
- const merged=diversifyBrands(categoryMatched,120,5);
+ const merged=diversifyBrands(categoryMatched,INITIAL_PRODUCT_TARGET,6);
 
  if(merged.length){
   return{
-   products:merged,
+   products:merged.slice(0,INITIAL_PRODUCT_TARGET),
    pagination:{
     ...(exact?.pagination||{}),
     discovery_seeded:true,
