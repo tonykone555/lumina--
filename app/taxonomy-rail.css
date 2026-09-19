@@ -1,1 +1,38 @@
 .ynot-taxonomy-rail{display:none!important}.ynot-app-shell>.ynot-subcat:not(.ynot-taxonomy-progressive){display:none!important}.ynot-taxonomy-progressive{display:block!important}body.ynot-compass-open .ynot-taxonomy-progressive,.ynot-app-shell.chrome-hidden .ynot-taxonomy-progressive{opacity:0!important;pointer-events:none!important}.ynot-compass-map-expanded{max-height:min(88vh,940px)!important;overflow:auto!important}.ynot-compass-grid-expanded{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:14px!important;align-items:start!important}.ynot-compass-grid-expanded .ynot-map-world{min-height:auto!important}.ynot-compass-grid-expanded .ynot-map-branches{display:flex!important;flex-wrap:wrap!important;gap:7px!important}.ynot-compass-grid-expanded .ynot-map-branches button{width:auto!important;min-height:30px!important;padding:0 9px!important;border-radius:999px!important}.ynot-compass-map-expanded>header{position:relative!important;top:auto!important}.ynot-compass-map-expanded .ynot-compass-close{position:absolute!important;right:0!important;top:0!important;z-index:20!important}@media(max-width:760px){.ynot-compass-grid-expanded{grid-template-columns:1fr!important}.ynot-compass-map-expanded{max-height:92vh!important;padding-bottom:34px!important}}
+
+
+/* Mobile product close: body-level control so transformed/blurred product layers
+   cannot trap the X inside the card or block its tap target. */
+.lv4-mobile-floating-close{display:none}
+@media(max-width:899px){
+  .lv4-detail>.lv4-close{display:none!important}
+  .lv4-mobile-floating-close{
+    position:fixed!important;
+    display:grid!important;
+    place-items:center!important;
+    top:calc(env(safe-area-inset-top) + 92px)!important;
+    right:14px!important;
+    width:38px!important;
+    height:38px!important;
+    min-width:38px!important;
+    min-height:38px!important;
+    padding:0!important;
+    margin:0!important;
+    border-radius:999px!important;
+    border:1px solid rgba(255,255,255,.24)!important;
+    background:rgba(18,19,19,.62)!important;
+    color:#fff!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.28),inset 0 1px rgba(255,255,255,.12)!important;
+    backdrop-filter:blur(18px)!important;
+    -webkit-backdrop-filter:blur(18px)!important;
+    z-index:2147483647!important;
+    pointer-events:auto!important;
+    touch-action:manipulation!important;
+    -webkit-tap-highlight-color:transparent!important;
+  }
+  .lv4-mobile-floating-close svg{
+    width:16px!important;
+    height:16px!important;
+    pointer-events:none!important;
+  }
+}
