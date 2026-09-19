@@ -1,0 +1,127 @@
+name: Sync YNOT catalog to OpenAI Ads
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  sync-feed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      YNOT_BASE_URL: https://ynotworld.app
+      OPENAI_ADS_SFTP_HOST: sftp.commerce.openai.com
+      OPENAI_ADS_SFTP_PORT: "443"
+      OPENAI_ADS_SFTP_USERNAME: oaiproductfeedprod.fdf79b49b195c041daaa0faa24c236c3c9510151
+      OPENAI_ADS_SFTP_REMOTE_FILE: /ynot-openai-product-feed.csv
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install sync dependencies
+        run: python -m pip install --disable-pip-version-check requests paramiko
+
+      - name: Refresh country catalogs
+        shell: python
+        run: |
+          import os
+          import time
+          import requests
+
+          base = os.environ["YNOT_BASE_URL"].rstrip("/")
+          countries = ["FR", "BE", "DE", "ES", "IT", "NL", "GB", "US", "CA", "AU"]
+
+          for country in countries:
+              url = f"{base}/api/commerce/openai-feed"
+              params = {
+                  "countries": country,
+                  "per_category": "30",
+                  "persist": "1",
+              }
+              print(f"Refreshing {country}...")
+              response = requests.get(url, params=params, timeout=90)
+              response.raise_for_status()
+              count = response.headers.get("x-ynot-product-count", "unknown")
+              print(f"{country}: persisted feed refresh completed ({count} products returned)")
+              time.sleep(1)
+
+      - name: Download and validate Ads feed
+        shell: python
+        run: |
+          import csv
+          import io
+          import os
+          import requests
+
+          url = os.environ["YNOT_BASE_URL"].rstrip("/") + "/feed/openai.csv"
+          response = requests.get(url, timeout=90)
+          response.raise_for_status()
+
+          content_type = response.headers.get("content-type", "")
+          if "text/csv" not in content_type:
+              raise RuntimeError(f"Expected text/csv, got {content_type!r}")
+
+          body = response.text
+          reader = csv.DictReader(io.StringIO(body))
+          required = {
+              "item_id", "title", "description", "url", "brand",
+              "seller_name", "image_url", "price", "availability",
+          }
+          missing = required.difference(reader.fieldnames or [])
+          if missing:
+              raise RuntimeError(f"Feed missing required columns: {sorted(missing)}")
+
+          rows = list(reader)
+          if not rows:
+              raise RuntimeError("Feed contains no products")
+
+          with open("/tmp/ynot-openai-product-feed.csv", "w", encoding="utf-8", newline="") as f:
+              f.write(body)
+
+          print(f"Validated {len(rows)} products for upload")
+
+      - name: Upload feed to OpenAI Ads SFTP
+        env:
+          OPENAI_ADS_SFTP_PASSWORD: ${{ secrets.OPENAI_ADS_SFTP_PASSWORD }}
+        shell: python
+        run: |
+          import os
+          import paramiko
+
+          password = os.environ.get("OPENAI_ADS_SFTP_PASSWORD")
+          if not password:
+              raise RuntimeError(
+                  "Missing GitHub Actions secret OPENAI_ADS_SFTP_PASSWORD"
+              )
+
+          host = os.environ["OPENAI_ADS_SFTP_HOST"]
+          port = int(os.environ["OPENAI_ADS_SFTP_PORT"])
+          username = os.environ["OPENAI_ADS_SFTP_USERNAME"]
+          remote_file = os.environ["OPENAI_ADS_SFTP_REMOTE_FILE"]
+          local_file = "/tmp/ynot-openai-product-feed.csv"
+          temp_file = remote_file + ".uploading"
+
+          transport = paramiko.Transport((host, port))
+          try:
+              transport.connect(username=username, password=password)
+              sftp = paramiko.SFTPClient.from_transport(transport)
+              try:
+                  sftp.put(local_file, temp_file)
+                  try:
+                      sftp.remove(remote_file)
+                  except OSError:
+                      pass
+                  sftp.rename(temp_file, remote_file)
+                  stat = sftp.stat(remote_file)
+                  print(f"Uploaded {remote_file} ({stat.st_size} bytes)")
+              finally:
+                  sftp.close()
+          finally:
+              transport.close()
