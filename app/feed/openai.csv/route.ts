@@ -11,8 +11,8 @@ function csvEscape(value: unknown) {
 
 function appUrl(req: NextRequest) {
   const raw =
-    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL ||
     req.nextUrl.origin;
   const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
   return url.replace(/\/$/, "");
@@ -35,9 +35,36 @@ function categoryPath(category: string) {
   return map[category] || category;
 }
 
+function adsItemId(ynotId: string) {
+  return String(ynotId || "").replace(/[^A-Za-z0-9]/g, "").slice(0, 100);
+}
+
+function isSupportedImage(url: string) {
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    return /\.(?:jpe?g|png)$/.test(pathname);
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(req: NextRequest) {
-  const products = await listCatalogProducts(10000);
+  const sourceProducts = await listCatalogProducts(10000);
   const base = appUrl(req);
+
+  // Keep the Ads feed deliberately strict: required OpenAI Ads fields plus a
+  // small set of useful optional fields. Invalid image formats are excluded so
+  // one malformed asset cannot poison hosted/SFTP validation.
+  const products = sourceProducts.filter((p: any) => {
+    return (
+      p?.ynot_id &&
+      p?.title &&
+      p?.ynot_price > 0 &&
+      p?.currency &&
+      p?.image_url &&
+      isSupportedImage(String(p.image_url))
+    );
+  });
 
   const headers = [
     "item_id",
@@ -46,33 +73,26 @@ export async function GET(req: NextRequest) {
     "url",
     "brand",
     "seller_name",
-    "marketplace_seller",
     "image_url",
-    "additional_image_urls",
     "price",
     "availability",
     "condition",
     "product_category",
     "is_ads_eligible",
-    "is_eligible_search",
-    "is_eligible_checkout",
     "ads_metadata",
   ];
 
   const rows = products.map((p: any) => {
     const metadata = {
-      category: p.category,
-      country: p.country,
-      price_tier: p.price_position || "catalog",
+      category: String(p.category || ""),
+      country: String(p.country || ""),
+      price_tier: String(p.price_position || "catalog"),
       margin_tier:
         Number(p.margin_pct || 0) >= 25
           ? "high"
           : Number(p.margin_pct || 0) >= 18
             ? "medium"
             : "base",
-      supplier_count: String(p.supplier_offer_count || 1),
-      ynot_score: String(Math.round(Number(p.routing_score || 0))),
-      intent: Array.isArray(p.intent_tags) ? p.intent_tags.slice(0, 4).join("|") : "",
     };
 
     const description = `${p.title} available from YNOT for shoppers in ${p.country}.${
@@ -84,24 +104,20 @@ export async function GET(req: NextRequest) {
     }`.slice(0, 5000);
 
     return [
-      p.ynot_id,
-      String(p.title || "").slice(0, 150),
+      adsItemId(p.ynot_id),
+      String(p.title).slice(0, 150),
       description,
       `${base}/p/${encodeURIComponent(p.ynot_id)}?country=${encodeURIComponent(
         p.country
       )}&category=${encodeURIComponent(p.category)}&src=chatgpt`,
       String(p.source_brand || p.brand || "YNOT").slice(0, 70),
       "YNOT",
-      "YNOT",
-      p.image_url || "",
-      Array.isArray(p.image_urls) ? p.image_urls.slice(1, 10).join(",") : "",
-      `${Number(p.ynot_price || 0).toFixed(2)} ${p.currency || "EUR"}`,
+      String(p.image_url),
+      `${Number(p.ynot_price).toFixed(2)} ${String(p.currency).toUpperCase()}`,
       "in_stock",
       "new",
       categoryPath(String(p.category || "")),
       "true",
-      "false",
-      "false",
       JSON.stringify(metadata),
     ]
       .map(csvEscape)
@@ -111,9 +127,10 @@ export async function GET(req: NextRequest) {
   return new NextResponse([headers.join(","), ...rows].join("\n"), {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": "inline; filename=ynot-openai-product-feed.csv",
+      "Content-Disposition": "attachment; filename=ynot-openai-product-feed.csv",
       "Cache-Control": "public, s-maxage=300, stale-while-revalidate=3600",
       "X-YNOT-Product-Count": String(products.length),
+      "X-YNOT-Source-Product-Count": String(sourceProducts.length),
     },
   });
 }
