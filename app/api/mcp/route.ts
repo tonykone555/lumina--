@@ -1,5 +1,6 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
+import { getThreadsProfile, hideThreadReply, listRecentThreads, listThreadReplies, publishImageThread, publishTextThread } from "@/lib/social/threads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -391,6 +392,74 @@ function makeHandler() {
       server.tool("review_generated_video","Record Grok's structured review of a generated video. This does not approve publishing.",{asset_id:z.string().uuid(),verdict:z.enum(["good","needs_changes","reject"]),notes:z.string().max(5000),improved_prompt:z.string().max(12000).default("")},async(input)=>{const rows=await dbRows(`ynot_generated_assets?id=eq.${input.asset_id}`,{method:"PATCH",body:JSON.stringify({review_status:input.verdict,review_notes:input.notes,metadata:{grok_review:true,improved_prompt:input.improved_prompt}})});return text({saved:true,publishing_enabled:false,asset:rows[0]||null})});
 
       server.tool("request_regeneration","Create a new queued generation job from a reviewed asset with an improved prompt. Human creative approval remains required.",{asset_id:z.string().uuid(),improved_prompt:z.string().min(20).max(12000),provider:z.string().max(80).default("grok-imagine")},async(input)=>{const assets=await dbRows(`ynot_generated_assets?id=eq.${input.asset_id}&select=creative_id,generation_job_id&limit=1`);if(!assets[0])return text({created:false,error:"ASSET_NOT_FOUND"});const rows=await dbRows("ynot_generation_jobs",{method:"POST",body:JSON.stringify({creative_id:assets[0].creative_id,provider:input.provider,status:"queued",enhanced_prompt:input.improved_prompt,metadata:{origin:"grok-regeneration",source_asset_id:input.asset_id,approval_required:true}})});return text({created:true,generation_started:false,job:rows[0]||null})});
+
+      server.tool(
+        "threads_get_profile",
+        "Read the connected YNOT Threads profile. No posting or modification occurs.",
+        {},
+        async () => text(await getThreadsProfile())
+      );
+
+      server.tool(
+        "threads_list_recent",
+        "Read recent posts from the connected YNOT Threads account.",
+        { limit: z.number().int().min(1).max(25).default(10) },
+        async ({ limit }) => text(await listRecentThreads(limit))
+      );
+
+      server.tool(
+        "threads_list_replies",
+        "Read replies to a specific YNOT Threads post.",
+        {
+          thread_id: z.string().min(1).max(200),
+          limit: z.number().int().min(1).max(50).default(25),
+        },
+        async ({ thread_id, limit }) => text(await listThreadReplies(thread_id, limit))
+      );
+
+      server.tool(
+        "threads_publish_text",
+        "Publish a text post to the connected YNOT Threads account. This is an external public action; call it only when the user has explicitly asked to publish the supplied text.",
+        {
+          text: z.string().min(1).max(500),
+          reply_to_id: z.string().min(1).max(200).optional(),
+        },
+        async ({ text: postText, reply_to_id }) =>
+          text(await publishTextThread(postText, reply_to_id))
+      );
+
+      server.tool(
+        "threads_publish_image",
+        "Publish an image post to the connected YNOT Threads account using a public image URL. This is an external public action; call it only when the user explicitly asks to publish.",
+        {
+          image_url: z.string().url(),
+          text: z.string().max(500).default(""),
+          reply_to_id: z.string().min(1).max(200).optional(),
+        },
+        async ({ image_url, text: postText, reply_to_id }) =>
+          text(await publishImageThread({ imageUrl: image_url, text: postText, replyToId: reply_to_id }))
+      );
+
+      server.tool(
+        "threads_reply",
+        "Reply publicly to a Threads post or reply from the connected YNOT account. Call only when the user explicitly asks to send the reply.",
+        {
+          reply_to_id: z.string().min(1).max(200),
+          text: z.string().min(1).max(500),
+        },
+        async ({ reply_to_id, text: replyText }) =>
+          text(await publishTextThread(replyText, reply_to_id))
+      );
+
+      server.tool(
+        "threads_hide_reply",
+        "Hide or unhide a reply on a YNOT Threads conversation. This changes public moderation state and should only be used on explicit instruction.",
+        {
+          reply_id: z.string().min(1).max(200),
+          hide: z.boolean().default(true),
+        },
+        async ({ reply_id, hide }) => text(await hideThreadReply(reply_id, hide))
+      );
 
     },
     {},
