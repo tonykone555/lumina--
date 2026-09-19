@@ -96,8 +96,81 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
  const response=await fetch("https://catalog.shopify.com/api/ucp/mcp",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
  const raw:any=await response.json();const content=raw?.result?.structuredContent;
  if(!response.ok||!content?.products)throw new Error("Catalog unavailable");
- const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price,images=[...new Set<string>((p?.media||[]).filter((m:any)=>m.type==="image"||m.url).map((m:any)=>m.url).filter(Boolean))];const variants=(p?.variants||[]).map((v:any)=>{const vp=v?.price||price;return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:v?.image?.url||v?.media?.[0]?.url||images[0]||"",url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"}}).filter((v:any)=>v.id);const gallery=[...new Set<string>([...images,...variants.map((v:any)=>v.image).filter(Boolean)])].slice(0,10);const merchant=p?.seller?.name||p?.variants?.[0]?.seller?.name||"the original Shopify merchant";return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:gallery[0]||"",images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description:descriptionText(p?.description)||descriptionText(p?.descriptionHtml)||descriptionText(p?.description_html)||descriptionText(p?.body_html)||`${p?.title||"This product"} from ${merchant}.`,descriptionHydrated:false,tags:[...new Set<string>((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))].slice(0,6),source:"shopify-global-catalog"}}));
+ const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price,images=[...new Set<string>((p?.media||[]).filter((m:any)=>m.type==="image"||m.url).map((m:any)=>m.url).filter(Boolean))];const variants=(p?.variants||[]).map((v:any)=>{const vp=v?.price||price;return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:v?.image?.url||v?.media?.[0]?.url||images[0]||"",url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"}}).filter((v:any)=>v.id);const gallery=[...new Set<string>([...images,...variants.map((v:any)=>v.image).filter(Boolean)])].slice(0,10);const merchant=p?.seller?.name||p?.variants?.[0]?.seller?.name||"the original Shopify merchant";const description=descriptionText(p?.description)||descriptionText(p?.descriptionHtml)||descriptionText(p?.description_html)||descriptionText(p?.body_html)||`${p?.title||"This product"} from ${merchant}.`;const rawTags=[...new Set<string>((p?.variants||[]).flatMap((v:any)=>v?.tags||[]))];return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:gallery[0]||"",images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(cleanTitle(p.title),description,rawTags),source:"shopify-global-catalog"}}));
  return{products,pagination:normalizeShopifyPagination(content.pagination||{})};
+}
+
+const SEARCH_ATTRIBUTE_SETS={
+ fashion:{
+  nouns:["hoodie","joggers","sweatpants","t-shirt","tee","jacket","overshirt","trousers","cargo pants","sweater","knitwear","shirt","jeans"],
+  modifiers:["soft","heavyweight","oversized","relaxed fit","stretch","structured","washed","premium","minimal","vintage","technical","breathable"],
+  materials:["cotton","organic cotton","fleece","French terry","knitted","wool","merino","linen","denim","nylon","ribbed","jersey"]
+ },
+ home:{
+  nouns:["sofa","chair","table","lamp","rug","storage","shelf","bed","desk","mirror","decor"],
+  modifiers:["soft","modular","minimal","sculptural","compact","large","rounded","textured","handmade","modern","organic","statement"],
+  materials:["boucle","linen","velvet","oak","walnut","marble","glass","metal","rattan","wool","ceramic","stone"]
+ },
+ skin:{
+  nouns:["serum","cleanser","moisturizer","cream","mask","toner","oil","SPF","treatment"],
+  modifiers:["gentle","hydrating","brightening","soothing","barrier repair","lightweight","rich","sensitive skin","glow","firming"],
+  materials:["niacinamide","vitamin C","ceramides","peptides","hyaluronic acid","retinol","squalane","salicylic acid","mineral"]
+ },
+ hair:{
+  nouns:["shampoo","conditioner","mask","serum","oil","leave-in","styling cream","scalp treatment","spray"],
+  modifiers:["repair","hydrating","volume","curl defining","anti-frizz","lightweight","nourishing","heat protectant","strengthening"],
+  materials:["keratin","peptides","argan oil","castor oil","rosemary","biotin","silk protein","coconut","shea butter"]
+ },
+ fitness:{
+  nouns:["shorts","leggings","joggers","training shirt","sports bra","lifting straps","gym bag","recovery tool","shoes"],
+  modifiers:["stretch","compressive","breathable","sweat-wicking","heavyweight","lightweight","seamless","supportive","oversized","performance"],
+  materials:["nylon","spandex","cotton","mesh","ribbed","technical fabric","recycled polyester"]
+ },
+ tech:{
+  nouns:["headphones","speaker","charger","power bank","keyboard","mouse","phone case","stand","camera accessory","smart light"],
+  modifiers:["wireless","compact","premium","portable","minimal","fast charging","noise cancelling","smart","ergonomic","rugged"],
+  materials:["aluminum","silicone","leather","magnetic","USB-C","Bluetooth","mechanical"]
+ }
+} as const;
+
+function inferSearchDomain(query:string){
+ const q=query.toLowerCase();
+ if(/hair|scalp|shampoo|conditioner|curl|frizz/.test(q))return"hair";
+ if(/skin|serum|cream|spf|cleanser|acne|beauty|moistur/.test(q))return"skin";
+ if(/fitness|gym|training|workout|legging|sports bra|recovery|lifting/.test(q))return"fitness";
+ if(/sofa|chair|furniture|lamp|rug|decor|table|home|bed|desk|mirror/.test(q))return"home";
+ if(/headphone|speaker|charger|keyboard|mouse|phone|tech|camera|smart/.test(q))return"tech";
+ return"fashion";
+}
+function significantWords(query:string){
+ const stop=new Set(["find","show","me","the","a","an","for","with","and","or","under","over","below","above","less","than","more","to","of","some","something","clothes","clothing","fashion","products","product"]);
+ return stripPriceLanguage(query).toLowerCase().replace(/[^a-z0-9' -]+/g," ").split(/\s+/).filter(w=>w.length>2&&!stop.has(w));
+}
+function expandCatalogQueries(query:string){
+ const clean=stripPriceLanguage(query)||query;
+ const domain=inferSearchDomain(clean);
+ const set=SEARCH_ATTRIBUTE_SETS[domain];
+ const words=significantWords(clean);
+ const foundNoun=set.nouns.find(n=>clean.toLowerCase().includes(n.toLowerCase()));
+ const base=foundNoun||words.slice(-2).join(" ")||set.nouns[0];
+ const queries:string[]=[clean];
+ const userHasModifier=set.modifiers.some(x=>clean.toLowerCase().includes(x.toLowerCase()));
+ const userHasMaterial=set.materials.some(x=>clean.toLowerCase().includes(x.toLowerCase()));
+ if(!userHasModifier)queries.push(...set.modifiers.slice(0,6).map(m=>`${m} ${base}`));
+ if(!userHasMaterial)queries.push(...set.materials.slice(0,6).map(m=>`${m} ${base}`));
+ if(foundNoun){
+  queries.push(...set.nouns.filter(n=>n!==foundNoun).slice(0,5).map(n=>words.length?`${words.slice(0,-1).join(" ")} ${n}`.trim():n));
+ }else{
+  queries.push(...set.nouns.slice(0,6).map(n=>words.length?`${clean} ${n}`:n));
+ }
+ return [...new Set(queries.map(q=>q.replace(/\s+/g," ").trim()).filter(Boolean))].slice(0,14);
+}
+function enrichedTags(title:string,description:string,current:string[]){
+ const hay=`${title} ${description} ${current.join(" ")}`.toLowerCase();
+ const domain=inferSearchDomain(hay);
+ const set=SEARCH_ATTRIBUTE_SETS[domain];
+ const attrs=[...set.modifiers,...set.materials,...set.nouns].filter(x=>hay.includes(x.toLowerCase()));
+ return [...new Set([...current,...attrs.map(x=>x.replace(/\b\w/g,m=>m.toUpperCase()))])].slice(0,12);
 }
 
 function broadFashionIntent(query:string){
@@ -118,28 +191,13 @@ function diversifyBrands(products:Product[],limit=72){
  return out;
 }
 async function fetchShopifyDiscovery(query:string,country:string,cursor?:string){
- const intent=broadFashionIntent(query);
- if(cursor||!intent.broad)return fetchShopify(query,country,cursor);
- const seeds=intent.men?[
-  "men heavyweight hoodies premium streetwear",
-  "men premium joggers sweatpants",
-  "men overshirts jackets streetwear",
-  "men relaxed trousers cargo pants",
-  "men knitwear sweaters premium",
-  "men graphic tees elevated basics"
- ]:[
-  "premium independent fashion brands",
-  "heavyweight hoodies premium streetwear",
-  "premium joggers sweatpants",
-  "modern jackets overshirts",
-  "premium knitwear sweaters",
-  "elevated basics clothing"
- ];
- const settled=await Promise.allSettled(seeds.map(seed=>fetchShopify(seed,country)));
+ if(cursor)return fetchShopify(query,country,cursor);
+ const queries=expandCatalogQueries(query);
+ const settled=await Promise.allSettled(queries.map(q=>fetchShopify(q,country)));
  const fulfilled=settled.filter((r):r is PromiseFulfilledResult<{products:Product[];pagination:any}>=>r.status==="fulfilled");
- const merged=diversifyBrands(fulfilled.flatMap(r=>r.value.products),90);
+ const merged=diversifyBrands(fulfilled.flatMap(r=>r.value.products),120);
  if(!merged.length)return fetchShopify(query,country);
- return{products:merged,pagination:{has_next_page:false,next_cursor:null,discovery_seeded:true}};
+ return{products:merged,pagination:{has_next_page:false,next_cursor:null,discovery_seeded:true,queries_used:queries}};
 }
 
 async function fetchShopify(query:string,country:string,cursor?:string){
