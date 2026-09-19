@@ -96,7 +96,38 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
  const response=await fetch("https://catalog.shopify.com/api/ucp/mcp",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
  const raw:any=await response.json();const content=raw?.result?.structuredContent;
  if(!response.ok||!content?.products)throw new Error("Catalog unavailable");
- const products:Product[]=usable(content.products.map((p:any)=>{const price=p?.price_range?.min||p?.variants?.[0]?.price,images=[...new Set<string>((p?.media||[]).filter((m:any)=>m.type==="image"||m.url).map((m:any)=>m.url).filter(Boolean))];const variants=(p?.variants||[]).map((v:any)=>{const vp=v?.price||price;return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:v?.image?.url||v?.media?.[0]?.url||images[0]||"",url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"}}).filter((v:any)=>v.id);const gallery=[...new Set<string>([...images,...variants.map((v:any)=>v.image).filter(Boolean)])].slice(0,10);const merchant=p?.seller?.name||p?.variants?.[0]?.seller?.name||"the original Shopify merchant";const description=descriptionText(p?.description)||descriptionText(p?.descriptionHtml)||descriptionText(p?.description_html)||descriptionText(p?.body_html)||`${p?.title||"This product"} from ${merchant}.`;return{id:p.id,title:cleanTitle(p.title),brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:gallery[0]||"",images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(cleanTitle(p.title),description),source:"shopify-global-catalog"}}));
+ const products:Product[]=usable(content.products.map((p:any)=>{
+  const price=p?.price_range?.min||p?.variants?.[0]?.price;
+  const title=cleanTitle(p.title);
+  const merchant=p?.seller?.name||p?.variants?.[0]?.seller?.name||"the original Shopify merchant";
+  const description=descriptionText(p?.description)||descriptionText(p?.descriptionHtml)||descriptionText(p?.description_html)||descriptionText(p?.body_html)||`${p?.title||"This product"} from ${merchant}.`;
+
+  const titleWords=new Set(title.toLowerCase().split(/[^a-z0-9]+/).filter((w:string)=>w.length>3));
+  const mediaEntries=(p?.media||[])
+    .filter((m:any)=>m.type==="image"||m.url)
+    .map((m:any)=>{
+      const url=String(m?.url||m?.image?.url||"");
+      const alt=cleanTitle(String(m?.alt_text||m?.altText||m?.alt||m?.description||""));
+      const altWords=alt.toLowerCase().split(/[^a-z0-9]+/).filter((w:string)=>w.length>3);
+      const overlap=altWords.filter((w:string)=>titleWords.has(w)).length;
+      return{url,alt,score:overlap+(alt?1:0)};
+    })
+    .filter((m:any)=>m.url)
+    .sort((a:any,b:any)=>b.score-a.score);
+
+  const mediaImages=[...new Set<string>(mediaEntries.map((m:any)=>m.url))];
+  const variants=(p?.variants||[]).map((v:any)=>{
+    const vp=v?.price||price;
+    const variantImage=v?.image?.url||v?.media?.[0]?.url||"";
+    return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:variantImage,url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"};
+  }).filter((v:any)=>v.id);
+
+  const variantImages=[...new Set<string>(variants.map((v:any)=>v.image).filter(Boolean))];
+  const gallery=[...new Set<string>([...variantImages,...mediaImages])].slice(0,10);
+  const primary=variantImages[0]||mediaImages[0]||"";
+
+  return{id:p.id,title,brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:primary,images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(title,description),source:"shopify-global-catalog"};
+}));
  return{products,pagination:normalizeShopifyPagination(content.pagination||{})};
 }
 
