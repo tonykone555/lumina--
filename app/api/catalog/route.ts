@@ -105,18 +105,20 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
 
   const titleWords=new Set(title.toLowerCase().split(/[^a-z0-9]+/).filter((w:string)=>w.length>3));
   const mediaEntries=(p?.media||[])
-    .filter((m:any)=>m.type==="image"||m.url)
+    .filter((m:any)=>!m?.type||String(m.type).toLowerCase()==="image")
     .map((m:any)=>{
       const url=String(m?.url||m?.image?.url||"");
       const alt=cleanTitle(String(m?.alt_text||m?.altText||m?.alt||m?.description||""));
       const altWords=alt.toLowerCase().split(/[^a-z0-9]+/).filter((w:string)=>w.length>3);
       const overlap=altWords.filter((w:string)=>titleWords.has(w)).length;
-      return{url,alt,score:overlap+(alt?1:0)};
+      return{url,alt,score:overlap};
     })
     .filter((m:any)=>m.url)
     .sort((a:any,b:any)=>b.score-a.score);
 
-  const mediaImages=[...new Set<string>(mediaEntries.map((m:any)=>m.url))];
+  const firstMedia=mediaEntries[0]?.url||"";
+  const confidentMedia=mediaEntries.filter((m:any,index:number)=>index===0||m.score>0).map((m:any)=>m.url);
+  const mediaImages=[...new Set<string>(confidentMedia)];
   const variants=(p?.variants||[]).map((v:any)=>{
     const vp=v?.price||price;
     const variantImage=v?.image?.url||v?.media?.[0]?.url||"";
@@ -127,7 +129,7 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
   // Variant images can be selected from the variant controls, but mixing every
   // variant image into the gallery caused unrelated/stale-looking photos to
   // appear while swiping through a product.
-  const gallery=mediaImages.slice(0,10);
+  const gallery=mediaImages.slice(0,6);
   const primary=mediaImages[0]||variants.find((v:any)=>v.image)?.image||"";
 
   return{id:p.id,title,brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:primary,images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(title,description),source:"shopify-global-catalog"};
