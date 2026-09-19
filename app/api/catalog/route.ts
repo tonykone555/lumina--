@@ -8,13 +8,6 @@ type Product={id:string;title:string;brand:string;price:number|null;currency?:st
 type PriceIntent={min?:number;max?:number;currency?:string;explicitCurrency:boolean};
 type LuminaSource="all"|"shopify"|"amazon";
 
-const FASHION:Product[]=[
- {id:"demo-1",title:"Satin Slip Dress",brand:"Atelier Noire",price:129,currency:"EUR",image:"https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=800&q=80",url:"#",tags:["Satin","Elegant","Black"]},
- {id:"demo-2",title:"Draped Midi Dress",brand:"Maison Vale",price:118,currency:"EUR",image:"https://images.unsplash.com/photo-1566174053879-31528523f8ae?auto=format&fit=crop&w=800&q=80",url:"#",tags:["Draped","Midi","Minimal"]},
- {id:"demo-3",title:"Bias Cut Maxi",brand:"Noma Studio",price:142,currency:"EUR",image:"https://images.unsplash.com/photo-1572804013309-59a8-5ddf8a6e9d64?auto=format&fit=crop&w=800&q=80",url:"#",tags:["Maxi","Evening","Black"]},
- {id:"demo-4",title:"Minimal Column Dress",brand:"Eloise",price:99,currency:"EUR",image:"https://images.unsplash.com/photo-1539008835657-9e8e9680c956?auto=format&fit=crop&w=800&q=80",url:"#",tags:["Minimal","Column","Elegant"]}
-];
-
 const NICHE_FALLBACK:Record<string,Product[]>={
  fitness:[
   {id:"fit-1",title:'Vital 5” Training Shorts',brand:"Form Athletics",price:49,currency:"EUR",image:"https://images.unsplash.com/photo-1599058917212-d750089bc07e?auto=format&fit=crop&w=800&q=80",url:"#",tags:["Breathable","Strength","Under €80"]},
@@ -51,7 +44,7 @@ const INITIAL_PRODUCT_TARGET=160; // 20 visual rows × 8 products
 
 function cleanTitle(text:string){return String(text||"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,"").replace(/\s{2,}/g," ").replace(/^\s*[|·—–-]+\s*|\s*[|·—–-]+\s*$/g,"").trim()}
 function descriptionText(value:unknown){if(typeof value==="string")return cleanTitle(value.replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;/gi,"'"));if(value&&typeof value==="object"){const v=value as Record<string,unknown>;return descriptionText(v.html??v.plain??v.text??v.value)}return""}
-function fallbackFor(query:string){const q=query.toLowerCase();if(/gym|fitness|shorts|running|training|recovery/.test(q))return NICHE_FALLBACK.fitness;if(/hair|scalp|density|shampoo/.test(q))return NICHE_FALLBACK.hair;if(/skin|acne|blemish|tone|serum/.test(q))return NICHE_FALLBACK.skin;if(/smile|teeth|tooth|whiten|oral/.test(q))return NICHE_FALLBACK.smile;return FASHION}
+function fallbackFor(query:string){const q=query.toLowerCase();if(/gym|fitness|shorts|running|training|recovery/.test(q))return NICHE_FALLBACK.fitness;if(/hair|scalp|density|shampoo/.test(q))return NICHE_FALLBACK.hair;if(/skin|acne|blemish|tone|serum/.test(q))return NICHE_FALLBACK.skin;if(/smile|teeth|tooth|whiten|oral/.test(q))return NICHE_FALLBACK.smile;return[]}
 function num(v:string){const n=Number.parseFloat(v.replace(",","."));return Number.isFinite(n)?n:undefined}
 function parsePriceIntent(text:string,country:string):PriceIntent{
  const q=text.toLowerCase();let min:number|undefined,max:number|undefined;
@@ -129,8 +122,9 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
   // Variant images can be selected from the variant controls, but mixing every
   // variant image into the gallery caused unrelated/stale-looking photos to
   // appear while swiping through a product.
-  const gallery=mediaImages.slice(0,6);
-  const primary=mediaImages[0]||variants.find((v:any)=>v.image)?.image||"";
+  const variantImages=variants.map((v:any)=>v.image).filter(Boolean);
+  const gallery=[...new Set<string>([...mediaImages,...variantImages])].slice(0,10);
+  const primary=gallery[0]||"";
 
   return{id:p.id,title,brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:primary,images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(title,description),source:"shopify-global-catalog"};
 }));
@@ -388,6 +382,5 @@ export async function GET(req:NextRequest){
  const products=groupedProducts(shopifyProducts,amazonProducts);
  if(products.length){return NextResponse.json({source:"lumina-multi-source",sources:[...(shopifyProducts.length?["shopify-global-catalog"]:[]),...(amazonProducts.length?["amazon-rainforest"]:[])],market:"lumina",luminaSource:"all",query,filters:{price:priceIntent},products,pagination:{...shopify.pagination,amazon_has_next_page:amazon.length>=20}},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
 
- const fallback=applyPriceIntent(fallbackFor(query).map(p=>({...p,title:cleanTitle(p.title)})),priceIntent);
- return NextResponse.json({source:"fallback",sources:["fallback"],market:"lumina",luminaSource:"all",query,filters:{price:priceIntent},products:fallback,pagination:{has_next_page:false},error:"Live YNOT sources returned no products for this search."});
+ return NextResponse.json({source:"live-empty",sources:[],market:"lumina",luminaSource:"all",query,filters:{price:priceIntent},products:[],pagination:{has_next_page:false},error:"No live products found for this search yet."});
 }
