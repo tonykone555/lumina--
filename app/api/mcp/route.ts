@@ -63,6 +63,40 @@ function safeProduct(p: Product) {
 async function catalog(query: string, country: string, source: string, limit: number) {
   const base = appUrl();
   if (!base) throw new Error("YNOT_APP_URL_NOT_CONFIGURED");
+
+  if (source === "shopify") {
+    const recUrl = new URL("/api/commerce/recommendations", base);
+    recUrl.searchParams.set("q", query);
+    recUrl.searchParams.set("country", country);
+    recUrl.searchParams.set("limit", String(Math.min(20, limit)));
+    const recResponse = await fetch(recUrl, { cache: "no-store" });
+    if (!recResponse.ok) throw new Error(`YNOT_RECOMMENDATIONS_${recResponse.status}`);
+    const recData: any = await recResponse.json();
+    const products = Array.isArray(recData?.products) ? recData.products : [];
+    return {
+      query: recData?.query || query,
+      source: "ynot-canonical-catalog",
+      error: recData?.error,
+      products: products.slice(0, Math.min(20, limit)).map((p: any) => ({
+        id: p.ynotId,
+        title: p.title,
+        brand: p.sourceBrand || p.brand || "YNOT",
+        description: p.originalTitle || p.title,
+        category: p.category || "other",
+        price: p.ynotPrice,
+        currency: p.sourceCurrency,
+        image: p.image,
+        images: Array.isArray(p.images) ? p.images : p.image ? [p.image] : [],
+        variants: [],
+        url: `${base}/p/${encodeURIComponent(p.ynotId)}?country=${encodeURIComponent(p.country)}&category=${encodeURIComponent(p.category)}&src=mcp`,
+        tags: p.intentTags || [],
+        source: "ynot-canonical-catalog",
+        supplier_offer_count: p.supplierOfferCount,
+        price_position: p.pricePosition,
+      })),
+    };
+  }
+
   const url = new URL("/api/catalog", base);
   url.searchParams.set("q", query);
   url.searchParams.set("country", country);
