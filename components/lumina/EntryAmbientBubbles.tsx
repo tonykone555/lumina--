@@ -222,13 +222,12 @@ export default function EntryAmbientBubbles(){
   const subHit=subcategoryAtPoint(event.clientX,event.clientY);
   if(subHit&&activeCategory){
    const sub=subHit.dataset.label||subHit.textContent?.trim()||"";
-   const parent=activeButton.current;
+   const query=`${activeCategory} ${sub}`.trim();
    resetTarget();
    setDismissed(true);
-   // Open the parent world first, then immediately narrow it to the selected
-   // subcategory using the normal YNOT search path.
-   parent?.click();
-   window.setTimeout(()=>submitSearch(`${activeCategory} ${sub}`),90);
+   // One transition only: do not open the parent category and then replace it.
+   // That double-load caused the product lattice to jump/scatter on mobile.
+   requestAnimationFrame(()=>submitSearch(query));
    return;
   }
 
