@@ -2,6 +2,7 @@
  let lastOpen=0;
  const isYnotTrigger=target=>{
   const el=target instanceof Element?target.closest('button,a'):null;if(!el)return false;
+  if(el.matches('[data-source-only="true"],.ynot-source-trigger-clean')||el.closest('.ynot-view-source'))return false;
   return el.classList.contains('ynot-peek')||/^YNOT$/i.test((el.textContent||'').trim());
  };
  document.addEventListener('click',event=>{
