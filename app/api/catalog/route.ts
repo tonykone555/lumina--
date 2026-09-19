@@ -269,7 +269,7 @@ function diversifyBrands(products:Product[],limit=72,maxPerBrand=5){
  }
  return out;
 }
-async function fetchShopifyDiscovery(query:string,country:string,cursor?:string){
+async function fetchShopifyDiscovery(query:string,country:string,cursor?:string,forceDeep=false){
  if(cursor)return fetchShopify(query,country,cursor);
 
  // Fast path: always ask Shopify for the exact user intent first.
@@ -279,16 +279,16 @@ async function fetchShopifyDiscovery(query:string,country:string,cursor?:string)
  try{exact=await fetchShopify(query,country)}catch{}
  const exactMatched=exact?strictCategoryFilter(query,exact.products):[];
  const exactDiverse=diversifyBrands(exactMatched,80,5);
- if(exactDiverse.length>=INITIAL_PRODUCT_TARGET){
+ if(!forceDeep&&exactDiverse.length>=24){
   return{
-   products:exactDiverse.slice(0,INITIAL_PRODUCT_TARGET),
+   products:exactDiverse.slice(0,forceDeep?INITIAL_PRODUCT_TARGET:80),
    pagination:{...(exact?.pagination||{}),fast_exact:true,queries_used:[query]}
   };
  }
 
  // Only deepen sparse searches. Keep the expansion tight and same-intent so the
  // first bubbles arrive quickly and unrelated sibling products never flood the world.
- const queries=expandCatalogQueries(query).filter(q=>q.toLowerCase()!==query.toLowerCase()).slice(0,8);
+ const queries=expandCatalogQueries(query).filter(q=>q.toLowerCase()!==query.toLowerCase()).slice(0,forceDeep?12:4);
  const settled=await Promise.allSettled(queries.map(q=>fetchShopify(q,country)));
  const fulfilled=settled.filter((r):r is PromiseFulfilledResult<{products:Product[];pagination:any}>=>r.status==="fulfilled");
  const combined=[...(exact?.products||[]),...fulfilled.flatMap(r=>r.value.products)];
@@ -355,6 +355,7 @@ export async function GET(req:NextRequest){
  const country=(search.get("country")||"FR").toUpperCase().slice(0,2);
  const market=search.get("market")==="ebay"?"ebay":"lumina";
  const requestedSource=search.get("source");
+ const categoryLoad=search.get("category_load")==="1";
  const luminaSource:LuminaSource=requestedSource==="all"||requestedSource==="amazon"||requestedSource==="shopify"?requestedSource:"shopify";
  const query=direction?`${base}, ${direction}`:base;
  const priceIntent=parsePriceIntent(query,country);
@@ -365,7 +366,7 @@ export async function GET(req:NextRequest){
  }
 
  if(luminaSource==="shopify"){
-  try{const result=await fetchShopifyDiscovery(query,country,cursor);const products=applyPriceIntent(strictCategoryFilter(query,result.products),priceIntent);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products,pagination:result.pagination,error:products.length?undefined:"No Shopify products found for this search yet."},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
+  try{const result=await fetchShopifyDiscovery(query,country,cursor,categoryLoad);const products=applyPriceIntent(strictCategoryFilter(query,result.products),priceIntent);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,filters:{price:priceIntent},products,pagination:result.pagination,error:products.length?undefined:"No Shopify products found for this search yet."},{headers:{"Cache-Control":"s-maxage=25, stale-while-revalidate=120"}})}
   catch(error){console.error("Shopify catalog error",error);return NextResponse.json({source:"shopify-global-catalog",sources:["shopify-global-catalog"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Shopify products are temporarily unavailable in YNOT."},{status:200})}
  }
 
@@ -374,7 +375,7 @@ export async function GET(req:NextRequest){
   catch(error){console.error("Amazon catalog error",error);return NextResponse.json({source:"amazon-rainforest",sources:["amazon-rainforest"],market:"lumina",luminaSource,query,products:[],pagination:{has_next_page:false},error:"Amazon products are temporarily unavailable in YNOT."},{status:200})}
  }
 
- const [shopifyResult,amazonResult]=await Promise.allSettled([fetchShopifyDiscovery(query,country,cursor),fetchAmazon(query,country,page)]);
+ const [shopifyResult,amazonResult]=await Promise.allSettled([fetchShopifyDiscovery(query,country,cursor,categoryLoad),fetchAmazon(query,country,page)]);
  const shopify=shopifyResult.status==="fulfilled"?shopifyResult.value:{products:[],pagination:{has_next_page:false,next_cursor:null}};
  const amazon=amazonResult.status==="fulfilled"?amazonResult.value:[];
  const shopifyProducts=applyPriceIntent(strictCategoryFilter(query,shopify.products),priceIntent);
