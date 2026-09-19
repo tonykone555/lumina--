@@ -1,6 +1,6 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-import { getThreadsProfile, hideThreadReply, listRecentThreads, listThreadReplies, publishImageThread, publishTextThread } from "@/lib/social/threads";
+import { getThreadsProfile, hideThreadReply, listRecentThreads, listThreadMentions, listThreadReplies, publishImageThread, publishTextThread, publishVideoThread, searchPublicThreads } from "@/lib/social/threads";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -459,6 +459,46 @@ function makeHandler() {
           hide: z.boolean().default(true),
         },
         async ({ reply_id, hide }) => text(await hideThreadReply(reply_id, hide))
+      );
+
+
+      server.tool(
+        "threads_publish_video",
+        "Publish a video post to the connected YNOT Threads account from a public video URL. The tool waits for Meta to finish processing the media before publishing. This is a public external action; call only when the user explicitly asks to publish.",
+        {
+          video_url: z.string().url(),
+          text: z.string().max(500).default(""),
+          alt_text: z.string().max(1000).default(""),
+          reply_to_id: z.string().min(1).max(200).optional(),
+        },
+        async ({ video_url, text: postText, alt_text, reply_to_id }) =>
+          text(
+            await publishVideoThread({
+              videoUrl: video_url,
+              text: postText,
+              altText: alt_text,
+              replyToId: reply_to_id,
+            })
+          )
+      );
+
+      server.tool(
+        "threads_search_public",
+        "Search public Threads posts by keyword or topic using the connected YNOT account permissions. Use TOP for relevance or RECENT for fresh conversations. This is read-only.",
+        {
+          query: z.string().min(1).max(200),
+          search_type: z.enum(["TOP", "RECENT"]).default("TOP"),
+          limit: z.number().int().min(1).max(50).default(25),
+        },
+        async ({ query, search_type, limit }) =>
+          text(await searchPublicThreads({ query, searchType: search_type, limit }))
+      );
+
+      server.tool(
+        "threads_list_mentions",
+        "Read public Threads posts that mention the connected YNOT account. This is read-only.",
+        { limit: z.number().int().min(1).max(50).default(25) },
+        async ({ limit }) => text(await listThreadMentions(limit))
       );
 
     },
