@@ -252,6 +252,77 @@ function makeHandler() {
   return createMcpHandler(
     (server) => {
       server.tool(
+        "get_growth_campaign_brief",
+        "Read the authoritative YNOT Growth creative-campaign operating contract. Grok Bot should call this before starting a new creative campaign or when campaign state is unclear.",
+        {},
+        async () => text({
+          system: "YNOT Growth Creative Engine",
+          role: "Grok Bot is the creative campaign orchestrator. YNOT is the source of truth for products, creative records, generation jobs, generated assets, approvals, posting state and performance.",
+          connection: {
+            transport: "MCP over the deployed YNOT /api/mcp endpoint",
+            product_source: "YNOT MCP / live YNOT catalogue",
+            generation_provider: "grok-imagine",
+            asset_destination: "YNOT generated asset records and Growth dashboard"
+          },
+          triggers: {
+            manual_campaign: "When the user says start/run/create a campaign for a niche, begin this workflow.",
+            product_campaign: "When the user names or selects products, use those exact products instead of discovering replacements.",
+            niche_campaign: "When only a niche is supplied, call get_products_to_promote and default to 5 real products unless the user specifies another count.",
+            approved_creative: "When a creative becomes approved in YNOT, enhance the production prompt and create a generation job.",
+            generated_asset: "When generated assets are available, inspect them, record a structured review, and request regeneration only when needed.",
+            posting: "Do not publish or spend automatically unless YNOT explicitly exposes an approved posting action and the user/campaign has enabled it."
+          },
+          campaign_flow: [
+            "1. Read this brief.",
+            "2. Resolve the niche, objective, platforms, language and requested product count.",
+            "3. Call get_products_to_promote for niche discovery, or get_product/get_product_images for user-selected products.",
+            "4. Use 5 products by default for a niche campaign.",
+            "5. For each product, create intentionally different creative branches such as UGC testimonial, problem/solution, aesthetic showcase, trend/native-social, comparison/reviewer and direct-response.",
+            "6. Before creating anything, call get_previous_creatives and get_creative_performance where useful so branches are not near-duplicates.",
+            "7. Build a high-detail prompt pack for every branch: audience, hook, scene, avatar/persona, image prompt, video prompt, script/voice, camera behavior, pacing, CTA, platform notes and product-fidelity constraints.",
+            "8. Call save_creative for each branch/variant so every concept exists in YNOT before media generation.",
+            "9. Wait for YNOT human approval unless the campaign state explicitly says otherwise.",
+            "10. For approved creatives, create the image-first generation prompt: preserve the real product, generate a realistic UGC/lifestyle still, then use the approved still as the visual anchor for the video.",
+            "11. Call create_generation_job with provider grok-imagine and the strongest production prompt.",
+            "12. As assets arrive, call get_generated_assets/get_generation_job, review them, and save review results with review_generated_video.",
+            "13. If an asset needs changes, call request_regeneration with a materially improved prompt.",
+            "14. Keep all outputs, prompts, lineage and status in YNOT so the Growth dashboard remains the source of truth."
+          ],
+          default_campaign: {
+            products: 5,
+            branches_per_product: 5,
+            variants_per_branch: 2,
+            aspect_ratio: "9:16",
+            strategy: "image-first then video",
+            approval_mode: "human-review",
+            destination: "YNOT Growth dashboard"
+          },
+          quality_rules: [
+            "Do not create near-identical branches.",
+            "Preserve product silhouette, color, material and important visual details from the supplied YNOT product images.",
+            "Use the real product image as a reference whenever generation supports it.",
+            "Make UGC feel believable: natural lighting, realistic hands/body language, credible environments and native social pacing.",
+            "Every branch must differ in hook, audience, persona, scene, pacing, camera language or CTA.",
+            "Never substitute a different product because generation is easier."
+          ],
+          required_tools: [
+            "get_products_to_promote",
+            "get_product",
+            "get_product_images",
+            "get_previous_creatives",
+            "get_creative_performance",
+            "save_creative",
+            "get_approved_creatives",
+            "create_generation_job",
+            "get_generation_job",
+            "get_generated_assets",
+            "review_generated_video",
+            "request_regeneration"
+          ]
+        })
+      );
+
+      server.tool(
         "search_catalogue",
         "Search YNOT's live commerce catalogue. For outreach and customer-facing recommendations, use the returned YNOT product URL from the default Shopify/YNOT canonical path. Never send raw merchant/Shopify URLs when a YNOT URL is available.",
         {
