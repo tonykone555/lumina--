@@ -45,29 +45,29 @@ const INITIAL_PRODUCT_TARGET=160; // 20 visual rows × 8 products
 type EntryProductIntent={key:string;query:string;terms:string[]};
 type EntryProductGroup={key:string;products:Product[]};
 const ENTRY_PRODUCT_INTENTS:EntryProductIntent[]=[
- {key:"sofa",query:"premium modular sofa unusual furniture",terms:["sofa","sectional","couch"]},
- {key:"furniture",query:"sculptural unusual premium furniture",terms:["furniture","cabinet","bench","console"]},
- {key:"serum",query:"premium skincare face serum",terms:["serum","skincare","peptide","vitamin"]},
- {key:"beauty-device",query:"premium skincare beauty device",terms:["device","mask","microcurrent","facial","led"]},
- {key:"dress",query:"premium womens dress",terms:["dress","gown"]},
- {key:"activewear",query:"premium gym training shirt activewear",terms:["shirt","tee","top","activewear","training"]},
- {key:"kitchen-tool",query:"premium kitchen tool utensil",terms:["kitchen","utensil","knife","tool","grater"]},
- {key:"cookware",query:"premium cookware pan pot",terms:["pan","pot","cookware","skillet"]},
- {key:"laptop",query:"MacBook premium laptop computer",terms:["macbook","laptop","notebook","computer"]},
- {key:"vacuum",query:"premium cordless vacuum cleaner",terms:["vacuum","hoover","cleaner"]},
- {key:"creatine",query:"creatine monohydrate supplement",terms:["creatine","monohydrate"]},
- {key:"protein",query:"premium protein powder whey shake",terms:["protein","whey","shake"]},
- {key:"sandals",query:"premium Birkenstock style sandals",terms:["birkenstock","sandal","slide"]},
- {key:"leather-bag",query:"premium leather handbag",terms:["leather","handbag","bag","tote"]},
- {key:"sneakers",query:"premium sneakers trainers",terms:["sneaker","trainer","shoe"]},
- {key:"headphones",query:"premium wireless headphones",terms:["headphone","earbud","airpod","audio"]},
- {key:"coffee-machine",query:"premium espresso coffee machine",terms:["espresso","coffee","machine"]},
- {key:"lamp",query:"sculptural statement lamp lighting",terms:["lamp","light","lighting"]},
- {key:"chair",query:"premium modern accent chair",terms:["chair","armchair","stool"]},
- {key:"side-table",query:"premium modern side table",terms:["table","nightstand","pedestal"]},
- {key:"jewelry-watch",query:"premium jewelry watch",terms:["watch","bracelet","necklace","ring","jewelry","jewellery"]},
- {key:"home-accessory",query:"premium modern home accessory decor",terms:["decor","vase","candle","home","accessory"]},
- {key:"smart-home",query:"useful premium smart home tech accessory",terms:["smart","charger","sensor","camera","speaker","hub"]}
+ {key:"sofa",query:"premium modular sofa clean studio product photography",terms:["sofa","sectional","couch"]},
+ {key:"furniture",query:"sculptural unusual premium furniture clean studio product photography",terms:["furniture","cabinet","bench","console"]},
+ {key:"serum",query:"premium skincare face serum clean packshot",terms:["serum","skincare","peptide","vitamin"]},
+ {key:"beauty-device",query:"premium skincare beauty device clean packshot",terms:["device","mask","microcurrent","facial","led"]},
+ {key:"dress",query:"premium womens dress clean studio product photography",terms:["dress","gown"]},
+ {key:"activewear",query:"premium gym training shirt activewear clean studio product photography",terms:["shirt","tee","top","activewear","training"]},
+ {key:"kitchen-tool",query:"premium kitchen tool utensil clean packshot",terms:["kitchen","utensil","knife","tool","grater"]},
+ {key:"cookware",query:"premium cookware pan pot clean packshot",terms:["pan","pot","cookware","skillet"]},
+ {key:"laptop",query:"MacBook premium laptop computer clean packshot",terms:["macbook","laptop","notebook","computer"]},
+ {key:"vacuum",query:"premium cordless vacuum cleaner clean packshot",terms:["vacuum","hoover","cleaner"]},
+ {key:"creatine",query:"creatine monohydrate supplement clean packshot",terms:["creatine","monohydrate"]},
+ {key:"protein",query:"premium protein powder whey shake clean packshot",terms:["protein","whey","shake"]},
+ {key:"sandals",query:"premium Birkenstock style sandals clean packshot",terms:["birkenstock","sandal","slide"]},
+ {key:"leather-bag",query:"premium leather handbag clean studio packshot",terms:["leather","handbag","bag","tote"]},
+ {key:"sneakers",query:"premium sneakers trainers clean studio packshot",terms:["sneaker","trainer","shoe"]},
+ {key:"headphones",query:"premium wireless headphones clean packshot",terms:["headphone","earbud","airpod","audio"]},
+ {key:"coffee-machine",query:"premium espresso coffee machine clean packshot",terms:["espresso","coffee","machine"]},
+ {key:"lamp",query:"sculptural statement lamp lighting clean studio product photography",terms:["lamp","light","lighting"]},
+ {key:"chair",query:"premium modern accent chair clean studio product photography",terms:["chair","armchair","stool"]},
+ {key:"side-table",query:"premium modern side table clean studio product photography",terms:["table","nightstand","pedestal"]},
+ {key:"jewelry-watch",query:"premium jewelry watch clean packshot",terms:["watch","bracelet","necklace","ring","jewelry","jewellery"]},
+ {key:"home-accessory",query:"premium modern home accessory decor clean packshot",terms:["decor","vase","candle","home","accessory"]},
+ {key:"smart-home",query:"useful premium smart home tech accessory clean packshot",terms:["smart","charger","sensor","camera","speaker","hub"]}
 ];
 const ENTRY_CACHE_TTL=20*60*1000;
 const entryProductCache=new Map<string,{expiresAt:number;groups:EntryProductGroup[]}>();
@@ -102,10 +102,13 @@ function entryProductScore(product:Product,intent:EntryProductIntent){
  const text=`${product.title||""} ${product.description||""} ${(product.tags||[]).join(" ")}`.toLowerCase();
  const matches=intent.terms.reduce((score,term)=>score+(text.includes(term)?8:0),0);
  const image=String(product.image||"");
- const quality=/^https:\/\//.test(image)?4:0;
+ const imagePath=image.toLowerCase();
+ const quality=(/^https:\/\//.test(image)?4:0)+(/cdn\.shopify\.com/.test(imagePath)?4:0)+(/\.(?:png|webp)(?:\?|$)/.test(imagePath)?3:0);
+ const packshot=/\b(packshot|product only|studio|white background|transparent background|isolated)\b/i.test(`${product.title||""} ${product.description||""}`)?6:0;
+ const lifestyle=/\b(lifestyle|in room|room scene|on model|lookbook|size chart|infographic|banner)\b/i.test(`${product.title||""} ${product.description||""} ${imagePath}`)?-8:0;
  const completeness=(product.price!=null?2:0)+(product.brand&&product.brand!=="Shopify merchant"?2:0)+(product.images?.length?1:0);
  const noise=/\b(case|cover|replacement|spare|sticker|poster|print|template|digital download|custom photo)\b/i.test(product.title||"")?-12:0;
- return matches+quality+completeness+noise;
+ return matches+quality+packshot+lifestyle+completeness+noise;
 }
 async function loadEntryProductGroups(country:string){
  const cached=entryProductCache.get(country);
