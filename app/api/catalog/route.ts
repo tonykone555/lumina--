@@ -45,14 +45,14 @@ const INITIAL_PRODUCT_TARGET=160; // 20 visual rows × 8 products
 type EntryProductIntent={key:string;query:string;fallbackQuery:string;terms:string[];brands:string[]};
 type EntryProductGroup={key:string;products:Product[]};
 const ENTRY_PRODUCT_INTENTS:EntryProductIntent[]=[
- {key:"sofa",query:"West Elm modular sofa",fallbackQuery:"premium modular sofa unusual furniture",terms:["sofa","sectional","couch"],brands:["West Elm","Muuto","HAY","Article","BoConcept","Roche Bobois"]},
+ {key:"sofa",query:"Muuto Outline sofa",fallbackQuery:"premium modular sofa unusual furniture",terms:["sofa","sectional","couch"],brands:["Muuto","HAY","West Elm","Article","BoConcept","Roche Bobois"]},
  {key:"furniture",query:"HAY sculptural furniture",fallbackQuery:"sculptural unusual premium furniture",terms:["furniture","cabinet","bench","console"],brands:["HAY","Vitra","Muuto","Kartell","Ferm Living","Audo"]},
  {key:"serum",query:"The Ordinary face serum",fallbackQuery:"premium skincare face serum",terms:["serum","skincare","peptide","vitamin"],brands:["The Ordinary","SkinCeuticals","Medik8","La Roche-Posay","Drunk Elephant"]},
  {key:"beauty-device",query:"FOREO facial beauty device",fallbackQuery:"premium skincare beauty device",terms:["device","mask","microcurrent","facial","led"],brands:["FOREO","NuFACE","CurrentBody","Therabody","Medicube"]},
  {key:"dress",query:"Reformation womens dress",fallbackQuery:"premium womens dress",terms:["dress","gown"],brands:["Reformation","Ganni","Jacquemus","Aritzia","COS","Rat & Boa"]},
  {key:"activewear",query:"Gymshark training shirt",fallbackQuery:"premium gym training shirt activewear",terms:["shirt","tee","top","activewear","training"],brands:["Gymshark","Lululemon","Nike","Adidas","Under Armour","On"]},
- {key:"kitchen-tool",query:"OXO premium kitchen tool",fallbackQuery:"premium kitchen tool utensil",terms:["kitchen","utensil","knife","tool","grater","peeler"],brands:["OXO","Zwilling","Joseph Joseph","Microplane","KitchenAid"]},
- {key:"cookware",query:"Le Creuset premium cookware pan",fallbackQuery:"premium cookware pan pot",terms:["pan","pot","cookware","skillet"],brands:["Le Creuset","Staub","Caraway","All-Clad","Made In"]},
+ {key:"kitchen-tool",query:"OXO Good Grips swivel peeler",fallbackQuery:"premium kitchen tool utensil",terms:["kitchen","utensil","knife","tool","grater","peeler"],brands:["OXO","Zwilling","Joseph Joseph","Microplane","KitchenAid"]},
+ {key:"cookware",query:"Le Creuset Signature Dutch Oven",fallbackQuery:"premium cookware pan pot",terms:["pan","pot","cookware","skillet","oven"],brands:["Le Creuset","Staub","Caraway","All-Clad","Made In"]},
  {key:"laptop",query:"Apple MacBook Air",fallbackQuery:"MacBook premium laptop computer",terms:["macbook","laptop","notebook","computer"],brands:["Apple","Microsoft","Dell","Lenovo","ASUS"]},
  {key:"vacuum",query:"Dyson cordless vacuum",fallbackQuery:"premium cordless vacuum cleaner",terms:["vacuum","hoover","cleaner"],brands:["Dyson","Hoover","Shark","Miele","Samsung"]},
  {key:"creatine",query:"Momentous creatine monohydrate",fallbackQuery:"creatine monohydrate supplement",terms:["creatine","monohydrate"],brands:["Momentous","Thorne","Myprotein","Bare Performance Nutrition"]},
@@ -61,13 +61,13 @@ const ENTRY_PRODUCT_INTENTS:EntryProductIntent[]=[
  {key:"leather-bag",query:"Coach premium leather handbag",fallbackQuery:"premium leather handbag",terms:["leather","handbag","bag","tote"],brands:["Coach","Polène","Cuyana","Longchamp","Mulberry"]},
  {key:"sneakers",query:"New Balance premium sneakers",fallbackQuery:"premium sneakers trainers",terms:["sneaker","trainer","shoe"],brands:["New Balance","Nike","Adidas","ASICS","On","Veja","Salomon"]},
  {key:"headphones",query:"Sony premium wireless headphones",fallbackQuery:"premium wireless headphones",terms:["headphone","earbud","airpod","audio"],brands:["Sony","Bose","Bowers & Wilkins","Sennheiser","Beats","Apple"]},
- {key:"coffee-machine",query:"DeLonghi espresso coffee machine",fallbackQuery:"premium espresso coffee machine",terms:["espresso","coffee","machine"],brands:["DeLonghi","Breville","Sage","Jura","Nespresso","Ninja"]},
+ {key:"coffee-machine",query:"Nespresso Vertuo Pop coffee machine",fallbackQuery:"premium espresso coffee machine",terms:["espresso","coffee","machine","nespresso"],brands:["Nespresso","DeLonghi","Breville","Sage","Jura","Ninja"]},
  {key:"lamp",query:"Flos statement lamp",fallbackQuery:"sculptural statement lamp lighting",terms:["lamp","light","lighting"],brands:["Flos","Artemide","Louis Poulsen","Kartell","HAY","&Tradition"]},
- {key:"chair",query:"Vitra modern chair",fallbackQuery:"premium modern accent chair",terms:["chair","armchair","stool"],brands:["Vitra","HAY","Herman Miller","Knoll","Muuto","Kartell"]},
+ {key:"chair",query:"Vitra Panton chair",fallbackQuery:"premium modern accent chair",terms:["chair","armchair","stool"],brands:["Vitra","HAY","Herman Miller","Knoll","Muuto","Kartell"]},
  {key:"side-table",query:"HAY modern side table",fallbackQuery:"premium modern side table",terms:["table","nightstand","pedestal"],brands:["HAY","Ferm Living","Muuto","Kartell","Westwing","Article"]},
  {key:"jewelry-watch",query:"Seiko premium watch",fallbackQuery:"premium jewelry watch",terms:["watch","bracelet","necklace","ring","jewelry","jewellery"],brands:["Seiko","Tissot","Citizen","Casio","BREDA"]},
  {key:"home-accessory",query:"Ferm Living home accessory",fallbackQuery:"premium modern home accessory decor",terms:["decor","vase","candle","home","accessory"],brands:["Ferm Living","HAY","Audo","Alessi","Georg Jensen"]},
- {key:"smart-home",query:"Aqara smart home hub",fallbackQuery:"useful premium smart home tech accessory",terms:["smart","charger","sensor","camera","speaker","hub"],brands:["Aqara","Philips Hue","Google Nest","Ring","Eve","Sonos"]}
+ {key:"smart-home",query:"Philips Hue smart bulb",fallbackQuery:"useful premium smart home tech accessory",terms:["smart","charger","sensor","camera","speaker","hub","bulb"],brands:["Philips Hue","Aqara","Google Nest","Ring","Eve","Sonos"]}
 ];
 const ENTRY_CACHE_TTL=20*60*1000;
 const entryProductCache=new Map<string,{expiresAt:number;groups:EntryProductGroup[]}>();
