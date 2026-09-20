@@ -112,7 +112,28 @@ export default function GrowthInbox({initialOpportunities,initialActivities}:{in
 
           <article className="productsCard">
             <div className="sectionTitle"><span>MATCHED PRODUCTS</span><b>{selected.matched_product_ids?.length||0}</b></div>
-            <div className="matchedProducts">{Array.isArray(selected.matched_products)&&selected.matched_products.length?selected.matched_products.map((p:any,i:number)=><div className="matchedProduct" key={p.id||p.ynot_id||i}>{p.image&&<img src={p.image} alt=""/>}<div><strong>{p.title||p.name||selected.matched_product_ids?.[i]||"YNOT product"}</strong><small>{p.brand||p.category||p.id||""}</small></div></div>):selected.matched_product_ids?.length?selected.matched_product_ids.map(id=><div className="matchedProduct" key={id}><div><strong>{id}</strong><small>YNOT product ID</small></div></div>):<div className="empty compact">No product matches saved.</div>}</div>
+            <div className="matchedProducts">{Array.isArray(selected.matched_products)&&selected.matched_products.length?selected.matched_products.map((p:any,i:number)=>{
+              const id=String(p.id||p.ynot_id||p.ynotId||selected.matched_product_ids?.[i]||"");
+              const country=String(p.country||selected.country||"FR").toUpperCase();
+              const category=String(p.category||selected.niche||"other");
+              const fallbackYnot=id&&/^ynot-/i.test(id)?`/p/${encodeURIComponent(id)}?country=${encodeURIComponent(country)}&category=${encodeURIComponent(category)}&src=growth`:null;
+              const ynotUrl=typeof p.ynot_url==="string"&&p.ynot_url?p.ynot_url:typeof p.url==="string"&&/ynotworld\.app\/p\//i.test(p.url)?p.url:fallbackYnot;
+              const merchantUrl=typeof p.merchant_url==="string"&&p.merchant_url?p.merchant_url:typeof p.source_url==="string"&&p.source_url?p.source_url:null;
+              return <div className="matchedProduct" key={id||i}>
+                {p.image&&<img src={p.image} alt=""/>}
+                <div className="matchedProductInfo">
+                  <strong>{p.title||p.name||id||"YNOT product"}</strong>
+                  <small>{p.brand||p.category||id||""}</small>
+                  <div className="productLinkStatus">
+                    {ynotUrl?<><span className="ynotLinkBadge">YNOT POPUP LINK</span><a href={ynotUrl} target="_blank" rel="noreferrer">Open card ↗</a></>:<span className="merchantOnlyBadge">NO YNOT LINK</span>}
+                    {merchantUrl&&<a className="merchantRef" href={merchantUrl} target="_blank" rel="noreferrer">Merchant ref ↗</a>}
+                  </div>
+                </div>
+              </div>
+            }):selected.matched_product_ids?.length?selected.matched_product_ids.map(id=>{
+              const href=/^ynot-/i.test(id)?`/p/${encodeURIComponent(id)}?country=${encodeURIComponent(String(selected.country||"FR").toUpperCase())}&category=${encodeURIComponent(selected.niche||"other")}&src=growth`:null;
+              return <div className="matchedProduct" key={id}><div className="matchedProductInfo"><strong>{id}</strong><small>YNOT product ID</small><div className="productLinkStatus">{href?<><span className="ynotLinkBadge">YNOT POPUP LINK</span><a href={href} target="_blank" rel="noreferrer">Open card ↗</a></>:<span className="merchantOnlyBadge">NO YNOT LINK</span>}</div></div></div>
+            }):<div className="empty compact">No product matches saved.</div>}</div>
           </article>
 
           <article className="historyCard">
