@@ -32,13 +32,13 @@ export default function GrowthInbox({initialOpportunities,initialActivities}:{in
   const selected=items.find(x=>x.id===selectedId)||visible[0]||items[0];
   const history=activities.filter(a=>a.opportunity_id===selected?.id).sort((a,b)=>+new Date(b.created_at)-+new Date(a.created_at));
 
-  async function action(action:string){
+  async function action(action:string, extra:Record<string,unknown>={}){
     if(!selected) return;
     setBusy(true);
     try{
       const res=await fetch("/api/admin/growth/opportunity",{
         method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({id:selected.id,action})
+        body:JSON.stringify({id:selected.id,action,...extra})
       });
       const data=await res.json();
       if(!res.ok) throw new Error(data?.error||"UPDATE_FAILED");
@@ -130,11 +130,15 @@ export default function GrowthInbox({initialOpportunities,initialActivities}:{in
               const fallbackYnot=id&&/^ynot-/i.test(id)?`/p/${encodeURIComponent(id)}?country=${encodeURIComponent(country)}&category=${encodeURIComponent(category)}&src=growth`:null;
               const ynotUrl=typeof p.ynot_url==="string"&&p.ynot_url?p.ynot_url:typeof p.url==="string"&&/ynotworld\.app\/p\//i.test(p.url)?p.url:fallbackYnot;
               const merchantUrl=typeof p.merchant_url==="string"&&p.merchant_url?p.merchant_url:typeof p.source_url==="string"&&p.source_url?p.source_url:null;
-              return <div className="matchedProduct" key={id||i}>
+              const selectedForOutreach=p.selected_for_outreach!==false;
+              return <div className={"matchedProduct "+(selectedForOutreach?"chosen":"")} key={id||i}>
+                <label className="productPick"><input type="checkbox" checked={selectedForOutreach} disabled={busy||!id} onChange={(e)=>action("toggle_product",{product_id:id,selected:e.target.checked})}/><span/></label>
                 {p.image&&<img src={p.image} alt=""/>}
                 <div className="matchedProductInfo">
-                  <strong>{p.title||p.name||id||"YNOT product"}</strong>
-                  <small>{p.brand||p.category||id||""}</small>
+                  <div className="productTitleLine"><strong>{p.title||p.name||id||"YNOT product"}</strong>{p.match_role&&<em>{String(p.match_role).toUpperCase()}</em>}{p.match_score!=null&&<b>{p.match_score}</b>}</div>
+                  <small>{p.brand||p.category||id||""}{p.price!=null?" · "+(p.currency||"")+" "+p.price:""}</small>
+                  {Array.isArray(p.match_reasons)&&p.match_reasons.length>0&&<p className="matchReason">{p.match_reasons.slice(0,3).join(" · ")}</p>}
+                  {Array.isArray(p.constraint_warnings)&&p.constraint_warnings.length>0&&<p className="matchWarning">{p.constraint_warnings.join(" · ")}</p>}
                   <div className="productLinkStatus">
                     {ynotUrl?<><span className="ynotLinkBadge">YNOT POPUP LINK</span><a href={ynotUrl} target="_blank" rel="noreferrer">Open card ↗</a></>:<span className="merchantOnlyBadge">NO YNOT LINK</span>}
                     {merchantUrl&&<a className="merchantRef" href={merchantUrl} target="_blank" rel="noreferrer">Merchant ref ↗</a>}
