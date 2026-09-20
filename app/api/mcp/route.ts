@@ -61,6 +61,35 @@ function safeProduct(p: Product) {
   };
 }
 
+function ynotProductUrl(productId: string, country = "FR", category = "other", src = "mcp-growth") {
+  const base = appUrl();
+  if (!base || !/^ynot-/i.test(String(productId || ""))) return null;
+  return `${base}/p/${encodeURIComponent(productId)}?country=${encodeURIComponent(country)}&category=${encodeURIComponent(category || "other")}&src=${encodeURIComponent(src)}`;
+}
+
+function normalizeGrowthProducts(products: unknown, defaultCountry = "FR") {
+  if (!Array.isArray(products)) return [];
+  return products.slice(0, 20).map((raw: any) => {
+    const p = raw && typeof raw === "object" ? { ...raw } : {};
+    const id = String(p.id || p.ynot_id || p.ynotId || "");
+    const category = String(p.category || "other");
+    const country = String(p.country || defaultCountry || "FR").toUpperCase();
+    const customerUrl = ynotProductUrl(id, country, category);
+    const merchantUrl =
+      typeof p.merchant_url === "string" ? p.merchant_url :
+      typeof p.source_url === "string" ? p.source_url :
+      typeof p.url === "string" && !/^https?:\/\/[^/]*ynotworld\.app\//i.test(p.url) ? p.url :
+      null;
+    return {
+      ...p,
+      id: id || p.id,
+      url: customerUrl || (typeof p.url === "string" && /ynotworld\.app/i.test(p.url) ? p.url : null),
+      ynot_url: customerUrl || (typeof p.ynot_url === "string" ? p.ynot_url : null),
+      merchant_url: merchantUrl,
+    };
+  });
+}
+
 async function catalog(query: string, country: string, source: string, limit: number) {
   const base = appUrl();
   if (!base) throw new Error("YNOT_APP_URL_NOT_CONFIGURED");
@@ -224,7 +253,7 @@ function makeHandler() {
     (server) => {
       server.tool(
         "search_catalogue",
-        "Search YNOT's live commerce catalogue. Returns only real live-source products, never UI demo products.",
+        "Search YNOT's live commerce catalogue. For outreach and customer-facing recommendations, use the returned YNOT product URL from the default Shopify/YNOT canonical path. Never send raw merchant/Shopify URLs when a YNOT URL is available.",
         {
           query: z.string().min(2).max(200),
           country: z.string().length(2).default("FR"),
@@ -275,7 +304,7 @@ function makeHandler() {
 
       server.tool(
         "get_products_to_promote",
-        "Find bounded real YNOT products for creative exploration: approved researched products first, then live Shopify candidates. Never returns demo merchandise.",
+        "Find bounded real YNOT products for creative exploration. For any customer-facing outreach, prefer candidates with a YNOT URL and use that URL instead of raw Shopify/merchant links. Never returns demo merchandise.",
         {
           niche: z.string().min(2).max(100),
           country: z.string().length(2).default("FR"),
@@ -483,6 +512,7 @@ function makeHandler() {
         },
         async ({ external_key, ...patch }) => {
           const clean = Object.fromEntries(Object.entries(patch).filter(([,value]) => value !== undefined));
+          if (Array.isArray(clean.matched_products)) clean.matched_products = normalizeGrowthProducts(clean.matched_products);
           const rows = await dbRows(`ynot_growth_opportunities?external_key=eq.${encodeURIComponent(external_key)}`, {
             method: "PATCH",
             body: JSON.stringify({...clean, updated_at: new Date().toISOString()}),
