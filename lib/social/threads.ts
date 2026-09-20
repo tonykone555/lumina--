@@ -1,5 +1,85 @@
 const THREADS_API_BASE = "https://graph.threads.net/v1.0";
 
+type ThreadsApiErrorDetails = {
+  status: number;
+  message: string;
+  code?: string | number;
+  errorSubcode?: string | number;
+  type?: string;
+};
+
+export class ThreadsApiError extends Error {
+  readonly status: number;
+  readonly metaMessage: string;
+  readonly code?: string | number;
+  readonly errorSubcode?: string | number;
+  readonly apiType?: string;
+
+  constructor(details: ThreadsApiErrorDetails) {
+    super(`THREADS_API_${details.status}:${details.message}`);
+    this.name = "ThreadsApiError";
+    this.status = details.status;
+    this.metaMessage = details.message;
+    this.code = details.code;
+    this.errorSubcode = details.errorSubcode;
+    this.apiType = details.type;
+  }
+}
+
+function redactThreadsSecrets(value: string) {
+  let safe = value
+    .replace(/(access[_-]?token\s*[=:]\s*)[^&\s"']+/gi, "$1[REDACTED]")
+    .replace(/(bearer\s+)[a-z0-9._~-]+/gi, "$1[REDACTED]");
+  const accessToken = process.env.THREADS_ACCESS_TOKEN;
+  if (accessToken) safe = safe.split(accessToken).join("[REDACTED]");
+  return safe.slice(0, 500);
+}
+
+function scalar(value: unknown): string | number | undefined {
+  return typeof value === "string" || typeof value === "number" ? value : undefined;
+}
+
+function parseThreadsApiError(status: number, data: any): ThreadsApiErrorDetails {
+  const nested = data?.error && typeof data.error === "object" ? data.error : null;
+  const first = Array.isArray(data?.errors) && data.errors[0] && typeof data.errors[0] === "object"
+    ? data.errors[0]
+    : null;
+  const source = nested || first || data || {};
+  const rawMessage = [
+    source?.message,
+    source?.error_user_msg,
+    source?.error_message,
+    data?.message,
+    data?.error_description,
+    typeof data?.error === "string" ? data.error : undefined,
+  ].find((value) => typeof value === "string" && value.trim());
+
+  return {
+    status,
+    message: redactThreadsSecrets(
+      typeof rawMessage === "string" && rawMessage.trim()
+        ? rawMessage.trim()
+        : `Meta Threads API request failed (${status})`
+    ),
+    code: scalar(source?.code ?? data?.code),
+    errorSubcode: scalar(source?.error_subcode ?? data?.error_subcode),
+    type: typeof (source?.type ?? data?.type) === "string"
+      ? redactThreadsSecrets(String(source?.type ?? data?.type))
+      : undefined,
+  };
+}
+
+export function publicThreadsApiError(error: unknown) {
+  if (!(error instanceof ThreadsApiError)) return null;
+  return {
+    message: error.metaMessage,
+    status: error.status,
+    code: error.code,
+    error_subcode: error.errorSubcode,
+    type: error.apiType,
+  };
+}
+
 function token() {
   const value = process.env.THREADS_ACCESS_TOKEN;
   if (!value) throw new Error("THREADS_ACCESS_TOKEN_NOT_CONFIGURED");
@@ -34,9 +114,16 @@ async function threadsRequest(path: string, init: RequestInit = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(
-      `THREADS_API_${res.status}:${data?.error?.message || raw || "Unknown error"}`
-    );
+    const details = parseThreadsApiError(res.status, data);
+    console.error("Meta Threads API request failed", {
+      path: url.pathname,
+      status: details.status,
+      message: details.message,
+      code: details.code,
+      error_subcode: details.errorSubcode,
+      type: details.type,
+    });
+    throw new ThreadsApiError(details);
   }
   return data;
 }
