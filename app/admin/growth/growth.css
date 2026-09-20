@@ -55,3 +55,10 @@
 .candidateScore{display:inline-block;margin-top:6px;font-size:8px;color:#b7f0c9;border:1px solid #355142;background:#0f1713;border-radius:999px;padding:3px 6px}
 .candidateWhy{display:block;margin-top:5px;font-style:normal;font-size:8px;line-height:1.35;color:#6f7a81;white-space:normal}
 .factoryProduct>div:nth-child(2){min-width:0}
+
+.factorySearch{display:grid;grid-template-columns:1fr auto;gap:8px;margin:16px 0 8px}
+.factorySearch input{width:100%;border:1px solid #2a3136;background:#0c1012;color:#dce3e7;border-radius:12px;padding:12px 13px;font-size:11px;outline:none}
+.factorySearch input:focus{border-color:#47545c;box-shadow:0 0 0 2px rgba(255,255,255,.025)}
+.factorySearch button{border:1px solid #dfe8ec;background:#eaf0f2;color:#0b0d0e;border-radius:11px;padding:11px 15px;font-weight:750;font-size:11px;cursor:pointer}
+.factoryProducts{max-height:560px;overflow:auto;padding-right:2px;scrollbar-width:thin}
+@media(max-width:700px){.factorySearch{grid-template-columns:1fr}.factorySearch button{width:100%}}
