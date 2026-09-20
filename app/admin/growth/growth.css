@@ -51,3 +51,7 @@
 @media(max-width:1050px){.factoryProducts{grid-template-columns:repeat(3,1fr)}.assetGrid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:900px){.factoryHead{align-items:flex-start;flex-direction:column}.factoryControls{grid-template-columns:repeat(2,1fr)}.factoryControls button{grid-column:1/-1}.factoryProducts{grid-template-columns:repeat(2,1fr)}.assetGrid{grid-template-columns:repeat(2,1fr)}.queueLayout{grid-template-columns:1fr}}
 @media(max-width:560px){.factoryProducts,.assetGrid{grid-template-columns:1fr}.factoryLaunch{align-items:flex-start;flex-direction:column}.factoryLaunch button{width:100%}}
+
+.candidateScore{display:inline-block;margin-top:6px;font-size:8px;color:#b7f0c9;border:1px solid #355142;background:#0f1713;border-radius:999px;padding:3px 6px}
+.candidateWhy{display:block;margin-top:5px;font-style:normal;font-size:8px;line-height:1.35;color:#6f7a81;white-space:normal}
+.factoryProduct>div:nth-child(2){min-width:0}
