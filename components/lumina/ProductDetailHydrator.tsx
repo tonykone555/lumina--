@@ -3,7 +3,7 @@
 import {useEffect,useLayoutEffect,useRef} from "react";
 
 type Variant={id?:string;label?:string;price?:number|null;currency?:string;image?:string;url?:string;available?:boolean};
-type Product={id:string;title:string;source?:string;description?:string;descriptionHydrated?:boolean;url?:string;image?:string;images?:string[];variantId?:string;variants?:Variant[];[key:string]:unknown};
+type Product={id:string;title:string;source?:string;description?:string;descriptionHydrated?:boolean;url?:string;image?:string;images?:string[];variantId?:string;variants?:Variant[];sourceProductId?:string;sourceVariantId?:string;merchantUrl?:string;[key:string]:unknown};
 type RichResponse={url?:string;product?:Product;error?:string};
 const products=new Map<string,Product>();const pending=new Map<string,Promise<Product>>();
 function key(value:string){return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
