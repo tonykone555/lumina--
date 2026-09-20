@@ -23,7 +23,10 @@ export async function GET(_req:NextRequest,{params}:{params:Promise<{id:string}>
       tags:Array.isArray(product.intent_tags)?product.intent_tags:[],
       source:"shopify",
       category:product.category,
-      description:`${product.title} available through YNOT.`
+      description:`${product.title} available through YNOT.`,
+      sourceProductId:product.source_product_id||null,
+      sourceVariantId:product.source_variant_id||null,
+      merchantUrl:product.best_source_url||null
     }
   },{
     headers:{"Cache-Control":"public, s-maxage=300, stale-while-revalidate=3600"}

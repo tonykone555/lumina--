@@ -19,6 +19,13 @@ function point(a:Axial){return{x:WORLD_CX+PITCH*(a.q+a.r/2),y:WORLD_CY+PITCH*(Ma
 function place(elements:HTMLElement[]){const grid=slots(elements.length);elements.forEach((el,index)=>{const p=point(grid[index]);el.style.setProperty("left",`${p.x}px`,"important");el.style.setProperty("top",`${p.y}px`,"important");el.style.setProperty("width",`${BUBBLE_SIZE}px`,"important");el.style.setProperty("height",`${BUBBLE_SIZE}px`,"important");el.style.setProperty("--s",`${BUBBLE_SIZE}px`);el.dataset.hexSlot=String(index)})}
 function normalizeWorld(){
  const shell=document.querySelector<HTMLElement>(".lv4-shell");if(!shell)return;
+ // Desktop is owned exclusively by DesktopLatticeController. The old hex/scattered
+ // normalizer used to race it after deep-link popups closed and could leave stale
+ // coordinates behind. Never write product positions on desktop here.
+ if(window.innerWidth>=900){
+  shell.querySelectorAll<HTMLElement>(".lv4-product").forEach(el=>{delete el.dataset.hexSlot});
+  return;
+ }
  const worlds=shell.classList.contains("level-worlds");
  const elements=worlds?[...shell.querySelectorAll<HTMLElement>(".lv4-category-bubble")]:[...shell.querySelectorAll<HTMLElement>(".lv4-intent,.lv4-textbubble,.lv4-product")];
  if(elements.length)place(elements);

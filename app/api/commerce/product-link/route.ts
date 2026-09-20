@@ -2,12 +2,13 @@ import {NextRequest,NextResponse} from "next/server";
 export const runtime="nodejs";
 
 type Variant={id?:string;label?:string;url?:string;available?:boolean;price?:number|null;currency?:string;image?:string};
-type Product={id?:string;variantId?:string;title?:string;brand?:string;url?:string;source?:string;variants?:Variant[];images?:string[];image?:string;currency?:string;description?:string;price?:number|null;supplierPrice?:number;retailPrice?:number;pricingMode?:string};
+type Product={id?:string;variantId?:string;title?:string;brand?:string;url?:string;source?:string;variants?:Variant[];images?:string[];image?:string;currency?:string;description?:string;price?:number|null;supplierPrice?:number;retailPrice?:number;pricingMode?:string;sourceProductId?:string;sourceVariantId?:string;merchantUrl?:string};
 function exactEnough(url?:string){if(!url)return false;try{const u=new URL(url);const p=u.pathname.replace(/\/+$/,'');if(u.protocol!=="https:"||p.length<=1)return false;return /\/products?\//i.test(p)||u.searchParams.has("variant")||/\/product\//i.test(p)}catch{return false}}
 function normalize(url?:string){if(!url)return'';try{const u=new URL(url);u.hash='';return u.toString()}catch{return''}}
 function bestLocal(product:Product){const variants=product.variants||[];const chosen=product.variantId?variants.find(v=>String(v.id||'')===String(product.variantId)):undefined;const candidates=[chosen?.url,...variants.filter(v=>v.available!==false).map(v=>v.url),product.url].map(normalize).filter(Boolean);return candidates.find(exactEnough)||''}
 function clean(s:string){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
-function priceOf(v:any,fallback:any){const raw=v?.price||fallback;if(raw==null)return null;if(typeof raw==='number')return raw;if(typeof raw?.amount==='number')return Number(raw.amount)/100;if(typeof raw?.amount==='string'){const n=Number(raw.amount);return Number.isFinite(n)?n/100:null}const n=Number(raw);return Number.isFinite(n)?n:null}
+function shopifyAmount(value:any){const raw=value?.amount??value;if(raw==null)return null;if(typeof raw==='string'){const cleaned=raw.trim().replace(',','.');const n=Number(cleaned);if(!Number.isFinite(n))return null;return /[.,]\d{1,2}$/.test(raw.trim())?n:n/100}if(typeof raw==='number'){if(!Number.isFinite(raw))return null;return Number.isInteger(raw)?raw/100:raw}return null}
+function priceOf(v:any,fallback:any){const raw=v?.price||fallback;if(raw==null)return null;if(typeof raw==='number')return raw;return shopifyAmount(raw)}
 function stripHtml(value:any):string{if(value&&typeof value==='object')return stripHtml(value.html??value.plain??value.text??value.value);return String(value||'').replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<style[\s\S]*?<\/style>/gi,' ').replace(/<[^>]+>/g,' ').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/\s+/g,' ').trim()}
 function mediaUrl(m:any){return normalize(m?.url||m?.image?.url||m?.previewImage?.url||m?.preview_image?.url||m?.src||m?.originalSource?.url||'')}
 const profile='https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json';
@@ -18,9 +19,10 @@ export async function POST(req:NextRequest){
   const product=await req.json() as Product;
   if(!product.title&&!product.id)return NextResponse.json({error:'PRODUCT_IDENTITY_REQUIRED'},{status:400});
   let detail:any=null;
-  if(product.id){try{const content=await callCatalog('get_product',{id:String(product.variantId||product.id)});detail=content?.product||null}catch{}}
+  const exactCatalogId=String(product.sourceProductId||product.sourceVariantId||product.variantId||product.id||'');
+  if(exactCatalogId){try{const content=await callCatalog('get_product',{id:exactCatalogId});detail=content?.product||null}catch{}}
   let products:any[]=[];
-  if(!detail){try{const content=await callCatalog('lookup_catalog',{ids:[String(product.variantId||product.id||product.url||'')]});products=content?.products||[];detail=products[0]||null}catch{}}
+  if(!detail){try{const lookupId=String(product.sourceProductId||product.sourceVariantId||product.variantId||product.id||product.merchantUrl||product.url||'');const content=await callCatalog('lookup_catalog',{ids:[lookupId]});products=content?.products||[];detail=products[0]||null}catch{}}
   if(!detail){const content=await callCatalog('search_catalog',{query:product.title||String(product.id||''),filters:{available:true},pagination:{limit:16}});products=content?.products||[]}
   const wantedId=String(product.id||''),wantedTitle=clean(product.title||'');
   const match=detail||products.find(p=>String(p?.id||'')===wantedId)||products.find(p=>clean(p?.title||'')===wantedTitle)||products.find(p=>wantedTitle&&(clean(p?.title||'').includes(wantedTitle)||wantedTitle.includes(clean(p?.title||''))));

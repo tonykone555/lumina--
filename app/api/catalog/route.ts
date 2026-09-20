@@ -46,6 +46,12 @@ function cleanTitle(text:string){return String(text||"").replace(/[\u{1F300}-\u{
 function descriptionText(value:unknown){if(typeof value==="string")return cleanTitle(value.replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;/gi,"'"));if(value&&typeof value==="object"){const v=value as Record<string,unknown>;return descriptionText(v.html??v.plain??v.text??v.value)}return""}
 function fallbackFor(query:string){const q=query.toLowerCase();if(/gym|fitness|shorts|running|training|recovery/.test(q))return NICHE_FALLBACK.fitness;if(/hair|scalp|density|shampoo/.test(q))return NICHE_FALLBACK.hair;if(/skin|acne|blemish|tone|serum/.test(q))return NICHE_FALLBACK.skin;if(/smile|teeth|tooth|whiten|oral/.test(q))return NICHE_FALLBACK.smile;return[]}
 function num(v:string){const n=Number.parseFloat(v.replace(",","."));return Number.isFinite(n)?n:undefined}
+function shopifyAmount(value:any){
+ const raw=value?.amount??value;if(raw==null)return null;
+ if(typeof raw==="string"){const cleaned=raw.trim().replace(",",".");const n=Number(cleaned);if(!Number.isFinite(n))return null;return /[.,]\d{1,2}$/.test(raw.trim())?n:n/100}
+ if(typeof raw==="number"){if(!Number.isFinite(raw))return null;return Number.isInteger(raw)?raw/100:raw}
+ return null
+}
 function parsePriceIntent(text:string,country:string):PriceIntent{
  const q=text.toLowerCase();let min:number|undefined,max:number|undefined;
  const between=q.match(/(?:between|from)\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*(\d+(?:[.,]\d+)?)\s*(?:and|to|[-–])\s*(?:€|eur|euros?|£|gbp|\$|usd)?\s*(\d+(?:[.,]\d+)?)/i);
@@ -115,7 +121,7 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
   const variants=(p?.variants||[]).map((v:any)=>{
     const vp=v?.price||price;
     const variantImage=v?.image?.url||v?.media?.[0]?.url||"";
-    return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?Number(vp.amount)/100:null,currency:vp?.currency||price?.currency||"USD",image:variantImage,url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"};
+    return{id:String(v.id||v.variant_id||""),label:cleanTitle(v.title||v.name||(v?.selected_options||[]).map((o:any)=>o.value).join(" · ")||"Option"),price:vp?shopifyAmount(vp):null,currency:vp?.currency||price?.currency||"USD",image:variantImage,url:v.url||v?.checkout_url||v?.seller?.url||p.url||"#",available:v.available!==false&&v?.availability!=="out_of_stock"};
   }).filter((v:any)=>v.id);
 
   // The popup gallery must only contain the product's own media.
@@ -126,7 +132,7 @@ async function fetchShopifyOnce(query:string,country:string,cursor?:string){
   const gallery=[...new Set<string>([...mediaImages,...variantImages])].slice(0,10);
   const primary=gallery[0]||"";
 
-  return{id:p.id,title,brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?Number(price.amount)/100:null,currency:price?.currency||"USD",image:primary,images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(title,description),source:"shopify-global-catalog"};
+  return{id:p.id,title,brand:p?.variants?.[0]?.seller?.name||p?.seller?.name||"Shopify merchant",price:price?shopifyAmount(price):null,currency:price?.currency||"USD",image:primary,images:gallery,url:p.url||p?.variants?.[0]?.seller?.url||"#",variants,description,descriptionHydrated:false,tags:enrichedTags(title,description),source:"shopify-global-catalog"};
 }));
  return{products,pagination:normalizeShopifyPagination(content.pagination||{})};
 }

@@ -85,6 +85,21 @@ function domainOf(raw:string){
   try{return new URL(raw).hostname.toLowerCase().replace(/^www\./,"")}catch{return""}
 }
 function rounded(n:number){return Math.round(n*100)/100}
+function shopifyAmount(value:any){
+  const raw=value?.amount??value;
+  if(raw==null)return null;
+  if(typeof raw==="string"){
+    const cleaned=raw.trim().replace(",",".");
+    const n=Number(cleaned);
+    if(!Number.isFinite(n))return null;
+    return /[.,]\d{1,2}$/.test(raw.trim())?n:n/100;
+  }
+  if(typeof raw==="number"){
+    if(!Number.isFinite(raw))return null;
+    return Number.isInteger(raw)?raw/100:raw;
+  }
+  return null;
+}
 function stableYnotId(country:FeedCountry,fingerprint:string){
   const hash=createHash("sha256").update(country+"|"+fingerprint).digest("hex").slice(0,24);
   return "ynot-"+country.toLowerCase()+"-"+hash;
@@ -240,7 +255,7 @@ async function shopifySearch(query:string,country:FeedCountry){
 function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:string):CatalogFeedProduct|null{
   const variant=Array.isArray(raw?.variants)?raw.variants.find((v:any)=>v?.available!==false)||raw.variants[0]:null;
   const price=raw?.price_range?.min||variant?.price;
-  const amount=Number(price?.amount)/100;
+  const amount=shopifyAmount(price);
   if(!Number.isFinite(amount)||amount<=0)return null;
 
   const originalTitle=cleanText(raw?.title);
