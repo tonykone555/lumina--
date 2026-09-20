@@ -42,6 +42,37 @@ const EBAY_LANGUAGES:Record<string,string>={US:"en-US",GB:"en-GB",UK:"en-GB",FR:
 let ebayTokenCache:{token:string;expiresAt:number}|null=null;
 const INITIAL_PRODUCT_TARGET=160; // 20 visual rows × 8 products
 
+type EntryProductIntent={key:string;query:string;terms:string[]};
+type EntryProductGroup={key:string;products:Product[]};
+const ENTRY_PRODUCT_INTENTS:EntryProductIntent[]=[
+ {key:"sofa",query:"premium modular sofa unusual furniture",terms:["sofa","sectional","couch"]},
+ {key:"furniture",query:"sculptural unusual premium furniture",terms:["furniture","cabinet","bench","console"]},
+ {key:"serum",query:"premium skincare face serum",terms:["serum","skincare","peptide","vitamin"]},
+ {key:"beauty-device",query:"premium skincare beauty device",terms:["device","mask","microcurrent","facial","led"]},
+ {key:"dress",query:"premium womens dress",terms:["dress","gown"]},
+ {key:"activewear",query:"premium gym training shirt activewear",terms:["shirt","tee","top","activewear","training"]},
+ {key:"kitchen-tool",query:"premium kitchen tool utensil",terms:["kitchen","utensil","knife","tool","grater"]},
+ {key:"cookware",query:"premium cookware pan pot",terms:["pan","pot","cookware","skillet"]},
+ {key:"laptop",query:"MacBook premium laptop computer",terms:["macbook","laptop","notebook","computer"]},
+ {key:"vacuum",query:"premium cordless vacuum cleaner",terms:["vacuum","hoover","cleaner"]},
+ {key:"creatine",query:"creatine monohydrate supplement",terms:["creatine","monohydrate"]},
+ {key:"protein",query:"premium protein powder whey shake",terms:["protein","whey","shake"]},
+ {key:"sandals",query:"premium Birkenstock style sandals",terms:["birkenstock","sandal","slide"]},
+ {key:"leather-bag",query:"premium leather handbag",terms:["leather","handbag","bag","tote"]},
+ {key:"sneakers",query:"premium sneakers trainers",terms:["sneaker","trainer","shoe"]},
+ {key:"headphones",query:"premium wireless headphones",terms:["headphone","earbud","airpod","audio"]},
+ {key:"coffee-machine",query:"premium espresso coffee machine",terms:["espresso","coffee","machine"]},
+ {key:"lamp",query:"sculptural statement lamp lighting",terms:["lamp","light","lighting"]},
+ {key:"chair",query:"premium modern accent chair",terms:["chair","armchair","stool"]},
+ {key:"side-table",query:"premium modern side table",terms:["table","nightstand","pedestal"]},
+ {key:"jewelry-watch",query:"premium jewelry watch",terms:["watch","bracelet","necklace","ring","jewelry","jewellery"]},
+ {key:"home-accessory",query:"premium modern home accessory decor",terms:["decor","vase","candle","home","accessory"]},
+ {key:"smart-home",query:"useful premium smart home tech accessory",terms:["smart","charger","sensor","camera","speaker","hub"]}
+];
+const ENTRY_CACHE_TTL=20*60*1000;
+const entryProductCache=new Map<string,{expiresAt:number;groups:EntryProductGroup[]}>();
+const entryProductInflight=new Map<string,Promise<EntryProductGroup[]>>();
+
 function cleanTitle(text:string){return String(text||"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,"").replace(/\s{2,}/g," ").replace(/^\s*[|·—–-]+\s*|\s*[|·—–-]+\s*$/g,"").trim()}
 function descriptionText(value:unknown){if(typeof value==="string")return cleanTitle(value.replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;/gi,"'"));if(value&&typeof value==="object"){const v=value as Record<string,unknown>;return descriptionText(v.html??v.plain??v.text??v.value)}return""}
 function fallbackFor(query:string){const q=query.toLowerCase();if(/gym|fitness|shorts|running|training|recovery/.test(q))return NICHE_FALLBACK.fitness;if(/hair|scalp|density|shampoo/.test(q))return NICHE_FALLBACK.hair;if(/skin|acne|blemish|tone|serum/.test(q))return NICHE_FALLBACK.skin;if(/smile|teeth|tooth|whiten|oral/.test(q))return NICHE_FALLBACK.smile;return[]}
@@ -67,6 +98,49 @@ function usable(products:Product[]){return products.filter(p=>Boolean(p.id&&p.ti
 function productKey(p:Product){return `${String(p.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${String(p.brand||"").toLowerCase()}`}
 function dedupeProducts(products:Product[]){const seen=new Set<string>();return products.filter(p=>{const key=productKey(p);if(!key||seen.has(key))return false;seen.add(key);return true})}
 function groupedProducts(shopify:Product[],amazon:Product[]){return dedupeProducts([...shopify,...amazon])}
+function entryProductScore(product:Product,intent:EntryProductIntent){
+ const text=`${product.title||""} ${product.description||""} ${(product.tags||[]).join(" ")}`.toLowerCase();
+ const matches=intent.terms.reduce((score,term)=>score+(text.includes(term)?8:0),0);
+ const image=String(product.image||"");
+ const quality=/^https:\/\//.test(image)?4:0;
+ const completeness=(product.price!=null?2:0)+(product.brand&&product.brand!=="Shopify merchant"?2:0)+(product.images?.length?1:0);
+ const noise=/\b(case|cover|replacement|spare|sticker|poster|print|template|digital download|custom photo)\b/i.test(product.title||"")?-12:0;
+ return matches+quality+completeness+noise;
+}
+async function loadEntryProductGroups(country:string){
+ const cached=entryProductCache.get(country);
+ if(cached&&cached.expiresAt>Date.now())return cached.groups;
+ const pending=entryProductInflight.get(country);
+ if(pending)return pending;
+
+ const request=(async()=>{
+  // One browser request fans out here, where the results can be cached and
+  // deduplicated. This avoids a burst of repeated homepage requests on iPhone.
+  const settled=await Promise.allSettled(ENTRY_PRODUCT_INTENTS.map(async intent=>{
+   const result=await fetchShopify(intent.query,country);
+   const products=dedupeProducts(result.products)
+    .sort((a,b)=>entryProductScore(b,intent)-entryProductScore(a,intent))
+    .slice(0,5);
+   return{key:intent.key,products};
+  }));
+  const seen=new Set<string>();
+  const groups:EntryProductGroup[]=[];
+  for(const result of settled){
+   if(result.status!=="fulfilled")continue;
+   const products=result.value.products.filter(product=>{
+    const key=productKey(product);
+    if(!key||seen.has(key))return false;
+    seen.add(key);
+    return true;
+   });
+   if(products.length)groups.push({key:result.value.key,products});
+  }
+  entryProductCache.set(country,{expiresAt:Date.now()+ENTRY_CACHE_TTL,groups});
+  return groups;
+ })().finally(()=>entryProductInflight.delete(country));
+ entryProductInflight.set(country,request);
+ return request;
+}
 function nextShopifyCursor(p:any){const candidates=[p?.cursor,p?.next_cursor,p?.nextCursor,p?.end_cursor,p?.endCursor,p?.after,p?.pageInfo?.endCursor,p?.page_info?.end_cursor];const found=candidates.find(v=>typeof v==="string"&&v.length);return found||""}
 function normalizeShopifyPagination(p:any){const next=nextShopifyCursor(p);const has=Boolean(p?.has_next_page??p?.hasNextPage??p?.pageInfo?.hasNextPage??p?.page_info?.has_next_page??next);return{...(p||{}),next_cursor:next||null,has_next_page:has}}
 function amazonPrice(r:any){const raw=r?.price?.value??r?.price?.raw??r?.prices?.[0]?.value??null;if(typeof raw==="number")return raw;if(typeof raw==="string"){const parsed=Number.parseFloat(raw.replace(/[^0-9,.-]/g,"").replace(",","."));return Number.isFinite(parsed)?parsed:null}return null}
@@ -352,12 +426,23 @@ export async function GET(req:NextRequest){
  const cursor=search.get("cursor")||undefined;
  const page=Math.max(0,Number.parseInt(search.get("page")||"0",10)||0);
  const country=(search.get("country")||"FR").toUpperCase().slice(0,2);
+ const entry=search.get("entry")==="1";
  const market=search.get("market")==="ebay"?"ebay":"lumina";
  const requestedSource=search.get("source");
  const categoryLoad=search.get("category_load")==="1";
  const luminaSource:LuminaSource=requestedSource==="all"||requestedSource==="amazon"||requestedSource==="shopify"?requestedSource:"shopify";
  const query=direction?`${base}, ${direction}`:base;
  const priceIntent=parsePriceIntent(query,country);
+
+ if(entry){
+  try{
+   const groups=await loadEntryProductGroups(country);
+   return NextResponse.json({source:"shopify-global-catalog",market:"lumina",luminaSource:"shopify",entry:true,groups},{headers:{"Cache-Control":"public, s-maxage=1200, stale-while-revalidate=86400"}});
+  }catch(error){
+   console.error("Entry product catalog error",error);
+   return NextResponse.json({source:"shopify-global-catalog",market:"lumina",luminaSource:"shopify",entry:true,groups:[],error:"Starter products are temporarily unavailable."},{status:200,headers:{"Cache-Control":"public, s-maxage=30, stale-while-revalidate=120"}});
+  }
+ }
 
  if(market==="ebay"){
   try{const result=await fetchEbay(query,country,priceIntent,page);return NextResponse.json({source:"ebay-marketplace",sources:["ebay-marketplace"],market:"ebay",query,filters:{price:priceIntent},products:result.products,pagination:result.pagination},{headers:{"Cache-Control":"s-maxage=30, stale-while-revalidate=120"}})}
