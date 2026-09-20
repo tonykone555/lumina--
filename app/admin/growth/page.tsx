@@ -51,6 +51,17 @@ export default async function GrowthAdminPage() {
       <Metric label="Revenue" value={money(totals.revenue)} sub={money(totals.spend)+" spend"}/>
       <Metric label="ROAS" value={roas==="—"?"—":roas+"×"} sub={totals.purchases+" purchases"}/>
     </section>
+    <section className="radarPanel">
+      <div className="panelHead radarHead"><div><span>DISCOVERX CRM</span><h2>Lead Board</h2><p>See the pipeline at a glance before opening the outreach inbox.</p></div><div className="radarStats"><b>{opportunities.length} live</b><b>{opportunities.filter((x:any)=>x.status==="ready").length} ready</b><b>{opportunities.filter((x:any)=>x.status==="replied").length} replied</b></div></div>
+      <div className="radarBoard">
+        <RadarColumn title="High-intent shoppers" owner="RADAR" items={opportunities.filter((x:any)=>x.kind==="intent").slice(0,12)}/>
+        <RadarColumn title="Micro-influencers" owner="RADAR" items={opportunities.filter((x:any)=>x.kind==="creator").slice(0,12)}/>
+        <RadarColumn title="UGC" owner="ARROW" items={opportunities.filter((x:any)=>x.kind==="ugc").slice(0,12)}/>
+        <RadarColumn title="Affiliates" owner="ARROW" items={opportunities.filter((x:any)=>x.kind==="affiliate").slice(0,12)}/>
+        <TrendColumn items={trends}/>
+        <GapColumn items={gaps}/>
+      </div>
+    </section>
     <GrowthInbox initialOpportunities={opportunities} initialActivities={activities}/>
     <div className="grid">
       <section className="panel wide"><div className="panelHead"><div><span>CREATIVE QUEUE</span><h2>Review before anything moves</h2></div><b>{creatives.filter((c:any)=>c.status==="review").length} waiting</b></div>
