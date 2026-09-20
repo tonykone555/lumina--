@@ -27,7 +27,7 @@ function shopperCountry(){
 function entryImageUrl(source:string){
  try{
   const url=new URL(source);
-  if(url.hostname==="cdn.shopify.com")url.searchParams.set("width","360");
+  if(url.hostname==="cdn.shopify.com")url.searchParams.set("width","640");
   return url.toString();
  }catch{return source}
 }
