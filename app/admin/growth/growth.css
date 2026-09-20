@@ -29,3 +29,9 @@
 
 
 .matchedProductInfo{min-width:0;flex:1}.productLinkStatus{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}.productLinkStatus span,.productLinkStatus a{font-size:8px;border-radius:999px;padding:4px 6px;text-decoration:none}.ynotLinkBadge{color:#bdf2ce;border:1px solid #355d46;background:#102016}.merchantOnlyBadge{color:#f0b7b7;border:1px solid #5a3939;background:#211313}.productLinkStatus a{color:#cbd5da;border:1px solid #313940;background:#111518}.productLinkStatus .merchantRef{color:#7f8a91;border-color:#2a3035;background:#0d1012}
+
+
+.intentContextCard{margin-top:8px;border:1px solid rgba(255,255,255,.07);background:linear-gradient(145deg,rgba(24,28,31,.78),rgba(12,15,17,.74));border-radius:15px;padding:13px}
+.intentContextCard blockquote{margin:10px 0 0;padding:11px 12px;border-left:2px solid #5a6a74;background:#0a0e10;border-radius:0 10px 10px 0;color:#d8e0e4;font-size:11px;line-height:1.5}
+.intentContextMeta{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.intentContextMeta span{font-size:8px;color:#b6c0c6;border:1px solid #30383d;background:#111518;border-radius:999px;padding:5px 7px}
+.intentContextCard>p{margin:10px 0 0;color:#8e999f;font-size:10px;line-height:1.5}

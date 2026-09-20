@@ -6,7 +6,8 @@ type Opportunity={
   id:string; external_key:string; kind:string; platform:string; handle?:string|null; display_name?:string|null;
   profile_url?:string|null; source_post_url?:string|null; niche?:string|null; country?:string|null;
   followers?:number|null; engagement?:number|null; intent_strength?:number|null; creator_fit?:number|null;
-  summary?:string|null; reason?:string|null; matched_product_ids?:string[]; matched_products?:any[];
+  summary?:string|null; reason?:string|null; source_quote?:string|null; budget_min?:number|null; budget_max?:number|null; budget_currency?:string|null;
+  intent_tags?:string[]; constraints?:Record<string,unknown>; personalization_context?:string|null; matched_product_ids?:string[]; matched_products?:any[];
   draft_message?:string|null; channel?:string|null; status:string; owner:string; outreach_approved?:boolean;
   contacted_at?:string|null; next_action?:string|null; updated_at?:string|null;
 };
@@ -96,6 +97,16 @@ export default function GrowthInbox({initialOpportunities,initialActivities}:{in
             <article className="detailCard"><span>WHY GROK PICKED THIS</span><p>{selected.reason||selected.summary||"No qualification note saved."}</p></article>
             <article className="detailCard"><span>NEXT ACTION</span><p>{selected.next_action||"Review the draft and approve when ready."}</p></article>
           </div>
+
+          {(selected.source_quote||selected.intent_tags?.length||selected.budget_max!=null||selected.personalization_context)&&<article className="intentContextCard">
+            <div className="sectionTitle"><span>BUYER / CREATOR CONTEXT</span><b>TAILORING INPUT</b></div>
+            {selected.source_quote&&<blockquote>{selected.source_quote}</blockquote>}
+            <div className="intentContextMeta">
+              {(selected.budget_min!=null||selected.budget_max!=null)&&<span>{selected.budget_currency||""} {selected.budget_min!=null?selected.budget_min:""}{selected.budget_min!=null&&selected.budget_max!=null?"–":""}{selected.budget_max!=null?selected.budget_max:""}</span>}
+              {selected.intent_tags?.map(tag=><span key={tag}>{tag}</span>)}
+            </div>
+            {selected.personalization_context&&<p>{selected.personalization_context}</p>}
+          </article>}
 
           <article className="draftCard">
             <div className="draftHead"><div><span>DRAFT RESPONSE</span><h4>{selected.channel||"Recommended channel not set"}</h4></div><button onClick={copyDraft} disabled={!selected.draft_message}>{copied?"Copied":"Copy"}</button></div>
