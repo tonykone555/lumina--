@@ -1,7 +1,7 @@
 "use client";
 import {useMemo,useState} from "react";
 
-type Product={id:string;title:string;brand?:string;price?:number|null;currency?:string;image?:string;images?:string[];url?:string;description?:string;category?:string};
+type Product={id:string;title:string;brand?:string;price?:number|null;currency?:string;image?:string;images?:string[];url?:string;description?:string;category?:string;content_score?:number;why?:string;signals?:Record<string,number|null>};
 
 const niches=["home","fitness","beauty","fashion","tech","pets"];
 const objectives=["organic","ugc","paid","launch","retargeting"];
@@ -42,19 +42,19 @@ export default function CampaignBuilder(){
   }
 
   return <section className="factoryPanel">
-    <div className="factoryHead"><div><span>CREATIVE FACTORY</span><h2>Launch a Grok campaign</h2><p>Pick a niche, select up to five real YNOT products, then branch them into prompt-pack jobs for Grok.</p></div><div className="factoryTotal"><b>{total}</b><small>planned variants</small></div></div>
+    <div className="factoryHead"><div><span>CREATIVE FACTORY</span><h2>Launch a Grok campaign</h2><p>YNOT ranks the candidates. You choose the five. Grok only creates the campaign after your selection.</p></div><div className="factoryTotal"><b>{total}</b><small>planned variants</small></div></div>
     <div className="factoryControls">
       <label>Niche<select value={niche} onChange={e=>setNiche(e.target.value)}>{niches.map(n=><option key={n}>{n}</option>)}</select></label>
       <label>Objective<select value={objective} onChange={e=>setObjective(e.target.value)}>{objectives.map(n=><option key={n}>{n}</option>)}</select></label>
       <label>Branches<input type="number" min={1} max={6} value={branches} onChange={e=>setBranches(Math.max(1,Math.min(6,Number(e.target.value)||1)))}/></label>
       <label>Variants<input type="number" min={1} max={4} value={variants} onChange={e=>setVariants(Math.max(1,Math.min(4,Number(e.target.value)||1)))}/></label>
-      <button onClick={findProducts} disabled={busy}>Find products</button>
+      <button onClick={findProducts} disabled={busy}>Rank products</button>
     </div>
     <div className="factoryProducts">{products.length?products.map(p=>{const id=String(p.id),on=selected.includes(id);return <button type="button" className={"factoryProduct "+(on?"selected":"")} key={id} onClick={()=>toggle(id)}>
       <div className="factoryProductImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}</div>
-      <div><strong>{p.title}</strong><small>{p.brand||"YNOT"} · {p.currency||"EUR"} {p.price??"—"}</small></div><i>{on?"✓":"+"}</i>
-    </button>}):<div className="factoryEmpty">Choose a niche and load products from the live catalogue.</div>}</div>
-    <div className="factoryLaunch"><div><strong>{selected.length}/5 products selected</strong><small>Image-first → video · Grok Imagine · 9:16 · approval gated</small></div><button onClick={start} disabled={busy||!selected.length}>{busy?"Working…":"Start campaign"}</button></div>
+      <div><strong>{p.title}</strong><small>{p.brand||"YNOT"} · {p.currency||"EUR"} {p.price??"—"}</small>{p.content_score!=null&&<span className="candidateScore">Content {p.content_score}</span>}{p.why&&<em className="candidateWhy">{p.why}</em>}</div><i>{on?"✓":"+"}</i>
+    </button>}):<div className="factoryEmpty">Choose a niche and load YNOT-ranked candidates. Nothing is auto-selected.</div>}</div>
+    <div className="factoryLaunch"><div><strong>{selected.length}/5 products selected</strong><small>Manual product choice · image-first → video · Grok Imagine · approval gated</small></div><button onClick={start} disabled={busy||!selected.length}>{busy?"Working…":"Start campaign"}</button></div>
     {message&&<div className="factoryMessage">{message}</div>}
   </section>
 }
