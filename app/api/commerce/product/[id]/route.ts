@@ -19,9 +19,10 @@ export async function GET(_req:NextRequest,{params}:{params:Promise<{id:string}>
       currency:String(product.currency||"USD"),
       image:product.image_url,
       images,
-      url:`/p/${encodeURIComponent(product.ynot_id)}`,
+      url:product.best_source_url||`/p/${encodeURIComponent(product.ynot_id)}`,
       tags:Array.isArray(product.intent_tags)?product.intent_tags:[],
       source:"shopify",
+      category:product.category,
       description:`${product.title} available through YNOT.`
     }
   },{
