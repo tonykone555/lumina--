@@ -323,6 +323,42 @@ function makeHandler() {
       );
 
       server.tool(
+        "get_pending_campaign_creatives",
+        "Get YNOT Creative Factory branches that were launched from the Growth campaign UI and still need Grok to create the full prompt pack.",
+        {limit:z.number().int().min(1).max(100).default(50)},
+        async ({limit}) => text({
+          creatives: await dbRows(`ynot_ad_creatives?status=eq.draft&template_key=eq.grok-campaign&payload->>prompt_status=eq.needs_grok&select=id,source_product_ids,headline,aspect_ratio,payload,created_at&order=created_at.asc&limit=${limit}`)
+        })
+      );
+
+      server.tool(
+        "complete_campaign_prompt_pack",
+        "Write Grok's production prompt pack back onto a Creative Factory branch. This moves the branch from draft to human review; it does not generate media or publish.",
+        {
+          creative_id:z.string().uuid(),
+          hook:z.string().min(2).max(500),
+          headline:z.string().min(2).max(300),
+          audience:z.string().min(2).max(1000),
+          avatar_type:z.string().min(2).max(300),
+          visual_style:z.string().min(2).max(1000),
+          image_prompt:z.string().min(20).max(12000),
+          video_prompt:z.string().min(20).max(12000),
+          script:z.string().min(2).max(5000),
+          caption:z.string().max(3000).default(""),
+          cta:z.string().max(100).default("View on YNOT"),
+          platform_notes:z.record(z.unknown()).optional()
+        },
+        async (input) => {
+          const existing=await dbRows(`ynot_ad_creatives?id=eq.${encodeURIComponent(input.creative_id)}&select=id,payload,status,template_key&limit=1`);
+          const row=existing[0];
+          if(!row||row.template_key!=="grok-campaign") return text({saved:false,error:"CAMPAIGN_CREATIVE_NOT_FOUND"});
+          const payload={...(row.payload||{}),audience:input.audience,avatar_type:input.avatar_type,visual_style:input.visual_style,image_prompt:input.image_prompt,video_prompt:input.video_prompt,caption:input.caption,platform_notes:input.platform_notes||{},prompt_status:"ready_for_review",prompt_completed_by:"grok"};
+          const rows=await dbRows(`ynot_ad_creatives?id=eq.${encodeURIComponent(input.creative_id)}`,{method:"PATCH",body:JSON.stringify({hook:input.hook,headline:input.headline,cta:input.cta,voice_script:input.script,payload,status:"review",updated_at:new Date().toISOString()})});
+          return text({saved:true,approval_required:true,creative:rows[0]||null});
+        }
+      );
+
+      server.tool(
         "search_catalogue",
         "Search YNOT's live commerce catalogue. For outreach and customer-facing recommendations, use the returned YNOT product URL from the default Shopify/YNOT canonical path. Never send raw merchant/Shopify URLs when a YNOT URL is available.",
         {
