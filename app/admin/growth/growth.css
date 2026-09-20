@@ -62,3 +62,8 @@
 .factorySearch button{border:1px solid #dfe8ec;background:#eaf0f2;color:#0b0d0e;border-radius:11px;padding:11px 15px;font-weight:750;font-size:11px;cursor:pointer}
 .factoryProducts{max-height:560px;overflow:auto;padding-right:2px;scrollbar-width:thin}
 @media(max-width:700px){.factorySearch{grid-template-columns:1fr}.factorySearch button{width:100%}}
+
+.promptWaiting{margin-top:8px;border:1px solid #5b4b2d;background:#1a160d;border-radius:10px;padding:9px 10px}
+.promptWaiting b{display:block;font-size:9px;color:#ffe2a1}
+.promptWaiting span{display:block;margin-top:4px;font-size:8px;line-height:1.45;color:#a99670}
+.promptMissing{margin-top:6px;border:1px dashed #343a3f;border-radius:9px;padding:7px 9px;color:#68737a;font-size:8px}
