@@ -308,19 +308,39 @@ export default function LuminaWorld(){
  useEffect(()=>{
   const params=new URLSearchParams(window.location.search),deepId=params.get("product");
   if(!deepId)return;
-  let cancelled=false;
+  let cancelled=false,currentProduct:Product|null=null;
+  const loadRelated=async(product:Product,country:string)=>{
+   const relatedQuery=[product.title,...(product.tags||[]).slice(0,4)].filter(Boolean).join(" ");
+   const relatedParams=new URLSearchParams({q:relatedQuery,market:"lumina",page:"0",country,source:"shopify"});
+   try{
+    const response=await fetch(`/api/catalog?${relatedParams}`,{cache:"no-store"});
+    const data:CatalogPage=await response.json();
+    if(cancelled)return;
+    const incoming=dedupe((data.products||[]).map(p=>({...p,title:cleanTitle(p.title)})));
+    setProducts(layoutProducts(dedupe([product,...incoming]),Number.POSITIVE_INFINITY,false));
+    setSubmitted(product.title);
+    setFocus("Similar");
+   }catch{}
+  };
   void fetch(`/api/commerce/product/${encodeURIComponent(deepId)}`,{cache:"no-store"})
    .then(async response=>{if(!response.ok)throw new Error("PRODUCT_NOT_FOUND");return response.json()})
    .then(data=>{
     if(cancelled||!data?.product)return;
     const product=data.product as Product;
+    currentProduct=product;
+    const category=params.get("category")||String((product as Product&{category?:string}).category||"");
+    if(category&&SCENES[category])setCategoryKey(category);
     setHovered(product);
     setSelected(product);
-    setSuggestionsOpen(false);
+    setSuggestionsOpen(true);
     setCheckoutError("");
-  })
+    const country=(params.get("country")||shopperCountry()).toUpperCase().slice(0,2);
+    void loadRelated(product,country);
+   })
    .catch(()=>{});
-  return()=>{cancelled=true};
+  const onRegion=()=>{if(currentProduct)void loadRelated(currentProduct,shopperCountry())};
+  window.addEventListener("ynot:region-changed",onRegion);
+  return()=>{cancelled=true;window.removeEventListener("ynot:region-changed",onRegion)};
  },[]);
 
  useEffect(()=>{if(!submitted||market!=="lumina"||luminaSource!=="shopify"||products.length>=SHOPIFY_WARM_TARGET||loadingRef.current)return;const needInitialRows=products.length<INITIAL_PRODUCT_TARGET;const canPage=Boolean(shopifyCursorRef.current);const t=window.setTimeout(()=>{if(loadingRef.current)return;const page=waveRef.current+1;waveRef.current=page;const cue=canPage?shopifyPageDirectionRef.current:DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length];void fetchProducts(submitted,cue,true,"lumina",page,"shopify")},needInitialRows?70:180);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length,shopifyFetchSerial,loading,fetchProducts]); // eslint-disable-line react-hooks/exhaustive-deps
