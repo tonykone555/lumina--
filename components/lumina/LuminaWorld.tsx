@@ -317,7 +317,7 @@ export default function LuminaWorld(){
     const response=await fetch(`/api/catalog?${relatedParams}`,{cache:"no-store"});
     const data:CatalogPage=await response.json();
     if(cancelled)return;
-    const incoming=dedupe((data.products||[]).map(p=>({...p,title:cleanTitle(p.title)}))).slice(0,72);
+    const incoming=dedupe((data.products||[]).map(p=>({...p,title:cleanTitle(p.title)}))).slice(0,140);
     setProducts(layoutProducts(dedupe([product,...incoming]),Number.POSITIVE_INFINITY,false));
     setSubmitted(product.title);
     setFocus("Similar");
