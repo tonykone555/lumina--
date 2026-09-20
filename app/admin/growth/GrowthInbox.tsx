@@ -20,6 +20,7 @@ export default function GrowthInbox({initialOpportunities,initialActivities}:{in
   const [activities,setActivities]=useState(initialActivities);
   const [selectedId,setSelectedId]=useState(initialOpportunities[0]?.id||"");
   const [filter,setFilter]=useState<(typeof filters)[number]>("all");
+  const [viewMode,setViewMode]=useState<"inbox"|"list">("inbox");
   const [busy,setBusy]=useState(false);
   const [copied,setCopied]=useState(false);
 
@@ -59,11 +60,28 @@ export default function GrowthInbox({initialOpportunities,initialActivities}:{in
       <div className="inboxCounts"><b>{items.filter(x=>x.status==="ready").length} ready</b><b>{items.filter(x=>x.outreach_approved&&x.status==="ready").length} approved</b><b>{items.filter(x=>x.status==="contacted").length} sent</b></div>
     </div>
 
-    <div className="inboxFilters">
-      {filters.map(f=><button key={f} className={filter===f?"active":""} onClick={()=>setFilter(f)}>{f}</button>)}
+    <div className="inboxToolbar">
+      <div className="inboxViewToggle">
+        <button className={viewMode==="inbox"?"active":""} onClick={()=>setViewMode("inbox")}>Inbox</button>
+        <button className={viewMode==="list"?"active":""} onClick={()=>setViewMode("list")}>Lead list</button>
+      </div>
+      <div className="inboxFilters">
+        {filters.map(f=><button key={f} className={filter===f?"active":""} onClick={()=>setFilter(f)}>{f}</button>)}
+      </div>
     </div>
 
-    <div className="inboxLayout">
+    {viewMode==="list"?<div className="leadDirectory">
+      <div className="leadDirectoryHead"><span>LEAD</span><span>TYPE</span><span>SOURCE</span><span>SCORE</span><span>PRODUCTS</span><span>OWNER</span><span>STATUS</span></div>
+      {visible.length?visible.map(x=><button key={x.id} className="leadDirectoryRow" onClick={()=>{setSelectedId(x.id);setViewMode("inbox")}}>
+        <div className="directoryLead"><div className="leadAvatar">{(x.display_name||x.handle||x.platform||"?").slice(0,1).toUpperCase()}</div><div><strong>{x.display_name||x.handle||"Unnamed lead"}</strong><small>{x.handle?"@"+String(x.handle).replace(/^@/,""):x.niche||"—"}</small></div></div>
+        <span>{x.kind}</span>
+        <span>{x.platform}</span>
+        <span>{x.intent_strength??x.creator_fit??"—"}</span>
+        <span>{x.matched_product_ids?.length||0}</span>
+        <span>{x.owner}</span>
+        <span className={"pipeline "+x.status}>{x.status}</span>
+      </button>):<div className="empty">No leads in this view.</div>}
+    </div>:<div className="inboxLayout">
       <aside className="inboxList">
         {visible.length?visible.map(x=><button key={x.id} className={"leadRow "+(selected?.id===x.id?"selected":"")} onClick={()=>setSelectedId(x.id)}>
           <div className="leadAvatar">{(x.display_name||x.handle||x.platform||"?").slice(0,1).toUpperCase()}</div>
@@ -157,6 +175,6 @@ export default function GrowthInbox({initialOpportunities,initialActivities}:{in
           </article>
         </>:<div className="empty">Select a lead.</div>}
       </section>
-    </div>
+    </div>}
   </section>;
 }
