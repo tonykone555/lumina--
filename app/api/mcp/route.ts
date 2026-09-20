@@ -90,6 +90,111 @@ function normalizeGrowthProducts(products: unknown, defaultCountry = "FR") {
   });
 }
 
+function words(value: unknown) {
+  return String(value || "").toLowerCase().replace(/[^a-z0-9€$£]+/g, " ").split(/\s+/).filter((w) => w.length > 2);
+}
+
+function scoreGrowthProduct(product: any, opportunity: any) {
+  const haystack = words([
+    product.title, product.original_title, product.brand, product.source_brand, product.category,
+    ...(Array.isArray(product.intent_tags) ? product.intent_tags : []),
+  ].join(" "));
+  const hay = new Set(haystack);
+  const wanted = Array.from(new Set(words([
+    opportunity.niche, opportunity.source_quote, opportunity.summary, opportunity.reason,
+    opportunity.personalization_context, ...(Array.isArray(opportunity.intent_tags) ? opportunity.intent_tags : []),
+  ].join(" ")))).slice(0, 80);
+  const lexicalHits = wanted.filter((w) => hay.has(w)).length;
+  const semanticScore = Math.min(40, lexicalHits * 6);
+  const categoryWanted = words(opportunity.niche || "");
+  const categoryHit = categoryWanted.some((w) => hay.has(w)) ? 24 : 0;
+
+  const price = Number(product.ynot_price || 0);
+  const budgetMin = Number(opportunity.budget_min || 0);
+  const budgetMax = Number(opportunity.budget_max || 0);
+  const tags = new Set((opportunity.intent_tags || []).map((x: any) => String(x).toLowerCase()));
+  const hardCap = tags.has("hard cap") || tags.has("hard_cap") || tags.has("strict budget");
+  if (hardCap && budgetMax > 0 && price > budgetMax) return { rejected: true, score: 0, reasons: [], warnings: ["above hard budget cap"] };
+
+  let budgetScore = 10;
+  const warnings: string[] = [];
+  if (budgetMax > 0) {
+    if (price <= budgetMax && (!budgetMin || price >= budgetMin)) budgetScore = 24;
+    else if (price < budgetMin) budgetScore = 18;
+    else if (price <= budgetMax * 1.15) { budgetScore = 12; warnings.push("stretch: slightly above budget"); }
+    else { budgetScore = 2; warnings.push("well above stated budget"); }
+  }
+
+  const reliability = Math.max(0, Math.min(10, Number(product.reliability_score || 0) / 10));
+  const presentation = (product.image_url ? 4 : 0) + (product.ynot_id ? 4 : 0);
+  const score = Math.round(Math.min(100, semanticScore + categoryHit + budgetScore + reliability + presentation));
+  const reasons = [];
+  if (categoryHit) reasons.push("category match");
+  if (lexicalHits) reasons.push(`${lexicalHits} intent/detail matches`);
+  if (budgetMax > 0 && price <= budgetMax) reasons.push("within stated budget");
+  if (Number(product.reliability_score || 0) >= 70) reasons.push("strong supplier reliability");
+  return { rejected: false, score, reasons, warnings };
+}
+
+async function matchGrowthProducts(externalKey: string, requestedLimit: number) {
+  const rows = await dbRows(`ynot_growth_opportunities?external_key=eq.${encodeURIComponent(externalKey)}&select=*&limit=1`);
+  const opportunity = rows?.[0];
+  if (!opportunity) return { error: "OPPORTUNITY_NOT_FOUND", external_key: externalKey, products: [] };
+
+  const country = String(opportunity.country || "FR").toUpperCase();
+  const fields = "ynot_id,country,category,title,original_title,brand,source_brand,image_url,image_urls,ynot_price,currency,intent_tags,price_position,reliability_score,routing_score,supplier_offer_count";
+  let candidates = await dbRows(`ynot_catalog_products?active=eq.true&country=eq.${encodeURIComponent(country)}&select=${fields}&limit=5000`);
+  if (!candidates?.length) candidates = await dbRows(`ynot_catalog_products?active=eq.true&select=${fields}&limit=5000`);
+
+  const scored = (candidates || []).map((p: any) => {
+    const evaluation = scoreGrowthProduct(p, opportunity);
+    const ynotUrl = ynotProductUrl(p.ynot_id, p.country || country, p.category || opportunity.niche || "other",);
+    return {
+      id: p.ynot_id,
+      ynot_id: p.ynot_id,
+      title: p.title,
+      brand: p.source_brand || p.brand || "YNOT",
+      category: p.category,
+      country: p.country || country,
+      price: p.ynot_price,
+      currency: p.currency,
+      image: p.image_url,
+      images: p.image_urls,
+      ynot_url: ynotUrl,
+      url: ynotUrl,
+      match_score: evaluation.score,
+      match_reasons: evaluation.reasons,
+      constraint_warnings: evaluation.warnings,
+      reliability_score: p.reliability_score,
+      routing_score: p.routing_score,
+      supplier_offer_count: p.supplier_offer_count,
+      rejected: evaluation.rejected,
+    };
+  }).filter((p: any) => !p.rejected && p.match_score >= 25).sort((a: any,b: any)=>b.match_score-a.match_score);
+
+  const limit = Math.max(2, Math.min(5, requestedLimit));
+  const picked: any[] = [];
+  const best = scored[0];
+  if (best) picked.push({...best, match_role: "best", selected_for_outreach: true});
+
+  const budgetMax = Number(opportunity.budget_max || 0);
+  const value = scored
+    .filter((p: any) => p.id !== best?.id && Number(p.price || 0) > 0 && (!budgetMax || Number(p.price) <= budgetMax))
+    .sort((a: any,b: any)=>Number(a.price)-Number(b.price))[0];
+  if (value && picked.length < limit) picked.push({...value, match_role: "value", selected_for_outreach: true});
+
+  const stretch = budgetMax > 0 ? scored
+    .filter((p: any) => !picked.some((x: any)=>x.id===p.id) && Number(p.price||0) > budgetMax && Number(p.price||0) <= budgetMax*1.2)
+    .sort((a: any,b: any)=>b.match_score-a.match_score)[0] : null;
+  if (stretch && picked.length < limit) picked.push({...stretch, match_role: "stretch", selected_for_outreach: false});
+
+  for (const p of scored) {
+    if (picked.length >= limit) break;
+    if (!picked.some((x: any)=>x.id===p.id)) picked.push({...p, match_role: picked.length===0?"best":"alternative", selected_for_outreach: picked.length < 3});
+  }
+  return { opportunity, products: picked, scanned: candidates?.length || 0 };
+}
+
 async function catalog(query: string, country: string, source: string, limit: number) {
   const base = appUrl();
   if (!base) throw new Error("YNOT_APP_URL_NOT_CONFIGURED");
@@ -570,6 +675,49 @@ function makeHandler() {
           if (owner) path += `&owner=eq.${owner}`;
           path += `&limit=${limit}`;
           return text({ opportunities: await dbRows(path) });
+        }
+      );
+
+      server.tool(
+        "match_growth_products",
+        "Search the full canonical YNOT catalogue for one Growth opportunity, hard-filter stated constraints, rank 2-5 products, attach YNOT popup-card links and save roles such as best, value and stretch. This invalidates any old draft so ARROW can rewrite it around the new matches.",
+        {
+          external_key: z.string().min(3).max(500),
+          limit: z.number().int().min(2).max(5).default(3),
+          save: z.boolean().default(true),
+        },
+        async ({ external_key, limit, save }) => {
+          const result: any = await matchGrowthProducts(external_key, limit);
+          if (result.error) return text(result);
+          if (!save) return text({ saved: false, scanned: result.scanned, opportunity: result.opportunity, products: result.products });
+
+          const matchedIds = result.products.map((p: any) => p.id);
+          const updated = await dbRows(`ynot_growth_opportunities?external_key=eq.${encodeURIComponent(external_key)}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              matched_product_ids: matchedIds,
+              matched_products: result.products,
+              owner: "STORE",
+              status: "qualified",
+              outreach_approved: false,
+              draft_message: null,
+              next_action: "ARROW: write a fresh tailored response using the selected YNOT product matches and the saved source context.",
+              updated_at: new Date().toISOString(),
+            }),
+          });
+          const opportunity = updated?.[0] || result.opportunity;
+          if (opportunity?.id) {
+            await dbRows("ynot_growth_activity", {
+              method: "POST",
+              body: JSON.stringify({
+                opportunity_id: opportunity.id,
+                event_type: "products_rematched",
+                actor: "STORE",
+                detail: { product_ids: matchedIds, scanned: result.scanned, roles: result.products.map((p: any)=>({id:p.id,role:p.match_role,score:p.match_score})) },
+              }),
+            });
+          }
+          return text({ saved: true, scanned: result.scanned, opportunity, products: result.products });
         }
       );
 
