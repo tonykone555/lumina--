@@ -18,13 +18,13 @@ export default async function ApprovalQueue(){
  const assets=await rows("ynot_generated_assets?select=*&order=created_at.desc&limit=120");
  const reviewAssets=assets.filter((a:any)=>!a.review_status||["pending","needs_changes"].includes(String(a.review_status)));
  return <main className="growth"><div className="ambient a"/><div className="ambient b"/>
-  <header><div><div className="eyebrow">YNOT / GROWTH</div><h1>Approval Queue</h1><p>Prompt packs, stills and videos stay gated here before generation, regeneration or distribution.</p></div><div className="live"><i/> Human gated</div></header>
-  <nav className="growthTabs"><Link href="/admin/growth">Overview</Link><Link href="/admin/growth/content">Content</Link><Link className="active" href="/admin/growth/queue">Approval Queue</Link><Link href="/admin/growth/threads">Threads</Link></nav>
+  <header><div><div className="eyebrow">YNOT / GROWTH</div><h1>Prompt Packs & Approval</h1><p>Every campaign branch appears here immediately. You can see what is waiting for Grok, review completed prompt packs, then approve stills and videos.</p></div><div className="live"><i/> Human gated</div></header>
+  <nav className="growthTabs"><Link href="/admin/growth">Overview</Link><Link href="/admin/growth/content">Content</Link><Link className="active" href="/admin/growth/queue">Prompt Packs</Link><Link href="/admin/growth/threads">Threads</Link></nav>
   <div className="queueLayout">
    <section className="panel wide"><div className="panelHead"><div><span>CREATIVE PROMPTS</span><h2>{creatives.length} campaign branches</h2></div></div>
     <div className="rows">{creatives.length?creatives.map((c:any)=>{const p=c.payload||{};return <article className="queueCreative" key={c.id}>
       <div className="queueThumb">{p.product?.image?<img src={p.product.image} alt=""/>:c.thumbnail_url?<img src={c.thumbnail_url} alt=""/>:<span>Y</span>}</div>
-      <div className="queueMain"><div className="queueTitle"><strong>{c.headline||c.hook||p.product?.title||"Creative branch"}</strong><em className={"status "+c.status}>{c.status}</em></div>
+      <div className="queueMain"><div className="queueTitle"><strong>{c.headline||c.hook||p.product?.title||"Creative branch"}</strong><em className={"status "+c.status}>{p.prompt_status==="needs_grok"?"WAITING FOR GROK":c.status}</em></div>
       <small>{p.branch_type?String(p.branch_type).replace(/_/g," "):"branch"}{p.variant_label?` · Variant ${p.variant_label}`:""}{p.prompt_status?` · ${String(p.prompt_status).replace(/_/g," ")}`:""}</small>
       {p.image_prompt&&<details><summary>Image prompt</summary><p>{p.image_prompt}</p></details>}
       {p.video_prompt&&<details><summary>Video prompt</summary><p>{p.video_prompt}</p></details>}
