@@ -112,7 +112,7 @@ function entryProductScore(product:Product,intent:EntryProductIntent){
  const noise=/\b(case|cover|replacement|spare|sticker|poster|print|template|digital download|custom photo)\b/i.test(product.title||"")?-12:0;
  return matches+trustedBrand+quality+packshot+lifestyle+completeness+noise;
 }
-function singularEntryProduct(product:Product){return !/\b(set of|\d+[- ]?piece|piece set|bundle|multipack|multi-pack|pair of|collection|assortment|starter kit|gift set)\b/i.test(product.title||"")}
+function singularEntryProduct(product:Product){return !/\b(set|set of|\d+[- ]?piece|piece set|bundle|multipack|multi-pack|\d+[- ]?pack|pair of|collection|assortment|starter kit|gift set)\b/i.test(product.title||"")}
 async function loadEntryProductGroups(country:string){
  const cached=entryProductCache.get(country);
  if(cached&&cached.expiresAt>Date.now())return cached.groups;
