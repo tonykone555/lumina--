@@ -1,5 +1,7 @@
 /* Final mobile-only product UX pass. Desktop remains unchanged. */
 @media (max-width:899px){
+  /* Keep only the floating close control on phones; the in-card X duplicated it. */
+  .lv4-detail>.lv4-close{display:none!important}
   /* Use the main product image as the gallery. Hide thumbnail rails entirely on phones. */
   .lv4-detail .ynot-loaded-gallery,
   .lv4-detail .lv4-gallery,
