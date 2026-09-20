@@ -267,7 +267,7 @@ function makeHandler() {
           triggers: {
             manual_campaign: "When the user says start/run/create a campaign for a niche, begin this workflow.",
             product_campaign: "When the user names or selects products, use those exact products instead of discovering replacements.",
-            niche_campaign: "When only a niche is supplied, call get_products_to_promote and default to 5 real products unless the user specifies another count.",
+            niche_campaign: "When only a niche is supplied, do not independently choose the campaign products. Ask YNOT for ranked candidates and use only products explicitly selected in the YNOT Growth UI or explicitly named by the user.",
             approved_creative: "When a creative becomes approved in YNOT, enhance the production prompt and create a generation job.",
             generated_asset: "When generated assets are available, inspect them, record a structured review, and request regeneration only when needed.",
             posting: "Do not publish or spend automatically unless YNOT explicitly exposes an approved posting action and the user/campaign has enabled it."
@@ -275,8 +275,8 @@ function makeHandler() {
           campaign_flow: [
             "1. Read this brief.",
             "2. Resolve the niche, objective, platforms, language and requested product count.",
-            "3. Call get_products_to_promote for niche discovery, or get_product/get_product_images for user-selected products.",
-            "4. Use 5 products by default for a niche campaign.",
+            "3. For niche campaigns, treat YNOT-ranked/manual selection as authoritative. Grok must not invent a better five. Use get_products_to_promote only as research context, not as final campaign selection.",
+            "4. Use the exact selected product IDs from YNOT or the exact products named by the user. If no products have been selected, stop at candidate research and do not create campaign creatives.",
             "5. For each product, create intentionally different creative branches such as UGC testimonial, problem/solution, aesthetic showcase, trend/native-social, comparison/reviewer and direct-response.",
             "6. Before creating anything, call get_previous_creatives and get_creative_performance where useful so branches are not near-duplicates.",
             "7. Build a high-detail prompt pack for every branch: audience, hook, scene, avatar/persona, image prompt, video prompt, script/voice, camera behavior, pacing, CTA, platform notes and product-fidelity constraints.",
@@ -288,6 +288,12 @@ function makeHandler() {
             "13. If an asset needs changes, call request_regeneration with a materially improved prompt.",
             "14. Keep all outputs, prompts, lineage and status in YNOT so the Growth dashboard remains the source of truth."
           ],
+          product_selection_policy: {
+            owner: "YNOT",
+            grok_role: "creative director only",
+            rule: "Grok must not choose final campaign products from popularity/search intuition. YNOT ranks candidates from product-score signals and the human selects the final set.",
+            ranking_signals: ["visual_distinctiveness","image_quality","image_variety","offer_clarity","niche_relevance","ynot_signal","social_proof","metadata_quality"]
+          },
           default_campaign: {
             products: 5,
             branches_per_product: 5,
