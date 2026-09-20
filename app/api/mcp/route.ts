@@ -393,6 +393,185 @@ function makeHandler() {
 
       server.tool("request_regeneration","Create a new queued generation job from a reviewed asset with an improved prompt. Human creative approval remains required.",{asset_id:z.string().uuid(),improved_prompt:z.string().min(20).max(12000),provider:z.string().max(80).default("grok-imagine")},async(input)=>{const assets=await dbRows(`ynot_generated_assets?id=eq.${input.asset_id}&select=creative_id,generation_job_id&limit=1`);if(!assets[0])return text({created:false,error:"ASSET_NOT_FOUND"});const rows=await dbRows("ynot_generation_jobs",{method:"POST",body:JSON.stringify({creative_id:assets[0].creative_id,provider:input.provider,status:"queued",enhanced_prompt:input.improved_prompt,metadata:{origin:"grok-regeneration",source_asset_id:input.asset_id,approval_required:true}})});return text({created:true,generation_started:false,job:rows[0]||null})});
 
+
+      server.tool(
+        "save_growth_opportunity",
+        "Create or update a qualified YNOT Growth opportunity discovered from X, TikTok, Threads, Reddit, YouTube or the web. This writes to the private Growth CRM only; it does not contact anyone.",
+        {
+          external_key: z.string().min(3).max(500),
+          kind: z.enum(["intent","creator","ugc","affiliate"]),
+          platform: z.string().min(1).max(40).default("web"),
+          handle: z.string().max(200).optional(),
+          display_name: z.string().max(300).optional(),
+          profile_url: z.string().url().optional(),
+          source_post_url: z.string().url().optional(),
+          niche: z.string().max(200).optional(),
+          country: z.string().max(8).optional(),
+          followers: z.number().int().min(0).optional(),
+          engagement: z.number().min(0).optional(),
+          intent_strength: z.number().int().min(0).max(100).optional(),
+          creator_fit: z.number().int().min(0).max(100).optional(),
+          summary: z.string().max(3000).optional(),
+          reason: z.string().max(3000).optional(),
+          matched_product_ids: z.array(z.string().max(300)).max(20).default([]),
+          matched_products: z.array(z.record(z.unknown())).max(20).default([]),
+          draft_message: z.string().max(5000).optional(),
+          channel: z.string().max(60).optional(),
+          status: z.enum(["new","qualified","ready","contacted","replied","won","lost","dismissed"]).default("new"),
+          owner: z.enum(["RADAR","STORE","ARROW"]).default("RADAR"),
+          next_action: z.string().max(1000).optional(),
+          metadata: z.record(z.unknown()).optional(),
+        },
+        async (input) => {
+          const payload = {
+            ...input,
+            handle: input.handle || null,
+            display_name: input.display_name || null,
+            profile_url: input.profile_url || null,
+            source_post_url: input.source_post_url || null,
+            niche: input.niche || null,
+            country: input.country || null,
+            followers: input.followers ?? null,
+            engagement: input.engagement ?? null,
+            intent_strength: input.intent_strength ?? null,
+            creator_fit: input.creator_fit ?? null,
+            summary: input.summary || null,
+            reason: input.reason || null,
+            draft_message: input.draft_message || null,
+            channel: input.channel || null,
+            next_action: input.next_action || null,
+            metadata: {...(input.metadata || {}), origin: "ynot-mcp"},
+            outreach_approved: false,
+            updated_at: new Date().toISOString(),
+          };
+          const rows = await dbRows("ynot_growth_opportunities?on_conflict=external_key", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+            body: JSON.stringify(payload),
+          });
+          const opportunity = rows[0] || null;
+          if (opportunity?.id) {
+            await dbRows("ynot_growth_activity", {
+              method: "POST",
+              body: JSON.stringify({
+                opportunity_id: opportunity.id,
+                event_type: "upserted",
+                actor: "RADAR",
+                detail: { kind: input.kind, platform: input.platform, origin: "ynot-mcp" },
+              }),
+            });
+          }
+          return text({ saved: true, contact_sent: false, approval_required: true, opportunity });
+        }
+      );
+
+      server.tool(
+        "update_growth_opportunity",
+        "Update qualification, product matches, draft outreach, ownership or pipeline status for an existing Growth opportunity. This cannot approve or send outreach.",
+        {
+          external_key: z.string().min(3).max(500),
+          status: z.enum(["new","qualified","ready","contacted","replied","won","lost","dismissed"]).optional(),
+          owner: z.enum(["RADAR","STORE","ARROW"]).optional(),
+          matched_product_ids: z.array(z.string().max(300)).max(20).optional(),
+          matched_products: z.array(z.record(z.unknown())).max(20).optional(),
+          draft_message: z.string().max(5000).optional(),
+          channel: z.string().max(60).optional(),
+          next_action: z.string().max(1000).optional(),
+          intent_strength: z.number().int().min(0).max(100).optional(),
+          creator_fit: z.number().int().min(0).max(100).optional(),
+          reason: z.string().max(3000).optional(),
+        },
+        async ({ external_key, ...patch }) => {
+          const clean = Object.fromEntries(Object.entries(patch).filter(([,value]) => value !== undefined));
+          const rows = await dbRows(`ynot_growth_opportunities?external_key=eq.${encodeURIComponent(external_key)}`, {
+            method: "PATCH",
+            body: JSON.stringify({...clean, updated_at: new Date().toISOString()}),
+          });
+          const opportunity = rows[0] || null;
+          if (opportunity?.id) {
+            await dbRows("ynot_growth_activity", {
+              method: "POST",
+              body: JSON.stringify({
+                opportunity_id: opportunity.id,
+                event_type: "updated",
+                actor: clean.owner || "RADAR",
+                detail: { fields: Object.keys(clean), origin: "ynot-mcp" },
+              }),
+            });
+          }
+          return text({ updated: Boolean(opportunity), contact_sent: false, approval_required: true, opportunity });
+        }
+      );
+
+      server.tool(
+        "get_growth_queue",
+        "Read the private YNOT Growth opportunity queue. Use it to avoid duplicates and continue work already discovered by RADAR, STORE or ARROW.",
+        {
+          kind: z.enum(["intent","creator","ugc","affiliate"]).optional(),
+          status: z.enum(["new","qualified","ready","contacted","replied","won","lost","dismissed"]).optional(),
+          owner: z.enum(["RADAR","STORE","ARROW"]).optional(),
+          limit: z.number().int().min(1).max(100).default(30),
+        },
+        async ({ kind, status, owner, limit }) => {
+          let path = "ynot_growth_opportunities?select=*&order=updated_at.desc";
+          if (kind) path += `&kind=eq.${kind}`;
+          if (status) path += `&status=eq.${status}`;
+          if (owner) path += `&owner=eq.${owner}`;
+          path += `&limit=${limit}`;
+          return text({ opportunities: await dbRows(path) });
+        }
+      );
+
+      server.tool(
+        "save_growth_trend",
+        "Create or update a YNOT product/category trend with evidence and catalogue matches. This is research storage only.",
+        {
+          external_key: z.string().min(3).max(500),
+          name: z.string().min(2).max(300),
+          platform: z.string().max(80).optional(),
+          niche: z.string().max(200).optional(),
+          audience: z.string().max(1000).optional(),
+          lifecycle: z.enum(["early","growing","saturated","declining"]).optional(),
+          velocity_score: z.number().int().min(0).max(100).optional(),
+          evidence: z.array(z.record(z.unknown())).max(50).default([]),
+          matched_product_ids: z.array(z.string().max(300)).max(30).default([]),
+          matched_products: z.array(z.record(z.unknown())).max(30).default([]),
+          recommendation: z.string().max(3000).optional(),
+          metadata: z.record(z.unknown()).optional(),
+        },
+        async (input) => {
+          const rows = await dbRows("ynot_growth_trends?on_conflict=external_key", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+            body: JSON.stringify({...input, metadata: {...(input.metadata || {}), origin: "ynot-mcp"}, updated_at: new Date().toISOString()}),
+          });
+          return text({ saved: true, trend: rows[0] || null });
+        }
+      );
+
+      server.tool(
+        "save_catalogue_gap",
+        "Save a demand-backed catalogue gap for STORE to research or source. This does not purchase inventory or contact suppliers.",
+        {
+          external_key: z.string().min(3).max(500),
+          niche: z.string().min(2).max(300),
+          demand_signal: z.string().max(3000).optional(),
+          reason: z.string().max(3000).optional(),
+          priority_score: z.number().int().min(0).max(100).optional(),
+          source_refs: z.array(z.record(z.unknown())).max(50).default([]),
+          metadata: z.record(z.unknown()).optional(),
+        },
+        async (input) => {
+          const rows = await dbRows("ynot_growth_catalog_gaps?on_conflict=external_key", {
+            method: "POST",
+            headers: { Prefer: "resolution=merge-duplicates,return=representation" },
+            body: JSON.stringify({...input, owner: "STORE", metadata: {...(input.metadata || {}), origin: "ynot-mcp"}, updated_at: new Date().toISOString()}),
+          });
+          return text({ saved: true, gap: rows[0] || null });
+        }
+      );
+
+
       server.tool(
         "threads_get_profile",
         "Read the connected YNOT Threads profile. No posting or modification occurs.",
