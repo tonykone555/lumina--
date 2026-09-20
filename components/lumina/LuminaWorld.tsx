@@ -158,6 +158,16 @@ export default function LuminaWorld(){
  const scene=SCENES[categoryKey]||SCENES.retail;
  useEffect(()=>{let alive=true;const term=(submitted||scene.query).trim();setBackground("");setBackgroundCredit(null);const timer=window.setTimeout(()=>fetch(`/api/background?q=${encodeURIComponent(term)}&market=${market}`).then(r=>r.json()).then(data=>{if(alive&&data.image){setBackground(data.image);setBackgroundCredit(data.credit||null)}}).catch(()=>{}),250);return()=>{alive=false;window.clearTimeout(timer)}},[submitted,scene.query,market]);
  useEffect(()=>{const refresh=()=>{try{const saved=JSON.parse(localStorage.getItem("ynot-saved-items")||"[]") as Product[];setLiked(new Set(Array.isArray(saved)?saved.map(item=>String(item.id)):[]))}catch{setLiked(new Set())}};refresh();window.addEventListener("ynot:saves-changed",refresh);return()=>window.removeEventListener("ynot:saves-changed",refresh)},[]);
+ useEffect(()=>{
+  const openEntryProduct=(event:Event)=>{
+   const product=(event as CustomEvent<{product?:Product}>).detail?.product;
+   if(!product?.id||!product.image)return;
+   setHovered(product);
+   openProduct(product);
+  };
+  window.addEventListener("ynot:open-entry-product",openEntryProduct as EventListener);
+  return()=>window.removeEventListener("ynot:open-entry-product",openEntryProduct as EventListener);
+ },[]); // The entry layer delegates to this component's existing popup owner.
  useEffect(()=>{const fitOverview=()=>{let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,count=0;for(const product of products){const x=Number(product.x),y=Number(product.y);if(!Number.isFinite(x)||!Number.isFinite(y)||Math.abs(x)>WORLD_W*2||Math.abs(y)>WORLD_H*2)continue;minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);count+=1}if(!count){centerWorld(.34);return}const padding=260,width=Math.max(1,maxX-minX+padding*2),height=Math.max(1,maxY-minY+padding*2),viewportW=Math.max(320,window.innerWidth-100),viewportH=Math.max(320,window.innerHeight-130),fit=Math.min(viewportW/width,viewportH/height,.5),next=Number.isFinite(fit)?Math.max(MIN_ZOOM,fit):MIN_ZOOM,centerX=(minX+maxX)/2,centerY=(minY+maxY)/2;if(!Number.isFinite(centerX)||!Number.isFinite(centerY))return;if(overviewFrameRef.current!=null)window.cancelAnimationFrame(overviewFrameRef.current);overviewFrameRef.current=window.requestAnimationFrame(()=>{overviewFrameRef.current=null;if(!overviewRef.current)return;setZoom(next);setPan({x:-centerX*next,y:-centerY*next})})};const change=(event:Event)=>{const far=Boolean((event as CustomEvent<{far?:boolean}>).detail?.far);overviewRef.current=far;if(!far){if(overviewFrameRef.current!=null)window.cancelAnimationFrame(overviewFrameRef.current);overviewFrameRef.current=null;centerWorld(submitted?.78:START_ZOOM);return}fitOverview()};window.addEventListener("ynot:set-world-overview",change as EventListener);if(overviewRef.current)fitOverview();return()=>{window.removeEventListener("ynot:set-world-overview",change as EventListener);if(overviewFrameRef.current!=null)window.cancelAnimationFrame(overviewFrameRef.current)}},[products,submitted]);
 
  const fetchProducts=useCallback(async(base:string,direction="",append=false,marketOverride:MarketMode=market,page=0,sourceOverride:LuminaSource=luminaSource,promoteIncoming=false,categoryLoad=false)=>{
