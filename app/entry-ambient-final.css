@@ -205,6 +205,8 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
   display:block;
   overflow:hidden;
   border-radius:50%;
+  isolation:isolate;
+  background:radial-gradient(circle at 43% 36%,rgba(248,249,247,.96) 0 28%,rgba(218,224,223,.9) 66%,rgba(174,185,187,.62) 82%,transparent 98%);
   -webkit-mask-image:radial-gradient(circle,#000 0 63%,rgba(0,0,0,.86) 72%,transparent 97%);
   mask-image:radial-gradient(circle,#000 0 63%,rgba(0,0,0,.86) 72%,transparent 97%);
   animation:ynotEntryProductSwap .72s cubic-bezier(.2,.75,.2,1) both;
@@ -213,7 +215,8 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
   object-fit:contain!important;
   object-position:center!important;
   padding:5%;
-  filter:saturate(1.06) contrast(1.03) drop-shadow(0 8px 9px rgba(0,0,0,.22));
+  mix-blend-mode:multiply;
+  filter:saturate(1.08) contrast(1.08) drop-shadow(0 8px 9px rgba(0,0,0,.22));
   user-select:none;
   -webkit-user-drag:none;
 }
