@@ -42,32 +42,32 @@ const EBAY_LANGUAGES:Record<string,string>={US:"en-US",GB:"en-GB",UK:"en-GB",FR:
 let ebayTokenCache:{token:string;expiresAt:number}|null=null;
 const INITIAL_PRODUCT_TARGET=160; // 20 visual rows × 8 products
 
-type EntryProductIntent={key:string;query:string;terms:string[]};
+type EntryProductIntent={key:string;query:string;fallbackQuery:string;terms:string[];brands:string[]};
 type EntryProductGroup={key:string;products:Product[]};
 const ENTRY_PRODUCT_INTENTS:EntryProductIntent[]=[
- {key:"sofa",query:"premium modular sofa unusual furniture",terms:["sofa","sectional","couch"]},
- {key:"furniture",query:"sculptural unusual premium furniture",terms:["furniture","cabinet","bench","console"]},
- {key:"serum",query:"premium skincare face serum",terms:["serum","skincare","peptide","vitamin"]},
- {key:"beauty-device",query:"premium skincare beauty device",terms:["device","mask","microcurrent","facial","led"]},
- {key:"dress",query:"premium womens dress",terms:["dress","gown"]},
- {key:"activewear",query:"premium gym training shirt activewear",terms:["shirt","tee","top","activewear","training"]},
- {key:"kitchen-tool",query:"premium kitchen tool utensil",terms:["kitchen","utensil","knife","tool","grater"]},
- {key:"cookware",query:"premium cookware pan pot",terms:["pan","pot","cookware","skillet"]},
- {key:"laptop",query:"MacBook premium laptop computer",terms:["macbook","laptop","notebook","computer"]},
- {key:"vacuum",query:"premium cordless vacuum cleaner",terms:["vacuum","hoover","cleaner"]},
- {key:"creatine",query:"creatine monohydrate supplement",terms:["creatine","monohydrate"]},
- {key:"protein",query:"premium protein powder whey shake",terms:["protein","whey","shake"]},
- {key:"sandals",query:"premium Birkenstock style sandals",terms:["birkenstock","sandal","slide"]},
- {key:"leather-bag",query:"premium leather handbag",terms:["leather","handbag","bag","tote"]},
- {key:"sneakers",query:"premium sneakers trainers",terms:["sneaker","trainer","shoe"]},
- {key:"headphones",query:"premium wireless headphones",terms:["headphone","earbud","airpod","audio"]},
- {key:"coffee-machine",query:"premium espresso coffee machine",terms:["espresso","coffee","machine"]},
- {key:"lamp",query:"sculptural statement lamp lighting",terms:["lamp","light","lighting"]},
- {key:"chair",query:"premium modern accent chair",terms:["chair","armchair","stool"]},
- {key:"side-table",query:"premium modern side table",terms:["table","nightstand","pedestal"]},
- {key:"jewelry-watch",query:"premium jewelry watch",terms:["watch","bracelet","necklace","ring","jewelry","jewellery"]},
- {key:"home-accessory",query:"premium modern home accessory decor",terms:["decor","vase","candle","home","accessory"]},
- {key:"smart-home",query:"useful premium smart home tech accessory",terms:["smart","charger","sensor","camera","speaker","hub"]}
+ {key:"sofa",query:"West Elm modular sofa",fallbackQuery:"premium modular sofa unusual furniture",terms:["sofa","sectional","couch"],brands:["West Elm","Muuto","HAY","Article","BoConcept","Roche Bobois"]},
+ {key:"furniture",query:"HAY sculptural furniture",fallbackQuery:"sculptural unusual premium furniture",terms:["furniture","cabinet","bench","console"],brands:["HAY","Vitra","Muuto","Kartell","Ferm Living","Audo"]},
+ {key:"serum",query:"The Ordinary face serum",fallbackQuery:"premium skincare face serum",terms:["serum","skincare","peptide","vitamin"],brands:["The Ordinary","SkinCeuticals","Medik8","La Roche-Posay","Drunk Elephant"]},
+ {key:"beauty-device",query:"FOREO facial beauty device",fallbackQuery:"premium skincare beauty device",terms:["device","mask","microcurrent","facial","led"],brands:["FOREO","NuFACE","CurrentBody","Therabody","Medicube"]},
+ {key:"dress",query:"Reformation womens dress",fallbackQuery:"premium womens dress",terms:["dress","gown"],brands:["Reformation","Ganni","Jacquemus","Aritzia","COS","Rat & Boa"]},
+ {key:"activewear",query:"Gymshark training shirt",fallbackQuery:"premium gym training shirt activewear",terms:["shirt","tee","top","activewear","training"],brands:["Gymshark","Lululemon","Nike","Adidas","Under Armour","On"]},
+ {key:"kitchen-tool",query:"OXO premium kitchen tool",fallbackQuery:"premium kitchen tool utensil",terms:["kitchen","utensil","knife","tool","grater","peeler"],brands:["OXO","Zwilling","Joseph Joseph","Microplane","KitchenAid"]},
+ {key:"cookware",query:"Le Creuset premium cookware pan",fallbackQuery:"premium cookware pan pot",terms:["pan","pot","cookware","skillet"],brands:["Le Creuset","Staub","Caraway","All-Clad","Made In"]},
+ {key:"laptop",query:"Apple MacBook Air",fallbackQuery:"MacBook premium laptop computer",terms:["macbook","laptop","notebook","computer"],brands:["Apple","Microsoft","Dell","Lenovo","ASUS"]},
+ {key:"vacuum",query:"Dyson cordless vacuum",fallbackQuery:"premium cordless vacuum cleaner",terms:["vacuum","hoover","cleaner"],brands:["Dyson","Hoover","Shark","Miele","Samsung"]},
+ {key:"creatine",query:"Momentous creatine monohydrate",fallbackQuery:"creatine monohydrate supplement",terms:["creatine","monohydrate"],brands:["Momentous","Thorne","Myprotein","Bare Performance Nutrition"]},
+ {key:"protein",query:"Optimum Nutrition whey protein",fallbackQuery:"premium protein powder whey shake",terms:["protein","whey","shake"],brands:["Optimum Nutrition","Myprotein","Momentous","Dymatize"]},
+ {key:"sandals",query:"Birkenstock Arizona sandals",fallbackQuery:"premium Birkenstock style sandals",terms:["birkenstock","sandal","slide"],brands:["Birkenstock"]},
+ {key:"leather-bag",query:"Coach premium leather handbag",fallbackQuery:"premium leather handbag",terms:["leather","handbag","bag","tote"],brands:["Coach","Polène","Cuyana","Longchamp","Mulberry"]},
+ {key:"sneakers",query:"New Balance premium sneakers",fallbackQuery:"premium sneakers trainers",terms:["sneaker","trainer","shoe"],brands:["New Balance","Nike","Adidas","ASICS","On","Veja","Salomon"]},
+ {key:"headphones",query:"Sony premium wireless headphones",fallbackQuery:"premium wireless headphones",terms:["headphone","earbud","airpod","audio"],brands:["Sony","Bose","Bowers & Wilkins","Sennheiser","Beats","Apple"]},
+ {key:"coffee-machine",query:"DeLonghi espresso coffee machine",fallbackQuery:"premium espresso coffee machine",terms:["espresso","coffee","machine"],brands:["DeLonghi","Breville","Sage","Jura","Nespresso","Ninja"]},
+ {key:"lamp",query:"Flos statement lamp",fallbackQuery:"sculptural statement lamp lighting",terms:["lamp","light","lighting"],brands:["Flos","Artemide","Louis Poulsen","Kartell","HAY","&Tradition"]},
+ {key:"chair",query:"Vitra modern chair",fallbackQuery:"premium modern accent chair",terms:["chair","armchair","stool"],brands:["Vitra","HAY","Herman Miller","Knoll","Muuto","Kartell"]},
+ {key:"side-table",query:"HAY modern side table",fallbackQuery:"premium modern side table",terms:["table","nightstand","pedestal"],brands:["HAY","Ferm Living","Muuto","Kartell","Westwing","Article"]},
+ {key:"jewelry-watch",query:"Seiko premium watch",fallbackQuery:"premium jewelry watch",terms:["watch","bracelet","necklace","ring","jewelry","jewellery"],brands:["Seiko","Tissot","Citizen","Casio","BREDA"]},
+ {key:"home-accessory",query:"Ferm Living home accessory",fallbackQuery:"premium modern home accessory decor",terms:["decor","vase","candle","home","accessory"],brands:["Ferm Living","HAY","Audo","Alessi","Georg Jensen"]},
+ {key:"smart-home",query:"Aqara smart home hub",fallbackQuery:"useful premium smart home tech accessory",terms:["smart","charger","sensor","camera","speaker","hub"],brands:["Aqara","Philips Hue","Google Nest","Ring","Eve","Sonos"]}
 ];
 const ENTRY_CACHE_TTL=20*60*1000;
 const entryProductCache=new Map<string,{expiresAt:number;groups:EntryProductGroup[]}>();
@@ -106,10 +106,13 @@ function entryProductScore(product:Product,intent:EntryProductIntent){
  const quality=(/^https:\/\//.test(image)?4:0)+(/cdn\.shopify\.com/.test(imagePath)?4:0)+(/\.(?:png|webp)(?:\?|$)/.test(imagePath)?3:0);
  const packshot=/\b(packshot|product only|studio|white background|transparent background|isolated)\b/i.test(`${product.title||""} ${product.description||""}`)?6:0;
  const lifestyle=/\b(lifestyle|in room|room scene|on model|lookbook|size chart|infographic|banner)\b/i.test(`${product.title||""} ${product.description||""} ${imagePath}`)?-8:0;
+ const brandText=`${product.brand||""} ${product.title||""}`.toLowerCase();
+ const trustedBrand=intent.brands.some(brand=>brandText.includes(brand.toLowerCase()))?30:0;
  const completeness=(product.price!=null?2:0)+(product.brand&&product.brand!=="Shopify merchant"?2:0)+(product.images?.length?1:0);
  const noise=/\b(case|cover|replacement|spare|sticker|poster|print|template|digital download|custom photo)\b/i.test(product.title||"")?-12:0;
- return matches+quality+packshot+lifestyle+completeness+noise;
+ return matches+trustedBrand+quality+packshot+lifestyle+completeness+noise;
 }
+function singularEntryProduct(product:Product){return !/\b(set of|\d+[- ]?piece|piece set|bundle|multipack|multi-pack|pair of|collection|assortment|starter kit|gift set)\b/i.test(product.title||"")}
 async function loadEntryProductGroups(country:string){
  const cached=entryProductCache.get(country);
  if(cached&&cached.expiresAt>Date.now())return cached.groups;
@@ -120,8 +123,11 @@ async function loadEntryProductGroups(country:string){
   // One browser request fans out here, where the results can be cached and
   // deduplicated. This avoids a burst of repeated homepage requests on iPhone.
   const settled=await Promise.allSettled(ENTRY_PRODUCT_INTENTS.map(async intent=>{
-   const result=await fetchShopify(intent.query,country);
-   const products=dedupeProducts(result.products)
+   const branded=await fetchShopify(intent.query,country);
+   const relevant=dedupeProducts(branded.products).filter(product=>intent.terms.some(term=>`${product.title||""} ${product.description||""}`.toLowerCase().includes(term)));
+   const fallback=relevant.length>=3?[]:(await fetchShopify(intent.fallbackQuery,country)).products;
+   const products=dedupeProducts([...relevant,...fallback])
+    .filter(singularEntryProduct)
     .sort((a,b)=>entryProductScore(b,intent)-entryProductScore(a,intent))
     .slice(0,5);
    return{key:intent.key,products};
