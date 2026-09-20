@@ -1,6 +1,50 @@
 "use client";
 
+import Image from "next/image";
 import {useEffect,useRef,useState} from "react";
+
+type EntryProduct={id:string;variantId?:string;title:string;brand:string;price:number|null;currency?:string;image:string;images?:string[];url?:string;tags?:string[];source?:string;variants?:unknown[];description?:string;checkout?:unknown};
+type EntryProductGroup={key:string;products:EntryProduct[]};
+type EntrySlot={groupKey:string;current:EntryProduct;revision:number};
+
+const ENTRY_SLOT_LAYOUT=[
+ {x:5,y:17,size:162,tone:"hero"},{x:18,y:9,size:112,tone:"medium"},{x:32,y:18,size:76,tone:"small"},
+ {x:48,y:9,size:132,tone:"hero"},{x:66,y:17,size:98,tone:"medium"},{x:83,y:10,size:78,tone:"small"},
+ {x:95,y:24,size:150,tone:"hero"},{x:7,y:39,size:92,tone:"medium"},{x:21,y:31,size:68,tone:"small"},
+ {x:29,y:40,size:102,tone:"medium"},{x:71,y:25,size:82,tone:"small"},{x:80,y:35,size:112,tone:"medium"},
+ {x:94,y:47,size:84,tone:"small"},{x:6,y:61,size:126,tone:"hero"},{x:20,y:57,size:84,tone:"small"},
+ {x:28,y:69,size:106,tone:"medium"},{x:50,y:77,size:74,tone:"small"},{x:70,y:66,size:116,tone:"medium"},
+ {x:88,y:59,size:98,tone:"medium"},{x:12,y:82,size:86,tone:"small"},{x:32,y:85,size:112,tone:"medium"},
+ {x:61,y:84,size:154,tone:"hero"},{x:88,y:81,size:102,tone:"medium"},
+] as const;
+
+const entryCatalogueRequests=new Map<string,Promise<EntryProductGroup[]>>();
+
+function shopperCountry(){
+ try{const saved=JSON.parse(localStorage.getItem("ynot-region")||"null") as {country?:string}|null;return String(saved?.country||"FR").toUpperCase().slice(0,2)}catch{return"FR"}
+}
+
+function entryImageUrl(source:string){
+ try{
+  const url=new URL(source);
+  if(url.hostname==="cdn.shopify.com")url.searchParams.set("width","360");
+  return url.toString();
+ }catch{return source}
+}
+
+function loadEntryCatalogue(country:string){
+ const cached=entryCatalogueRequests.get(country);
+ if(cached)return cached;
+ const request=fetch(`/api/catalog?entry=1&country=${encodeURIComponent(country)}`,{cache:"force-cache"})
+  .then(async response=>{
+   if(!response.ok)throw new Error("ENTRY_CATALOG_UNAVAILABLE");
+   const data=await response.json() as {groups?:EntryProductGroup[]};
+   return (data.groups||[]).filter(group=>group.products?.some(product=>product.id&&product.image));
+  })
+  .catch(error=>{entryCatalogueRequests.delete(country);throw error});
+ entryCatalogueRequests.set(country,request);
+ return request;
+}
 
 const BUBBLES=[
  {x:"5%",y:"17%",s:112,d:12.5,delay:-2.4,depth:.82,blur:0},
@@ -82,10 +126,35 @@ export default function EntryAmbientBubbles(){
  const[activeCategoryCenter,setActiveCategoryCenter]=useState<{x:number;y:number}|null>(null);
  const[hoveredSubcategory,setHoveredSubcategory]=useState("");
  const[position,setPosition]=useState<{x:number;y:number}|null>(null);
+ const[entryGroups,setEntryGroups]=useState<EntryProductGroup[]>([]);
+ const[productSlots,setProductSlots]=useState<EntrySlot[]>([]);
+ const[productInteraction,setProductInteraction]=useState(false);
+ const[pageVisible,setPageVisible]=useState(true);
  const pointerId=useRef<number|null>(null);
  const lastHit=useRef<HTMLButtonElement|null>(null);
  const dwellTimer=useRef<number|null>(null);
  const activeButton=useRef<HTMLButtonElement|null>(null);
+
+ useEffect(()=>{
+  let cancelled=false;
+  if(new URLSearchParams(window.location.search).has("product")){
+   setDismissed(true);
+   return()=>{cancelled=true};
+  }
+  void loadEntryCatalogue(shopperCountry()).then(groups=>{
+   if(cancelled)return;
+   const usable=groups.slice(0,ENTRY_SLOT_LAYOUT.length);
+   setEntryGroups(usable);
+   setProductSlots(usable.map(group=>({groupKey:group.key,current:group.products[0],revision:0})));
+  }).catch(()=>{});
+  return()=>{cancelled=true};
+ },[]);
+
+ useEffect(()=>{
+  const sync=()=>setPageVisible(!document.hidden);
+  document.addEventListener("visibilitychange",sync);
+  return()=>document.removeEventListener("visibilitychange",sync);
+ },[]);
 
  useEffect(()=>{
   let frame=0;
@@ -140,6 +209,31 @@ export default function EntryAmbientBubbles(){
 
  const active=home&&!dismissed;
  const subcategories=activeCategory?SUBCATEGORIES[activeCategory]||[]:[];
+
+ useEffect(()=>{
+  if(!active||dragging||productInteraction||!pageVisible||productSlots.length<3)return;
+  let timer=0;
+  const schedule=()=>{
+   timer=window.setTimeout(()=>{
+    setProductSlots(previous=>{
+     const candidates=previous.map((_,index)=>index).filter(index=>(entryGroups[index]?.products.length||0)>1);
+     const count=Math.min(candidates.length,3+Math.floor(Math.random()*3));
+     for(let index=candidates.length-1;index>0;index--){const swap=Math.floor(Math.random()*(index+1));[candidates[index],candidates[swap]]=[candidates[swap],candidates[index]]}
+     const rotating=new Set(candidates.slice(0,count));
+     return previous.map((slot,index)=>{
+      if(!rotating.has(index))return slot;
+      const group=entryGroups[index];
+      const currentIndex=group.products.findIndex(product=>product.id===slot.current.id);
+      const current=group.products[(currentIndex+1)%group.products.length];
+      return current.id===slot.current.id?slot:{...slot,current,revision:slot.revision+1};
+     });
+    });
+    schedule();
+   },12000+Math.floor(Math.random()*6001));
+  };
+  schedule();
+  return()=>window.clearTimeout(timer);
+ },[active,dragging,entryGroups,pageVisible,productInteraction,productSlots.length]);
 
  // Rest the white draggable light exactly in the visual center of the microphone.
  // Use the rendered microphone bounds instead of hard-coded viewport coordinates so
@@ -270,6 +364,11 @@ export default function EntryAmbientBubbles(){
   setPosition(null);
  }
 
+ function openEntryProduct(product:EntryProduct){
+  setDismissed(true);
+  window.dispatchEvent(new CustomEvent("ynot:open-entry-product",{detail:{product}}));
+ }
+
  return <>
   <div className={`ynot-entry-ambient ${active?"active":""}`} aria-hidden="true">
    {BUBBLES.map((bubble,index)=><i key={index} style={{
@@ -279,6 +378,33 @@ export default function EntryAmbientBubbles(){
     "--ynot-depth":bubble.depth,
     "--ynot-blur":`${bubble.blur}px`,
    } as React.CSSProperties}/>)}
+  </div>
+
+  <div className={`ynot-entry-products ${active&&productSlots.length?"active":""}`} aria-label="Products from across YNOT stores">
+   {productSlots.map((slot,index)=>{
+    const layout=ENTRY_SLOT_LAYOUT[index];
+    if(!layout)return null;
+    const product=slot.current;
+    return <button
+     type="button"
+     key={slot.groupKey}
+     className={`ynot-entry-product ${layout.tone}`}
+     style={{left:`${layout.x}%`,top:`${layout.y}%`,"--entry-size":`${layout.size}px`,"--entry-delay":`${(index%7)*-.7}s`} as React.CSSProperties}
+     aria-label={`Open ${product.title}${product.brand?` by ${product.brand}`:""}`}
+     onPointerEnter={()=>setProductInteraction(true)}
+     onPointerLeave={()=>setProductInteraction(false)}
+     onFocus={()=>setProductInteraction(true)}
+     onBlur={()=>setProductInteraction(false)}
+     onClick={()=>openEntryProduct(product)}
+    >
+     <span className="ynot-entry-product-depth"/>
+     <span className="ynot-entry-product-image" key={`${product.id}-${slot.revision}`}>
+      <Image src={entryImageUrl(product.image)} alt="" fill sizes="(max-width: 760px) 76px, 150px" unoptimized/>
+     </span>
+     <span className="ynot-entry-product-shine"/>
+     <span className="ynot-entry-product-label"><b>{product.title}</b><small>{product.brand}</small></span>
+    </button>;
+   })}
   </div>
 
   {activeCategory&&activeCategoryCenter&&subcategories.length>0&&<div className="ynot-entry-subcategory-ring" aria-hidden="true">
