@@ -305,6 +305,24 @@ export default function LuminaWorld(){
  useEffect(()=>{setVisualSimilar([]);setSuggestionsOpen(Boolean(selected));if(selected){const t=window.setTimeout(()=>void loadVisualSimilar(),40);return()=>window.clearTimeout(t)}},[selected?.id]); // eslint-disable-line react-hooks/exhaustive-deps
  useEffect(()=>{if(level!=="details"||!products.length)return;const related=selected||hovered;if(related)exploreProduct(related);else expandWorld()},[level]); // eslint-disable-line react-hooks/exhaustive-deps
  useEffect(()=>()=>{if(wheelFrameRef.current!=null)window.cancelAnimationFrame(wheelFrameRef.current)},[]);
+ useEffect(()=>{
+  const params=new URLSearchParams(window.location.search),deepId=params.get("product");
+  if(!deepId)return;
+  let cancelled=false;
+  void fetch(`/api/commerce/product/${encodeURIComponent(deepId)}`,{cache:"no-store"})
+   .then(async response=>{if(!response.ok)throw new Error("PRODUCT_NOT_FOUND");return response.json()})
+   .then(data=>{
+    if(cancelled||!data?.product)return;
+    const product=data.product as Product;
+    setHovered(product);
+    setSelected(product);
+    setSuggestionsOpen(false);
+    setCheckoutError("");
+  })
+   .catch(()=>{});
+  return()=>{cancelled=true};
+ },[]);
+
  useEffect(()=>{if(!submitted||market!=="lumina"||luminaSource!=="shopify"||products.length>=SHOPIFY_WARM_TARGET||loadingRef.current)return;const needInitialRows=products.length<INITIAL_PRODUCT_TARGET;const canPage=Boolean(shopifyCursorRef.current);const t=window.setTimeout(()=>{if(loadingRef.current)return;const page=waveRef.current+1;waveRef.current=page;const cue=canPage?shopifyPageDirectionRef.current:DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length];void fetchProducts(submitted,cue,true,"lumina",page,"shopify")},needInitialRows?70:180);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length,shopifyFetchSerial,loading,fetchProducts]); // eslint-disable-line react-hooks/exhaustive-deps
 
  function pointerDown(e:React.PointerEvent<HTMLElement>){pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2){const p=[...pointersRef.current.values()],midX=(p[0].x+p[1].x)/2,midY=(p[0].y+p[1].y)/2;pinchRef.current={distance:Math.max(1,Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)),zoom,stageX:(midX-pan.x)/zoom,stageY:(midY-pan.y)/zoom};dragRef.current.drag=false;return}if((e.target as HTMLElement).closest("button,input,a,.lv4-detail,.lv4-source-picker"))return;dragRef.current={drag:true,px:e.clientX-pan.x,py:e.clientY-pan.y,lastX:e.clientX,lastY:e.clientY,startX:e.clientX,startY:e.clientY};(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)}
