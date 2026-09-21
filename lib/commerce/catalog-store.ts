@@ -117,6 +117,10 @@ export async function listCatalogProducts(limit=5000){
   return request(`ynot_catalog_products?active=eq.true&ad_eligible=eq.true&select=*&order=routing_score.desc&limit=${Math.max(1,Math.min(10000,limit))}`);
 }
 
+export async function listCommerceReadyProducts(limit=5000){
+  return request(`ynot_catalog_products?active=eq.true&ad_eligible=eq.true&commerce_status=eq.commerce_ready&select=*&order=quality_score.desc,routing_score.desc&limit=${Math.max(1,Math.min(10000,limit))}`);
+}
+
 export async function recordCommerceEvent(input:{
   eventType:string;
   ynotId?:string|null;
