@@ -8,7 +8,7 @@ type FeedBuildCategory=Exclude<FeedCategory,"general">;
 
 const COUNTRIES=new Set<FeedCountry>(["FR","DE","ES","IT","NL","BE","GB","US","CA","AU"]);
 const CATEGORIES=new Set<FeedBuildCategory>([
-  "home","fashion","beauty","health","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
+  "home","fashion","beauty","health","tech","fitness","sports","music","gaming","photography","kitchen","cleaning","appliances","pets","office","travel","outdoors","garden","tools","automotive","baby","crafts","gifts"
 ]);
 
 function csvList<T extends string>(value:string|null,allowed:Set<T>):T[]{
