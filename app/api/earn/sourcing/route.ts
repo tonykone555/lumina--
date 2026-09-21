@@ -11,12 +11,14 @@ export async function POST(req:NextRequest){
   const title=String(b.title||"").trim().slice(0,240);
   const brand=String(b.brand||"").trim().slice(0,160);
   const retailPrice=Number(b.retail_price??b.price);
+  const mainSupplierPrice=Number(b.main_supplier_price??b.supplierPrice);
+  const category=String(b.category||"").slice(0,100)||undefined;
   const currency=String(b.currency||"EUR").toUpperCase().slice(0,5);
   const shipTo=String(b.ship_to||"FR").toUpperCase().slice(0,2);
   const language=(String(b.language||"en_US")==="de_DE"?"de_DE":String(b.language||"en_US")==="pt_BR"?"pt_BR":"en_US") as "en_US"|"de_DE"|"pt_BR";
   if(!title)return NextResponse.json({error:"TITLE_REQUIRED"},{status:400});
   if(!Number.isFinite(retailPrice)||retailPrice<=0)return NextResponse.json({error:"RETAIL_PRICE_REQUIRED"},{status:400});
-  const result=await findAliExpressSources({title,brand,retailPrice,currency,shipTo,language});
+  const result=await findAliExpressSources({title,brand,retailPrice,mainSupplierPrice:Number.isFinite(mainSupplierPrice)?mainSupplierPrice:undefined,category,currency,shipTo,language});
   return NextResponse.json(result);
  }catch(e){
   const m=e instanceof Error?e.message:"SOURCING_FAILED";
