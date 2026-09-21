@@ -8,7 +8,7 @@ type FeedBuildCategory=Exclude<FeedCategory,"general">;
 
 const COUNTRIES=new Set<FeedCountry>(["FR","DE","ES","IT","NL","BE","GB","US","CA","AU"]);
 const CATEGORIES=new Set<FeedBuildCategory>([
-  "home","fashion","beauty","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
+  "home","fashion","beauty","health","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
 ]);
 
 function csvList<T extends string>(value:string|null,allowed:Set<T>):T[]{
@@ -23,7 +23,7 @@ function csvEscape(value:unknown){
 export async function GET(req:NextRequest){
   const countries=csvList(req.nextUrl.searchParams.get("countries"),COUNTRIES);
   const categories=csvList(req.nextUrl.searchParams.get("categories"),CATEGORIES);
-  const perCategory=Math.max(20,Math.min(300,Number(req.nextUrl.searchParams.get("per_category")||120)));
+  const perCategory=Math.max(50,Math.min(1000,Number(req.nextUrl.searchParams.get("per_category")||400)));
   const eligible=req.nextUrl.searchParams.get("eligible")!=="0";
   const format=req.nextUrl.searchParams.get("format")==="csv"?"csv":"json";
 
