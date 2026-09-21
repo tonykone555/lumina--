@@ -1,0 +1,13 @@
+import {NextRequest,NextResponse} from "next/server";
+import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
+import {searchTikTokAdLibrary} from "@/lib/intelligence/fetchlayer-social";
+import {enrichHostContact} from "@/lib/intelligence/fetchlayer-contacts";
+export const runtime="nodejs";
+function normalize(a:any){return {id:String(a?.adId||a?.id||""),advertiser:String(a?.advertiser?.name||a?.advertiserName||a?.businessName||a?.advertiser||""),advertiserId:String(a?.advertiser?.id||a?.advertiserId||""),title:String(a?.title||a?.creative?.title||""),body:String(a?.caption||a?.creative?.caption||a?.creative?.text||a?.text||""),cta:String(a?.ctaText||a?.callToAction||a?.creative?.ctaText||""),landingPage:String(a?.landingPageUrl||a?.linkUrl||a?.creative?.linkUrl||""),shownFrom:a?.shownFrom||a?.startDate||null,shownTo:a?.shownTo||a?.endDate||null,estimatedAudience:a?.estimatedAudience||null,mediaType:String(a?.mediaType||"video"),raw:a};}
+export async function POST(req:NextRequest){
+ try{await requireYnotAdmin(req);const b=await req.json(),query=String(b.query||"").trim().slice(0,160),country=String(b.country||"FR").toUpperCase().slice(0,3);if(!query)return NextResponse.json({error:"QUERY_REQUIRED"},{status:400});
+ const raw=await searchTikTokAdLibrary(query,country,Math.max(10,Math.min(100,Number(b.limit)||40)));const ads=(Array.isArray(raw?.ads)?raw.ads:[]).map(normalize);
+ const groups=new Map<string,any>();for(const ad of ads){const k=ad.advertiser.toLowerCase()||ad.id;if(!groups.has(k))groups.set(k,{advertiser:ad.advertiser,advertiserId:ad.advertiserId,ads:[],activeAds:0,landingPages:new Set<string>()});const g=groups.get(k);g.ads.push(ad);g.activeAds++;if(ad.landingPage)g.landingPages.add(ad.landingPage)}
+ const advertisers=[...groups.values()].map((g:any)=>({advertiser:g.advertiser,advertiserId:g.advertiserId,adCount:g.ads.length,landingPages:[...g.landingPages],sampleAds:g.ads.slice(0,5),signalScore:Math.min(100,25+g.ads.length*12+(g.landingPages.size?12:0))})).sort((a:any,b:any)=>b.signalScore-a.signalScore||b.adCount-a.adCount);
+ return NextResponse.json({query,country,ads,advertisers,adCount:Number(raw?.adCount||ads.length),notes:Array.isArray(raw?.notes)?raw.notes:[]});
+ }catch(e){const m=e instanceof Error?e.message:"TIKTOK_AD_SEARCH_FAILED";return NextResponse.json({error:m},{status:/FETCHLAYER_NOT_CONFIGURED/.test(m)?503:adminErrorStatus(e)});}}
