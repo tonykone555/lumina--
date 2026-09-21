@@ -166,7 +166,7 @@ async function marketizeProducts(products:CatalogFeedProduct[],country:FeedCount
 function inferCategory(query:string):FeedCategory{
   const q=query.toLowerCase();
   if(/sofa|chair|lamp|rug|furniture|decor|mirror|shelf|bedding|home/.test(q))return"home";
-  if(/bag|dress|shirt|jacket|shoe|sneaker|belt|wallet|sunglass|jewel|fashion|clothing/.test(q))return"fashion";
+  if(/bag|dress|shirt|tee|t-shirt|sweatshirt|hoodie|jacket|coat|trouser|pant|jean|skirt|shoe|sneaker|belt|wallet|sunglass|jewel|fashion|clothing|apparel/.test(q))return"fashion";
   if(/beauty|skin|hair|makeup|facial|cosmetic|serum|cream|brush/.test(q))return"beauty";
   if(/headphone|earbud|charger|phone|keyboard|mouse|speaker|smart|tech|electronic/.test(q))return"tech";
   if(/fitness|gym|workout|training|yoga|lifting|recovery|sport/.test(q))return"fitness";
@@ -244,6 +244,8 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
   if(!Number.isFinite(amount)||amount<=0)return null;
 
   const originalTitle=cleanText(raw?.title);
+  const titleCategory=inferCategory(originalTitle);
+  const resolvedCategory=titleCategory==="general"?category:titleCategory;
   const sourceUrl=String(raw?.url||variant?.url||variant?.seller?.url||"");
   const merchantDomain=domainOf(sourceUrl);
   const image=String(raw?.media?.[0]?.url||variant?.image?.url||variant?.media?.[0]?.url||"");
@@ -267,7 +269,7 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
     paymentFeePct:.029
   });
 
-  const fp=productFingerprint({title:originalTitle,brand:sourceBrand,category,sourcePrice:amount,merchantDomain,image});
+  const fp=productFingerprint({title:originalTitle,brand:sourceBrand,category:resolvedCategory,sourcePrice:amount,merchantDomain,image});
   const ynotId=stableYnotId(country,fp);
   const images=[...new Set(
     (Array.isArray(raw?.media)?raw.media:[])
@@ -306,7 +308,7 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
     brand:sourceBrand||"YNOT",
     sourceBrand:sourceBrand||null,
     sellerName:"YNOT",
-    category,
+    category:resolvedCategory,
     country,
     source:"shopify-global-catalog",
     merchantDomain,
@@ -322,7 +324,7 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
     reliabilityScore:offer.reliabilityScore,
     routingScore:offer.routingScore,
     adEligible,
-    intentTags:intentTags(originalTitle,category,query),
+    intentTags:intentTags(originalTitle,resolvedCategory,query),
     fingerprint:fp,
     supplierOfferCount:1,
     supplierOffers:[offer]
