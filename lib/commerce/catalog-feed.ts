@@ -5,8 +5,8 @@ import { clusterByIdentity, productFingerprint, shopperTitle } from "./product-i
 
 export type FeedCountry = "FR"|"DE"|"ES"|"IT"|"NL"|"BE"|"GB"|"US"|"CA"|"AU";
 export type FeedCategory =
-  "home"|"fashion"|"beauty"|"health"|"tech"|"fitness"|"kitchen"|"pets"|
-  "office"|"travel"|"outdoors"|"gifts"|"general";
+  "home"|"fashion"|"beauty"|"health"|"tech"|"fitness"|"sports"|"music"|"gaming"|"photography"|"kitchen"|"cleaning"|"appliances"|"pets"|
+  "office"|"travel"|"outdoors"|"garden"|"tools"|"automotive"|"baby"|"crafts"|"gifts"|"general";
 
 export type SupplierOffer={
   merchantDomain:string;
@@ -89,6 +89,11 @@ export const CATEGORY_BRANDS:Record<Exclude<FeedCategory,"general">,string[]>={
     "On Running","Hoka","Rogue Fitness","Bowflex","NordicTrack","Peloton","Concept2","TRX","Hyperice",
     "Therabody","REP Fitness","Eleiko","Technogym","Life Fitness","ProForm"
   ],
+  sports:["Wilson","Head","Babolat","Yonex","Callaway","TaylorMade","Titleist","Ping","Specialized","Trek","Giro","Everlast","Venum","Speedo","Arena","Salomon","Rossignol","Burton","Black Diamond","Shimano"],
+  music:["Fender","Gibson","Yamaha","Roland","Korg","Akai","Novation","Focusrite","Shure","Audio-Technica","Native Instruments","Pioneer DJ","BOSS","Marshall","Orange","Ibanez","Epiphone"],
+  gaming:["Razer","Logitech G","SteelSeries","ASUS ROG","MSI","Corsair","HyperX","Secretlab","Elgato","Thrustmaster","Moza Racing","Acer Predator","Alienware"],
+  photography:["Sony","Canon","Nikon","Fujifilm","Panasonic Lumix","DJI","GoPro","Sigma","Tamron","Manfrotto","SmallRig","Godox","Rode"],
+
   tech:[
     "Apple","Samsung","Google","Sony","Bose","JBL","Beats","Sennheiser","Anker","Belkin","Logitech","Razer",
     "ASUS","Acer","Lenovo","Dell","HP","LG","BenQ","Nothing","Garmin","Fitbit","DJI","GoPro","Sonos",
@@ -103,6 +108,9 @@ export const CATEGORY_BRANDS:Record<Exclude<FeedCategory,"general">,string[]>={
     "Ninja","KitchenAid","Breville","Smeg","Le Creuset","Staub","Zwilling","Wüsthof","Vitamix","Nespresso",
     "De'Longhi","Fellow","Ooni","Instant Pot","Our Place","Caraway","HexClad","Lodge","OXO","Hydro Flask"
   ],
+  cleaning:["Dyson","Shark","Bissell","Tineco","Kärcher","Miele","iRobot","Roborock","Ecovacs","Hoover","Vax"],
+  appliances:["Bosch","Samsung","LG","Whirlpool","Miele","Haier","Beko","Electrolux","AEG","Philips","De'Longhi","Dyson"],
+
   pets:[
     "KONG","Ruffwear","Wild One","Fable","Furbo","PetSafe","Whistle","Fi","Kurgo","Earth Rated",
     "Catit","Litter-Robot","Tuft + Paw","Orijen","Acana","Royal Canin"
@@ -119,6 +127,12 @@ export const CATEGORY_BRANDS:Record<Exclude<FeedCategory,"general">,string[]>={
     "Patagonia","The North Face","Arc'teryx","Columbia","Salomon","Merrell","Osprey","YETI","Coleman",
     "Black Diamond","MSR","Sea to Summit","Hydro Flask","Garmin","Goal Zero","Jackery","EcoFlow"
   ],
+  garden:["Bosch","Makita","DeWalt","Ryobi","Husqvarna","Stihl","Gardena","Kärcher","Greenworks","Worx"],
+  tools:["DeWalt","Makita","Milwaukee","Bosch","Ryobi","Festool","Stanley","Knipex","Metabo","Einhell"],
+  automotive:["Garmin","Nextbase","Anker","NOCO","Bosch","Pioneer","Kenwood","Alpine","Meguiar's","Autoglym","Michelin"],
+  baby:["Bugaboo","UPPAbaby","Cybex","Nuna","Maxi-Cosi","Stokke","BabyBjörn","Chicco","Philips Avent","Owlet"],
+  crafts:["Cricut","Brother","Singer","Janome","Silhouette","xTool","Glowforge","Prusa","Bambu Lab","Dremel"],
+
   gifts:[
     "LEGO","Pandora","Swarovski","Coach","Kate Spade","Jo Malone","Diptyque","Le Creuset","YETI",
     "Apple","Bose","Lego","Rituals","Fortnum & Mason","Hotel Chocolat"
@@ -153,6 +167,25 @@ export const CATEGORY_ALTERNATIVE_QUERIES:Record<Exclude<FeedCategory,"general">
     "home gym equipment","commercial weight bench","premium treadmill","rowing machine home gym",
     "massage gun recovery","lifting belt premium","strength training equipment"
   ],
+  sports:[
+    "football boots","soccer ball","basketball shoes","basketball hoop","tennis racket","padel racket","pickleball paddle",
+    "golf clubs","golf rangefinder","cycling helmet","road bike accessories","boxing gloves","punching bag","martial arts gear",
+    "swimming goggles","swim training gear","ski goggles","snowboard gear","climbing harness","fishing reel","fishing rod"
+  ],
+  music:[
+    "electric guitar","acoustic guitar","bass guitar","digital piano","keyboard synthesizer","MIDI controller","studio microphone",
+    "audio interface","studio monitors","DJ controller","turntable","guitar pedal","guitar amplifier","drum kit","electronic drums",
+    "headphone amplifier","music production controller"
+  ],
+  gaming:[
+    "gaming PC","gaming laptop","gaming monitor","gaming headset","gaming keyboard","gaming mouse","gaming chair",
+    "mechanical keyboard","streaming microphone","capture card","controller","handheld gaming console","sim racing wheel"
+  ],
+  photography:[
+    "mirrorless camera","camera lens","action camera","drone camera","camera gimbal","camera tripod","studio light",
+    "LED video light","camera microphone","camera backpack","instant camera","photo printer","creator camera"
+  ],
+
   tech:[
     "premium wireless earbuds","noise cancelling headphones alternative","creator laptop","gaming monitor",
     "portable projector premium","smartwatch fitness","robot vacuum premium","air purifier smart",
@@ -168,6 +201,15 @@ export const CATEGORY_ALTERNATIVE_QUERIES:Record<Exclude<FeedCategory,"general">
     "premium blender","coffee grinder premium","smart kitchen appliance","premium water bottle",
     "ceramic cookware","cast iron cookware"
   ],
+  cleaning:[
+    "cordless vacuum","robot vacuum","wet dry vacuum","steam mop","carpet cleaner","pressure washer","window cleaner",
+    "air purifier","dehumidifier","laundry steamer","floor scrubber","portable vacuum","cleaning machine"
+  ],
+  appliances:[
+    "washing machine","dryer","dishwasher","refrigerator","freezer","microwave","mini fridge","portable air conditioner",
+    "fan","heater","dehumidifier","air purifier","vacuum cleaner","smart appliance"
+  ],
+
   pets:[
     "premium dog bed","modern cat furniture","smart pet feeder","pet water fountain premium",
     "premium dog harness","premium cat tree","smart pet camera","premium pet accessories"
@@ -184,6 +226,27 @@ export const CATEGORY_ALTERNATIVE_QUERIES:Record<Exclude<FeedCategory,"general">
     "premium camping gear","hiking backpack premium","portable power station alternative","premium cooler",
     "camping tent premium","hiking boots performance","outdoor gear brand","portable camping stove"
   ],
+  garden:[
+    "lawn mower","robot lawn mower","garden tools","garden furniture","outdoor storage","garden hose","pressure washer",
+    "leaf blower","hedge trimmer","chainsaw","raised garden bed","greenhouse","patio heater"
+  ],
+  tools:[
+    "cordless drill","impact driver","power tool set","circular saw","jigsaw","angle grinder","tool chest","mechanic tool set",
+    "laser level","air compressor","shop vacuum","work light","power station"
+  ],
+  automotive:[
+    "car dash cam","car charger","car vacuum","jump starter","OBD scanner","car stereo","car speakers","roof rack",
+    "car detailing kit","portable tire inflator","car phone mount","motorcycle helmet","motorcycle accessories"
+  ],
+  baby:[
+    "baby stroller","car seat","baby carrier","high chair","baby monitor","travel crib","baby bottle","breast pump",
+    "nursery furniture","baby sleep product","diaper bag","baby bath"
+  ],
+  crafts:[
+    "sewing machine","cricut machine","cutting machine","heat press","3d printer","craft printer","embroidery machine",
+    "art supplies","resin kit","pottery tools","knitting kit","craft storage"
+  ],
+
   gifts:[
     "premium gift set","luxury gift alternative","beauty gift set premium","tech gift premium",
     "fitness gift premium","home gift premium","jewelry gift alternative","premium coffee gift"
@@ -342,12 +405,23 @@ function inferCategory(query:string):FeedCategory{
   if(/beauty|skin|hair|makeup|facial|cosmetic|serum|cream|brush/.test(q))return"beauty";
   if(/protein|creatine|electrolyte|vitamin|magnesium|zinc|omega|collagen|probiotic|supplement|nutrition|hydration|greens powder/.test(q))return"health";
   if(/headphone|earbud|charger|phone|keyboard|mouse|speaker|smart|tech|electronic/.test(q))return"tech";
-  if(/fitness|gym|workout|training|yoga|lifting|recovery|sport/.test(q))return"fitness";
+  if(/fitness|gym|workout|training|yoga|lifting|recovery/.test(q))return"fitness";
+  if(/football|soccer|basketball|tennis|padel|pickleball|golf|cycling|boxing|martial|swimming|ski|snowboard|climbing|fishing|sport/.test(q))return"sports";
+  if(/guitar|piano|keyboard|synth|midi|microphone|audio interface|studio monitor|dj|turntable|drum|amplifier|music/.test(q))return"music";
+  if(/gaming|gamepad|capture card|sim racing|streaming microphone/.test(q))return"gaming";
+  if(/camera|lens|photography|gimbal|tripod|video light|photo printer|drone/.test(q))return"photography";
   if(/coffee|kitchen|air fryer|cook|bottle|food storage|utensil/.test(q))return"kitchen";
+  if(/vacuum|cleaning|steam mop|carpet cleaner|pressure washer|floor scrubber|dehumidifier/.test(q))return"cleaning";
+  if(/washing machine|dryer|dishwasher|refrigerator|freezer|microwave|air conditioner|heater|appliance/.test(q))return"appliances";
   if(/dog|cat|pet|puppy|kitten/.test(q))return"pets";
   if(/office|desk|monitor|ergonomic|work from home|laptop stand/.test(q))return"office";
   if(/travel|luggage|carry on|packing|passport|weekender/.test(q))return"travel";
   if(/camp|hiking|outdoor|picnic|trail/.test(q))return"outdoors";
+  if(/garden|lawn|mower|hedge|chainsaw|greenhouse|patio heater/.test(q))return"garden";
+  if(/drill|impact driver|power tool|saw|grinder|tool chest|compressor|laser level/.test(q))return"tools";
+  if(/automotive|car |dash cam|jump starter|obd|tire inflator|motorcycle/.test(q))return"automotive";
+  if(/baby|stroller|car seat|high chair|breast pump|nursery|diaper/.test(q))return"baby";
+  if(/craft|sewing|cricut|heat press|3d printer|embroidery|resin|pottery|knitting/.test(q))return"crafts";
   if(/gift|present|birthday|housewarming|anniversary/.test(q))return"gifts";
   return"general";
 }
@@ -705,7 +779,7 @@ export async function buildCatalogFeed(opts:{
 }={}){
   const countries=opts.countries?.length?opts.countries:["FR","DE","ES","IT","NL","BE","GB","US","CA"];
   const categories=opts.categories?.length?opts.categories:[
-    "home","fashion","beauty","health","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
+    "home","fashion","beauty","health","tech","fitness","sports","music","gaming","photography","kitchen","cleaning","appliances","pets","office","travel","outdoors","garden","tools","automotive","baby","crafts","gifts"
   ];
   const perCategory=Math.max(50,Math.min(1000,opts.perCategory||400));
   const jobs=countries.flatMap(country=>categories.map(category=>({country,category})));
