@@ -8,11 +8,11 @@
     right:auto!important;
     top:4.0vw!important;
     transform:translateX(-50%)!important;
-    width:35vw!important;
-    max-width:142px!important;
-    height:8.2vw!important;
-    max-height:34px!important;
-    min-height:32px!important;
+    width:37vw!important;
+    max-width:150px!important;
+    height:9.2vw!important;
+    max-height:37px!important;
+    min-height:34px!important;
     margin:0!important;
     padding:.62vw!important;
     z-index:716!important;
@@ -24,7 +24,7 @@
     min-height:0!important;
     margin:0!important;
     padding:0!important;
-    font-size:clamp(8.5px,2.05vw,9.5px)!important;
+    font-size:clamp(8.8px,2.15vw,10px)!important;
     line-height:1!important;
     text-indent:0!important;
   }
