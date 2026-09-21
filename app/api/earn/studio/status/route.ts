@@ -11,7 +11,7 @@ export async function GET(req:NextRequest){
     return NextResponse.json({
       higgsfield:{configured:higgsfield},
       trypost:{configured:trypost},
-      generation_ready:higgsfield,
+      generation_ready:higgsfield&&Boolean(process.env.GEMINI_API_KEY||process.env.GOOGLE_API_KEY),
       publishing_ready:trypost
     });
   }catch(e){
