@@ -132,6 +132,64 @@ export const BRAND_CATEGORY_QUERIES:Record<Exclude<FeedCategory,"general">,strin
   ])
 ) as Record<Exclude<FeedCategory,"general">,string[]>;
 
+export const CATEGORY_ALTERNATIVE_QUERIES:Record<Exclude<FeedCategory,"general">,string[]>={
+  fashion:[
+    "premium women activewear","seamless gym leggings","sculpting leggings","premium sports bra","minimalist women fashion",
+    "premium midi dress","bodycon dress brand","boutique womenswear","premium denim jeans","streetwear hoodie",
+    "minimal sneakers","premium swimwear","sculpting shapewear","luxury handbag alternative"
+  ],
+  beauty:[
+    "clinical skincare serum","korean skincare serum","barrier repair moisturizer","mineral sunscreen",
+    "retinol skincare","premium makeup foundation","clean beauty makeup","lip oil","hydrating concealer",
+    "premium hair care","bond repair hair treatment","luxury fragrance alternative","niche perfume"
+  ],
+  health:[
+    "premium whey protein","clean protein powder","plant protein premium","creatine monohydrate premium",
+    "electrolyte hydration powder","daily greens powder","collagen peptides","premium magnesium supplement",
+    "omega 3 supplement","probiotic wellness","sports nutrition brand","meal replacement shake"
+  ],
+  fitness:[
+    "premium gym clothing","seamless activewear","running shoes performance","adjustable dumbbells premium",
+    "home gym equipment","commercial weight bench","premium treadmill","rowing machine home gym",
+    "massage gun recovery","lifting belt premium","strength training equipment"
+  ],
+  tech:[
+    "premium wireless earbuds","noise cancelling headphones alternative","creator laptop","gaming monitor",
+    "portable projector premium","smartwatch fitness","robot vacuum premium","air purifier smart",
+    "smart home camera","mechanical keyboard premium","portable speaker premium"
+  ],
+  home:[
+    "designer sofa alternative","modular sectional sofa","premium mattress","modern dining table",
+    "designer accent chair","premium area rug","minimalist furniture","luxury furniture alternative",
+    "modern storage cabinet","premium bed frame","statement floor lamp"
+  ],
+  kitchen:[
+    "premium air fryer","espresso machine alternative","premium cookware set","chef knife set",
+    "premium blender","coffee grinder premium","smart kitchen appliance","premium water bottle",
+    "ceramic cookware","cast iron cookware"
+  ],
+  pets:[
+    "premium dog bed","modern cat furniture","smart pet feeder","pet water fountain premium",
+    "premium dog harness","premium cat tree","smart pet camera","premium pet accessories"
+  ],
+  office:[
+    "ergonomic chair alternative","premium standing desk","minimal office desk","premium monitor arm",
+    "mechanical keyboard premium","desk setup accessories","ergonomic workspace","premium office storage"
+  ],
+  travel:[
+    "premium luggage alternative","minimal carry on luggage","premium travel backpack","weekender bag premium",
+    "hard shell suitcase","luxury luggage alternative","premium packing cubes","travel organizer premium"
+  ],
+  outdoors:[
+    "premium camping gear","hiking backpack premium","portable power station alternative","premium cooler",
+    "camping tent premium","hiking boots performance","outdoor gear brand","portable camping stove"
+  ],
+  gifts:[
+    "premium gift set","luxury gift alternative","beauty gift set premium","tech gift premium",
+    "fitness gift premium","home gift premium","jewelry gift alternative","premium coffee gift"
+  ]
+};
+
 export const CATEGORY_QUERIES:Record<Exclude<FeedCategory,"general">,string[]>={
   home:[
     "sofa","sectional sofa","accent chair","dining table","coffee table","bed frame","mattress","floor lamp",
@@ -655,9 +713,11 @@ export async function buildCatalogFeed(opts:{
   const groups=await mapLimit(jobs,Math.max(1,Math.min(10,opts.concurrency||6)),async({country,category})=>{
     const genericQueries=CATEGORY_QUERIES[category];
     const brandQueries=BRAND_CATEGORY_QUERIES[category]||[];
-    // Brand-first discovery: query established brands directly, then broaden with
-    // category demand terms. This keeps generic accessories from dominating the feed.
-    const queries=[...brandQueries,...genericQueries];
+    const alternativeQueries=CATEGORY_ALTERNATIVE_QUERIES[category]||[];
+    // Search both established brands and brand-grade alternatives. Alternatives are
+    // not required to be famous: coherent merchants with multiple strong products,
+    // reliable supply and good economics can outrank a household name.
+    const queries=[...brandQueries,...alternativeQueries,...genericQueries];
     const settled=await Promise.allSettled(queries.map(q=>shopifySearch(q,country)));
     const mappedRaw=settled.flatMap(result=>
       result.status==="fulfilled"
@@ -667,22 +727,40 @@ export async function buildCatalogFeed(opts:{
     const mapped=await marketizeProducts(mappedRaw,country);
 
     const brandNames=new Set((CATEGORY_BRANDS[category]||[]).map(x=>x.toLowerCase()));
-    return collapseSupplierOffers(mapped)
-      .filter(p=>!opts.adEligibleOnly||p.adEligible)
+    const collapsed=collapseSupplierOffers(mapped).filter(p=>!opts.adEligibleOnly||p.adEligible);
+    const brandDepth=new Map<string,number>();
+    const merchantDepth=new Map<string,number>();
+    for(const p of collapsed){
+      const brand=String(p.sourceBrand||p.brand||"").trim().toLowerCase();
+      const merchant=String(p.merchantDomain||"").trim().toLowerCase();
+      if(brand)brandDepth.set(brand,(brandDepth.get(brand)||0)+1);
+      if(merchant)merchantDepth.set(merchant,(merchantDepth.get(merchant)||0)+1);
+    }
+    return collapsed
       .map(p=>{
         const sourceBrand=String(p.sourceBrand||p.brand||"").toLowerCase();
+        const merchant=String(p.merchantDomain||"").toLowerCase();
         const directBrand=[...brandNames].some(b=>sourceBrand.includes(b)||b.includes(sourceBrand));
-        return {...p,__brandBoost:directBrand?1:0} as CatalogFeedProduct & {__brandBoost:number};
+        const depth=Math.max(brandDepth.get(sourceBrand)||0,merchantDepth.get(merchant)||0);
+        const alternativeBoost=
+          !directBrand &&
+          depth>=3 &&
+          p.reliabilityScore>=60 &&
+          p.routingScore>=60
+            ? Math.min(1,depth/10)
+            : 0;
+        return {...p,__brandBoost:directBrand?1:0,__alternativeBoost:alternativeBoost,__depth:depth} as CatalogFeedProduct & {__brandBoost:number;__alternativeBoost:number;__depth:number};
       })
       .sort((a,b)=>
-        ((b as any).__brandBoost-(a as any).__brandBoost) ||
+        (((b as any).__brandBoost+(b as any).__alternativeBoost)-((a as any).__brandBoost+(a as any).__alternativeBoost)) ||
+        ((b as any).__depth-(a as any).__depth) ||
         (Number(b.adEligible)-Number(a.adEligible)) ||
         (b.routingScore-a.routingScore) ||
         (b.supplierOfferCount-a.supplierOfferCount) ||
         (b.grossContribution-a.grossContribution)
       )
       .slice(0,perCategory)
-      .map(({__brandBoost,...p}:any)=>p);
+      .map(({__brandBoost,__alternativeBoost,__depth,...p}:any)=>p);
   });
 
   return groups.flat();
