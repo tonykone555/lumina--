@@ -1,0 +1,2 @@
+import {NextRequest,NextResponse} from "next/server";import {authenticatedUser,ensureCreator,rest} from "@/lib/creators/earn";
+export async function GET(req:NextRequest){try{const u=await authenticatedUser(req),c=await ensureCreator(u),rows=await rest(`ynot_creator_studio_jobs?creator_id=eq.${c.id}&select=*&order=created_at.desc&limit=50`);return NextResponse.json({jobs:rows||[]})}catch(e){const m=e instanceof Error?e.message:"JOBS_FAILED";return NextResponse.json({error:m},{status:/SIGN_IN|SESSION/.test(m)?401:400})}}
