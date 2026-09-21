@@ -61,10 +61,11 @@ export async function POST(req:NextRequest){
   const parsed=text.split(/\r?\n/)
     .filter(line=>line && !line.startsWith("#"))
     .map(line=>{
-      const idx=line.indexOf(":");
+      const delimiter=" : ";
+      const idx=line.indexOf(delimiter);
       if(idx<0)return null;
       const id=line.slice(0,idx).trim();
-      const fullName=line.slice(idx+1).trim();
+      const fullName=line.slice(idx+delimiter.length).trim();
       if(!id.startsWith("gid://shopify/TaxonomyCategory/")||!fullName)return null;
       const parts=fullName.split(" > ").map(x=>x.trim()).filter(Boolean);
       return{
