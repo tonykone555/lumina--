@@ -64,6 +64,74 @@ const DEFAULT_SHIPPING:Record<FeedCountry,number>={
   FR:6.9,DE:7.9,ES:8.9,IT:8.9,NL:7.9,BE:7.9,GB:7.9,US:8.9,CA:9.9,AU:10.9
 };
 
+
+export const CATEGORY_BRANDS:Record<Exclude<FeedCategory,"general">,string[]>={
+  fashion:[
+    "Nike","Adidas","New Balance","Levi's","Calvin Klein","Tommy Hilfiger","Ralph Lauren","The North Face",
+    "Patagonia","Gymshark","Alo Yoga","Lululemon","Under Armour","Puma","Reebok","ASICS","On Running",
+    "Hoka","Dr. Martens","Birkenstock","Steve Madden","Coach","Michael Kors","Kate Spade","Diesel",
+    "True Religion","Carhartt","Dickies","G-Star RAW","AllSaints","Represent","Fear of God ESSENTIALS",
+    "Good American","SKIMS","Spanx","House of CB","Oh Polly","Meshki","Reformation","Abercrombie & Fitch"
+  ],
+  beauty:[
+    "The Ordinary","CeraVe","La Roche-Posay","COSRX","Beauty of Joseon","Laneige","Kiehl's","Clinique",
+    "Estée Lauder","Lancôme","MAC","NARS","Charlotte Tilbury","Rare Beauty","Fenty Beauty","Huda Beauty",
+    "e.l.f. Cosmetics","NYX","Maybelline","L'Oréal Paris","Olaplex","Kérastase","Moroccanoil","Sol de Janeiro",
+    "Paula's Choice","Drunk Elephant","Tatcha","Sunday Riley","Glow Recipe","K18","ghd","Dyson Beauty"
+  ],
+  health:[
+    "Optimum Nutrition","Myprotein","Bulk","Applied Nutrition","Dymatize","Rule One","Ghost","Legion Athletics",
+    "Transparent Labs","Thorne","NOW Foods","Solgar","Garden of Life","Nordic Naturals","Vital Proteins",
+    "LMNT","Liquid I.V.","Nuun","AG1","Bloom Nutrition","OLLY","Ritual","Huel","Vega","Orgain"
+  ],
+  fitness:[
+    "Gymshark","Nike","Adidas","Under Armour","Lululemon","Alo Yoga","Puma","Reebok","ASICS","New Balance",
+    "On Running","Hoka","Rogue Fitness","Bowflex","NordicTrack","Peloton","Concept2","TRX","Hyperice",
+    "Therabody","REP Fitness","Eleiko","Technogym","Life Fitness","ProForm"
+  ],
+  tech:[
+    "Apple","Samsung","Google","Sony","Bose","JBL","Beats","Sennheiser","Anker","Belkin","Logitech","Razer",
+    "ASUS","Acer","Lenovo","Dell","HP","LG","BenQ","Nothing","Garmin","Fitbit","DJI","GoPro","Sonos",
+    "Marshall","Roborock","iRobot","Ecovacs","Dyson","Philips Hue"
+  ],
+  home:[
+    "IKEA","West Elm","CB2","Article","Burrow","Floyd","Castlery","Rove Concepts","Ashley Furniture",
+    "La-Z-Boy","Herman Miller","Steelcase","Tempur-Pedic","Casper","Purple","Saatva","Emma","Simba",
+    "Ruggable","Loloi","Safavieh","Jonathan Adler","Kartell","Muuto","HAY"
+  ],
+  kitchen:[
+    "Ninja","KitchenAid","Breville","Smeg","Le Creuset","Staub","Zwilling","Wüsthof","Vitamix","Nespresso",
+    "De'Longhi","Fellow","Ooni","Instant Pot","Our Place","Caraway","HexClad","Lodge","OXO","Hydro Flask"
+  ],
+  pets:[
+    "KONG","Ruffwear","Wild One","Fable","Furbo","PetSafe","Whistle","Fi","Kurgo","Earth Rated",
+    "Catit","Litter-Robot","Tuft + Paw","Orijen","Acana","Royal Canin"
+  ],
+  office:[
+    "Herman Miller","Steelcase","Humanscale","Branch","Autonomous","FlexiSpot","Secretlab","Logitech",
+    "Keychron","BenQ","Dell","LG","Ergotron","Grovemade","Twelve South"
+  ],
+  travel:[
+    "Samsonite","Rimowa","TUMI","Away","Monos","July","Delsey","Travelpro","Briggs & Riley","Horizn Studios",
+    "Bellroy","Peak Design","Patagonia","The North Face","Osprey","Herschel","Calpak","Béis"
+  ],
+  outdoors:[
+    "Patagonia","The North Face","Arc'teryx","Columbia","Salomon","Merrell","Osprey","YETI","Coleman",
+    "Black Diamond","MSR","Sea to Summit","Hydro Flask","Garmin","Goal Zero","Jackery","EcoFlow"
+  ],
+  gifts:[
+    "LEGO","Pandora","Swarovski","Coach","Kate Spade","Jo Malone","Diptyque","Le Creuset","YETI",
+    "Apple","Bose","Lego","Rituals","Fortnum & Mason","Hotel Chocolat"
+  ]
+};
+
+export const BRAND_CATEGORY_QUERIES:Record<Exclude<FeedCategory,"general">,string[]>=Object.fromEntries(
+  Object.entries(CATEGORY_BRANDS).map(([category,brands])=>[
+    category,
+    brands.map(brand=>brand)
+  ])
+) as Record<Exclude<FeedCategory,"general">,string[]>;
+
 export const CATEGORY_QUERIES:Record<Exclude<FeedCategory,"general">,string[]>={
   home:[
     "sofa","sectional sofa","accent chair","dining table","coffee table","bed frame","mattress","floor lamp",
@@ -585,7 +653,11 @@ export async function buildCatalogFeed(opts:{
   const jobs=countries.flatMap(country=>categories.map(category=>({country,category})));
 
   const groups=await mapLimit(jobs,Math.max(1,Math.min(10,opts.concurrency||6)),async({country,category})=>{
-    const queries=CATEGORY_QUERIES[category];
+    const genericQueries=CATEGORY_QUERIES[category];
+    const brandQueries=BRAND_CATEGORY_QUERIES[category]||[];
+    // Brand-first discovery: query established brands directly, then broaden with
+    // category demand terms. This keeps generic accessories from dominating the feed.
+    const queries=[...brandQueries,...genericQueries];
     const settled=await Promise.allSettled(queries.map(q=>shopifySearch(q,country)));
     const mappedRaw=settled.flatMap(result=>
       result.status==="fulfilled"
@@ -594,14 +666,23 @@ export async function buildCatalogFeed(opts:{
     );
     const mapped=await marketizeProducts(mappedRaw,country);
 
+    const brandNames=new Set((CATEGORY_BRANDS[category]||[]).map(x=>x.toLowerCase()));
     return collapseSupplierOffers(mapped)
       .filter(p=>!opts.adEligibleOnly||p.adEligible)
+      .map(p=>{
+        const sourceBrand=String(p.sourceBrand||p.brand||"").toLowerCase();
+        const directBrand=[...brandNames].some(b=>sourceBrand.includes(b)||b.includes(sourceBrand));
+        return {...p,__brandBoost:directBrand?1:0} as CatalogFeedProduct & {__brandBoost:number};
+      })
       .sort((a,b)=>
+        ((b as any).__brandBoost-(a as any).__brandBoost) ||
         (Number(b.adEligible)-Number(a.adEligible)) ||
         (b.routingScore-a.routingScore) ||
+        (b.supplierOfferCount-a.supplierOfferCount) ||
         (b.grossContribution-a.grossContribution)
       )
-      .slice(0,perCategory);
+      .slice(0,perCategory)
+      .map(({__brandBoost,...p}:any)=>p);
   });
 
   return groups.flat();
