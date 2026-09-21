@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {authenticatedUser,ensureCreator,rest} from "@/lib/creators/earn";
-import {renderStudioVideo} from "@/lib/creators/higgsfield";
+import {renderStudioVideo} from "@/lib/creators/studio-video";
 import {composeStudioBaseImage,type StudioQualityTier} from "@/lib/creators/studio-image";
 export const runtime="nodejs";export const maxDuration=300;
 const sb=()=>String(process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.SUPABASE_URL||"").replace(/\/$/,"");
@@ -37,7 +37,7 @@ export async function POST(req:NextRequest){
   const draft=(await rest("ynot_creator_studio_jobs",{method:"POST",body:JSON.stringify([{creator_id:c.id,product_id:productId,product_title:title,product_image_url:image,source_path:sourcePath||null,source_video_url:sourceVideoUrl||null,avatar_image_url:avatarImageUrl||null,mode,angle,status:"generating",metadata:{quality_tier:qualityTier,image_source:imageSource,base_image_path:basePath,base_image_model:baseImageModel,base_image_prompt:baseImagePrompt,background_image_url:backgroundImageUrl||null,avatar_source:avatarPath?"upload":avatarImageUrl?"remote":"none"}}])}))?.[0];
   try{
     const result=await renderStudioVideo({mode,qualityTier,productTitle:title,productDescription:description||undefined,productCategory:category||undefined,productBrand:brand||undefined,productImageUrl:image,baseImageUrl,sourceVideoUrl:sourceVideoUrl||undefined,avatarImageUrl:avatarImageUrl||undefined,backgroundImageUrl:backgroundImageUrl||undefined,angle});
-    const rows=await rest(`ynot_creator_studio_jobs?id=eq.${draft.id}`,{method:"PATCH",body:JSON.stringify({status:"completed",provider_model:result.model,provider_request_id:result.requestId||null,prompt:result.prompt,result_url:result.url,thumbnail_url:result.thumbnail,metadata:{quality_tier:qualityTier,image_source:imageSource,base_image_path:basePath,base_image_model:baseImageModel,routing_tier:result.routingTier,routing_reason:result.routingReason},completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
+    const rows=await rest(`ynot_creator_studio_jobs?id=eq.${draft.id}`,{method:"PATCH",body:JSON.stringify({status:"completed",provider_model:result.model,provider_request_id:result.requestId||null,prompt:(result as any).prompt||baseImagePrompt||null,result_url:result.url,thumbnail_url:result.thumbnail,metadata:{quality_tier:qualityTier,image_source:imageSource,base_image_path:basePath,base_image_model:baseImageModel,video_provider:(result as any).provider||"higgsfield",routing_tier:result.routingTier,routing_reason:result.routingReason},completed_at:new Date().toISOString(),updated_at:new Date().toISOString()})});
     return NextResponse.json({ok:true,job:rows?.[0]||{...draft,...result,status:"completed"}});
   }catch(error){await rest(`ynot_creator_studio_jobs?id=eq.${draft.id}`,{method:"PATCH",body:JSON.stringify({status:"failed",error:error instanceof Error?error.message:"HIGGSFIELD_FAILED",updated_at:new Date().toISOString()})}).catch(()=>{});throw error}
  }catch(e){const m=e instanceof Error?e.message:"STUDIO_GENERATION_FAILED";return NextResponse.json({error:m},{status:/SIGN_IN|SESSION/.test(m)?401:/NOT_CONFIGURED/.test(m)?503:400})}
