@@ -20,13 +20,14 @@ type UniverseRow={
 const TAXONOMY_URL="https://github.com/Shopify/product-taxonomy/releases/latest/download/categories.en.json.gz";
 
 const BLOCKED_PATTERNS:[RegExp,string][]=[
-  [/\btobacco\b|\bnicotine\b|\bvap(e|ing)\b/i,"regulated-tobacco-nicotine"],
-  [/\bcannabis\b|\bmarijuana\b|\bthc\b|\bcbd\b/i,"regulated-recreational-drug"],
-  [/\balcoholic beverages\b|\bliquor\b|\bspirits\b|\bwine\b|\bbeer\b/i,"regulated-alcohol"],
-  [/\bfirearms?\b|\bammunition\b|\bgun parts?\b|\bsilencers?\b|\bweapon scopes?\b|\bweapon sights?\b/i,"regulated-weapons"],
-  [/\bexplosives?\b|\bfireworks?\b/i,"regulated-explosives"],
-  [/\bpachinko\b|\bpachislot\b|\bslot machines?\b|\bcasino games?\b/i,"regulated-gambling"],
-  [/\bsteroids?\b|\bhormones?\b/i,"restricted-health-product"]
+  [/^Mature\b/i,"adult-restricted"],
+  [/Food, Beverages & Tobacco\s*>\s*Tobacco Products/i,"regulated-tobacco-nicotine"],
+  [/Food, Beverages & Tobacco\s*>\s*Beverages\s*>.*\b(beer|wine|liquor|spirits|alcoholic)\b/i,"regulated-alcohol"],
+  [/\b(cannabis|marijuana|THC|CBD)\b/i,"regulated-recreational-drug"],
+  [/\b(firearms?|ammunition|gun parts?|firearm suppressors?|gun silencers?|weapon scopes?|weapon sights?)\b/i,"regulated-weapons"],
+  [/\b(explosives?|fireworks?)\b/i,"regulated-explosives"],
+  [/\b(pachinko|pachislot|slot machines?|casino games?)\b/i,"regulated-gambling"],
+  [/\b(steroids?|hormones?)\b/i,"restricted-health-product"]
 ];
 
 function supabase(){
