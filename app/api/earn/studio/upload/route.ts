@@ -7,7 +7,7 @@ const service=()=>String(process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_S
 export async function POST(req:NextRequest){
  try{
   const u=await authenticatedUser(req),c=await ensureCreator(u),b=await req.json().catch(()=>({})),kind=String(b.kind||"video"),ext=String(b.extension||"mp4").toLowerCase().replace(/[^a-z0-9]/g,"").slice(0,8)||"mp4";
-  if(!["video","avatar"].includes(kind))throw new Error("INVALID_UPLOAD_KIND");
+  if(!["video","avatar","flow"].includes(kind))throw new Error("INVALID_UPLOAD_KIND");
   const path=`${c.id}/${kind}/${Date.now()}-${crypto.randomBytes(6).toString("hex")}.${ext}`,k=service();if(!base()||!k)throw new Error("STORAGE_NOT_CONFIGURED");
   const r=await fetch(`${base()}/storage/v1/object/upload/sign/creator-studio/${path}`,{method:"POST",headers:{apikey:k,...(k.startsWith("sb_")?{}:{Authorization:`Bearer ${k}`}),"Content-Type":"application/json"},body:"{}",cache:"no-store"}),d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(d?.message||"SIGNED_UPLOAD_FAILED");
