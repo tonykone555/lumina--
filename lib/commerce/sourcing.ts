@@ -1,9 +1,12 @@
 import {getAliExpressDetails,searchAliExpress,type FetchLayerMarket,type FetchLayerSearchProduct} from "./fetchlayer";
+import {landedCost as commerceLandedCost} from "./engine";
 
 export type SourcingInput={
  title:string;
  brand?:string;
  retailPrice:number;
+ mainSupplierPrice?:number;
+ category?:string;
  currency:string;
  shipTo:string;
  language?:"en_US"|"de_DE"|"pt_BR";
@@ -34,8 +37,38 @@ function shippingAmount(details:any){
 }
 const money=(n:number)=>Math.round(n*100)/100;
 
+export function creatorOfferFromMainSupplier(input:SourcingInput){
+ const supplier=Number(input.mainSupplierPrice);
+ if(!Number.isFinite(supplier)||supplier<=0||supplier>=input.retailPrice)return null;
+ const protectedCost=commerceLandedCost({
+  sourceId:"shopify-main",
+  productId:"baseline",
+  title:input.title,
+  category:input.category,
+  price:supplier,
+  currency:input.currency,
+  shipping:0,
+  stockConfidence:.75,
+  returnPolicyScore:.7,
+  regionMatch:.75
+ });
+ const contribution=money(Math.max(0,input.retailPrice-protectedCost));
+ const creatorShare=Math.max(0,Math.min(.9,Number(process.env.YNOT_CREATOR_MARGIN_SHARE||.7)));
+ const minYnotMargin=Math.max(0,Number(process.env.YNOT_MIN_REALIZED_MARGIN_EUR||5));
+ const creatorPayout=money(Math.max(0,Math.min(contribution*creatorShare,contribution-minYnotMargin)));
+ return{
+  supplier:"shopify",
+  protectedCost,
+  availableMargin:contribution,
+  creatorPayout,
+  creatorPayoutRate:money(creatorPayout/input.retailPrice),
+  ynotRetainedMargin:money(Math.max(0,contribution-creatorPayout))
+ };
+}
+
 export async function findAliExpressSources(input:SourcingInput){
  if(!Number.isFinite(input.retailPrice)||input.retailPrice<=0)throw new Error("INVALID_RETAIL_PRICE");
+ const baseline=creatorOfferFromMainSupplier(input);
  const market:FetchLayerMarket={
   shipTo:input.shipTo.toUpperCase(),
   currency:input.currency.toUpperCase(),
@@ -74,11 +107,15 @@ export async function findAliExpressSources(input:SourcingInput){
    creatorPayoutRate:money(creatorPayout/input.retailPrice),
    ynotRetainedMargin,rating:details?.product?.rating??p.rating??null,
    soldCount:details?.product?.soldCount??p.soldCount??null,
-   store:details?.product?.store||null,delivery:details?.product?.shipping||null,
+   store:details?.product?.store||null,delivery:shippingInfo,
    matchType:match.type,matchConfidence:money(match.confidence),
-   safeToRepresentAsOriginal:match.type==="exact",market
+   safeToRepresentAsOriginal:match.type==="exact",
+   hasClearDelivery,cheaperThanMain,eligibleForBoost,
+   extraCreatorPayout:eligibleForBoost?money(creatorPayout-(baseline?.creatorPayout||0)):0,
+   market
   });
  }
- candidates.sort((a,b)=>(b.creatorPayout-a.creatorPayout)||(b.matchConfidence-a.matchConfidence));
- return{query,market:searched.market,notes:searched.notes,candidates,best:candidates[0]||null};
+ candidates.sort((a,b)=>(Number(b.eligibleForBoost)-Number(a.eligibleForBoost))||(b.creatorPayout-a.creatorPayout)||(b.matchConfidence-a.matchConfidence));
+ const bestBoost=candidates.find(x=>x.eligibleForBoost)||null;
+ return{query,market:searched.market,notes:searched.notes,baseline,candidates,best:bestBoost,boost:bestBoost};
 }
