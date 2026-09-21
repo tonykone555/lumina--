@@ -7,7 +7,7 @@ export const maxDuration=60;
 
 type BuildCategory=Exclude<FeedCategory,"general">;
 const COUNTRIES=new Set<FeedCountry>(["FR","DE","ES","IT","NL","BE","GB","US","CA","AU"]);
-const CATEGORIES=new Set<BuildCategory>(["home","fashion","beauty","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"]);
+const CATEGORIES=new Set<BuildCategory>(["home","fashion","beauty","health","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"]);
 
 function csvEscape(value:unknown){
   const s=String(value??"");
@@ -34,7 +34,7 @@ export async function GET(req:NextRequest){
     const fresh=await buildCatalogFeed({
       countries:countries.length?countries:["FR"],
       categories:categories.length?categories:[...CATEGORIES],
-      perCategory:Math.max(20,Math.min(250,Number(req.nextUrl.searchParams.get("per_category")||100))),
+      perCategory:Math.max(50,Math.min(1000,Number(req.nextUrl.searchParams.get("per_category")||400))),
       adEligibleOnly:true,
       concurrency:6
     });
