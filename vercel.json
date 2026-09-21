@@ -9,7 +9,7 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/commerce/product-universe/research?limit=12&country=US",
+      "path": "/api/commerce/product-universe/research?limit=25&country=US",
       "schedule": "*/5 * * * *"
     },
     {
