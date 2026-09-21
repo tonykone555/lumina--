@@ -11,6 +11,8 @@ type Product={id:string;title:string;brand?:string;price?:number|null;supplierPr
 type CreatorProduct={id:string;product_id:string;title:string;brand?:string;image_url?:string;product_url?:string;price?:number|null;currency:string;commission_rate:number;commission_cents?:number|null};
 type SourceCandidate={productId:string;title:string;url:string;imageUrl?:string|null;landedCost:number;creatorPayout:number;creatorPayoutRate:number;ynotRetainedMargin:number;matchType:"exact"|"equivalent"|"similar";matchConfidence:number;safeToRepresentAsOriginal:boolean;hasClearDelivery?:boolean;eligibleForBoost?:boolean;extraCreatorPayout?:number};
 type SourceCheck={baseline?:{creatorPayout:number;creatorPayoutRate:number}|null;boost?:SourceCandidate|null};
+type Opportunity={product:Product;catalogueFit:number;economicsFit:number;creatorFit:number;opportunityScore:number;reasons:string[]};
+type OpportunitySignal={metaAds:number;tiktokAds:number;advertisers:number;activeAds:number;repeatedAdvertisers:number;adSignalScore:number;evidence:string[]};
 type Dashboard={creator:any;stats:{clicks:number;products:number;pending_cents:number;available_cents:number;paid_cents:number};products:CreatorProduct[];commissions:any[];payouts:any[]};
 type Tab="overview"|"discover"|"studio"|"links"|"earnings"|"academy";
 const interests=["fashion","beauty","fitness","home","tech","pets","food","lifestyle"];
@@ -24,6 +26,7 @@ export default function CreatorDashboard(){
  const[data,setData]=useState<Dashboard|null>(null),[loading,setLoading]=useState(true),[signedOut,setSignedOut]=useState(false),[tab,setTab]=useState<Tab>("overview");
  const[query,setQuery]=useState(""),[results,setResults]=useState<Product[]>([]),[searching,setSearching]=useState(false),[working,setWorking]=useState<string>(""),[notice,setNotice]=useState("");
  const[sourceEconomics,setSourceEconomics]=useState<Record<string,SourceCheck>>({}),[sourceChecking,setSourceChecking]=useState<string>("");
+ const[opportunities,setOpportunities]=useState<Record<string,Opportunity>>({}),[opportunitySignal,setOpportunitySignal]=useState<OpportunitySignal|null>(null),[researching,setResearching]=useState(false);
  const[niches,setNiches]=useState<string[]>([]),[bio,setBio]=useState(""),[onboarding,setOnboarding]=useState(false);
 
  async function load(){
@@ -46,6 +49,17 @@ export default function CreatorDashboard(){
  async function findProducts(term=query){
   const q=term.trim();if(q.length<2)return;setSearching(true);setNotice("");setQuery(q);setTab("discover");
   try{const r=await fetch(`/api/catalog?q=${encodeURIComponent(q)}&source=shopify&country=FR`),j=await r.json();if(!r.ok)throw new Error(j.error||"Search failed");setResults((j.products||[]).slice(0,36));if(!(j.products||[]).length)setNotice("No products found. Try another search.")}catch(e){setNotice(e instanceof Error?e.message:"Search failed")}finally{setSearching(false)}
+ }
+ async function researchProducts(){
+  const q=query.trim();if(q.length<2||!results.length)return;
+  setResearching(true);setNotice("");
+  try{
+   const r=await authedFetch("/api/earn/opportunities",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({niche:q,country:"FR",products:results})});
+   const j=await r.json().catch(()=>({}));
+   if(!r.ok)throw new Error(j.error||"Unable to research this niche");
+   const map:Record<string,Opportunity>={};for(const x of j.opportunities||[])map[String(x.product?.id||"")]=x;
+   setOpportunities(map);setOpportunitySignal(j.signal||null);
+  }catch(e){setNotice(e instanceof Error?e.message:"Unable to research this niche")}finally{setResearching(false)}
  }
  async function checkEarning(p:Product){
   if(!p.price||sourceChecking===p.id)return;
@@ -102,9 +116,9 @@ export default function CreatorDashboard(){
     </>}
 
     {tab==="discover"&&<>
-      <form className="creatorSearch" onSubmit={e=>{e.preventDefault();void findProducts()}}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search any product — gym set, sofa, skincare, headphones…"/><button disabled={searching}>{searching?"Searching…":"Search YNOT"}</button></form>
+      <form className="creatorSearch" onSubmit={e=>{e.preventDefault();void findProducts()}}><Search/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search any product — gym set, sofa, skincare, headphones…"/><button disabled={searching}>{searching?"Searching…":"Search YNOT"}</button></form>{results.length?<div className="creatorResearchBar"><button onClick={()=>void researchProducts()} disabled={researching}><TrendingUp/>{researching?"Researching live ads…":"Research what is working"}</button>{opportunitySignal?<div><b>{opportunitySignal.adSignalScore}/100 demand signal</b><span>{opportunitySignal.activeAds} active ads · {opportunitySignal.advertisers} advertisers · {opportunitySignal.repeatedAdvertisers} repeating advertisers</span></div>:<span>Check Meta + TikTok ad activity against these YNOT products.</span>}</div>:null}
       <div className="creatorBrowse creatorBrowseInline">{browse.map(x=><button key={x} onClick={()=>void findProducts(x)}>{x}</button>)}</div>
-      {results.length?<div className="creatorProductGrid">{results.map(p=>{const active=selectedIds.has(String(p.id)),check=sourceEconomics[p.id],boost=check?.boost,baseline=check?.baseline?.creatorPayout,fallbackCommission=Number(p.price||0)*rate,earning=boost?.creatorPayout||baseline||fallbackCommission;return <article key={p.id} className={active?"active":""}><div className="creatorProductImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}{active&&<i><Check/> Promoting</i>}</div><div className="creatorProductBody"><small>{p.brand||"YNOT"}</small><h3>{p.title}</h3><div className="creatorProductMoney"><span>{p.price!=null?money(Number(p.price),p.currency||"EUR"):"Price varies"}</span><b>{p.price!=null?`Earn ${money(earning,p.currency||"EUR")} / sale`:`${Math.round(rate*100)}% commission`}</b></div>{boost?<small className="creatorSourceEconomics">Boost unlocked · +{money(Number(boost.extraCreatorPayout||0),p.currency||"EUR")} per sale · verified alternate route</small>:check?<small className="creatorSourceEconomics">Standard payout · no verified extra route yet</small>:p.price!=null?<button className="creatorCheckEarning" disabled={sourceChecking===p.id} onClick={()=>void checkEarning(p)}>{sourceChecking===p.id?"Verifying alternatives…":"Check for extra earnings"}</button>:null}<button disabled={active||working===p.id} onClick={()=>void promote(p)}>{active?"Already promoting":working===p.id?"Adding…":"Promote this"} <ArrowRight/></button></div></article>})}</div>:<div className="creatorDiscoverEmpty"><TrendingUp/><h2>Search the YNOT catalogue</h2><p>Pick products you would genuinely make content about. Your link appears as soon as you add one.</p></div>}
+      {results.length?<div className="creatorProductGrid">{results.map(p=>{const active=selectedIds.has(String(p.id)),check=sourceEconomics[p.id],boost=check?.boost,baseline=check?.baseline?.creatorPayout,fallbackCommission=Number(p.price||0)*rate,earning=boost?.creatorPayout||baseline||fallbackCommission,opp=opportunities[p.id];return <article key={p.id} className={active?"active":""}><div className="creatorProductImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}{active&&<i><Check/> Promoting</i>}{opp&&<em className={`creatorOpportunityBadge ${opp.opportunityScore>=70?"hot":opp.opportunityScore>=50?"good":""}`}>{opp.opportunityScore} opportunity</em>}</div><div className="creatorProductBody"><small>{p.brand||"YNOT"}</small><h3>{p.title}</h3><div className="creatorProductMoney"><span>{p.price!=null?money(Number(p.price),p.currency||"EUR"):"Price varies"}</span><b>{p.price!=null?`Earn ${money(earning,p.currency||"EUR")} / sale`:`${Math.round(rate*100)}% commission`}</b></div>{opp?<div className="creatorOpportunityInfo"><span>Ad signal {opp.creatorFit}</span><span>Catalogue fit {opp.catalogueFit}</span><small>{opp.reasons.slice(0,2).join(" · ")}</small></div>:null}{boost?<small className="creatorSourceEconomics">Boost unlocked · +{money(Number(boost.extraCreatorPayout||0),p.currency||"EUR")} per sale · verified alternate route</small>:check?<small className="creatorSourceEconomics">Standard payout · no verified extra route yet</small>:p.price!=null?<button className="creatorCheckEarning" disabled={sourceChecking===p.id} onClick={()=>void checkEarning(p)}>{sourceChecking===p.id?"Verifying alternatives…":"Check for extra earnings"}</button>:null}<button disabled={active||working===p.id} onClick={()=>void promote(p)}>{active?"Already promoting":working===p.id?"Adding…":"Promote this"} <ArrowRight/></button></div></article>})}</div>:<div className="creatorDiscoverEmpty"><TrendingUp/><h2>Search the YNOT catalogue</h2><p>Pick products you would genuinely make content about. Your link appears as soon as you add one.</p></div>}
     </>}
 
 
