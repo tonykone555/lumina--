@@ -7,7 +7,7 @@ export const maxDuration=60;
 
 type BuildCategory=Exclude<FeedCategory,"general">;
 const COUNTRIES=new Set<FeedCountry>(["FR","DE","ES","IT","NL","BE","GB","US","CA","AU"]);
-const CATEGORIES=new Set<BuildCategory>(["home","fashion","beauty","health","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"]);
+const CATEGORIES=new Set<BuildCategory>(["home","fashion","beauty","health","tech","fitness","sports","music","gaming","photography","kitchen","cleaning","appliances","pets","office","travel","outdoors","garden","tools","automotive","baby","crafts","gifts"]);
 
 function csvEscape(value:unknown){
   const s=String(value??"");
