@@ -77,8 +77,7 @@ async function catalogSearch(item:QueueItem,country:string):Promise<ResearchResu
             categories:[{id:item.taxonomy_id}]
           },
           context:{address_country:country,intent:item.full_name},
-          pagination:{limit:50},
-          view:"offer"
+          pagination:{limit:50}
         }
       }
     }
@@ -91,9 +90,27 @@ async function catalogSearch(item:QueueItem,country:string):Promise<ResearchResu
     signal:AbortSignal.timeout(20000)
   });
   const raw:any=await res.json().catch(()=>null);
-  const content=raw?.result?.structuredContent;
-  if(!res.ok||!content)throw new Error("SHOPIFY_CATALOG_"+res.status+":"+clean(raw?.error?.message||"invalid response"));
-  const products=Array.isArray(content.products)?content.products:[];
+  let content:any=raw?.result?.structuredContent||null;
+  if(!content&&Array.isArray(raw?.result?.content)){
+    for(const part of raw.result.content){
+      if(part?.type!=="text"||typeof part?.text!=="string")continue;
+      try{
+        const parsed=JSON.parse(part.text);
+        content=parsed?.structuredContent||parsed?.result?.structuredContent||parsed;
+        if(content)break;
+      }catch{}
+    }
+  }
+  if(!content&&raw?.result&&typeof raw.result==="object"&&Array.isArray(raw.result.products))content=raw.result;
+  const embeddedError=
+    clean(raw?.error?.message)||
+    clean(raw?.result?.error?.message)||
+    clean(raw?.result?.message)||
+    (raw?.result?.isError?clean(raw?.result?.content?.[0]?.text):"");
+  if(!res.ok||!content||!Array.isArray(content?.products)){
+    throw new Error("SHOPIFY_CATALOG_"+res.status+":"+(embeddedError||"unrecognized MCP response"));
+  }
+  const products=content.products;
   const merchants=new Set<string>(),brands=new Set<string>(),prices:number[]=[];
   let currency:string|null=null;
   for(const p of products){
