@@ -5,7 +5,7 @@ import { clusterByIdentity, productFingerprint, shopperTitle } from "./product-i
 
 export type FeedCountry = "FR"|"DE"|"ES"|"IT"|"NL"|"BE"|"GB"|"US"|"CA"|"AU";
 export type FeedCategory =
-  "home"|"fashion"|"beauty"|"tech"|"fitness"|"kitchen"|"pets"|
+  "home"|"fashion"|"beauty"|"health"|"tech"|"fitness"|"kitchen"|"pets"|
   "office"|"travel"|"outdoors"|"gifts"|"general";
 
 export type SupplierOffer={
@@ -80,6 +80,11 @@ export const CATEGORY_QUERIES:Record<Exclude<FeedCategory,"general">,string[]>={
     "eye cream","lip balm","foundation makeup","concealer","mascara","lipstick","blush","bronzer","eyeshadow palette",
     "shampoo","conditioner","hair mask","hair oil","hair dryer","hair straightener","curling iron","skincare set",
     "body lotion","fragrance perfume"
+  ],
+  health:[
+    "protein powder","whey protein","plant protein","creatine monohydrate","electrolyte powder","hydration powder",
+    "multivitamin","vitamin d","vitamin c","magnesium supplement","zinc supplement","omega 3","collagen powder",
+    "fiber supplement","probiotic","greens powder","meal replacement shake","sports nutrition"
   ],
   tech:[
     "smartphone","tablet","laptop","smartwatch","wireless earbuds","noise cancelling headphones","bluetooth speaker",
@@ -209,6 +214,7 @@ function inferCategory(query:string):FeedCategory{
   if(/sofa|chair|lamp|rug|furniture|decor|mirror|shelf|bedding|home/.test(q))return"home";
   if(/bag|dress|shirt|tee|t-shirt|sweatshirt|hoodie|jacket|coat|trouser|pant|jean|skirt|shoe|sneaker|belt|wallet|sunglass|jewel|fashion|clothing|apparel/.test(q))return"fashion";
   if(/beauty|skin|hair|makeup|facial|cosmetic|serum|cream|brush/.test(q))return"beauty";
+  if(/protein|creatine|electrolyte|vitamin|magnesium|zinc|omega|collagen|probiotic|supplement|nutrition|hydration|greens powder/.test(q))return"health";
   if(/headphone|earbud|charger|phone|keyboard|mouse|speaker|smart|tech|electronic/.test(q))return"tech";
   if(/fitness|gym|workout|training|yoga|lifting|recovery|sport/.test(q))return"fitness";
   if(/coffee|kitchen|air fryer|cook|bottle|food storage|utensil/.test(q))return"kitchen";
@@ -573,7 +579,7 @@ export async function buildCatalogFeed(opts:{
 }={}){
   const countries=opts.countries?.length?opts.countries:["FR","DE","ES","IT","NL","BE","GB","US","CA"];
   const categories=opts.categories?.length?opts.categories:[
-    "home","fashion","beauty","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
+    "home","fashion","beauty","health","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
   ];
   const perCategory=Math.max(50,Math.min(1000,opts.perCategory||400));
   const jobs=countries.flatMap(country=>categories.map(category=>({country,category})));
