@@ -1,4 +1,5 @@
 import {createHiggsfieldClient} from "@higgsfield/client/v2";
+import {buildStudioPrompt} from "./studio-prompts";
 
 function credentials(){
  const joined=String(process.env.HF_CREDENTIALS||"").trim();
@@ -8,12 +9,8 @@ function credentials(){
  throw new Error("HIGGSFIELD_NOT_CONFIGURED");
 }
 function client(){return createHiggsfieldClient({credentials:credentials(),timeout:120000,maxRetries:3,retryBackoff:1500,retryMaxBackoff:20000,pollInterval:2000,maxPollTime:300000})}
-export function studioPrompt(input:{productTitle:string;angle:string;mode:string;backgroundImageUrl?:string}){
- const angle=input.angle==="problem"?"problem to solution":input.angle==="routine"?"daily lifestyle routine":input.angle==="demo"?"clear product demonstration":"natural UGC testimonial";
- return `Vertical 9:16 social commerce video. Preserve natural human motion, timing, body mechanics and camera movement from the source performance. Feature the exact product: ${input.productTitle}. Creative angle: ${angle}.${input.backgroundImageUrl?" Use the supplied background image as the visual environment reference while keeping the creator and product natural in the scene.":""} Keep the product visually faithful, believable in scale and naturally integrated into the hands/outfit/scene. Avoid warped packaging, duplicate products, unreadable logos, extra fingers or floating objects. Native creator content, realistic lighting, premium but not overproduced.`;
-}
-export async function renderStudioVideo(input:{mode:string;productTitle:string;productImageUrl:string;sourceVideoUrl?:string;avatarImageUrl?:string;backgroundImageUrl?:string;angle:string}){
- const c=client(),prompt=studioPrompt(input);
+export async function renderStudioVideo(input:{mode:string;productTitle:string;productDescription?:string;productCategory?:string;productBrand?:string;productImageUrl:string;sourceVideoUrl?:string;avatarImageUrl?:string;backgroundImageUrl?:string;angle:string}){
+ const c=client(),prompt=buildStudioPrompt({product:{title:input.productTitle,description:input.productDescription,category:input.productCategory,brand:input.productBrand},angle:input.angle,mode:input.mode,hasBackground:Boolean(input.backgroundImageUrl)});
  if(input.mode==="video-avatar"){
    if(!input.sourceVideoUrl||!input.avatarImageUrl)throw new Error("SOURCE_VIDEO_AND_AVATAR_REQUIRED");
    const job=await c.subscribe("higgsfiled/genjutsu/motion-transfer/v1.0",{input:{prompt,video_url:input.sourceVideoUrl,image_urls:[input.avatarImageUrl,input.productImageUrl,input.backgroundImageUrl].filter(Boolean),resolution:"720p"},withPolling:true});
