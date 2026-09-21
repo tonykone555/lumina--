@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {buildCatalogFeed,type FeedCategory,type FeedCountry} from "@/lib/commerce/catalog-feed";
-import {listCommerceReadyProducts,persistCatalogProducts} from "@/lib/commerce/catalog-store";
+import {listSelectedCommerceProducts,persistCatalogProducts} from "@/lib/commerce/catalog-store";
 
 export const runtime="nodejs";
 export const maxDuration=60;
@@ -42,7 +42,7 @@ export async function GET(req:NextRequest){
     catch(error){console.error("YNOT feed refresh persistence failed",error)}
   }
 
-  let products=await listCommerceReadyProducts(10000);
+  let products=await listSelectedCommerceProducts(10000);
   if(countries.length)products=products.filter((p:any)=>countries.includes(p.country));
   if(categories.length)products=products.filter((p:any)=>categories.includes(p.category));
 
