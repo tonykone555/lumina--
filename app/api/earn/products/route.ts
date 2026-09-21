@@ -1,0 +1,24 @@
+import {NextRequest,NextResponse} from "next/server";
+import {authenticatedUser,ensureCreator,rest,shareUrl} from "@/lib/creators/earn";
+
+export const runtime="nodejs";
+
+export async function GET(req:NextRequest){
+ try{const u=await authenticatedUser(req),c=await ensureCreator(u);const rows=await rest(`ynot_creator_products?creator_id=eq.${c.id}&status=eq.active&select=*&order=created_at.desc&limit=100`);return NextResponse.json({products:rows||[],storefront:`/c/${c.referral_code}`})}
+ catch(e){const m=e instanceof Error?e.message:"CREATOR_PRODUCTS_FAILED";return NextResponse.json({error:m},{status:/SIGN_IN|SESSION/.test(m)?401:400})}
+}
+export async function POST(req:NextRequest){
+ try{
+  const u=await authenticatedUser(req),c=await ensureCreator(u),b=await req.json();
+  const id=String(b.id||b.product_id||"").trim().slice(0,500),title=String(b.title||"").trim().slice(0,240),image=String(b.image||b.image_url||"").slice(0,1200),url=String(b.url||b.product_url||"").slice(0,1500);
+  if(!id||!title||!image)return NextResponse.json({error:"PRODUCT_DETAILS_REQUIRED"},{status:400});
+  const price=Number(b.price),rate=Number(c.commission_rate||.05),commissionCents=Number.isFinite(price)&&price>0?Math.round(price*100*rate):null;
+  const payload={creator_id:c.id,product_id:id,title,brand:String(b.brand||"YNOT").slice(0,160),image_url:image,product_url:url,price:Number.isFinite(price)?price:null,currency:String(b.currency||"EUR").toUpperCase().slice(0,5),category:String(b.category||"").slice(0,100)||null,commission_rate:rate,commission_cents:commissionCents,status:"active",metadata:{description:String(b.description||"").slice(0,1000)},updated_at:new Date().toISOString()};
+  const rows=await rest("ynot_creator_products?on_conflict=creator_id,product_id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify([payload])});
+  return NextResponse.json({product:rows?.[0]||payload,share_url:shareUrl(id,c.referral_code)});
+ }catch(e){const m=e instanceof Error?e.message:"PROMOTE_PRODUCT_FAILED";return NextResponse.json({error:m},{status:/SIGN_IN|SESSION/.test(m)?401:400})}
+}
+export async function DELETE(req:NextRequest){
+ try{const u=await authenticatedUser(req),c=await ensureCreator(u),id=String(req.nextUrl.searchParams.get("id")||"").slice(0,500);if(!id)return NextResponse.json({error:"PRODUCT_ID_REQUIRED"},{status:400});await rest(`ynot_creator_products?creator_id=eq.${c.id}&product_id=eq.${encodeURIComponent(id)}`,{method:"PATCH",body:JSON.stringify({status:"inactive",updated_at:new Date().toISOString()})});return NextResponse.json({ok:true})}
+ catch(e){const m=e instanceof Error?e.message:"REMOVE_PRODUCT_FAILED";return NextResponse.json({error:m},{status:/SIGN_IN|SESSION/.test(m)?401:400})}
+}
