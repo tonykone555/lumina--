@@ -1,5 +1,7 @@
+import {buildStudioPrompt} from "./studio-prompts";
 import {renderStudioVideo as renderHiggsfieldVideo} from "./higgsfield";
 import {renderViggleMotion} from "./viggle";
+import {renderMuapiStudioVideo} from "./muapi";
 
 export type StudioVideoTier="standard"|"premium";
 
@@ -18,32 +20,46 @@ export async function renderStudioVideo(input:{
  angle:string;
 }){
  const tier=input.qualityTier||"standard";
+ const prompt=buildStudioPrompt({
+  product:{title:input.productTitle,description:input.productDescription,category:input.productCategory,brand:input.productBrand},
+  angle:input.angle,
+  mode:input.mode,
+  hasBackground:Boolean(input.backgroundImageUrl)
+ });
 
- if(tier==="standard"&&(input.mode==="video-avatar"||input.mode==="video-self")){
-  if(!input.sourceVideoUrl)throw new Error("SOURCE_VIDEO_REQUIRED");
-  const characterImageUrl=input.baseImageUrl||input.avatarImageUrl||input.productImageUrl;
-  try{
-   return await renderViggleMotion({
-    characterImageUrl,
-    motionVideoUrl:input.sourceVideoUrl
-   });
-  }catch(viggleError){
-   try{
-    const fallback=await renderHiggsfieldVideo({...input,qualityTier:"standard"});
-    return{
-     ...fallback,
-     provider:"higgsfield" as const,
-     routingTier:"standard-motion-fallback",
-     routingReason:"Viggle failed; Genjutsu fallback used: "+(viggleError instanceof Error?viggleError.message:"unknown")
-    };
-   }catch(higgsfieldError){
-    const v=viggleError instanceof Error?viggleError.message:"VIGGLE_FAILED";
-    const h=higgsfieldError instanceof Error?higgsfieldError.message:"HIGGSFIELD_FAILED";
-    throw new Error("STANDARD_MOTION_FAILED | Viggle: "+v+" | Higgsfield: "+h);
-   }
-  }
+ if(tier==="premium"){
+  const result=await renderHiggsfieldVideo({...input,qualityTier:"premium"});
+  return{...result,provider:"higgsfield" as const};
  }
 
- const result=await renderHiggsfieldVideo(input);
- return{...result,provider:"higgsfield" as const};
+ const baseImageUrl=input.baseImageUrl||input.avatarImageUrl||input.productImageUrl;
+
+ try{
+  return await renderMuapiStudioVideo({
+   mode:input.mode,
+   prompt,
+   baseImageUrl,
+   sourceVideoUrl:input.sourceVideoUrl
+  });
+ }catch(muapiError){
+  if((input.mode==="video-avatar"||input.mode==="video-self")&&input.sourceVideoUrl&&String(process.env.VIGGLE_API_KEY||"").trim()){
+   try{
+    const fallback=await renderViggleMotion({
+     characterImageUrl:baseImageUrl,
+     motionVideoUrl:input.sourceVideoUrl
+    });
+    return{
+     ...fallback,
+     prompt,
+     routingTier:"standard-motion-fallback",
+     routingReason:"MuAPI failed; Viggle JST-2 fallback used: "+(muapiError instanceof Error?muapiError.message:"unknown")
+    };
+   }catch(viggleError){
+    const m=muapiError instanceof Error?muapiError.message:"MUAPI_FAILED";
+    const v=viggleError instanceof Error?viggleError.message:"VIGGLE_FAILED";
+    throw new Error("STANDARD_VIDEO_FAILED | MuAPI: "+m+" | Viggle: "+v);
+   }
+  }
+  throw muapiError;
+ }
 }
