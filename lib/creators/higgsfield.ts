@@ -27,11 +27,11 @@ export async function renderStudioVideo(input:{mode:string;productTitle:string;p
  }
  if(input.mode==="image-self"||input.mode==="ai-avatar"){
    if(!input.avatarImageUrl)throw new Error("AVATAR_IMAGE_REQUIRED");
-   const job=await c.subscribe("kling-video/motion-control/pro",{input:{prompt,image_url:input.avatarImageUrl,video_url:input.sourceVideoUrl||"",keep_original_sound:"yes",character_orientation:"video"},withPolling:true});
-   return normalize(job,"kling-video/motion-control/pro",prompt);
+   const job=await c.subscribe("alibaba/happy-horse/reference-to-video",{input:{prompt,duration:5,image_urls:[input.avatarImageUrl,input.productImageUrl].filter(Boolean),resolution:"720p"},withPolling:true});
+   return normalize(job,"alibaba/happy-horse/reference-to-video",prompt);
  }
- const job=await c.subscribe("bytedance/seedance-2.5/text-to-video",{input:{prompt:`${prompt} Product reference: ${input.productImageUrl}`,duration:5,resolution:"720p",aspect_ratio:"9:16",output_format:"mp4",generate_audio:true},withPolling:true});
- return normalize(job,"bytedance/seedance-2.5/text-to-video",prompt);
+ const job=await c.subscribe("alibaba/happy-horse/reference-to-video",{input:{prompt,duration:5,image_urls:[input.productImageUrl].filter(Boolean),resolution:"720p"},withPolling:true});
+ return normalize(job,"alibaba/happy-horse/reference-to-video",prompt);
 }
 function normalize(job:any,model:string,prompt:string){
  const first=job?.jobs?.[0],url=first?.results?.raw?.url||first?.results?.min?.url||null;
