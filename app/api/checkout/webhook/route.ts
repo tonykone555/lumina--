@@ -16,8 +16,11 @@ export async function POST(req:Request){
    }
   }
   if(event.type==="payment_intent.succeeded"){
-   const intent=event.data.object;
-   if(intent.metadata?.ynotFlow==="manual_procurement"){const sessions=await stripe.checkout.sessions.list({payment_intent:intent.id,limit:1}),session=sessions.data[0],m=session?.metadata||{};if(session&&m.buyerId)try{await settleOrder({buyerId:m.buyerId,orderId:session.id,subtotalCents:Number(m.subtotalCents||0),creditCents:Number(m.creditCents||0),checkoutRef:m.checkoutRef})}catch(error){console.error("YNOT Circle settlement requires intervention",session.id,error)}if(session&&m.creatorId){try{const creator=await creatorById(m.creatorId);if(creator){const subtotal=Number(m.subtotalCents||0);await createCommission({creatorId:creator.id,sessionId:session.id,paymentIntentId:intent.id,subtotalCents:subtotal,basisCents:subtotal,rate:Number(creator.commission_rate),currency:String(m.checkoutCurrency||intent.currency||"EUR").toUpperCase()})}}catch(error){console.error("YNOT creator commission requires intervention",session.id,error)}}}
+   const intent=event.data.object,flow=intent.metadata?.ynotFlow;
+   if(flow==="manual_procurement"||flow==="multi_item_manual_procurement"){const sessions=await stripe.checkout.sessions.list({payment_intent:intent.id,limit:1}),session=sessions.data[0],m=session?.metadata||{};
+    if(flow==="manual_procurement"&&session&&m.buyerId)try{await settleOrder({buyerId:m.buyerId,orderId:session.id,subtotalCents:Number(m.subtotalCents||0),creditCents:Number(m.creditCents||0),checkoutRef:m.checkoutRef})}catch(error){console.error("YNOT Circle settlement requires intervention",session.id,error)}
+    if(session&&m.creatorId){try{const creator=await creatorById(m.creatorId);if(creator){const subtotal=Number(m.subtotalCents||0);await createCommission({creatorId:creator.id,sessionId:session.id,paymentIntentId:intent.id,subtotalCents:subtotal,basisCents:subtotal,rate:Number(creator.commission_rate),currency:String(m.checkoutCurrency||intent.currency||"EUR").toUpperCase(),productId:m.creatorProductId||m.productId||null})}}catch(error){console.error("YNOT creator commission requires intervention",session.id,error)}}
+   }
   }
   if(event.type==="checkout.session.async_payment_succeeded"){
    const session=await stripe.checkout.sessions.retrieve(event.data.object.id),m=session.metadata||{};
