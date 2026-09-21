@@ -124,6 +124,7 @@
   /* Zoom and map sit immediately next to the top pill. */
   .ynot-reference-nav-tools{display:flex!important;align-items:center!important;gap:7px!important}
   .ynot-reference-nav-tools button,
+  .ynot-reference-nav-tools .ynot-reference-earn-orb,
   .ynot-reference-notify,
   .ynot-reference-avatar{
     width:43px!important;height:43px!important;
@@ -138,6 +139,8 @@
     -webkit-backdrop-filter:blur(20px)!important;
   }
   .ynot-reference-nav-tools svg,.ynot-reference-notify svg,.ynot-reference-avatar svg{width:17px!important;height:17px!important;stroke-width:1.8!important}
+  .ynot-reference-nav-tools .ynot-reference-earn-orb{text-decoration:none!important}
+  .ynot-reference-nav-tools .ynot-reference-earn-orb span{display:grid!important;place-items:center!important;width:23px!important;height:23px!important;border-radius:50%!important;border:1px solid rgba(255,255,255,.26)!important;background:linear-gradient(145deg,rgba(255,255,255,.22),rgba(255,255,255,.05))!important;color:#fff!important;font:850 13px/1 Inter,sans-serif!important;box-shadow:inset 0 1px rgba(255,255,255,.28)!important}
 
   /* WORLD / YNOT — same 3D glass language as before, second centered tier. */
   .ynot-reference-header .ynot-world-controls{
