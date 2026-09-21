@@ -65,17 +65,58 @@ const DEFAULT_SHIPPING:Record<FeedCountry,number>={
 };
 
 export const CATEGORY_QUERIES:Record<Exclude<FeedCategory,"general">,string[]>={
-  home:["table lamp","desk lamp","storage organizer","side table","wall mirror","throw blanket","home decor","small shelf"],
-  fashion:["crossbody bag","shoulder bag","backpack","sunglasses","belt","jewelry","wallet","cap"],
-  beauty:["hair tool","facial device","skincare tool","makeup organizer","hair brush","beauty device","face roller","cosmetic bag"],
-  tech:["wireless earbuds","headphones","power bank","phone stand","USB-C charger","desk charger","keyboard","smart light"],
-  fitness:["gym bag","resistance bands","recovery tool","lifting straps","shaker bottle","yoga mat","foam roller","training accessory"],
-  kitchen:["coffee accessory","air fryer accessory","kitchen organizer","food storage","water bottle","kitchen gadget","utensil set","coffee grinder accessory"],
-  pets:["dog toy","cat toy","pet bed","pet grooming tool","pet travel bowl","dog leash","pet organizer","pet accessory"],
-  office:["office chair accessory","desk organizer","laptop stand","desk mat","monitor stand","ergonomic accessory","cable organizer","office lamp"],
-  travel:["carry on bag","packing cubes","travel organizer","toiletry bag","travel pillow","luggage accessory","passport wallet","weekender bag"],
-  outdoors:["camping accessory","hiking backpack","outdoor light","water bottle","picnic accessory","travel blanket","dry bag","outdoor organizer"],
-  gifts:["gift set","birthday gift","housewarming gift","personalized gift","gift for him","gift for her","small luxury gift","unique gift"]
+  home:[
+    "sofa","sectional sofa","accent chair","dining table","coffee table","bed frame","mattress","floor lamp",
+    "table lamp","area rug","wall mirror","bookshelf","storage cabinet","nightstand","office chair","home decor"
+  ],
+  fashion:[
+    "women dress","midi dress","maxi dress","mini dress","women jeans","women leggings","activewear leggings",
+    "sports bra","women blazer","women jacket","women coat","women top","women bodysuit","women swimwear",
+    "women bikini","women sneakers","women boots","men hoodie","men t-shirt","men jeans","men sneakers",
+    "handbag","crossbody bag","shoulder bag","backpack","sunglasses","jewelry"
+  ],
+  beauty:[
+    "face serum","vitamin c serum","hyaluronic acid serum","moisturizer","face cleanser","sunscreen","retinol serum",
+    "eye cream","lip balm","foundation makeup","concealer","mascara","lipstick","blush","bronzer","eyeshadow palette",
+    "shampoo","conditioner","hair mask","hair oil","hair dryer","hair straightener","curling iron","skincare set",
+    "body lotion","fragrance perfume"
+  ],
+  tech:[
+    "smartphone","tablet","laptop","smartwatch","wireless earbuds","noise cancelling headphones","bluetooth speaker",
+    "gaming keyboard","gaming mouse","monitor","webcam","portable projector","power bank","USB-C charger",
+    "smart home camera","smart light","robot vacuum","air purifier"
+  ],
+  fitness:[
+    "women gym leggings","sports bra","gym shorts","gym top","men gym shorts","men gym shirt","running shoes",
+    "dumbbells","adjustable dumbbells","kettlebell","weight bench","pull up bar","treadmill","exercise bike",
+    "rowing machine","resistance bands","yoga mat","lifting belt","lifting straps","foam roller","massage gun",
+    "protein shaker","gym bag"
+  ],
+  kitchen:[
+    "air fryer","espresso machine","coffee machine","blender","stand mixer","rice cooker","toaster oven",
+    "cookware set","frying pan","chef knife","knife set","food processor","water filter","vacuum sealer",
+    "food storage set","water bottle","coffee grinder"
+  ],
+  pets:[
+    "dog food","cat food","dog bed","cat bed","automatic pet feeder","pet water fountain","dog harness","dog leash",
+    "cat tree","dog toy","cat toy","pet grooming kit","pet carrier","pet stroller","dog crate"
+  ],
+  office:[
+    "ergonomic office chair","standing desk","office desk","monitor","desk lamp","laptop stand","monitor arm",
+    "mechanical keyboard","wireless mouse","webcam","desk organizer","filing cabinet","printer","office storage"
+  ],
+  travel:[
+    "carry on luggage","checked luggage","hard shell suitcase","weekender bag","travel backpack","duffel bag",
+    "packing cubes","toiletry bag","travel pillow","passport holder","luggage set","travel organizer"
+  ],
+  outdoors:[
+    "camping tent","sleeping bag","camping chair","hiking boots","hiking backpack","portable power station",
+    "camping stove","cooler","outdoor grill","headlamp","water filter","dry bag","picnic blanket"
+  ],
+  gifts:[
+    "luxury gift set","beauty gift set","skincare gift set","perfume gift set","jewelry gift","watch gift",
+    "home gift set","coffee gift set","tech gift","fitness gift","birthday gift","anniversary gift"
+  ]
 };
 
 function cleanText(value:unknown){
@@ -534,7 +575,7 @@ export async function buildCatalogFeed(opts:{
   const categories=opts.categories?.length?opts.categories:[
     "home","fashion","beauty","tech","fitness","kitchen","pets","office","travel","outdoors","gifts"
   ];
-  const perCategory=Math.max(20,Math.min(300,opts.perCategory||120));
+  const perCategory=Math.max(50,Math.min(1000,opts.perCategory||400));
   const jobs=countries.flatMap(country=>categories.map(category=>({country,category})));
 
   const groups=await mapLimit(jobs,Math.max(1,Math.min(10,opts.concurrency||6)),async({country,category})=>{
