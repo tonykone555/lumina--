@@ -1,0 +1,2 @@
+import {NextRequest,NextResponse} from "next/server";import {authenticatedUser} from "@/lib/creators/earn";import {listTryPostAccounts} from "@/lib/creators/trypost";
+export async function GET(req:NextRequest){try{await authenticatedUser(req);const accounts=await listTryPostAccounts();return NextResponse.json({accounts})}catch(e){const m=e instanceof Error?e.message:"SOCIAL_ACCOUNTS_FAILED";return NextResponse.json({error:m},{status:/SIGN_IN|SESSION/.test(m)?401:/NOT_CONFIGURED/.test(m)?503:400})}}
