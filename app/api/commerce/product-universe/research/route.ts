@@ -96,12 +96,18 @@ export async function POST(req:NextRequest){
   const country=String(body?.country||"US").toUpperCase();
 
   const queue=await sb(
-    `ynot_product_research_queue?status=eq.pending&select=*&order=priority.desc,updated_at.asc&limit=${limit}`
+    `ynot_product_research_queue?status=in.(pending,retry)&select=*&order=priority.desc,updated_at.asc&limit=${limit}`
   );
   const results:any[]=[];
+  const concurrency=Math.max(1,Math.min(10,Number(body?.concurrency||8)));
+  let cursor=0;
 
-  for(const item of queue){
-    try{
+  async function worker(){
+    while(true){
+      const index=cursor++;
+      if(index>=queue.length)return;
+      const item=queue[index];
+      try{
       const found=await catalogSearch(item.taxonomy_id,item.object_name,country);
       const merchants=[...new Set(found.products.map(merchantDomain).filter(Boolean))].slice(0,25);
       const brands=[...new Set(found.products.map(brandName).filter(Boolean))].slice(0,25);
@@ -139,15 +145,21 @@ export async function POST(req:NextRequest){
           updated_at:new Date().toISOString()
         })
       }).catch(()=>{});
-      results.push({taxonomyId:item.taxonomy_id,object:item.object_name,status:"retry"});
+        results.push({taxonomyId:item.taxonomy_id,object:item.object_name,status:"retry"});
+      }
     }
   }
+
+  await Promise.all(Array.from({length:Math.min(concurrency,queue.length)},()=>worker()));
 
   return NextResponse.json({
     ok:true,
     country,
     processed:results.length,
     validated:results.filter(x=>x.status==="validated").length,
+    noSample:results.filter(x=>x.status==="no_sample").length,
+    retry:results.filter(x=>x.status==="retry").length,
+    concurrency,
     results
   });
 }
