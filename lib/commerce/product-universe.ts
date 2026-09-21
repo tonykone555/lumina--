@@ -23,8 +23,9 @@ const BLOCKED_PATTERNS:[RegExp,string][]=[
   [/\btobacco\b|\bnicotine\b|\bvap(e|ing)\b/i,"regulated-tobacco-nicotine"],
   [/\bcannabis\b|\bmarijuana\b|\bthc\b|\bcbd\b/i,"regulated-recreational-drug"],
   [/\balcoholic beverages\b|\bliquor\b|\bspirits\b|\bwine\b|\bbeer\b/i,"regulated-alcohol"],
-  [/\bfirearms?\b|\bammunition\b|\bgun parts?\b|\bsilencers?\b/i,"regulated-weapons"],
+  [/\bfirearms?\b|\bammunition\b|\bgun parts?\b|\bsilencers?\b|\bweapon scopes?\b|\bweapon sights?\b/i,"regulated-weapons"],
   [/\bexplosives?\b|\bfireworks?\b/i,"regulated-explosives"],
+  [/\bpachinko\b|\bpachislot\b|\bslot machines?\b|\bcasino games?\b/i,"regulated-gambling"],
   [/\bsteroids?\b|\bhormones?\b/i,"restricted-health-product"]
 ];
 
