@@ -19,15 +19,11 @@ function normalizeImage(value:string){
 }
 function extractImages(html:string){
  const found=new Set<string>();
- const patterns=[
-  /https:\\/\\/i\.pinimg\.com\\/[^"'<>\\s]+/g,
-  /https:\/\/i\.pinimg\.com\/[^"'<>\\s]+/g
- ];
- for(const pattern of patterns){
-  for(const raw of html.match(pattern)||[]){
-   const image=normalizeImage(raw);
-   if(image&&/\.(?:jpe?g|png|webp)(?:\?|$)/i.test(image))found.add(image);
-  }
+ const normalized=html.replace(/\\u002F/g,"/").replace(/\\\//g,"/");
+ const matches=normalized.match(/https:\/\/i\.pinimg\.com\/[^"'<>\\s]+/g)||[];
+ for(const raw of matches){
+  const image=normalizeImage(raw);
+  if(image&&/\.(?:jpe?g|png|webp)(?:\?|$)/i.test(image))found.add(image);
  }
  return [...found];
 }
