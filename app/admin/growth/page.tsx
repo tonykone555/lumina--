@@ -3,6 +3,7 @@ import "./growth.css";
 import CreativeActions from "./CreativeActions";
 import GrowthInbox from "./GrowthInbox";
 import CampaignBuilder from "./CampaignBuilder";
+import GrowthHosts from "./GrowthHosts";
 
 export const dynamic = "force-dynamic";
 
@@ -44,8 +45,9 @@ export default async function GrowthAdminPage() {
   return <main className="growth">
     <div className="ambient a"/><div className="ambient b"/>
     <header><div><div className="eyebrow">YNOT / PRIVATE CONTROL ROOM</div><h1>Growth Intelligence</h1><p>Products → creative hypotheses → approval → distribution → evidence.</p></div><div className="live"><i/> Approval gated</div></header>
-    <nav className="growthTabs"><Link className="active" href="/admin/growth">Overview</Link><Link href="/admin/growth/content">Content</Link><Link href="/admin/growth/queue">Prompt Packs</Link><Link href="/admin/growth/threads">Threads</Link></nav>
+    <nav className="growthTabs"><Link className="active" href="/admin/growth">Overview</Link><a href="#hosts">Hosts</a><Link href="/admin/growth/content">Content</Link><Link href="/admin/growth/queue">Prompt Packs</Link><Link href="/admin/growth/threads">Threads</Link></nav>
     <CampaignBuilder/>
+    <GrowthHosts/>
     <section className="metrics">
       <Metric label="Creative hypotheses" value={String(creatives.length)} sub="latest loaded"/>
       <Metric label="Impressions" value={totals.impressions.toLocaleString()} sub="recorded evidence"/>
