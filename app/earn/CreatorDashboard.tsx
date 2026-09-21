@@ -2,7 +2,6 @@
 
 import {useEffect,useMemo,useState} from "react";
 import Link from "next/link";
-import {useSearchParams} from "next/navigation";
 import {ArrowLeft,ArrowRight,Check,Copy,ExternalLink,Link2,LogIn,Search,Share2,Sparkles,TrendingUp,WalletCards,X} from "lucide-react";
 import {authedFetch,readSession} from "@/lib/ynot/supabase-browser";
 import CreatorStudio from "./CreatorStudio";
@@ -20,10 +19,7 @@ function money(v:number,currency="EUR"){try{return new Intl.NumberFormat(undefin
 function share(productId:string,code:string){return `https://ynotworld.app/p/${encodeURIComponent(productId)}?ref=${encodeURIComponent(code)}`}
 
 export default function CreatorDashboard(){
- const searchParams=useSearchParams();
- const requestedTab=searchParams.get("tab");
- const initialTab:Tab=(["overview","discover","studio","links","earnings","academy"] as Tab[]).includes(requestedTab as Tab)?requestedTab as Tab:"overview";
- const[data,setData]=useState<Dashboard|null>(null),[loading,setLoading]=useState(true),[signedOut,setSignedOut]=useState(false),[tab,setTab]=useState<Tab>(initialTab);
+ const[data,setData]=useState<Dashboard|null>(null),[loading,setLoading]=useState(true),[signedOut,setSignedOut]=useState(false),[tab,setTab]=useState<Tab>("overview");
  const[query,setQuery]=useState(""),[results,setResults]=useState<Product[]>([]),[searching,setSearching]=useState(false),[working,setWorking]=useState<string>(""),[notice,setNotice]=useState("");
  const[niches,setNiches]=useState<string[]>([]),[bio,setBio]=useState(""),[onboarding,setOnboarding]=useState(false);
 
@@ -38,7 +34,7 @@ export default function CreatorDashboard(){
   }catch(e){setNotice(e instanceof Error?e.message:"Unable to load dashboard")}finally{setLoading(false)}
  }
  useEffect(()=>{void load();const changed=()=>setTimeout(()=>void load(),50);window.addEventListener("ynot:auth-changed",changed);return()=>window.removeEventListener("ynot:auth-changed",changed)},[]);
- useEffect(()=>{const next=searchParams.get("tab") as Tab|null;if(next&&(["overview","discover","studio","links","earnings","academy"] as Tab[]).includes(next))setTab(next)},[searchParams]);
+ useEffect(()=>{const next=new URLSearchParams(window.location.search).get("tab") as Tab|null;if(next&&(["overview","discover","studio","links","earnings","academy"] as Tab[]).includes(next))setTab(next)},[]);
 
  async function saveOnboarding(){
   setWorking("onboarding");setNotice("");
