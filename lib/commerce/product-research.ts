@@ -74,7 +74,7 @@ async function catalogSearch(item:QueueItem,country:string):Promise<ResearchResu
           filters:{
             available:true,
             ships_to:{country},
-            categories:[{id:item.taxonomy_id}]
+            categories:[item.taxonomy_id]
           },
           context:{address_country:country,intent:item.full_name},
           pagination:{limit:50}
@@ -82,14 +82,21 @@ async function catalogSearch(item:QueueItem,country:string):Promise<ResearchResu
       }
     }
   };
-  const res=await fetch("https://catalog.shopify.com/api/ucp/mcp",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(payload),
-    cache:"no-store",
-    signal:AbortSignal.timeout(20000)
-  });
-  const raw:any=await res.json().catch(()=>null);
+  let res:Response|null=null;
+  let raw:any=null;
+  for(let attempt=0;attempt<3;attempt++){
+    res=await fetch("https://catalog.shopify.com/api/ucp/mcp",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload),
+      cache:"no-store",
+      signal:AbortSignal.timeout(20000)
+    });
+    raw=await res.json().catch(()=>null);
+    if(res.status!==429)break;
+    await new Promise(resolve=>setTimeout(resolve,750*(attempt+1)));
+  }
+  if(!res)throw new Error("SHOPIFY_CATALOG_NO_RESPONSE");
   let content:any=raw?.result?.structuredContent||null;
   if(!content&&Array.isArray(raw?.result?.content)){
     for(const part of raw.result.content){
@@ -214,8 +221,8 @@ export async function researchProductUniverse(opts:{limit?:number;country?:strin
   const limit=Math.max(1,Math.min(25,opts.limit||8));
   const claimed=await rpc("ynot_claim_product_research_batch",{p_limit:limit}) as QueueItem[];
   const results:ResearchResult[]=[];
-  for(let i=0;i<claimed.length;i+=3){
-    const group=claimed.slice(i,i+3);
+  for(let i=0;i<claimed.length;i+=2){
+    const group=claimed.slice(i,i+2);
     const settled=await Promise.allSettled(group.map(async item=>{
       const result=await catalogSearch(item,country);
       await updateSuccess(item,result,country);
