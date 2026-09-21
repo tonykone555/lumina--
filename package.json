@@ -24,7 +24,8 @@
     "remotion": "4.0.506",
     "stripe": "22.4.0",
     "three": "0.180.0",
-    "zod": "^3.25.0"
+    "zod": "^3.25.0",
+    "@higgsfield/client": "0.2.6"
   },
   "devDependencies": {
     "@types/node": "22.0.0",
