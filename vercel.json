@@ -7,6 +7,14 @@
     {
       "path": "/api/admin/growth/threads/auto/run",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/commerce/product-universe/research?limit=12&country=US",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/commerce/product-universe/sync-taxonomy",
+      "schedule": "0 3 * * 0"
     }
   ]
 }
