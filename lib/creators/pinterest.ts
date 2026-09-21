@@ -1,51 +1,102 @@
-const API="https://api.apify.com/v2";
-const ACTOR=process.env.APIFY_PINTEREST_ACTOR||"parsebird~pinterest-search-scraper";
+const CACHE_TTL_MS=10*60*1000;
+const MIN_FETCH_GAP_MS=1200;
+type CacheEntry={expires:number;items:PinterestInspiration[]};
+const g=globalThis as typeof globalThis&{__ynotPinterestCache?:Map<string,CacheEntry>;__ynotPinterestLastFetch?:number};
+const cache=g.__ynotPinterestCache||(g.__ynotPinterestCache=new Map());
+g.__ynotPinterestLastFetch=g.__ynotPinterestLastFetch||0;
 
-function token(){
- const value=String(process.env.APIFY_API_TOKEN||"").trim();
- if(!value)throw new Error("APIFY_API_TOKEN_NOT_CONFIGURED");
- return value;
-}
-function actorId(id:string){return id.replace("/","~")}
-function str(v:unknown){return typeof v==="string"?v:""}
-function bestImage(row:Record<string,unknown>){
- const images=(row.images&&typeof row.images==="object"?row.images:null) as Record<string,unknown>|null;
- return str(row.imageURL)||str(row.imageUrl)||str(row.image_url)||str(images?.orig)||str(images?.["736x"])||str(images?.["564x"])||str(images?.["474x"])||str(row.thumbnail)||"";
-}
-function pinUrl(row:Record<string,unknown>){
- const raw=str(row.url)||str(row.pinUrl)||str(row.pin_url);
- if(raw)return raw;
- const id=str(row.id);return id?"https://www.pinterest.com/pin/"+id+"/":"";
-}
 export type PinterestInspiration={id:string;title:string;description:string;image:string;source_url:string;creator:string};
+
+function sleep(ms:number){return new Promise(resolve=>setTimeout(resolve,ms))}
+function cleanHtmlText(value:string){
+ return value.replace(/\\u002F/g,"/").replace(/\\u0026/g,"&").replace(/&amp;/g,"&").replace(/\\\//g,"/").replace(/\\u003C[^>]*\\u003E/g," ").replace(/<[^>]+>/g," ").replace(/\\s+/g," ").trim();
+}
+function normalizeImage(value:string){
+ let url=value.replace(/\\u002F/g,"/").replace(/\\\//g,"/");
+ try{url=decodeURIComponent(url)}catch{}
+ if(!/^https:\/\/i\.pinimg\.com\//i.test(url))return"";
+ return url.replace(/\/\/(?:60x60|75x75|100x100|136x136|140x140|170x|236x|280x280_RS|474x|564x|736x)\//,"/736x/");
+}
+function extractImages(html:string){
+ const found=new Set<string>();
+ const patterns=[
+  /https:\\/\\/i\.pinimg\.com\\/[^"'<>\\s]+/g,
+  /https:\/\/i\.pinimg\.com\/[^"'<>\\s]+/g
+ ];
+ for(const pattern of patterns){
+  for(const raw of html.match(pattern)||[]){
+   const image=normalizeImage(raw);
+   if(image&&/\.(?:jpe?g|png|webp)(?:\?|$)/i.test(image))found.add(image);
+  }
+ }
+ return [...found];
+}
+function nearbyMeta(html:string,image:string){
+ const needles=[image,image.replace(/\//g,"\\/")];
+ let index=-1;
+ for(const needle of needles){index=html.indexOf(needle);if(index>=0)break}
+ if(index<0)return{title:"Pinterest inspiration",description:"",creator:"",pinId:""};
+ const chunk=html.slice(Math.max(0,index-2600),Math.min(html.length,index+2600));
+ const pick=(keys:string[])=>{
+  for(const key of keys){
+   const m=chunk.match(new RegExp('"' + key + '"\\s*:\\s*"([^"]{1,400})"','i'));
+   if(m?.[1])return cleanHtmlText(m[1]);
+  }
+  return"";
+ };
+ const idMatch=chunk.match(/"id"\s*:\s*"?(\d{6,})"?/);
+ return{
+  title:pick(["grid_title","title","name"])||"Pinterest inspiration",
+  description:pick(["description","seo_description","alt_text"]),
+  creator:pick(["full_name","username"]),
+  pinId:idMatch?.[1]||""
+ };
+}
+async function fetchPinterestHtml(query:string){
+ const now=Date.now(),wait=Math.max(0,MIN_FETCH_GAP_MS-(now-(g.__ynotPinterestLastFetch||0)));
+ if(wait)await sleep(wait);
+ g.__ynotPinterestLastFetch=Date.now();
+ const url="https://www.pinterest.com/search/pins/?q="+encodeURIComponent(query)+"&rs=typed";
+ const response=await fetch(url,{
+  headers:{
+   "User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+   "Accept":"text/html,application/xhtml+xml",
+   "Accept-Language":"en-US,en;q=0.9",
+   "Cache-Control":"no-cache"
+  },
+  redirect:"follow",
+  cache:"no-store",
+  signal:AbortSignal.timeout(15000)
+ });
+ if(!response.ok)throw new Error("PINTEREST_SCRAPE_HTTP_"+response.status);
+ const html=await response.text();
+ if(html.length<1000)throw new Error("PINTEREST_SCRAPE_EMPTY");
+ return{html,url};
+}
 
 export async function searchPinterestInspiration(query:string,limit=24){
  const q=query.trim().slice(0,160);
  if(q.length<2)return[];
- const response=await fetch(API+"/acts/"+actorId(ACTOR)+"/run-sync-get-dataset-items?clean=true",{
-  method:"POST",
-  headers:{Authorization:"Bearer "+token(),"Content-Type":"application/json"},
-  body:JSON.stringify({query:q,filter:"all",limit:Math.max(8,Math.min(40,limit))}),
-  signal:AbortSignal.timeout(90000),
-  cache:"no-store"
- });
- if(!response.ok){
-  const body=await response.text();
-  throw new Error("PINTEREST_SEARCH_FAILED_"+response.status+": "+body.slice(0,180));
- }
- const rows=await response.json() as Record<string,unknown>[];
- const out:PinterestInspiration[]=[];const seen=new Set<string>();
- for(const row of Array.isArray(rows)?rows:[]){
-  const image=bestImage(row);if(!image||seen.has(image))continue;seen.add(image);
-  const pinner=(row.pinner&&typeof row.pinner==="object"?row.pinner:null) as Record<string,unknown>|null;
-  out.push({
-   id:str(row.id)||image,
-   title:str(row.title)||str(row.name)||"Pinterest inspiration",
-   description:str(row.description)||str(row.altText)||"",
+ const key=q.toLowerCase()+"|"+limit;
+ const hit=cache.get(key);
+ if(hit&&hit.expires>Date.now())return hit.items;
+ const {html,url}=await fetchPinterestHtml(q);
+ const images=extractImages(html);
+ if(!images.length)throw new Error("PINTEREST_SCRAPE_NO_IMAGES");
+ const items:PinterestInspiration[]=[];const seen=new Set<string>();
+ for(const image of images){
+  if(seen.has(image))continue;seen.add(image);
+  const meta=nearbyMeta(html,image);
+  items.push({
+   id:meta.pinId||image,
+   title:meta.title,
+   description:meta.description,
    image,
-   source_url:pinUrl(row),
-   creator:str(pinner?.fullName)||str(pinner?.username)||""
+   source_url:meta.pinId?"https://www.pinterest.com/pin/"+meta.pinId+"/":url,
+   creator:meta.creator
   });
+  if(items.length>=Math.max(8,Math.min(40,limit)))break;
  }
- return out.slice(0,Math.max(8,Math.min(40,limit)));
+ cache.set(key,{expires:Date.now()+CACHE_TTL_MS,items});
+ return items;
 }
