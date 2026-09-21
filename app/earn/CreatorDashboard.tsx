@@ -4,11 +4,13 @@ import {useEffect,useMemo,useState} from "react";
 import Link from "next/link";
 import {ArrowLeft,ArrowRight,Check,Copy,ExternalLink,Link2,LogIn,Search,Share2,Sparkles,TrendingUp,WalletCards,X} from "lucide-react";
 import {authedFetch,readSession} from "@/lib/ynot/supabase-browser";
+import CreatorStudio from "./CreatorStudio";
+import CreatorAcademy from "./CreatorAcademy";
 
 type Product={id:string;title:string;brand?:string;price?:number|null;currency?:string;image?:string;images?:string[];url?:string;description?:string;category?:string};
 type CreatorProduct={id:string;product_id:string;title:string;brand?:string;image_url?:string;product_url?:string;price?:number|null;currency:string;commission_rate:number;commission_cents?:number|null};
 type Dashboard={creator:any;stats:{clicks:number;products:number;pending_cents:number;available_cents:number;paid_cents:number};products:CreatorProduct[];commissions:any[];payouts:any[]};
-type Tab="overview"|"discover"|"links"|"earnings";
+type Tab="overview"|"discover"|"studio"|"links"|"earnings"|"academy";
 const interests=["fashion","beauty","fitness","home","tech","pets","food","lifestyle"];
 const browse=["fashion finds","beauty tools","fitness accessories","home decor","tech accessories","pet accessories"];
 
@@ -64,9 +66,9 @@ export default function CreatorDashboard(){
  return <main className="creatorDash">
   <header className="creatorTop"><Link href="/" className="earnBrand">YNOT</Link><div className="creatorTopRight"><Link href="/earn">Earn with YNOT</Link><a href={`/c/${code}`} target="_blank">My storefront <ExternalLink/></a><div className="creatorAvatar">{data?.creator?.avatar_url?<img src={data.creator.avatar_url} alt=""/>:<span>{String(data?.creator?.display_name||"Y")[0]}</span>}</div></div></header>
   <div className="creatorShell">
-   <aside className="creatorSide"><div className="creatorIdentity"><small>YNOT CREATOR</small><strong>{data?.creator?.display_name||"Creator"}</strong><span>@{code}</span></div><nav>{(["overview","discover","links","earnings"] as Tab[]).map(x=><button key={x} className={tab===x?"active":""} onClick={()=>setTab(x)}>{x==="overview"?"Overview":x==="discover"?"Find products":x==="links"?"My products & links":"Earnings"}</button>)}</nav><div className="creatorSideCard"><Sparkles/><b>{Math.round(rate*100)}% base commission</b><span>Current creator rate on eligible attributed order subtotal.</span></div><Link className="creatorBack" href="/"><ArrowLeft/> Back to YNOT shop</Link></aside>
+   <aside className="creatorSide"><div className="creatorIdentity"><small>YNOT CREATOR</small><strong>{data?.creator?.display_name||"Creator"}</strong><span>@{code}</span></div><nav>{(["overview","discover","studio","links","earnings","academy"] as Tab[]).map(x=><button key={x} className={tab===x?"active":""} onClick={()=>setTab(x)}>{x==="overview"?"Overview":x==="discover"?"Find products":x==="studio"?"Creator Studio":x==="links"?"My products & links":x==="earnings"?"Earnings":"Academy"}</button>)}</nav><div className="creatorSideCard"><Sparkles/><b>{Math.round(rate*100)}% base commission</b><span>Current creator rate on eligible attributed order subtotal.</span></div><Link className="creatorBack" href="/"><ArrowLeft/> Back to YNOT shop</Link></aside>
    <section className="creatorMain">
-    <div className="creatorHeading"><div><span>CREATOR DASHBOARD</span><h1>{tab==="overview"?"Build your catalogue. Grow your earnings.":tab==="discover"?"Find something worth posting.":tab==="links"?"Your products. Your links.":"Earnings & payouts"}</h1></div>{tab!=="discover"&&<button className="creatorAction" onClick={()=>setTab("discover")}>Find products <Search/></button>}</div>
+    <div className="creatorHeading"><div><span>CREATOR DASHBOARD</span><h1>{tab==="overview"?"Build your catalogue. Grow your earnings.":tab==="discover"?"Find something worth posting.":tab==="studio"?"Create the content.":tab==="links"?"Your products. Your links.":tab==="earnings"?"Earnings & payouts":"Learn the YNOT creator system."}</h1></div>{tab!=="discover"&&tab!=="studio"&&tab!=="academy"&&<button className="creatorAction" onClick={()=>setTab("discover")}>Find products <Search/></button>}</div>
     {notice&&<div className="creatorNotice">{notice}</div>}
 
     {onboarding&&<section className="creatorOnboard"><div><span>ONE-MINUTE SETUP</span><h2>What do you actually post about?</h2><p>Pick a few interests. YNOT will use these later to rank products and content opportunities for you.</p></div><div className="creatorInterest">{interests.map(x=><button key={x} className={niches.includes(x)?"active":""} onClick={()=>setNiches(s=>s.includes(x)?s.filter(v=>v!==x):[...s,x].slice(0,8))}>{niches.includes(x)?<Check/>:null}{x}</button>)}</div><textarea value={bio} onChange={e=>setBio(e.target.value)} placeholder="Optional: tell YNOT what your audience likes…"/><button className="creatorAction" disabled={working==="onboarding"||!niches.length} onClick={saveOnboarding}>{working==="onboarding"?"Saving…":"Activate creator profile"} <ArrowRight/></button></section>}
@@ -83,6 +85,10 @@ export default function CreatorDashboard(){
       {results.length?<div className="creatorProductGrid">{results.map(p=>{const active=selectedIds.has(String(p.id)),commission=Number(p.price||0)*rate;return <article key={p.id} className={active?"active":""}><div className="creatorProductImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}{active&&<i><Check/> Promoting</i>}</div><div className="creatorProductBody"><small>{p.brand||"YNOT"}</small><h3>{p.title}</h3><div className="creatorProductMoney"><span>{p.price!=null?money(Number(p.price),p.currency||"EUR"):"Price varies"}</span><b>{p.price!=null?`Earn ~${money(commission,p.currency||"EUR")} / sale`:`${Math.round(rate*100)}% commission`}</b></div><button disabled={active||working===p.id} onClick={()=>void promote(p)}>{active?"Already promoting":working===p.id?"Adding…":"Promote this"} <ArrowRight/></button></div></article>})}</div>:<div className="creatorDiscoverEmpty"><TrendingUp/><h2>Search the YNOT catalogue</h2><p>Pick products you would genuinely make content about. Your link appears as soon as you add one.</p></div>}
     </>}
 
+
+    {tab==="studio"&&<CreatorStudio products={data?.products||[]}/>} 
+
+    {tab==="academy"&&<CreatorAcademy/>}
     {tab==="links"&&<section className="creatorPanel creatorLinksPanel"><div className="creatorPanelHead"><div><span>MY PRODUCTS</span><h2>{data?.products.length||0} active promotion links</h2></div></div>{data?.products.length?<div className="creatorLinkRows">{data.products.map(p=>{const url=share(p.product_id,code);return <article key={p.id}><div className="creatorLinkProduct">{p.image_url?<img src={p.image_url} alt=""/>:<span>Y</span>}<div><strong>{p.title}</strong><small>{p.brand||"YNOT"} · {p.price!=null?money(Number(p.price),p.currency):"Price varies"} · {p.commission_cents?moneyCents(p.commission_cents,p.currency):`${Math.round(p.commission_rate*100)}%`}</small></div></div><div className="creatorLinkBox"><code>{url.replace("https://","")}</code><button onClick={()=>copy(url)}><Copy/></button><a href={url} target="_blank"><ExternalLink/></a></div><button className="creatorRemove" disabled={working===p.product_id} onClick={()=>void removeProduct(p.product_id)}><X/> Remove</button></article>})}</div>:<div className="creatorEmpty"><Link2/><h3>Your links will appear here</h3><p>Choose a product first.</p><button onClick={()=>setTab("discover")}>Find products</button></div>}</section>}
 
     {tab==="earnings"&&<>
