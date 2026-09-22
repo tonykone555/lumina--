@@ -12,3 +12,34 @@
 @media(max-width:760px){.float-rail{width:58px;padding:14px 8px;align-items:center;background:rgba(20,27,22,.38)}.logo-orb{width:42px;margin-bottom:28px;text-align:center}.logo-orb strong{font-size:0}.logo-orb strong i{font-size:26px}.logo-orb small,.rail-orb span,.rail-bottom span{display:none}.rail-nav{gap:8px}.rail-orb{width:40px;height:40px;padding:0;justify-content:center}.rail-bottom b{font-size:0}.rail-bottom b svg{width:20px}.semantic-world{left:58px}.search-float{left:70px;right:10px;top:10px;height:44px}.search-float input{font-size:13px}.profile-tools{display:none}.niche-switcher{left:70px;right:10px;top:62px;transform:none;overflow-x:auto;justify-content:flex-start;scrollbar-width:none}.product-panel{position:absolute;top:auto;right:8px;left:66px;bottom:8px;width:auto;height:67dvh;border-radius:22px}.product-hero{height:38%;min-height:185px}.journey-dock{left:66px;right:8px;bottom:10px;grid-template-columns:1fr}.catalog-pill{display:none}.taste-strip{min-width:0}.refine-orb{bottom:55px}.pin-shelf{left:68px;top:108px}.drop-anything{display:none}.semantic-anchor{font-size:12px;padding:9px 12px}.product-orb{--size:112px}.product-orb:nth-of-type(5n){--size:132px}}
 
 .ynot-bottom-search button.is-searching{display:flex;align-items:center;gap:7px;min-width:104px;justify-content:center}.ynot-search-spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:ynot-spin .7s linear infinite}@keyframes ynot-spin{to{transform:rotate(360deg)}}
+
+
+/* YNOT instant product motion: look-ahead prewarmed, GPU-composited and cached per product */
+.lv4-product[data-product-id]{isolation:isolate;overflow:hidden}
+.lv4-product[data-product-id]>img{will-change:transform,filter;transform:translateZ(0);backface-visibility:hidden}
+.lv4-product.ynot-motion-ready:not(.ynot-motion-active)>img{animation-play-state:paused!important}
+.lv4-product.ynot-motion-active[data-motion-type="fast"]>img{animation-duration:5.8s;animation-timing-function:ease-in-out;animation-iteration-count:infinite;animation-direction:alternate}
+.lv4-product.ynot-motion-active[data-motion-preset="soft_float"]>img{animation-name:ynotSoftFloat}
+.lv4-product.ynot-motion-active[data-motion-preset="active_float"]>img{animation-name:ynotActiveFloat;animation-duration:4.4s}
+.lv4-product.ynot-motion-active[data-motion-preset="product_orbit"]>img{animation-name:ynotProductOrbit;animation-duration:6.5s}
+.lv4-product.ynot-motion-active[data-motion-preset="context_push"]>img{animation-name:ynotContextPush;animation-duration:7.2s}
+.lv4-product.ynot-motion-active[data-motion-preset="fashion_alive"]>img{animation-name:ynotFashionAlive;animation-duration:6.8s}
+.lv4-product.ynot-motion-active[data-motion-preset="beauty_alive"]>img{animation-name:ynotBeautyAlive;animation-duration:6.2s}
+.lv4-product.ynot-motion-ready::after{content:"";position:absolute;inset:-30%;z-index:1;pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 37%,rgba(255,255,255,.16) 49%,transparent 61%);transform:translate3d(-26%,0,0) rotate(4deg)}
+.lv4-product.ynot-motion-active::after{animation:ynotLightSweep 7.5s ease-in-out infinite}
+.lv4-product .ynot-product-motion-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;opacity:0;transition:opacity .32s ease;background:transparent}
+.lv4-product.ynot-motion-active[data-motion-type="video"] .ynot-product-motion-video{opacity:1}
+.lv4-product.ynot-motion-active[data-motion-type="video"]>img{opacity:0;transition:opacity .28s ease}
+.lv4-product .lv4-vita-gloss,.lv4-product .lv4-product-tooltip,.lv4-product .lv4-price,.lv4-product .lv4-orbmeta{z-index:3}
+
+@keyframes ynotSoftFloat{0%{transform:scale(1.015) translate3d(-.8%,.6%,0)}50%{transform:scale(1.055) translate3d(.9%,-.9%,0)}100%{transform:scale(1.025) translate3d(-.4%,-.2%,0)}}
+@keyframes ynotActiveFloat{0%{transform:scale(1.02) translate3d(-1.2%,1%,0) rotate(-.35deg)}55%{transform:scale(1.07) translate3d(1.1%,-1.1%,0) rotate(.45deg)}100%{transform:scale(1.035) translate3d(-.25%,-.4%,0) rotate(0)}}
+@keyframes ynotProductOrbit{0%{transform:scale(1.045) translate3d(-1.5%,.4%,0) rotate(-.7deg)}50%{transform:scale(1.09) translate3d(1.35%,-.75%,0) rotate(.75deg)}100%{transform:scale(1.055) translate3d(-.35%,.25%,0) rotate(-.15deg)}}
+@keyframes ynotContextPush{0%{transform:scale(1.01) translate3d(0,.4%,0)}50%{transform:scale(1.085) translate3d(-.8%,-.55%,0)}100%{transform:scale(1.035) translate3d(.45%,-.15%,0)}}
+@keyframes ynotFashionAlive{0%{transform:scale(1.018) translate3d(0,.35%,0)}35%{transform:scale(1.045) translate3d(.28%,-.22%,0)}70%{transform:scale(1.035) translate3d(-.22%,-.1%,0)}100%{transform:scale(1.055) translate3d(.15%,-.42%,0)}}
+@keyframes ynotBeautyAlive{0%{transform:scale(1.025) translate3d(-.25%,.3%,0)}50%{transform:scale(1.07) translate3d(.35%,-.55%,0)}100%{transform:scale(1.035) translate3d(-.1%,-.15%,0)}}
+@keyframes ynotLightSweep{0%,58%{opacity:0;transform:translate3d(-30%,0,0) rotate(4deg)}68%{opacity:.62}82%{opacity:0;transform:translate3d(38%,0,0) rotate(4deg)}100%{opacity:0}}
+
+@media(prefers-reduced-motion:reduce){
+ .lv4-product.ynot-motion-active[data-motion-type="fast"]>img,.lv4-product.ynot-motion-active::after{animation:none!important}
+}
