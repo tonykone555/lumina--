@@ -42,10 +42,9 @@ export async function rest(path:string,init?:RequestInit){
 }
 
 function hfConfig(){
- const base=String(process.env.HUGGINGFACE_SPACE_URL||"").replace(/\/$/,"");
+ const base=String(process.env.HUGGINGFACE_SPACE_URL||"https://lightricks-ltx-video-distilled.hf.space").replace(/\/$/,"");
  const token=String(process.env.HUGGINGFACE_TOKEN||"");
- const api=String(process.env.HUGGINGFACE_SPACE_API_NAME||"generate").replace(/^\//,"");
- if(!base)throw new Error("HUGGINGFACE_SPACE_NOT_CONFIGURED");
+ const api=String(process.env.HUGGINGFACE_SPACE_API_NAME||"image_to_video").replace(/^\//,"");
  return{base,token,api};
 }
 
@@ -56,14 +55,52 @@ function hfHeaders(token:string,json=false){
  return h;
 }
 
+async function uploadGradioImage(imageUrl:string,base:string,token:string){
+ const source=await fetch(imageUrl,{cache:"no-store"});
+ if(!source.ok)throw new Error("HF_IMAGE_DOWNLOAD_"+source.status);
+ const bytes=await source.arrayBuffer();
+ if(!bytes.byteLength||bytes.byteLength>12*1024*1024)throw new Error("HF_IMAGE_SIZE_INVALID");
+ const mime=(source.headers.get("content-type")||"image/jpeg").split(";")[0];
+ if(!mime.startsWith("image/"))throw new Error("HF_IMAGE_TYPE_INVALID");
+ const ext=mime.includes("png")?"png":mime.includes("webp")?"webp":mime.includes("gif")?"gif":"jpg";
+ const form=new FormData();
+ form.append("files",new Blob([bytes],{type:mime}),"ynot-product."+ext);
+ const upload=await fetch(base+"/gradio_api/upload",{method:"POST",headers:hfHeaders(token),body:form,cache:"no-store"});
+ const data=await upload.json().catch(()=>null);
+ if(!upload.ok)throw new Error("HF_UPLOAD_"+upload.status+":"+String(data?.detail||data?.error||"unknown"));
+ const path=String(Array.isArray(data)?data[0]:"");
+ if(!path)throw new Error("HF_UPLOAD_PATH_MISSING");
+ return{path,orig_name:"ynot-product."+ext,meta:{_type:"gradio.FileData"}};
+}
+
 export async function submitHuggingFace(product:VideoProduct,prompt:string){
  const{base,token,api}=hfConfig();
+ const image=await uploadGradioImage(product.image,base,token);
+ const negative="worst quality, inconsistent motion, blurry, jittery, distorted, warped product, changed logo, changed text, duplicate objects, deformed face, deformed hands";
+ // Official Lightricks Space input order:
+ // prompt, negative prompt, image file, hidden video, height, width, mode,
+ // duration, video frames, seed, randomize seed, guidance scale, improve texture.
+ const data=[
+  prompt,
+  negative,
+  image,
+  null,
+  640,
+  512,
+  "image-to-video",
+  2.0,
+  9,
+  42,
+  true,
+  3.0,
+  false
+ ];
  const r=await fetch(`${base}/gradio_api/call/${encodeURIComponent(api)}`,{
   method:"POST",headers:hfHeaders(token,true),cache:"no-store",
-  body:JSON.stringify({data:[product.image,prompt,3,512,640]})
+  body:JSON.stringify({data})
  });
  const d=await r.json().catch(()=>({}));
- if(!r.ok)throw new Error("HF_SUBMIT_"+r.status+":"+String(d?.detail||d?.error||"unknown"));
+ if(!r.ok)throw new Error("HF_SUBMIT_"+r.status+":"+String(d?.detail||d?.error||d?.message||"unknown"));
  const eventId=String(d?.event_id||"");
  if(!eventId)throw new Error("HF_EVENT_ID_MISSING");
  return eventId;
@@ -132,8 +169,8 @@ export async function persistVideo(productId:string,hash:string,remoteUrl:string
  const up=await fetch(`${base}/storage/v1/object/product-media/${path.split("/").map(encodeURIComponent).join("/")}`,{method:"POST",headers:uploadHeaders,body:bytes,cache:"no-store"});
  if(!up.ok)throw new Error("VIDEO_STORE_"+up.status+":"+(await up.text()).slice(0,160));
  const publicUrl=`${base}/storage/v1/object/public/product-media/${path.split("/").map(encodeURIComponent).join("/")}`;
- await rest("ynot_product_media?on_conflict=product_id,media_type,source_image_hash",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify([{product_id:productId,source_image_url:posterUrl,source_image_hash:hash,media_type:"video_ai",provider:"huggingface-zerogpu",video_url:publicUrl,poster_url:posterUrl,preset:null,status:"ready",priority:50,metadata:{model:"ltx-video",cached:true},updated_at:new Date().toISOString()}])});
+ await rest("ynot_product_media?on_conflict=product_id,media_type,source_image_hash",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify([{product_id:productId,source_image_url:posterUrl,source_image_hash:hash,media_type:"video_ai",provider:"huggingface-zerogpu-lightricks",video_url:publicUrl,poster_url:posterUrl,preset:null,status:"ready",priority:50,metadata:{model:"ltx-video-0.9.8-13b-distilled",space:"Lightricks/ltx-video-distilled",cached:true},updated_at:new Date().toISOString()}])});
  return publicUrl;
 }
 
-export function huggingFaceConfigured(){return Boolean(String(process.env.HUGGINGFACE_SPACE_URL||"").trim())}
+export function huggingFaceConfigured(){return true}
