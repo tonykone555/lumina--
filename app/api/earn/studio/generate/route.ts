@@ -13,12 +13,13 @@ async function storeGeneratedImage(path:string,mimeType:string,data:string){
  return signed(path);
 }
 export async function POST(req:NextRequest){
+ let basePath="",baseImagePrompt="";
  try{
   const u=await authenticatedUser(req),c=await ensureCreator(u),b=await req.json().catch(()=>({})),product=b.product||{};
   const productId=String(product.product_id||product.id||"").slice(0,500),title=String(product.title||"").slice(0,240),image=String(product.image_url||product.image||"").slice(0,1600),description=String(product.description||"").slice(0,2400),category=String(product.category||"").slice(0,240),brand=String(product.brand||"").slice(0,240),mode=String(b.mode||"video-avatar"),angle=String(b.angle||"testimonial"),qualityTier=(String(b.quality_tier||"standard")==="premium"?"premium":"standard") as StudioQualityTier,imageSource=["ynot_standard","ynot_premium","google_flow"].includes(String(b.image_source))?String(b.image_source):"ynot_standard",flowImagePath=String(b.flow_image_path||"").slice(0,1200);
   if(!productId||!title||!image)throw new Error("PRODUCT_REQUIRED");
   const reuseBasePath=String(b.reuse_base_image_path||"").slice(0,1200),sourcePath=String(b.source_path||"").slice(0,1200),avatarPath=String(b.avatar_path||"").slice(0,1200),sourceVideoUrl=sourcePath?await signed(sourcePath):String(b.source_video_url||"").slice(0,1600),avatarImageUrl=avatarPath?await signed(avatarPath):String(b.avatar_image_url||"").slice(0,1600),backgroundImageUrl=String(b.background_image_url||"").slice(0,1600);
-  let baseImageUrl="",basePath="",baseImageModel="",baseImagePrompt="";
+  let baseImageUrl="",baseImageModel="";
   if(reuseBasePath){
     basePath=reuseBasePath;
     baseImageUrl=await signed(reuseBasePath);
