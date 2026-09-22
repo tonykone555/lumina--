@@ -170,3 +170,62 @@ img.ynot-shared-media.has-motion[data-motion-preset="soft_float"]{animation-name
     border-radius:13px!important;
   }
 }
+
+
+/* Final Deals mobile interaction fix: tag ribbon owns horizontal swipes. */
+.ynot-drawer .ynot-dock{
+  touch-action:pan-x!important;
+  overscroll-behavior-x:contain!important;
+  -webkit-overflow-scrolling:touch!important;
+  scroll-snap-type:x proximity;
+  pointer-events:auto!important;
+}
+.ynot-drawer .ynot-dock button{
+  touch-action:pan-x!important;
+  scroll-snap-align:start;
+  user-select:none!important;
+  -webkit-user-select:none!important;
+}
+
+/* The old Discover @ control must never exist above Deals, even on stale CSS. */
+.lv4-mobile-menu{
+  display:none!important;
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
+/* Anchor bag + close to the actual viewport edge, independent of legacy header geometry. */
+.ynot-drawer.open .ynot-head-actions{
+  position:fixed!important;
+  left:auto!important;
+  right:max(10px,env(safe-area-inset-right))!important;
+  top:calc(6px + env(safe-area-inset-top))!important;
+  width:auto!important;
+  min-width:0!important;
+  height:42px!important;
+  transform:none!important;
+  z-index:290!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:10px!important;
+  pointer-events:auto!important;
+}
+.ynot-drawer.open .ynot-head-actions .ynot-cart-trigger,
+.ynot-drawer.open .ynot-head-actions .ynot-close{
+  flex:0 0 40px!important;
+  width:40px!important;
+  height:40px!important;
+}
+
+@media(max-width:760px){
+  .ynot-drawer.open .ynot-head-actions{
+    right:max(8px,env(safe-area-inset-right))!important;
+    top:calc(5px + env(safe-area-inset-top))!important;
+    gap:9px!important;
+  }
+  .ynot-drawer .ynot-dock{
+    padding-right:52px!important;
+  }
+}
