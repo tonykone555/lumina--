@@ -8,7 +8,7 @@ type Job={id:string;product_id:string;source_image_url:string;source_image_hash:
 
 async function rowsFor(ids:string[]){
  const filter=ids.length?"&product_id=in.("+encodeURIComponent(ids.map(id=>'"'+id.replace(/"/g,"")+'"').join(","))+")":"";
- const rows=await rest("ynot_video_jobs?select=id,product_id,source_image_url,source_image_hash,title,category,prompt,external_job_id,status,video_url,poster_url,error&status=in.(queued,processing,ready,failed)"+filter+"&order=updated_at.desc&limit=80");
+ const rows=await rest("ynot_video_jobs?select=id,product_id,source_image_url,source_image_hash,title,category,prompt,external_job_id,status,video_url,poster_url,error&provider=eq.huggingface_zerogpu_lightricks&model=eq.ltx_video_0_9_8_13b_distilled&status=in.(queued,processing,ready,failed)"+filter+"&order=updated_at.desc&limit=80");
  return Array.isArray(rows)?rows as Job[]:[];
 }
 async function processingCount(){
@@ -49,7 +49,7 @@ export async function POST(req:NextRequest){
   const ids=(Array.isArray(b?.product_ids)?b.product_ids:[]).slice(0,40).map((x:any)=>String(x||"").slice(0,500)).filter(Boolean);
   let jobs=await rowsFor(ids);
   if(huggingFaceConfigured()){
-   let slots=Math.max(0,2-await processingCount());
+   let slots=Math.max(0,1-await processingCount());
    for(let i=0;i<jobs.length&&slots>0;i++){
     if(jobs[i].status!=="queued")continue;
     try{jobs[i]=await startQueued(jobs[i]);slots--}catch{}
