@@ -247,3 +247,12 @@ img.ynot-shared-media.has-motion[data-motion-preset="soft_float"]{animation-name
 .ynot-drawer .ynot-close:active{
   transform:scale(.985);
 }
+
+
+/* Desktop YNOT Deals: three product lanes. Mobile stays two lanes. */
+@media(min-width:900px){
+  .ynot-drawer .ynot-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+}
