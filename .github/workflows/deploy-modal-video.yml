@@ -2,6 +2,11 @@ name: Deploy Modal video worker
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "modal/**"
+      - ".github/workflows/deploy-modal-video.yml"
 
 jobs:
   deploy:
