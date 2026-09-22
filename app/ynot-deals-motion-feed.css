@@ -256,3 +256,38 @@ img.ynot-shared-media.has-motion[data-motion-preset="soft_float"]{animation-name
     gap:12px!important;
   }
 }
+
+
+/* Quiet generation indicator: only a tiny, dim top-right pulse while a real video is queued or processing. */
+.ynot-drawer .ynot-video-pulse{
+  position:absolute;
+  top:9px;
+  right:9px;
+  width:6px;
+  height:6px;
+  border-radius:999px;
+  background:rgba(255,255,255,.72);
+  box-shadow:0 0 0 1px rgba(255,255,255,.06),0 0 8px rgba(255,255,255,.06);
+  opacity:0;
+  transform:scale(.9);
+  pointer-events:none;
+  z-index:8;
+}
+.ynot-drawer .ynot-orb[data-video-status="queued"] .ynot-video-pulse,
+.ynot-drawer .ynot-orb[data-video-status="processing"] .ynot-video-pulse{
+  animation:ynotVideoQuietPulse 2.8s ease-in-out infinite;
+}
+@keyframes ynotVideoQuietPulse{
+  0%,100%{opacity:.07;transform:scale(.88)}
+  50%{opacity:.22;transform:scale(1.14)}
+}
+@media(max-width:760px){
+  .ynot-drawer .ynot-video-pulse{top:8px;right:8px;width:5px;height:5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .ynot-drawer .ynot-orb[data-video-status="queued"] .ynot-video-pulse,
+  .ynot-drawer .ynot-orb[data-video-status="processing"] .ynot-video-pulse{
+    animation:none;
+    opacity:.14;
+  }
+}
