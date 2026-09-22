@@ -40,7 +40,7 @@ export default function ProductMotionPrefetch(){
    const batch=[...queued.values()].filter(p=>!inflight.has(p.id)).slice(0,8);if(!batch.length)return;
    batch.forEach(p=>{queued.delete(p.id);inflight.add(p.id)});
    fetch("/api/catalog/media",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({products:batch}),keepalive:true})
-    .then(r=>r.json()).then(d=>{const media=d?.media||{};for(const p of batch){const m=media[p.id] as Media|undefined;if(!m)continue;known.set(p.id,m);document.querySelectorAll<HTMLElement>(`[data-product-id="${CSS.escape(p.id)}"]`).forEach(card=>apply(card,m));}})
+    .then(r=>r.json()).then(d=>{const media=d?.media||{};for(const p of batch){const m=media[p.id] as Media|undefined;if(!m)continue;known.set(p.id,m);document.querySelectorAll<HTMLElement>(`[data-motion-surface="deals"][data-product-id="${CSS.escape(p.id)}"]`).forEach(card=>apply(card,m));}})
     .catch(()=>{})
     .finally(()=>{batch.forEach(p=>inflight.delete(p.id));if(queued.size)flushTimer=scheduleIdle(flush) as number});
   }
