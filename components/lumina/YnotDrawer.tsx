@@ -15,14 +15,16 @@ type CatalogItem={id:string;title:string;brand?:string;price:number|null;currenc
 type CartItem={key:string;productId:string;variantId?:string;title:string;brand?:string;image:string;quantity:number;price:number;currency:string;source:string;url?:string;supplierPrice?:number;category?:string;token?:string;expiresAt?:number};
 
 const sections=["Showcase","Fashion","Jewelry","Accessories","Bags","Tech","Home","Beauty & Hair","Fitness","Pets","Car","Travel","Free Delivery","Amazon"];
-const sectionQueries:Record<string,string>={Showcase:"premium trending fashion bags accessories beauty skincare modern home decor design products","Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
+const sectionQueries:Record<string,string>={Showcase:"premium clothing protein fitness furniture tools home appliances beauty accessories products","Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
 const SHOWCASE_QUERIES=[
- "premium trending fashion bags jewelry accessories",
- "beauty skincare fragrance premium trending",
- "modern home decor furniture design lifestyle",
- "premium handbags jewelry watches sunglasses",
- "designer home accessories lighting decor",
- "premium dresses outerwear bags accessories"
+ "premium clothing dresses jackets activewear accessories",
+ "protein powder nutrition fitness recovery products",
+ "modern furniture sofas chairs tables storage home decor",
+ "home appliances kitchen coffee air purifier vacuum smart home",
+ "useful tools power tools hand tools home improvement workshop",
+ "beauty skincare fragrance grooming premium products",
+ "bags jewelry watches sunglasses accessories",
+ "fitness equipment gym accessories training recovery"
 ];
 const SAVED_KEY="ynot-saved-items";
 function money(v:number,currency="EUR"){try{return new Intl.NumberFormat("en-IE",{style:"currency",currency,maximumFractionDigits:2}).format(v)}catch{return`${v.toFixed(2)} ${currency}`}}
@@ -46,10 +48,34 @@ function showcaseQuality(d:Deal){
  if(d.price<8)score-=20;
  return score;
 }
+function showcaseLane(d:Deal){
+ const text=`${d.title} ${d.brand||""} ${d.section}`.toLowerCase();
+ if(/protein|whey|creatine|nutrition|electrolyte|supplement/.test(text))return"protein";
+ if(/dress|shirt|jacket|coat|hoodie|pants|trouser|jeans|activewear|clothing|apparel/.test(text))return"clothing";
+ if(/sofa|chair|table|desk|cabinet|shelf|furniture|rug|lamp|decor|storage/.test(text))return"furniture";
+ if(/vacuum|blender|coffee|kettle|toaster|air fryer|purifier|humidifier|fan|heater|appliance|smart home/.test(text))return"appliances";
+ if(/drill|screwdriver|wrench|hammer|saw|tool|workshop|home improvement/.test(text))return"tools";
+ if(/serum|skincare|beauty|hair|perfume|fragrance|grooming/.test(text))return"beauty";
+ if(/bag|handbag|tote|wallet|jewel|necklace|earring|bracelet|watch|sunglass|eyewear/.test(text))return"accessories";
+ if(/fitness|gym|training|recovery|dumbbell|resistance|yoga/.test(text))return"fitness";
+ return"other";
+}
 function showcaseProducts(list:Deal[]){
- const ranked=dedupe(list).filter(deal=>!/(?:^|\b)(shoe|shoes|sneaker|sneakers|trainer|trainers|boot|boots|loafer|loafers|heel|heels|sandal|sandals|footwear)(?:\b|$)/i.test(`${deal.title} ${deal.brand||""}`)).map((deal,index)=>({deal,index,quality:showcaseQuality(deal)})).filter(x=>x.quality>-5);
+ const ranked=dedupe(list).filter(deal=>!/(?:^|\b)(shoe|shoes|sneaker|sneakers|trainer|trainers|boot|boots|loafer|loafers|heel|heels|sandal|sandals|footwear)(?:\b|$)/i.test(`${deal.title} ${deal.brand||""}`)).map((deal,index)=>({deal,index,quality:showcaseQuality(deal),lane:showcaseLane(deal)})).filter(x=>x.quality>-5);
  ranked.sort((a,b)=>b.quality-a.quality||a.index-b.index);
- return ranked.map(x=>x.deal);
+ const order=["clothing","protein","furniture","appliances","tools","beauty","accessories","fitness","other"];
+ const buckets=new Map(order.map(k=>[k,ranked.filter(x=>x.lane===k)]));
+ const out:Deal[]=[];
+ let round=0,added=true;
+ while(added){
+  added=false;
+  for(const lane of order){
+   const bucket=buckets.get(lane)||[],item=bucket[round];
+   if(item){out.push(item.deal);added=true}
+  }
+  round++;
+ }
+ return out;
 }
 function cleanVariantLabel(value?:string){return String(value||"").trim().replace(/\s+/g," ").toLowerCase()}
 function selectableVariants(product:Deal){const seen=new Set<string>(),list=(product.variants||[]).filter(variant=>{const label=cleanVariantLabel(variant.label);if(!variant.id||variant.available===false||!label||seen.has(label))return false;seen.add(label);return true});if(list.length>1)return list;if(!list.length)return[];const label=cleanVariantLabel(list[0].label),title=cleanVariantLabel(product.title);return label&&label!==title&&!/^default(?: title)?$|^option$/.test(label)?list:[]}
@@ -74,7 +100,7 @@ export default function YnotDrawer(){
 
  useEffect(()=>{const openStory=(event:Event)=>{const item=(event as CustomEvent<Deal>).detail;if(!item)return;setOpen(true);setStory({...item,section:item.section||"Saved",sections:item.sections||["Saved"],badge:item.badge||"Saved",note:item.note||`${sourceLabel(item.source)} product`});setStoryImage(0)};window.addEventListener("ynot:open-story",openStory);return()=>window.removeEventListener("ynot:open-story",openStory)},[]);
  useEffect(()=>{let alive=true;
-  const showcaseQueries=SHOWCASE_QUERIES.slice(0,3).map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
+  const showcaseQueries=SHOWCASE_QUERIES.slice(0,5).map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
   const requests=[
    ...showcaseQueries.map(params=>fetch(`/api/catalog?${params}`).then(r=>r.json())),
    fetch("https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed").then(r=>r.json()),
