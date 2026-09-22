@@ -125,7 +125,21 @@ export default function ProductMotionPrefetch(){
 
   function attach(root:ParentNode=document){
    const cards=[...root.querySelectorAll<HTMLElement>('[data-motion-surface="deals"][data-product-id]')];
-   cards.forEach(card=>{if(card.dataset.motionObserved!=="1"){card.dataset.motionObserved="1";const p=meta(card);if(p)applyInstantMotion(card,p);prewarm.observe(card);active.observe(card)}});
+   cards.forEach(card=>{
+    if(card.dataset.motionObserved==="1")return;
+    card.dataset.motionObserved="1";
+    const p=meta(card);
+    if(p)applyInstantMotion(card,p);
+    // The first visible cards must animate on the same frame they are mounted.
+    const rect=card.getBoundingClientRect();
+    if(rect.bottom>-240&&rect.top<window.innerHeight+240){
+     card.classList.add("ynot-motion-active");
+     const video=card.querySelector<HTMLVideoElement>("video.ynot-product-motion-video");
+     if(video)void video.play().catch(()=>{});
+    }
+    prewarm.observe(card);
+    active.observe(card);
+   });
    // Fast swipes can cover several screens in a moment. Proactively prepare the next visible feed runway,
    // instead of waiting for each card to approach the viewport.
    const runway=cards.filter(card=>{const rect=card.getBoundingClientRect();return rect.bottom>-1200&&rect.top<window.innerHeight+16000}).slice(0,96);
