@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {huggingFaceConfigured,motionPrompt,rest,sourceHash,submitHuggingFace,type VideoProduct} from "@/lib/catalog/hf-video";
+import {selectVideoCandidates,scoreVideoCandidate,type VideoGenerationSource} from "@/lib/catalog/video-score";
 
 export const runtime="nodejs";
 export const maxDuration=60;
@@ -7,7 +8,7 @@ export const maxDuration=60;
 type JobRow={id:string;product_id:string;source_image_hash:string;external_job_id?:string|null;status:string;video_url?:string|null;error?:string|null};
 
 async function countProcessing(){
- const rows=await rest("ynot_video_jobs?select=id&status=eq.processing&limit=8");
+ const rows=await rest("ynot_video_jobs?select=id&status=eq.processing&provider=eq.huggingface_zerogpu_lightricks&model=eq.ltx_video_0_9_8_13b_distilled&limit=8");
  return Array.isArray(rows)?rows.length:0;
 }
 
@@ -40,9 +41,17 @@ export async function POST(req:NextRequest){
   const b=await req.json().catch(()=>({}));
   const products:VideoProduct[]=(Array.isArray(b?.products)?b.products:[]).slice(0,12).map((p:any)=>({id:String(p?.id||"").slice(0,500),title:String(p?.title||"").slice(0,260),image:String(p?.image||"").slice(0,1800),category:String(p?.category||"").slice(0,160)})).filter((p:VideoProduct)=>p.id&&p.image);
   if(!products.length)return NextResponse.json({configured:huggingFaceConfigured(),jobs:{}});
+  const requestedSource=String(b?.source||"search");
+  const source:VideoGenerationSource=requestedSource==="showcase"?"showcase":requestedSource==="admin"?"admin":"search";
+  const selected=selectVideoCandidates(products,source),selectedIds=new Set(selected.map(x=>x.product.id));
   let slots=Math.max(0,1-await countProcessing());
   const out:Record<string,any>={};
   for(const product of products){
+   if(!selectedIds.has(product.id)){
+    const scored=scoreVideoCandidate(product,source);
+    out[product.id]={status:"skipped",score:scored.score,reasons:scored.reasons};
+    continue;
+   }
    const hash=sourceHash(product.image);
    const ready=await existingVideo(product.id,hash);
    if(ready){out[product.id]={status:"ready",video_url:ready.video_url,poster_url:ready.poster_url||product.image};continue}
@@ -53,7 +62,7 @@ export async function POST(req:NextRequest){
     try{job=await start(job,product,prompt);slots--}
     catch(e){await rest("ynot_video_jobs?id=eq."+encodeURIComponent(job.id),{method:"PATCH",body:JSON.stringify({status:"queued",error:e instanceof Error?e.message:"HF_SUBMIT_FAILED",updated_at:new Date().toISOString()})}).catch(()=>{});}
    }
-   out[product.id]={status:job.status,event_id:job.external_job_id||null,error:job.error||null};
+   const scored=scoreVideoCandidate(product,source);out[product.id]={status:job.status,event_id:job.external_job_id||null,error:job.error||null,score:scored.score,reasons:scored.reasons};
   }
   return NextResponse.json({configured:huggingFaceConfigured(),jobs:out});
  }catch(e){
