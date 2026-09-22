@@ -1,0 +1,7 @@
+gradio>=5.0
+spaces
+torch>=2.8.0
+transformers
+accelerate
+imageio[ffmpeg]
+git+https://github.com/huggingface/diffusers.git
