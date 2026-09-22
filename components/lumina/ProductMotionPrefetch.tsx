@@ -3,12 +3,29 @@
 import {useEffect} from "react";
 
 type Media={product_id:string;media_type:string;video_url?:string|null;poster_url?:string|null;preset?:string|null;status:string};
-type ProductMeta={id:string;title:string;image:string;category:string};
+type ProductMeta={id:string;title:string;image:string;category:string;generateVideo:boolean};
 
 function meta(card:HTMLElement):ProductMeta|null{
  const id=String(card.dataset.productId||"").trim(),image=String(card.dataset.productImage||card.querySelector("img")?.getAttribute("src")||"").trim();
  if(!id||!image)return null;
- return{id,title:String(card.dataset.productTitle||""),image,category:String(card.dataset.productCategory||"")};
+ return{id,title:String(card.dataset.productTitle||""),image,category:String(card.dataset.productCategory||""),generateVideo:card.dataset.videoGeneration==="search"};
+}
+
+function instantPreset(p:ProductMeta){
+ const t=(p.category+" "+p.title).toLowerCase();
+ if(/fashion|dress|shirt|jacket|coat|bag|apparel|clothing/.test(t))return"fashion_alive";
+ if(/beauty|skin|serum|cream|hair|perfume|fragrance|jewel|watch/.test(t))return"beauty_alive";
+ if(/home|decor|furniture|lamp|chair|sofa|table|rug/.test(t))return"context_push";
+ if(/fitness|gym|sport|training/.test(t))return"active_float";
+ if(/tech|gadget|phone|audio|accessor/.test(t))return"product_orbit";
+ return"soft_float";
+}
+
+function applyInstantMotion(card:HTMLElement,p:ProductMeta){
+ if(card.dataset.motionType==="video")return;
+ card.dataset.motionType="fast";
+ card.dataset.motionPreset=instantPreset(p);
+ card.classList.add("ynot-motion-ready");
 }
 function scheduleIdle(fn:()=>void){
  const w=window as any;if(typeof w.requestIdleCallback==="function")return w.requestIdleCallback(fn,{timeout:220});
@@ -66,7 +83,7 @@ export default function ProductMotionPrefetch(){
   }
 
   function requestVideos(products:ProductMeta[]){
-   const fresh=products.filter(p=>!videoRequested.has(p.id)&&!(known.get(p.id)?.video_url)).slice(0,12);
+   const fresh=products.filter(p=>p.generateVideo&&!videoRequested.has(p.id)&&!(known.get(p.id)?.video_url)).slice(0,12);
    if(!fresh.length)return;
    fresh.forEach(p=>{videoRequested.add(p.id);videoTracked.set(p.id,p)});
    fetch("/api/catalog/video/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({products:fresh}),keepalive:true})
@@ -96,6 +113,8 @@ export default function ProductMotionPrefetch(){
 
   function queue(card:HTMLElement){
    const p=meta(card);if(!p)return;
+   // Every Deals card moves immediately. Network lookup can later upgrade it to cached/real video.
+   applyInstantMotion(card,p);
    const cached=known.get(p.id);if(cached){apply(card,cached);return}
    if(inflight.has(p.id)||queued.has(p.id))return;queued.set(p.id,p);
    if(flushTimer==null)flushTimer=scheduleIdle(flush) as number;
@@ -106,7 +125,7 @@ export default function ProductMotionPrefetch(){
 
   function attach(root:ParentNode=document){
    const cards=[...root.querySelectorAll<HTMLElement>('[data-motion-surface="deals"][data-product-id]')];
-   cards.forEach(card=>{if(card.dataset.motionObserved!=="1"){card.dataset.motionObserved="1";prewarm.observe(card);active.observe(card)}});
+   cards.forEach(card=>{if(card.dataset.motionObserved!=="1"){card.dataset.motionObserved="1";const p=meta(card);if(p)applyInstantMotion(card,p);prewarm.observe(card);active.observe(card)}});
    // Fast swipes can cover several screens in a moment. Proactively prepare the next visible feed runway,
    // instead of waiting for each card to approach the viewport.
    const runway=cards.filter(card=>{const rect=card.getBoundingClientRect();return rect.bottom>-1200&&rect.top<window.innerHeight+16000}).slice(0,96);
