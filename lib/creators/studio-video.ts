@@ -9,6 +9,7 @@ export type StudioVideoTier="standard"|"premium";
 export async function renderStudioVideo(input:{
  mode:string;
  qualityTier?:StudioVideoTier;
+ standardProvider?:"modal"|"muapi";
  productTitle:string;
  productDescription?:string;
  productCategory?:string;
@@ -36,6 +37,11 @@ export async function renderStudioVideo(input:{
  }
 
  const baseImageUrl=input.baseImageUrl||input.avatarImageUrl||input.productImageUrl;
+ // Explicit MuAPI selection bypasses Modal entirely for Standard video.
+ if(tier==="standard"&&input.standardProvider==="muapi"){
+  const result=await renderMuapiStudioVideo({mode:input.mode,prompt,baseImageUrl,sourceVideoUrl:input.sourceVideoUrl});
+  return{...result,provider:"muapi" as const,routingTier:"standard-muapi",routingReason:"Creator selected MuAPI"};
+ }
  const modalModes=new Set(["product-only","image-self","ai-avatar"]);
 
  // New normal route: Nano Banana/Flow prepares the frame, Wan 2.2 on Modal
