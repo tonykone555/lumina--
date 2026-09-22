@@ -17,7 +17,7 @@ function scheduleIdle(fn:()=>void){
 
 export default function ProductMotionPrefetch(){
  useEffect(()=>{
-  const known=new Map<string,Media>(),queued=new Map<string,ProductMeta>(),inflight=new Set<string>();let flushTimer:number|undefined;
+  const known=new Map<string,Media>(),queued=new Map<string,ProductMeta>(),inflight=new Set<string>(),videoTracked=new Map<string,ProductMeta>(),videoRequested=new Set<string>();let flushTimer:number|undefined,statusTimer:number|undefined;
 
   function apply(card:HTMLElement,m:Media){
    if(m.video_url){
@@ -35,12 +35,61 @@ export default function ProductMotionPrefetch(){
    card.classList.add("ynot-motion-ready");
   }
 
+  function applyEverywhere(productId:string,m:Media){
+   known.set(productId,m);
+   document.querySelectorAll<HTMLElement>(`[data-motion-surface="deals"][data-product-id="${CSS.escape(productId)}"]`).forEach(card=>apply(card,m));
+  }
+
+  function pollVideoStatus(){
+   if(statusTimer!=null||!videoTracked.size)return;
+   statusTimer=window.setTimeout(async()=>{
+    statusTimer=undefined;
+    const ids=[...videoTracked.keys()].slice(0,40);
+    try{
+     const r=await fetch("/api/catalog/video/status",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product_ids:ids}),cache:"no-store"});
+     const d=await r.json();
+     if(!r.ok||!d?.configured){return}
+     let pending=false;
+     for(const id of ids){
+      const state=d?.jobs?.[id];
+      if(!state)continue;
+      if(state.status==="ready"&&state.video_url){
+       const p=videoTracked.get(id);if(!p)continue;
+       const m:Media={product_id:id,media_type:"video_ai",video_url:state.video_url,poster_url:p.image,preset:null,status:"ready"};
+       applyEverywhere(id,m);videoTracked.delete(id);
+      }else if(state.status==="failed"){videoTracked.delete(id)}
+      else pending=true;
+     }
+     if(pending||videoTracked.size)pollVideoStatus();
+    }catch{if(videoTracked.size)pollVideoStatus()}
+   },4200);
+  }
+
+  function requestVideos(products:ProductMeta[]){
+   const fresh=products.filter(p=>!videoRequested.has(p.id)&&!(known.get(p.id)?.video_url)).slice(0,12);
+   if(!fresh.length)return;
+   fresh.forEach(p=>{videoRequested.add(p.id);videoTracked.set(p.id,p)});
+   fetch("/api/catalog/video/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({products:fresh}),keepalive:true})
+    .then(async r=>({ok:r.ok,data:await r.json().catch(()=>({}))}))
+    .then(({ok,data})=>{
+     if(!ok||!data?.configured){fresh.forEach(p=>videoTracked.delete(p.id));return}
+     for(const p of fresh){
+      const state=data?.jobs?.[p.id];
+      if(state?.status==="ready"&&state?.video_url){
+       applyEverywhere(p.id,{product_id:p.id,media_type:"video_ai",video_url:state.video_url,poster_url:p.image,preset:null,status:"ready"});
+       videoTracked.delete(p.id);
+      }
+     }
+     pollVideoStatus();
+    }).catch(()=>{fresh.forEach(p=>videoTracked.delete(p.id))});
+  }
+
   function flush(){
    flushTimer=undefined;
    const batch=[...queued.values()].filter(p=>!inflight.has(p.id)).slice(0,16);if(!batch.length)return;
    batch.forEach(p=>{queued.delete(p.id);inflight.add(p.id)});
    fetch("/api/catalog/media",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({products:batch}),keepalive:true})
-    .then(r=>r.json()).then(d=>{const media=d?.media||{};for(const p of batch){const m=media[p.id] as Media|undefined;if(!m)continue;known.set(p.id,m);document.querySelectorAll<HTMLElement>(`[data-motion-surface="deals"][data-product-id="${CSS.escape(p.id)}"]`).forEach(card=>apply(card,m));}})
+    .then(r=>r.json()).then(d=>{const media=d?.media||{};for(const p of batch){const m=media[p.id] as Media|undefined;if(!m)continue;applyEverywhere(p.id,m)}requestVideos(batch)})
     .catch(()=>{})
     .finally(()=>{batch.forEach(p=>inflight.delete(p.id));if(queued.size)flushTimer=scheduleIdle(flush) as number});
   }
@@ -66,7 +115,7 @@ export default function ProductMotionPrefetch(){
   attach();
   const mutation=new MutationObserver(records=>{for(const r of records)for(const node of r.addedNodes)if(node instanceof HTMLElement){if(node.matches('[data-motion-surface="deals"][data-product-id]'))attach(node.parentElement||document);else attach(node)}});
   mutation.observe(document.body,{childList:true,subtree:true});
-  return()=>{mutation.disconnect();prewarm.disconnect();active.disconnect();if(flushTimer!=null)window.clearTimeout(flushTimer)};
+  return()=>{mutation.disconnect();prewarm.disconnect();active.disconnect();if(flushTimer!=null)window.clearTimeout(flushTimer);if(statusTimer!=null)window.clearTimeout(statusTimer)};
  },[]);
  return null;
 }
