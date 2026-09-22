@@ -14,8 +14,8 @@ type AmazonItem={id:string;title:string;brand?:string;price:number;currency:stri
 type CatalogItem={id:string;title:string;brand?:string;price:number|null;currency?:string;image:string;images?:string[];url?:string;tags?:string[];source?:string;variants?:Variant[];checkout?:CheckoutMode;supplierPrice?:number;retailPrice?:number;pricingMode?:string;sellableByLumina?:boolean;description?:string};
 type CartItem={key:string;productId:string;variantId?:string;title:string;brand?:string;image:string;quantity:number;price:number;currency:string;source:string;url?:string;supplierPrice?:number;category?:string;token?:string;expiresAt?:number};
 
-const sections=["Best Value","Under €25","Selling Fast","Fast Delivery","Fashion","Jewelry","Accessories","Bags","Tech","Home","Beauty & Hair","Fitness","Pets","Car","Travel","Free Delivery","Amazon"];
-const sectionQueries:Record<string,string>={"Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
+const sections=["Showcase","Best Value","Under €25","Selling Fast","Fast Delivery","Fashion","Jewelry","Accessories","Bags","Tech","Home","Beauty & Hair","Fitness","Pets","Car","Travel","Free Delivery","Amazon"];
+const sectionQueries:Record<string,string>={Showcase:"premium trending fashion sneakers bags accessories beauty skincare modern home decor design products","Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
 const SAVED_KEY="ynot-saved-items";
 function money(v:number,currency="EUR"){try{return new Intl.NumberFormat("en-IE",{style:"currency",currency,maximumFractionDigits:2}).format(v)}catch{return`${v.toFixed(2)} ${currency}`}}
 function sourceLabel(source?:string){const value=(source||"").toLowerCase();if(value.includes("amazon")||value.includes("ebay"))return"YNOT · Marketplace";if(value.includes("shopify"))return"YNOT · Commerce";return"YNOT · Commerce"}
@@ -26,6 +26,23 @@ function toDeal(item:FeedItem):Deal|null{if(item.price==null||!item.image_url||!
 function amazonToDeal(item:AmazonItem):Deal{const raw=Number(item.price),retail=priced(raw,item.currency,`${item.section} ${item.title}`,item.source);return{id:item.id,title:item.title,brand:item.brand,price:retail,retailPrice:retail,supplierPrice:raw,pricingMode:"provisional",currency:item.currency,image:item.image,url:item.url,section:item.section,sections:item.sections||[item.section,"Best Value"],badge:item.badge||"Amazon value",note:`Amazon · ${item.rating?`${item.rating}★ · `:""}${item.reviews?`${item.reviews.toLocaleString()} reviews · `:""}${item.score}/100 value score`,score:item.score,source:item.source,checkout:{mode:"merchant",reason:"Requires YNOT supplier verification"}}}
 function catalogToDeal(item:CatalogItem,section="Best Value"):Deal|null{if(item.price==null||!item.image||!item.url||item.url==="#")return null;const supplier=Number(item.supplierPrice??item.price),currency=item.currency||"EUR",retail=Number(item.retailPrice??(item.supplierPrice!=null?priced(supplier,currency,`${section} ${item.title}`,item.source):item.price)),tags=(item.tags||[]).filter(Boolean),under25=retail<=25,source=sourceLabel(item.source),ss=["Best Value",...(under25?["Under €25"]:[]),section,...tags];if(source==="Amazon")ss.push("Amazon");return{id:item.id,title:item.title,brand:item.brand,price:retail,retailPrice:retail,supplierPrice:supplier,pricingMode:item.pricingMode||"provisional",currency,image:item.image,images:item.images,url:item.url,section,sections:[...new Set(ss)],badge:item.sellableByLumina?"YNOT price":under25?"Under €25":"YNOT price",note:`${source} · YNOT discovery price`,description:item.description||`${item.title} from ${item.brand||sourceLabel(item.source)}. Full product details are available from the original merchant.`,source:item.source,variants:item.variants,checkout:item.checkout,sellableByLumina:item.sellableByLumina}}
 function dedupe(list:Deal[]){const seen=new Set<string>();return list.filter(d=>{const k=d.id||`${d.title}|${d.brand}`;if(seen.has(k))return false;seen.add(k);return true})}
+function showcaseQuality(d:Deal){
+ const text=`${d.title} ${d.brand||""} ${d.section} ${d.source||""}`.toLowerCase();
+ let score=Number(d.score||0);
+ if(d.brand&&d.brand.trim().length>1)score+=18;
+ if(/shopify/.test(String(d.source||"").toLowerCase()))score+=10;
+ if(d.sellableByLumina)score+=8;
+ if(d.price>=20&&d.price<=350)score+=8;
+ if(/dress|skirt|jacket|coat|sneaker|shoe|loafer|boot|bag|handbag|tote|wallet|sunglass|eyewear|jewel|necklace|earring|bracelet|watch|perfume|fragrance|serum|skincare|beauty|lamp|chair|sofa|table|vase|decor|rug|leather/.test(text))score+=18;
+ if(/cheap|wholesale|bulk|replacement|spare|extension cable|usb-c extension|adapter|module|part\b|pack\b|10-pack|sweatband|strap only|compatible with|repair|tool kit/.test(text))score-=55;
+ if(d.price<8)score-=20;
+ return score;
+}
+function showcaseProducts(list:Deal[]){
+ const ranked=dedupe(list).map((deal,index)=>({deal,index,quality:showcaseQuality(deal)})).filter(x=>x.quality>-5);
+ ranked.sort((a,b)=>b.quality-a.quality||a.index-b.index);
+ return ranked.map(x=>x.deal);
+}
 function cleanVariantLabel(value?:string){return String(value||"").trim().replace(/\s+/g," ").toLowerCase()}
 function selectableVariants(product:Deal){const seen=new Set<string>(),list=(product.variants||[]).filter(variant=>{const label=cleanVariantLabel(variant.label);if(!variant.id||variant.available===false||!label||seen.has(label))return false;seen.add(label);return true});if(list.length>1)return list;if(!list.length)return[];const label=cleanVariantLabel(list[0].label),title=cleanVariantLabel(product.title);return label&&label!==title&&!/^default(?: title)?$|^option$/.test(label)?list:[]}
 function loadCart():CartItem[]{try{const parsed=JSON.parse(localStorage.getItem("ynot-cart")||"[]");return Array.isArray(parsed)?parsed:[]}catch{return[]}}
@@ -35,7 +52,7 @@ function region(){try{return JSON.parse(localStorage.getItem("ynot-region")||"nu
 
 export default function YnotDrawer(){
  const fallback:Deal[]=[];
- const [open,setOpen]=useState(false),[active,setActive]=useState("Best Value"),[deals,setDeals]=useState<Deal[]>(fallback),[selected,setSelected]=useState<Deal|null>(null),[query,setQuery]=useState(""),[searchResults,setSearchResults]=useState<Deal[]>([]),[searching,setSearching]=useState(false),[loadingMore,setLoadingMore]=useState(false),[live,setLive]=useState(false),[cartOpen,setCartOpen]=useState(false),[cart,setCart]=useState<CartItem[]>([]),[cartBusy,setCartBusy]=useState(false),[cartError,setCartError]=useState(""),[saved,setSaved]=useState<Set<string>>(new Set()),[story,setStory]=useState<Deal|null>(null),[storyImage,setStoryImage]=useState(0);
+ const [open,setOpen]=useState(false),[active,setActive]=useState("Showcase"),[deals,setDeals]=useState<Deal[]>(fallback),[selected,setSelected]=useState<Deal|null>(null),[query,setQuery]=useState(""),[searchResults,setSearchResults]=useState<Deal[]>([]),[searching,setSearching]=useState(false),[loadingMore,setLoadingMore]=useState(false),[live,setLive]=useState(false),[cartOpen,setCartOpen]=useState(false),[cart,setCart]=useState<CartItem[]>([]),[cartBusy,setCartBusy]=useState(false),[cartError,setCartError]=useState(""),[saved,setSaved]=useState<Set<string>>(new Set()),[story,setStory]=useState<Deal|null>(null),[storyImage,setStoryImage]=useState(0);
  const bodyRef=useRef<HTMLDivElement>(null),loadingMoreRef=useRef(false),searchRequestRef=useRef(0),searchPageRef=useRef(0),searchCursorRef=useRef(""),searchLoadingRef=useRef(false),sectionCursorRef=useRef<Record<string,string>>({}),sectionPageRef=useRef<Record<string,number>>({}),miniStartY=useRef(0),storyStart=useRef({x:0,y:0});
  function closeDrawer(){setStory(null);setSelected(null);setCartOpen(false);setCartError("");setOpen(false)}
  function closeDealProduct(){setStory(null);setSelected(null);setCartError("")}
@@ -47,8 +64,36 @@ export default function YnotDrawer(){
  useEffect(()=>{let frame=0;const clean=()=>{frame=0;document.querySelectorAll<HTMLElement>(".ynot-selected,.ynot-story").forEach(card=>{const buttons=[...card.querySelectorAll<HTMLButtonElement>("button")].filter(button=>button.textContent?.trim().toLowerCase()==="description"||button.classList.contains("ynot-description-toggle"));buttons.slice(1).forEach(button=>button.remove())})};const schedule=()=>{if(!frame)frame=requestAnimationFrame(clean)};const observer=new MutationObserver(schedule);observer.observe(document.body,{subtree:true,childList:true});schedule();return()=>{observer.disconnect();if(frame)cancelAnimationFrame(frame)}},[]);
 
  useEffect(()=>{const openStory=(event:Event)=>{const item=(event as CustomEvent<Deal>).detail;if(!item)return;setOpen(true);setStory({...item,section:item.section||"Saved",sections:item.sections||["Saved"],badge:item.badge||"Saved",note:item.note||`${sourceLabel(item.source)} product`});setStoryImage(0)};window.addEventListener("ynot:open-story",openStory);return()=>window.removeEventListener("ynot:open-story",openStory)},[]);
- useEffect(()=>{let alive=true;const shopify=new URLSearchParams({q:"trending fashion beauty home tech accessories",market:"lumina",source:"shopify",page:"0"});Promise.allSettled([fetch(`/api/catalog?${shopify}`).then(r=>r.json()),fetch("https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed").then(r=>r.json()),fetch("/api/ynot-amazon?country=FR").then(r=>r.json())]).then(results=>{if(!alive)return;const shopifyDeals=results[0].status==="fulfilled"?((results[0].value?.products||[]).map((p:CatalogItem)=>catalogToDeal(p,"Best Value")).filter(Boolean) as Deal[]):[];const feed=results[1].status==="fulfilled"?((results[1].value?.items||[]).map(toDeal).filter(Boolean) as Deal[]):[];const amazon=results[2].status==="fulfilled"?(results[2].value?.items||[]).map(amazonToDeal):[];const merged=dedupe([...shopifyDeals,...feed,...amazon]).sort((a,b)=>(b.score||0)-(a.score||0));if(merged.length){setDeals(merged);setLive(true)}const next=results[0].status==="fulfilled"?results[0].value?.pagination?.next_cursor:"";if(typeof next==="string")sectionCursorRef.current["Best Value"]=next}).catch(()=>{});return()=>{alive=false}},[]);
- const activeDeals=useMemo(()=>deals.filter(d=>active==="Best Value"||d.sections.includes(active)||d.section===active).slice(0,1000),[deals,active]);
+ useEffect(()=>{let alive=true;
+  const showcaseQueries=[
+   "premium trending fashion sneakers bags accessories",
+   "beauty skincare fragrance premium trending",
+   "modern home decor furniture design lifestyle"
+  ].map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
+  const requests=[
+   ...showcaseQueries.map(params=>fetch(`/api/catalog?${params}`).then(r=>r.json())),
+   fetch("https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed").then(r=>r.json()),
+   fetch("/api/ynot-amazon?country=FR").then(r=>r.json())
+  ];
+  Promise.allSettled(requests).then(results=>{
+   if(!alive)return;
+   const showcase:Deal[]=[];
+   for(let i=0;i<showcaseQueries.length;i++)if(results[i].status==="fulfilled"){
+    showcase.push(...((results[i] as PromiseFulfilledResult<any>).value?.products||[]).map((p:CatalogItem)=>catalogToDeal(p,"Showcase")).filter(Boolean) as Deal[]);
+   }
+   const feedResult=results[showcaseQueries.length],amazonResult=results[showcaseQueries.length+1];
+   const feed=feedResult?.status==="fulfilled"?((feedResult.value?.items||[]).map(toDeal).filter(Boolean) as Deal[]):[];
+   const amazon=amazonResult?.status==="fulfilled"?(amazonResult.value?.items||[]).map(amazonToDeal):[];
+   const hero=showcaseProducts(showcase).slice(0,72);
+   const rest=dedupe([...feed,...amazon]).sort((a,b)=>(b.score||0)-(a.score||0));
+   const merged=dedupe([...hero,...rest]);
+   if(merged.length){setDeals(merged);setLive(true)}
+   const first=results[0]?.status==="fulfilled"?(results[0] as PromiseFulfilledResult<any>).value?.pagination?.next_cursor:"";
+   if(typeof first==="string")sectionCursorRef.current["Showcase"]=first;
+  }).catch(()=>{});
+  return()=>{alive=false}
+ },[]);
+ const activeDeals=useMemo(()=>{const filtered=deals.filter(d=>active==="Best Value"||d.sections.includes(active)||d.section===active);return(active==="Showcase"?showcaseProducts(filtered):filtered).slice(0,1000)},[deals,active]);
  const searched=useMemo(()=>query.trim()?dedupe([...searchResults,...deals.filter(d=>`${d.title} ${d.brand||""} ${d.section} ${d.badge} ${d.source||""}`.toLowerCase().includes(query.toLowerCase()))]):null,[query,deals,searchResults]);
  async function searchCatalogue(term:string,append=false){const clean=term.trim();if(clean.length<2||(append&&searchLoadingRef.current))return;const request=append?searchRequestRef.current:++searchRequestRef.current;if(!append){searchPageRef.current=0;searchCursorRef.current="";setSearchResults([])}searchLoadingRef.current=true;setSearching(true);try{const params=new URLSearchParams({q:clean,market:"lumina",source:"all",page:String(searchPageRef.current)});if(searchCursorRef.current)params.set("cursor",searchCursorRef.current);const response=await fetch(`/api/catalog?${params}`),data=await response.json();if(request!==searchRequestRef.current)return;const incoming=(data.products||[]).map((p:CatalogItem)=>catalogToDeal(p,"Search results")).filter(Boolean) as Deal[];setSearchResults(previous=>dedupe(append?[...previous,...incoming]:incoming));searchPageRef.current+=1;searchCursorRef.current=typeof data.pagination?.next_cursor==="string"?data.pagination.next_cursor:""}finally{if(request===searchRequestRef.current){searchLoadingRef.current=false;setSearching(false)}}}
  useEffect(()=>{const clean=query.trim();if(clean.length<2){searchRequestRef.current++;setSearchResults([]);setSearching(false);return}const timer=window.setTimeout(()=>void searchCatalogue(clean),300);return()=>window.clearTimeout(timer)},[query]);
