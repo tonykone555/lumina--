@@ -11,15 +11,17 @@ export async function GET(req:NextRequest){
     const viggle=Boolean(String(process.env.VIGGLE_API_KEY||"").trim());
     const muapi=Boolean(String(process.env.MUAPI_API_KEY||"").trim());
     const geminiImage=Boolean(String(process.env.GEMINI_API_KEY||process.env.GOOGLE_API_KEY||"").trim());
+    const modal=Boolean(String(process.env.MODAL_TOKEN_ID||"").trim()&&String(process.env.MODAL_TOKEN_SECRET||"").trim());
     return NextResponse.json({
       higgsfield:{configured:higgsfield},
       viggle:{configured:viggle},
       muapi:{configured:muapi},
+      modal:{configured:modal,model:"Wan-AI/Wan2.2-TI2V-5B-Diffusers"},
       trypost:{configured:trypost},
       gemini_image:{configured:geminiImage,standard_model:"gemini-3.1-flash-image",premium_model:"gemini-3-pro-image"},
-      generation_ready:(higgsfield||muapi||viggle)&&geminiImage,
+      generation_ready:(higgsfield||modal||muapi||viggle)&&geminiImage,
       standard_motion_ready:muapi||viggle,
-      standard_video_ready:muapi,
+      standard_video_ready:modal||muapi,
       premium_motion_ready:higgsfield,
       publishing_ready:trypost
     });
