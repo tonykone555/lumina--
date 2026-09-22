@@ -24,7 +24,7 @@ export default function ProductMotionPrefetch(){
     let video=card.querySelector<HTMLVideoElement>("video.ynot-product-motion-video");
     if(!video){
      video=document.createElement("video");video.className="ynot-product-motion-video";video.muted=true;video.loop=true;video.playsInline=true;video.preload="metadata";video.setAttribute("aria-hidden","true");
-     const img=card.querySelector("img");if(img)card.insertBefore(video,img);else card.prepend(video);
+     const host=card.querySelector<HTMLElement>("[data-motion-host]")||card;const img=host.querySelector("img");if(img)host.insertBefore(video,img);else host.prepend(video);
     }
     if(video.src!==m.video_url)video.src=m.video_url;
     if(m.poster_url)video.poster=m.poster_url;
