@@ -12,7 +12,7 @@ async function rowsFor(ids:string[]){
  return Array.isArray(rows)?rows as Job[]:[];
 }
 async function processingCount(){
- const rows=await rest("ynot_video_jobs?select=id&status=eq.processing&limit=8");
+ const rows=await rest("ynot_video_jobs?select=id&status=eq.processing&provider=eq.huggingface_zerogpu_lightricks&model=eq.ltx_video_0_9_8_13b_distilled&limit=8");
  return Array.isArray(rows)?rows.length:0;
 }
 async function startQueued(job:Job){
