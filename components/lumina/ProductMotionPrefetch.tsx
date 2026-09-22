@@ -11,8 +11,8 @@ function meta(card:HTMLElement):ProductMeta|null{
  return{id,title:String(card.dataset.productTitle||""),image,category:String(card.dataset.productCategory||"")};
 }
 function scheduleIdle(fn:()=>void){
- const w=window as any;if(typeof w.requestIdleCallback==="function")return w.requestIdleCallback(fn,{timeout:500});
- return window.setTimeout(fn,80);
+ const w=window as any;if(typeof w.requestIdleCallback==="function")return w.requestIdleCallback(fn,{timeout:220});
+ return window.setTimeout(fn,28);
 }
 
 export default function ProductMotionPrefetch(){
@@ -37,7 +37,7 @@ export default function ProductMotionPrefetch(){
 
   function flush(){
    flushTimer=undefined;
-   const batch=[...queued.values()].filter(p=>!inflight.has(p.id)).slice(0,8);if(!batch.length)return;
+   const batch=[...queued.values()].filter(p=>!inflight.has(p.id)).slice(0,16);if(!batch.length)return;
    batch.forEach(p=>{queued.delete(p.id);inflight.add(p.id)});
    fetch("/api/catalog/media",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({products:batch}),keepalive:true})
     .then(r=>r.json()).then(d=>{const media=d?.media||{};for(const p of batch){const m=media[p.id] as Media|undefined;if(!m)continue;known.set(p.id,m);document.querySelectorAll<HTMLElement>(`[data-motion-surface="deals"][data-product-id="${CSS.escape(p.id)}"]`).forEach(card=>apply(card,m));}})
@@ -52,11 +52,16 @@ export default function ProductMotionPrefetch(){
    if(flushTimer==null)flushTimer=scheduleIdle(flush) as number;
   }
 
-  const prewarm=new IntersectionObserver(entries=>{for(const entry of entries){if(entry.isIntersecting)queue(entry.target as HTMLElement)}},{root:null,rootMargin:"1800px 900px 2400px 900px",threshold:0});
+  const prewarm=new IntersectionObserver(entries=>{for(const entry of entries){if(entry.isIntersecting)queue(entry.target as HTMLElement)}},{root:null,rootMargin:"7000px 1200px 16000px 1200px",threshold:0});
   const active=new IntersectionObserver(entries=>{for(const entry of entries){const card=entry.target as HTMLElement,video=card.querySelector<HTMLVideoElement>("video.ynot-product-motion-video");if(entry.isIntersecting){card.classList.add("ynot-motion-active");if(video)void video.play().catch(()=>{})}else{card.classList.remove("ynot-motion-active");if(video)video.pause()}}},{root:null,rootMargin:"240px",threshold:.08});
 
   function attach(root:ParentNode=document){
-   root.querySelectorAll<HTMLElement>('[data-motion-surface="deals"][data-product-id]').forEach(card=>{if(card.dataset.motionObserved==="1")return;card.dataset.motionObserved="1";prewarm.observe(card);active.observe(card)});
+   const cards=[...root.querySelectorAll<HTMLElement>('[data-motion-surface="deals"][data-product-id]')];
+   cards.forEach(card=>{if(card.dataset.motionObserved!=="1"){card.dataset.motionObserved="1";prewarm.observe(card);active.observe(card)}});
+   // Fast swipes can cover several screens in a moment. Proactively prepare the next visible feed runway,
+   // instead of waiting for each card to approach the viewport.
+   const runway=cards.filter(card=>{const rect=card.getBoundingClientRect();return rect.bottom>-1200&&rect.top<window.innerHeight+16000}).slice(0,96);
+   runway.forEach(queue);
   }
   attach();
   const mutation=new MutationObserver(records=>{for(const r of records)for(const node of r.addedNodes)if(node instanceof HTMLElement){if(node.matches('[data-motion-surface="deals"][data-product-id]'))attach(node.parentElement||document);else attach(node)}});
