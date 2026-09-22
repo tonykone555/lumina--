@@ -17,8 +17,11 @@ type CartItem={key:string;productId:string;variantId?:string;title:string;brand?
 const sections=["Showcase","Fashion","Jewelry","Accessories","Bags","Tech","Home","Beauty & Hair","Fitness","Pets","Car","Travel","Free Delivery","Amazon"];
 const sectionQueries:Record<string,string>={Showcase:"premium mens clothing fashion furniture home appliances beauty accessories fitness products","Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
 const SHOWCASE_QUERIES=[
- "premium mens clothing jackets shirts trousers hoodies activewear",
- "premium clothing dresses jackets knitwear activewear",
+ "premium mens clothing shirts trousers hoodies activewear",
+ "premium womens clothing dresses knitwear trousers activewear",
+ "mens winter coats wool parkas puffer jackets",
+ "womens winter coats wool parkas puffer jackets",
+ "premium hair care shampoo conditioner scalp styling products",
  "modern furniture sofas chairs tables storage home decor",
  "home appliances kitchen coffee air purifier vacuum smart home",
  "beauty skincare fragrance grooming premium products",
@@ -30,6 +33,15 @@ const SAVED_KEY="ynot-saved-items";
 function money(v:number,currency="EUR"){try{return new Intl.NumberFormat("en-IE",{style:"currency",currency,maximumFractionDigits:2}).format(v)}catch{return`${v.toFixed(2)} ${currency}`}}
 function sourceLabel(source?:string){const value=(source||"").toLowerCase();if(value.includes("amazon")||value.includes("ebay"))return"YNOT · Marketplace";if(value.includes("shopify"))return"YNOT · Commerce";return"YNOT · Commerce"}
 function inferCategory(text:string){const t=text.toLowerCase();if(/dress|fashion|shirt|shoe|bag|jewel|accessor|apparel|clothing/.test(t))return"fashion";if(/fitness|gym|training|running|recovery|sport/.test(t))return"fitness";if(/skin|beauty|serum|cream|spf|cleanser/.test(t))return"skin";if(/hair|scalp|shampoo|conditioner/.test(t))return"hair";if(/home|decor|furniture|lamp|kitchen|bedding/.test(t))return"home";if(/tech|phone|audio|headphone|charger|gaming|smart/.test(t))return"tech";return"default"}
+function dealMotionPreset(deal:Deal){
+ const t=`${deal.section} ${deal.title}`.toLowerCase();
+ if(/hair|scalp|shampoo|conditioner|serum|beauty|skin|perfume|fragrance|jewel|watch/.test(t))return"beauty_alive";
+ if(/dress|shirt|jacket|coat|parka|puffer|hoodie|trouser|jeans|clothing|apparel|bag/.test(t))return"fashion_alive";
+ if(/home|decor|furniture|lamp|chair|sofa|table|rug|vacuum|blender|coffee|appliance/.test(t))return"context_push";
+ if(/fitness|gym|protein|whey|training|recovery/.test(t))return"active_float";
+ if(/tech|gadget|phone|audio|accessor/.test(t))return"product_orbit";
+ return"soft_float";
+}
 function priced(raw:number,currency:string,text:string,source="discovery"){return dynamicLuminaPrice({sourceId:source,productId:text,title:text,category:inferCategory(text),price:raw,currency,shipping:0,stockConfidence:.75,returnPolicyScore:.7,regionMatch:.75})}
 function normalizeSections(item:FeedItem){return(item.sections||[]).map(s=>s==="Under 25"?"Under €25":s)}
 function toDeal(item:FeedItem):Deal|null{if(item.price==null||!item.image_url||!item.product_url)return null;const raw=Number(item.price),currency=item.currency||"EUR",retail=priced(raw,currency,`${item.primary_section} ${item.title}`,item.source),ss=normalizeSections(item);if(item.source.toLowerCase().includes("amazon")&&!ss.includes("Amazon"))ss.push("Amazon");return{id:`${item.source}:${item.source_product_id}`,title:item.title,brand:item.brand,price:retail,retailPrice:retail,supplierPrice:raw,pricingMode:"provisional",currency,image:item.image_url,url:item.product_url,section:item.primary_section||"Best Value",sections:ss.length?ss:[item.primary_section||"Best Value"],badge:item.badge||"Worth a look",note:`${item.brand||"Independent store"} · ${item.offer_score||0}/100 offer score`,installments:item.installment_eligible?4:undefined,score:item.offer_score||0,source:item.source,checkout:{mode:"merchant",reason:"Requires YNOT supplier verification"}}}
@@ -51,11 +63,14 @@ function showcaseQuality(d:Deal){
 function showcaseLane(d:Deal){
  const text=`${d.title} ${d.brand||""} ${d.section}`.toLowerCase();
  if(/protein|whey|creatine|nutrition|electrolyte|supplement/.test(text))return"protein";
- if(/\bmen'?s\b|\bmens\b|\bmale\b/.test(text)&&/shirt|jacket|coat|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|polo|shorts/.test(text))return"mens";
- if(/dress|shirt|jacket|coat|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|knitwear|skirt|shorts/.test(text))return"clothing";
+ if(/shampoo|conditioner|scalp|hair mask|hair oil|hair serum|styling cream|styling gel|hair care/.test(text))return"hair";
+ if(/coat|parka|puffer|overcoat|winter jacket|down jacket/.test(text))return"winter";
+ if(/\bwomen'?s\b|\bwomens\b|\bfemale\b/.test(text)&&/dress|shirt|jacket|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|knitwear|skirt|shorts/.test(text))return"womens";
+ if(/\bmen'?s\b|\bmens\b|\bmale\b/.test(text)&&/shirt|jacket|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|polo|shorts/.test(text))return"mens";
+ if(/dress|shirt|jacket|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|knitwear|skirt|shorts/.test(text))return"clothing";
  if(/sofa|chair|table|desk|cabinet|shelf|furniture|rug|lamp|decor|storage/.test(text))return"furniture";
  if(/vacuum|blender|coffee|kettle|toaster|air fryer|purifier|humidifier|fan|heater|appliance|smart home/.test(text))return"appliances";
- if(/serum|skincare|beauty|hair|perfume|fragrance|grooming/.test(text))return"beauty";
+ if(/serum|skincare|beauty|perfume|fragrance|grooming/.test(text))return"beauty";
  if(/bag|handbag|tote|wallet|jewel|necklace|earring|bracelet|watch|sunglass|eyewear/.test(text))return"accessories";
  if(/fitness|gym|training|recovery|dumbbell|resistance|yoga/.test(text))return"fitness";
  return"other";
@@ -63,17 +78,27 @@ function showcaseLane(d:Deal){
 function showcaseProducts(list:Deal[]){
  const ranked=dedupe(list).filter(deal=>!/(?:^|\b)(shoe|shoes|sneaker|sneakers|trainer|trainers|boot|boots|loafer|loafers|heel|heels|sandal|sandals|footwear)(?:\b|$)/i.test(`${deal.title} ${deal.brand||""}`)).map((deal,index)=>({deal,index,quality:showcaseQuality(deal),lane:showcaseLane(deal)})).filter(x=>x.quality>-5);
  ranked.sort((a,b)=>b.quality-a.quality||a.index-b.index);
- const order=["mens","clothing","furniture","appliances","beauty","accessories","fitness","protein","other"];
- const buckets=new Map(order.map(k=>[k,ranked.filter(x=>x.lane===k)]));
+ const lanes=["mens","womens","winter","hair","clothing","furniture","appliances","beauty","accessories","fitness","protein","other"];
+ const buckets=new Map(lanes.map(k=>[k,ranked.filter(x=>x.lane===k)]));
+ const cursor=new Map(lanes.map(k=>[k,0]));
+ // Ten-slot discovery rhythm: 3/10 reserved for women's clothing, winter coats and hair.
+ const rhythm=["mens","womens","furniture","winter","appliances","hair","clothing","beauty","accessories","fitness"];
  const out:Deal[]=[];
- let round=0,added=true;
+ let misses=0,slot=0;
+ while(out.length<ranked.length&&misses<rhythm.length*4){
+  const lane=rhythm[slot%rhythm.length],bucket=buckets.get(lane)||[],i=cursor.get(lane)||0;
+  if(i<bucket.length){out.push(bucket[i].deal);cursor.set(lane,i+1);misses=0}else misses++;
+  slot++;
+ }
+ // Fill any remaining stock without letting protein dominate.
+ const tail=["mens","womens","winter","hair","clothing","furniture","appliances","beauty","accessories","fitness","other","protein"];
+ let added=true;
  while(added){
   added=false;
-  for(const lane of order){
-   const bucket=buckets.get(lane)||[],item=bucket[round];
-   if(item){out.push(item.deal);added=true}
+  for(const lane of tail){
+   const bucket=buckets.get(lane)||[],i=cursor.get(lane)||0;
+   if(i<bucket.length){out.push(bucket[i].deal);cursor.set(lane,i+1);added=true}
   }
-  round++;
  }
  return out;
 }
@@ -100,7 +125,7 @@ export default function YnotDrawer(){
 
  useEffect(()=>{const openStory=(event:Event)=>{const item=(event as CustomEvent<Deal>).detail;if(!item)return;setOpen(true);setStory({...item,section:item.section||"Saved",sections:item.sections||["Saved"],badge:item.badge||"Saved",note:item.note||`${sourceLabel(item.source)} product`});setStoryImage(0)};window.addEventListener("ynot:open-story",openStory);return()=>window.removeEventListener("ynot:open-story",openStory)},[]);
  useEffect(()=>{let alive=true;
-  const showcaseQueries=SHOWCASE_QUERIES.slice(0,7).map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
+  const showcaseQueries=SHOWCASE_QUERIES.slice(0,10).map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
   const requests=[
    ...showcaseQueries.map(params=>fetch(`/api/catalog?${params}`).then(r=>r.json())),
    fetch("https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed").then(r=>r.json()),
@@ -202,4 +227,4 @@ export default function YnotDrawer(){
  </>;
 }
 
-function DealOrb({deal,active,saved,onSelect,onSave,generateVideo=false}:{deal:Deal;active:boolean;saved:boolean;onSelect:(d:Deal)=>void;onSave:(d:Deal)=>void;generateVideo?:boolean}){const variantImages=[...new Set([...(deal.images||[]),...(deal.variants||[]).map(v=>v.image).filter(Boolean) as string[]])].filter(Boolean).slice(0,4);return <div className={`ynot-orb ${active?"active":""}`} data-motion-surface="deals" data-product-id={deal.id} data-product-title={deal.title} data-product-image={deal.image} data-product-category={inferCategory(`${deal.section} ${deal.title}`)} data-video-generation={generateVideo?"search":"none"} data-tile-shape={Math.abs([...deal.id].reduce((a,ch)=>((a*31)+ch.charCodeAt(0))|0,7))%5} role="button" tabIndex={0} onClick={()=>onSelect(deal)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onSelect(deal)}}}><button className={`ynot-orb-heart ${saved?"active":""}`} onClick={e=>{e.stopPropagation();onSave(deal)}} aria-label="Save product"><Heart/></button><span className="ynot-orb-img" data-motion-host><img src={deal.image} alt=""/>{variantImages.length>1&&<span className="ynot-variant-strip">{variantImages.slice(0,3).map((img,i)=><img key={`${img}-${i}`} src={img} alt=""/>)}</span>}</span><span className="ynot-orb-copy"><b>{deal.title}</b><em>{sourceLabel(deal.source)} · {deal.badge}</em><strong>{money(deal.price,deal.currency)}</strong></span></div>}
+function DealOrb({deal,active,saved,onSelect,onSave,generateVideo=false}:{deal:Deal;active:boolean;saved:boolean;onSelect:(d:Deal)=>void;onSave:(d:Deal)=>void;generateVideo?:boolean}){const variantImages=[...new Set([...(deal.images||[]),...(deal.variants||[]).map(v=>v.image).filter(Boolean) as string[]])].filter(Boolean).slice(0,4);return <div className={`ynot-orb ynot-motion-ready ynot-motion-active ${active?"active":""}`} data-motion-type="fast" data-motion-preset={dealMotionPreset(deal)} data-motion-surface="deals" data-product-id={deal.id} data-product-title={deal.title} data-product-image={deal.image} data-product-category={inferCategory(`${deal.section} ${deal.title}`)} data-video-generation={generateVideo?"search":"none"} data-tile-shape={Math.abs([...deal.id].reduce((a,ch)=>((a*31)+ch.charCodeAt(0))|0,7))%5} role="button" tabIndex={0} onClick={()=>onSelect(deal)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();onSelect(deal)}}}><button className={`ynot-orb-heart ${saved?"active":""}`} onClick={e=>{e.stopPropagation();onSave(deal)}} aria-label="Save product"><Heart/></button><span className="ynot-orb-img" data-motion-host><img src={deal.image} alt=""/>{variantImages.length>1&&<span className="ynot-variant-strip">{variantImages.slice(0,3).map((img,i)=><img key={`${img}-${i}`} src={img} alt=""/>)}</span>}</span><span className="ynot-orb-copy"><b>{deal.title}</b><em>{sourceLabel(deal.source)} · {deal.badge}</em><strong>{money(deal.price,deal.currency)}</strong></span></div>}
