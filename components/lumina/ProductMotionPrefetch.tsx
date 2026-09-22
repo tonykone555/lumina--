@@ -86,7 +86,7 @@ export default function ProductMotionPrefetch(){
    const fresh=products.filter(p=>p.generateVideo&&!videoRequested.has(p.id)&&!(known.get(p.id)?.video_url)).slice(0,12);
    if(!fresh.length)return;
    fresh.forEach(p=>{videoRequested.add(p.id);videoTracked.set(p.id,p)});
-   fetch("/api/catalog/video/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({products:fresh}),keepalive:true})
+   fetch("/api/catalog/video/generate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({products:fresh,source:"search"}),keepalive:true})
     .then(async r=>({ok:r.ok,data:await r.json().catch(()=>({}))}))
     .then(({ok,data})=>{
      if(!ok||!data?.configured){fresh.forEach(p=>videoTracked.delete(p.id));return}
@@ -94,6 +94,8 @@ export default function ProductMotionPrefetch(){
       const state=data?.jobs?.[p.id];
       if(state?.status==="ready"&&state?.video_url){
        applyEverywhere(p.id,{product_id:p.id,media_type:"video_ai",video_url:state.video_url,poster_url:p.image,preset:null,status:"ready"});
+       videoTracked.delete(p.id);
+      }else if(state?.status==="skipped"||state?.status==="failed"){
        videoTracked.delete(p.id);
       }
      }
