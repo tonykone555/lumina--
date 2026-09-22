@@ -15,7 +15,7 @@ type CatalogItem={id:string;title:string;brand?:string;price:number|null;currenc
 type CartItem={key:string;productId:string;variantId?:string;title:string;brand?:string;image:string;quantity:number;price:number;currency:string;source:string;url?:string;supplierPrice?:number;category?:string;token?:string;expiresAt?:number};
 
 const sections=["Showcase","Best Value","Under €25","Selling Fast","Fast Delivery","Fashion","Jewelry","Accessories","Bags","Tech","Home","Beauty & Hair","Fitness","Pets","Car","Travel","Free Delivery","Amazon"];
-const sectionQueries:Record<string,string>={Showcase:"premium trending fashion sneakers bags accessories beauty skincare modern home decor design products","Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
+const sectionQueries:Record<string,string>={Showcase:"premium trending fashion bags accessories beauty skincare modern home decor design products","Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
 const SAVED_KEY="ynot-saved-items";
 function money(v:number,currency="EUR"){try{return new Intl.NumberFormat("en-IE",{style:"currency",currency,maximumFractionDigits:2}).format(v)}catch{return`${v.toFixed(2)} ${currency}`}}
 function sourceLabel(source?:string){const value=(source||"").toLowerCase();if(value.includes("amazon")||value.includes("ebay"))return"YNOT · Marketplace";if(value.includes("shopify"))return"YNOT · Commerce";return"YNOT · Commerce"}
@@ -33,13 +33,13 @@ function showcaseQuality(d:Deal){
  if(/shopify/.test(String(d.source||"").toLowerCase()))score+=10;
  if(d.sellableByLumina)score+=8;
  if(d.price>=20&&d.price<=350)score+=8;
- if(/dress|skirt|jacket|coat|sneaker|shoe|loafer|boot|bag|handbag|tote|wallet|sunglass|eyewear|jewel|necklace|earring|bracelet|watch|perfume|fragrance|serum|skincare|beauty|lamp|chair|sofa|table|vase|decor|rug|leather/.test(text))score+=18;
+ if(/dress|skirt|jacket|coat|bag|handbag|tote|wallet|sunglass|eyewear|jewel|necklace|earring|bracelet|watch|perfume|fragrance|serum|skincare|beauty|lamp|chair|sofa|table|vase|decor|rug|leather/.test(text))score+=18;
  if(/cheap|wholesale|bulk|replacement|spare|extension cable|usb-c extension|adapter|module|part\b|pack\b|10-pack|sweatband|strap only|compatible with|repair|tool kit/.test(text))score-=55;
  if(d.price<8)score-=20;
  return score;
 }
 function showcaseProducts(list:Deal[]){
- const ranked=dedupe(list).map((deal,index)=>({deal,index,quality:showcaseQuality(deal)})).filter(x=>x.quality>-5);
+ const ranked=dedupe(list).filter(deal=>!/(?:^|\b)(shoe|shoes|sneaker|sneakers|trainer|trainers|boot|boots|loafer|loafers|heel|heels|sandal|sandals|footwear)(?:\b|$)/i.test(`${deal.title} ${deal.brand||""}`)).map((deal,index)=>({deal,index,quality:showcaseQuality(deal)})).filter(x=>x.quality>-5);
  ranked.sort((a,b)=>b.quality-a.quality||a.index-b.index);
  return ranked.map(x=>x.deal);
 }
@@ -66,7 +66,7 @@ export default function YnotDrawer(){
  useEffect(()=>{const openStory=(event:Event)=>{const item=(event as CustomEvent<Deal>).detail;if(!item)return;setOpen(true);setStory({...item,section:item.section||"Saved",sections:item.sections||["Saved"],badge:item.badge||"Saved",note:item.note||`${sourceLabel(item.source)} product`});setStoryImage(0)};window.addEventListener("ynot:open-story",openStory);return()=>window.removeEventListener("ynot:open-story",openStory)},[]);
  useEffect(()=>{let alive=true;
   const showcaseQueries=[
-   "premium trending fashion sneakers bags accessories",
+   "premium trending fashion bags jewelry accessories",
    "beauty skincare fragrance premium trending",
    "modern home decor furniture design lifestyle"
   ].map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
