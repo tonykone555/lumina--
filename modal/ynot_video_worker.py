@@ -161,9 +161,9 @@ class WanStudioVideo:
     @modal.enter()
     def load_model(self):
         import torch
-        from diffusers import DiffusionPipeline
+        from diffusers import WanImageToVideoPipeline
 
-        self.pipe = DiffusionPipeline.from_pretrained(
+        self.pipe = WanImageToVideoPipeline.from_pretrained(
             STUDIO_MODEL_ID,
             torch_dtype=torch.bfloat16,
         )
