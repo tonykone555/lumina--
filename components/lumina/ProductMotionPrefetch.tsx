@@ -56,10 +56,10 @@ export default function ProductMotionPrefetch(){
   const active=new IntersectionObserver(entries=>{for(const entry of entries){const card=entry.target as HTMLElement,video=card.querySelector<HTMLVideoElement>("video.ynot-product-motion-video");if(entry.isIntersecting){card.classList.add("ynot-motion-active");if(video)void video.play().catch(()=>{})}else{card.classList.remove("ynot-motion-active");if(video)video.pause()}}},{root:null,rootMargin:"240px",threshold:.08});
 
   function attach(root:ParentNode=document){
-   root.querySelectorAll<HTMLElement>("[data-product-id]").forEach(card=>{if(card.dataset.motionObserved==="1")return;card.dataset.motionObserved="1";prewarm.observe(card);active.observe(card)});
+   root.querySelectorAll<HTMLElement>('[data-motion-surface="deals"][data-product-id]').forEach(card=>{if(card.dataset.motionObserved==="1")return;card.dataset.motionObserved="1";prewarm.observe(card);active.observe(card)});
   }
   attach();
-  const mutation=new MutationObserver(records=>{for(const r of records)for(const node of r.addedNodes)if(node instanceof HTMLElement){if(node.matches("[data-product-id]"))attach(node.parentElement||document);else attach(node)}});
+  const mutation=new MutationObserver(records=>{for(const r of records)for(const node of r.addedNodes)if(node instanceof HTMLElement){if(node.matches('[data-motion-surface="deals"][data-product-id]'))attach(node.parentElement||document);else attach(node)}});
   mutation.observe(document.body,{childList:true,subtree:true});
   return()=>{mutation.disconnect();prewarm.disconnect();active.disconnect();if(flushTimer!=null)window.clearTimeout(flushTimer)};
  },[]);
