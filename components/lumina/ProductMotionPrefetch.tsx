@@ -57,6 +57,13 @@ export default function ProductMotionPrefetch(){
    document.querySelectorAll<HTMLElement>(`[data-motion-surface="deals"][data-product-id="${CSS.escape(productId)}"]`).forEach(card=>apply(card,m));
   }
 
+  function setVideoStatus(productId:string,status?:string){
+   document.querySelectorAll<HTMLElement>(`[data-motion-surface="deals"][data-product-id="${CSS.escape(productId)}"]`).forEach(card=>{
+    if(status==="queued"||status==="processing")card.dataset.videoStatus=status;
+    else delete card.dataset.videoStatus;
+   });
+  }
+
   function pollVideoStatus(){
    if(statusTimer!=null||!videoTracked.size)return;
    statusTimer=window.setTimeout(async()=>{
@@ -73,9 +80,12 @@ export default function ProductMotionPrefetch(){
       if(state.status==="ready"&&state.video_url){
        const p=videoTracked.get(id);if(!p)continue;
        const m:Media={product_id:id,media_type:"video_ai",video_url:state.video_url,poster_url:p.image,preset:null,status:"ready"};
-       applyEverywhere(id,m);videoTracked.delete(id);
-      }else if(state.status==="failed"){videoTracked.delete(id)}
-      else pending=true;
+       applyEverywhere(id,m);setVideoStatus(id,"ready");videoTracked.delete(id);
+      }else if(state.status==="failed"||state.status==="skipped"){
+       setVideoStatus(id,state.status);videoTracked.delete(id);
+      }else{
+       setVideoStatus(id,state.status);pending=true;
+      }
      }
      if(pending||videoTracked.size)pollVideoStatus();
     }catch{if(videoTracked.size)pollVideoStatus()}
@@ -94,13 +104,15 @@ export default function ProductMotionPrefetch(){
       const state=data?.jobs?.[p.id];
       if(state?.status==="ready"&&state?.video_url){
        applyEverywhere(p.id,{product_id:p.id,media_type:"video_ai",video_url:state.video_url,poster_url:p.image,preset:null,status:"ready"});
-       videoTracked.delete(p.id);
+       setVideoStatus(p.id,"ready");videoTracked.delete(p.id);
       }else if(state?.status==="skipped"||state?.status==="failed"){
-       videoTracked.delete(p.id);
+       setVideoStatus(p.id,state.status);videoTracked.delete(p.id);
+      }else if(state?.status==="queued"||state?.status==="processing"){
+       setVideoStatus(p.id,state.status);
       }
      }
      pollVideoStatus();
-    }).catch(()=>{fresh.forEach(p=>videoTracked.delete(p.id))});
+    }).catch(()=>{fresh.forEach(p=>{setVideoStatus(p.id,"failed");videoTracked.delete(p.id)})});
   }
 
   function flush(){
