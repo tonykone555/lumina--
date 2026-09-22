@@ -8,7 +8,7 @@ from pathlib import Path
 
 import modal
 
-APP_NAME = "ynot-video-worker"
+# Test deployment trigger\nAPP_NAME = "ynot-video-worker"
 MODEL_ID = os.environ.get("YNOT_MODAL_MODEL", "Lightricks/LTX-Video")
 
 app = modal.App(APP_NAME)
