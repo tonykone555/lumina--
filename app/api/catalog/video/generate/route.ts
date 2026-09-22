@@ -18,13 +18,13 @@ async function existingVideo(productId:string,hash:string){
 }
 
 async function jobFor(productId:string,hash:string){
- const q="ynot_video_jobs?select=id,product_id,source_image_hash,external_job_id,status,video_url,error&product_id=eq."+encodeURIComponent(productId)+"&source_image_hash=eq."+encodeURIComponent(hash)+"&provider=eq.huggingface_zerogpu&model=eq.ltx_video_2b_distilled&limit=1";
+ const q="ynot_video_jobs?select=id,product_id,source_image_hash,external_job_id,status,video_url,error&product_id=eq."+encodeURIComponent(productId)+"&source_image_hash=eq."+encodeURIComponent(hash)+"&provider=eq.huggingface_zerogpu_lightricks&model=eq.ltx_video_0_9_8_13b_distilled&limit=1";
  const rows=await rest(q);
  return (Array.isArray(rows)?rows[0]:null) as JobRow|null;
 }
 
 async function createOrResetJob(product:VideoProduct,hash:string,prompt:string){
- const payload=[{product_id:product.id,source_image_url:product.image,source_image_hash:hash,title:product.title,category:product.category||null,prompt,provider:"huggingface_zerogpu",model:"ltx_video_2b_distilled",status:"queued",error:null,poster_url:product.image,metadata:{duration_seconds:3,width:512,height:640,source:"ynot-deals"},updated_at:new Date().toISOString()}];
+ const payload=[{product_id:product.id,source_image_url:product.image,source_image_hash:hash,title:product.title,category:product.category||null,prompt,provider:"huggingface_zerogpu_lightricks",model:"ltx_video_0_9_8_13b_distilled",status:"queued",error:null,poster_url:product.image,metadata:{duration_seconds:2,width:512,height:640,source:"ynot-deals",space:"Lightricks/ltx-video-distilled",api:"image_to_video"},updated_at:new Date().toISOString()}];
  const rows=await rest("ynot_video_jobs?on_conflict=product_id,source_image_hash,provider,model",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify(payload)});
  return rows?.[0] as JobRow;
 }
@@ -40,7 +40,7 @@ export async function POST(req:NextRequest){
   const b=await req.json().catch(()=>({}));
   const products:VideoProduct[]=(Array.isArray(b?.products)?b.products:[]).slice(0,12).map((p:any)=>({id:String(p?.id||"").slice(0,500),title:String(p?.title||"").slice(0,260),image:String(p?.image||"").slice(0,1800),category:String(p?.category||"").slice(0,160)})).filter((p:VideoProduct)=>p.id&&p.image);
   if(!products.length)return NextResponse.json({configured:huggingFaceConfigured(),jobs:{}});
-  let slots=Math.max(0,2-await countProcessing());
+  let slots=Math.max(0,1-await countProcessing());
   const out:Record<string,any>={};
   for(const product of products){
    const hash=sourceHash(product.image);
