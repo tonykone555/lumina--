@@ -26,10 +26,9 @@ async function rest(path:string,init?:RequestInit){const{base,headers}=dbConfig(
 
 export async function POST(req:NextRequest){
  try{
-  const body=await req.json();const products:(ProductInput[])=(Array.isArray(body?.products)?body.products:[]).slice(0,24).map((p:any)=>({id:String(p?.id||"").slice(0,500),title:String(p?.title||"").slice(0,260),image:String(p?.image||"").slice(0,1500),category:String(p?.category||"").slice(0,120)})).filter(p=>p.id&&p.image);
+  const body=await req.json();const createMotion=body?.createMotion!==false;const products:(ProductInput[])=(Array.isArray(body?.products)?body.products:[]).slice(0,24).map((p:any)=>({id:String(p?.id||"").slice(0,500),title:String(p?.title||"").slice(0,260),image:String(p?.image||"").slice(0,1500),category:String(p?.category||"").slice(0,120)})).filter(p=>p.id&&p.image);
   if(!products.length)return NextResponse.json({media:{}});
-  const motionRows=products.map(p=>({product_id:p.id,source_image_url:p.image||"",source_image_hash:hashString(p.image||""),media_type:"motion_fast",provider:"ynot-motion",video_url:null,poster_url:p.image||null,preset:presetFor(p),status:"ready",priority:10,metadata:{version:1,title:p.title||null,category:p.category||null},updated_at:new Date().toISOString()}));
-  await rest("ynot_product_media?on_conflict=product_id,media_type,source_image_hash",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(motionRows)});
+  if(createMotion){const motionRows=products.map(p=>({product_id:p.id,source_image_url:p.image||"",source_image_hash:hashString(p.image||""),media_type:"motion_fast",provider:"ynot-motion",video_url:null,poster_url:p.image||null,preset:presetFor(p),status:"ready",priority:10,metadata:{version:1,title:p.title||null,category:p.category||null},updated_at:new Date().toISOString()}));await rest("ynot_product_media?on_conflict=product_id,media_type,source_image_hash",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},body:JSON.stringify(motionRows)})}
   const idList=products.map(p=>"\""+p.id.replace(/\"/g,"")+"\"").join(",");
   const rows=(await rest("ynot_product_media?select=product_id,media_type,video_url,poster_url,preset,status,priority,source_image_url,source_image_hash,metadata&status=eq.ready&product_id=in.("+encodeURIComponent(idList)+")")) as MediaRow[];
   const media:Record<string,MediaRow>={};
