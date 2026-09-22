@@ -12,7 +12,7 @@ import modal
 # Credentials-ready deployment trigger
 APP_NAME = "ynot-video-worker"
 MODEL_ID = os.environ.get("YNOT_MODAL_MODEL", "Lightricks/LTX-Video")
-STUDIO_MODEL_ID = os.environ.get("YNOT_STUDIO_MODAL_MODEL", "Wan-AI/Wan2.2-TI2V-5B-Diffusers")
+STUDIO_MODEL_ID = os.environ.get("YNOT_STUDIO_MODAL_MODEL", "Wan-AI/Wan2.2-I2V-A14B-Diffusers")
 
 app = modal.App(APP_NAME)
 
