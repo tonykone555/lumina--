@@ -127,7 +127,10 @@ function findFileUrl(value:any,base:string):string{
   }
   if(Array.isArray(v)){for(const x of v){const u=visit(x);if(u)return u}return""}
   if(typeof v==="object"){
-   for(const key of ["url","path","video","video_url","name"]){const u=visit(v[key]);if(u)return u}
+   const direct=visit(v.url)||visit(v.video)||visit(v.video_url);
+   if(direct)return direct;
+   const path=String(v.path||v.name||"");
+   if(path)return base+"/gradio_api/file="+encodeURIComponent(path);
    for(const x of Object.values(v)){const u=visit(x);if(u)return u}
   }
   return"";
