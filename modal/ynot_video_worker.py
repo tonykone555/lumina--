@@ -231,7 +231,7 @@ def generate_studio_video(
     height: int = 832,
     num_frames: int = 49,
 ):
-    """High-quality Creator Studio image-to-video entrypoint."""
+    """High-quality Creator Studio image-to-video entrypoint. Wan I2V deployment revision 2."""
     return WanStudioVideo().generate.remote(
         image_url=image_url,
         prompt=prompt,
