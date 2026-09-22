@@ -13,8 +13,7 @@ export default function ProductMediaSurface({product,className="",createMotion=f
    .then(r=>r.json()).then(d=>{if(alive)setMedia(d?.media?.[product.id]||null)}).catch(()=>{});
   return()=>{alive=false};
  },[product.id,product.image,product.category,createMotion]);
- const preset=media?.preset||"";
- return <div className={`ynot-shared-media ${className} ${media?.video_url?"has-video":media?"has-motion":""}`} data-motion-preset={preset}>
-  {media?.video_url?<video src={media.video_url} poster={media.poster_url||product.image} autoPlay muted loop playsInline preload="metadata" aria-label={alt||product.title||"Product video"}/>:<img src={media?.poster_url||product.image} alt={alt}/>}
- </div>;
+ const common={className:`ynot-shared-media ${className} ${media?.video_url?"has-video":media?"has-motion":""}`.trim(),"data-motion-preset":media?.preset||undefined};
+ if(media?.video_url)return <video {...common} src={media.video_url} poster={media.poster_url||product.image} autoPlay muted loop playsInline preload="metadata" aria-label={alt||product.title||"Product video"}/>;
+ return <img {...common} src={media?.poster_url||product.image} alt={alt}/>;
 }
