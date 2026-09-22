@@ -3,9 +3,9 @@
 import {useEffect,useState} from "react";
 
 type Media={product_id:string;media_type:string;video_url?:string|null;poster_url?:string|null;preset?:string|null;status:string};
-type Props={product:{id:string;title?:string;image:string;category?:string};className?:string;createMotion?:boolean;alt?:string};
+type Props={product:{id:string;title?:string;image:string;category?:string};className?:string;createMotion?:boolean;alt?:string;popupCompatible?:boolean};
 
-export default function ProductMediaSurface({product,className="",createMotion=false,alt=""}:Props){
+export default function ProductMediaSurface({product,className="",createMotion=false,alt="",popupCompatible=false}:Props){
  const[media,setMedia]=useState<Media|null>(null);
  useEffect(()=>{
   let alive=true;
@@ -14,6 +14,7 @@ export default function ProductMediaSurface({product,className="",createMotion=f
   return()=>{alive=false};
  },[product.id,product.image,product.category,createMotion]);
  const common={className:`ynot-shared-media ${className} ${media?.video_url?"has-video":media?"has-motion":""}`.trim(),"data-motion-preset":media?.preset||undefined};
+ if(media?.video_url&&popupCompatible)return <><img {...common} src={media.poster_url||product.image} alt={alt}/><video className="ynot-popup-video ynot-shared-media-video" src={media.video_url} poster={media.poster_url||product.image} autoPlay muted loop playsInline preload="metadata" aria-label={alt||product.title||"Product video"}/></>;
  if(media?.video_url)return <video {...common} src={media.video_url} poster={media.poster_url||product.image} autoPlay muted loop playsInline preload="metadata" aria-label={alt||product.title||"Product video"}/>;
  return <img {...common} src={media?.poster_url||product.image} alt={alt}/>;
 }
