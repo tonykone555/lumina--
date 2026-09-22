@@ -17,17 +17,12 @@ type CartItem={key:string;productId:string;variantId?:string;title:string;brand?
 const sections=["Showcase","Fashion","Jewelry","Accessories","Bags","Tech","Home","Beauty & Hair","Fitness","Pets","Car","Travel","Free Delivery","Amazon"];
 const sectionQueries:Record<string,string>={Showcase:"premium mens clothing fashion furniture home appliances beauty accessories fitness products","Best Value":"trending best value products","Under €25":"useful products under 25 euro","Selling Fast":"popular trending products","Fast Delivery":"popular products fast delivery",Fashion:"fashion clothing shoes accessories",Jewelry:"jewelry necklaces rings earrings",Accessories:"fashion accessories bags sunglasses",Bags:"bags handbags backpacks",Tech:"useful tech gadgets phone accessories",Home:"home decor storage kitchen","Beauty & Hair":"beauty skincare hair care",Fitness:"fitness activewear training recovery",Pets:"pet accessories",Car:"car accessories",Travel:"travel accessories luggage","Free Delivery":"popular products free delivery",Amazon:"popular products"};
 const SHOWCASE_QUERIES=[
- "premium mens clothing shirts trousers hoodies activewear",
- "premium womens clothing dresses knitwear trousers activewear",
- "mens winter coats wool parkas puffer jackets",
- "womens winter coats wool parkas puffer jackets",
- "premium hair care shampoo conditioner scalp styling products",
- "modern furniture sofas chairs tables storage home decor",
- "home appliances kitchen coffee air purifier vacuum smart home",
- "beauty skincare fragrance grooming premium products",
- "bags jewelry watches sunglasses accessories",
- "fitness equipment gym accessories training recovery",
- "protein powder nutrition fitness recovery products"
+ "premium mens clothing shirts trousers hoodies jackets activewear",
+ "women dresses elegant casual midi maxi party dresses",
+ "premium handbags totes shoulder bags crossbody bags",
+ "skincare serum cleanser moisturizer spf beauty products",
+ "jewelry necklaces bracelets earrings rings premium accessories",
+ "protein powder creatine supplements nutrition recovery products"
 ];
 const SAVED_KEY="ynot-saved-items";
 function money(v:number,currency="EUR"){try{return new Intl.NumberFormat("en-IE",{style:"currency",currency,maximumFractionDigits:2}).format(v)}catch{return`${v.toFixed(2)} ${currency}`}}
@@ -62,27 +57,22 @@ function showcaseQuality(d:Deal){
 }
 function showcaseLane(d:Deal){
  const text=`${d.title} ${d.brand||""} ${d.section}`.toLowerCase();
- if(/protein|whey|creatine|nutrition|electrolyte|supplement/.test(text))return"protein";
- if(/shampoo|conditioner|scalp|hair mask|hair oil|hair serum|styling cream|styling gel|hair care/.test(text))return"hair";
- if(/coat|parka|puffer|overcoat|winter jacket|down jacket/.test(text))return"winter";
- if(/\bwomen'?s\b|\bwomens\b|\bfemale\b/.test(text)&&/dress|shirt|jacket|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|knitwear|skirt|shorts/.test(text))return"womens";
+ if(/protein|whey|creatine|nutrition|electrolyte|supplement/.test(text))return"supplements";
+ if(/necklace|pendant|chain|jewel|bracelet|earring|ring/.test(text))return"jewelry";
+ if(/bag|handbag|tote|crossbody|shoulder bag|wallet/.test(text))return"bags";
+ if(/serum|skincare|skin care|cleanser|moisturizer|spf|cream|beauty/.test(text))return"skincare";
+ if(/dress|midi dress|maxi dress|mini dress|gown/.test(text))return"dresses";
  if(/\bmen'?s\b|\bmens\b|\bmale\b/.test(text)&&/shirt|jacket|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|polo|shorts/.test(text))return"mens";
- if(/dress|shirt|jacket|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|knitwear|skirt|shorts/.test(text))return"clothing";
- if(/sofa|chair|table|desk|cabinet|shelf|furniture|rug|lamp|decor|storage/.test(text))return"furniture";
- if(/vacuum|blender|coffee|kettle|toaster|air fryer|purifier|humidifier|fan|heater|appliance|smart home/.test(text))return"appliances";
- if(/serum|skincare|beauty|perfume|fragrance|grooming/.test(text))return"beauty";
- if(/bag|handbag|tote|wallet|jewel|necklace|earring|bracelet|watch|sunglass|eyewear/.test(text))return"accessories";
- if(/fitness|gym|training|recovery|dumbbell|resistance|yoga/.test(text))return"fitness";
+ if(/shirt|jacket|hoodie|pants|trouser|jeans|activewear|clothing|apparel|sweater|polo|shorts/.test(text))return"mens";
  return"other";
 }
 function showcaseProducts(list:Deal[]){
  const ranked=dedupe(list).filter(deal=>!/(?:^|\b)(shoe|shoes|sneaker|sneakers|trainer|trainers|boot|boots|loafer|loafers|heel|heels|sandal|sandals|footwear)(?:\b|$)/i.test(`${deal.title} ${deal.brand||""}`)).map((deal,index)=>({deal,index,quality:showcaseQuality(deal),lane:showcaseLane(deal)})).filter(x=>x.quality>-5);
  ranked.sort((a,b)=>b.quality-a.quality||a.index-b.index);
- const lanes=["mens","womens","winter","hair","clothing","furniture","appliances","beauty","accessories","fitness","protein","other"];
+ const lanes=["mens","dresses","bags","skincare","jewelry","supplements","other"];
  const buckets=new Map(lanes.map(k=>[k,ranked.filter(x=>x.lane===k)]));
  const cursor=new Map(lanes.map(k=>[k,0]));
- // Ten-slot discovery rhythm: 3/10 reserved for women's clothing, winter coats and hair.
- const rhythm=["mens","womens","furniture","winter","appliances","hair","clothing","beauty","accessories","fitness"];
+ const rhythm=["mens","dresses","bags","mens","skincare","dresses","jewelry","bags","mens","supplements"];
  const out:Deal[]=[];
  let misses=0,slot=0;
  while(out.length<ranked.length&&misses<rhythm.length*4){
@@ -90,8 +80,7 @@ function showcaseProducts(list:Deal[]){
   if(i<bucket.length){out.push(bucket[i].deal);cursor.set(lane,i+1);misses=0}else misses++;
   slot++;
  }
- // Fill any remaining stock without letting protein dominate.
- const tail=["mens","womens","winter","hair","clothing","furniture","appliances","beauty","accessories","fitness","other","protein"];
+ const tail=["mens","dresses","bags","skincare","jewelry","supplements","other"];
  let added=true;
  while(added){
   added=false;
@@ -125,7 +114,7 @@ export default function YnotDrawer(){
 
  useEffect(()=>{const openStory=(event:Event)=>{const item=(event as CustomEvent<Deal>).detail;if(!item)return;setOpen(true);setStory({...item,section:item.section||"Saved",sections:item.sections||["Saved"],badge:item.badge||"Saved",note:item.note||`${sourceLabel(item.source)} product`});setStoryImage(0)};window.addEventListener("ynot:open-story",openStory);return()=>window.removeEventListener("ynot:open-story",openStory)},[]);
  useEffect(()=>{let alive=true;
-  const showcaseQueries=SHOWCASE_QUERIES.slice(0,10).map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
+  const showcaseQueries=SHOWCASE_QUERIES.slice(0,6).map(q=>new URLSearchParams({q,market:"lumina",source:"shopify",page:"0"}));
   const requests=[
    ...showcaseQueries.map(params=>fetch(`/api/catalog?${params}`).then(r=>r.json())),
    fetch("https://iycxkwoxbkanfyraohge.supabase.co/functions/v1/ynot-feed").then(r=>r.json()),
