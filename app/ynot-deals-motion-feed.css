@@ -90,3 +90,26 @@
   .ynot-drawer .ynot-orb.ynot-motion-active[data-motion-type="fast"] .ynot-orb-img>img,
   .ynot-shared-media.has-motion>img{animation:none!important}
 }
+
+/* Shop World keeps its existing layout; only the opened detail may reuse media already prepared by Deals. */
+.lv4-detail>.lv4-detail-media{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1/1!important;
+  margin:0!important;
+  border-radius:27px!important;
+  overflow:hidden!important;
+  background:transparent!important;
+  border:1px solid rgba(255,255,255,.54)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.50),0 16px 42px rgba(46,33,24,.10)!important;
+  flex:0 0 auto!important;
+}
+.lv4-detail>.lv4-detail-media>img,
+.lv4-detail>.lv4-detail-media>video{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  border-radius:inherit!important;
+}
