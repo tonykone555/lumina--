@@ -229,3 +229,21 @@ img.ynot-shared-media.has-motion[data-motion-preset="soft_float"]{animation-name
     padding-right:52px!important;
   }
 }
+
+
+/* Immediate-touch response for Deals controls/cards. */
+.ynot-drawer .ynot-orb,
+.ynot-drawer .ynot-cart-trigger,
+.ynot-drawer .ynot-close,
+.ynot-drawer .ynot-orb-heart,
+.ynot-drawer .ynot-load-more,
+.ynot-drawer .ynot-shop,
+.ynot-drawer .ynot-cart button{
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+}
+.ynot-drawer .ynot-orb:active,
+.ynot-drawer .ynot-cart-trigger:active,
+.ynot-drawer .ynot-close:active{
+  transform:scale(.985);
+}
