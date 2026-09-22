@@ -12,7 +12,7 @@ import modal
 # Credentials-ready deployment trigger
 APP_NAME = "ynot-video-worker"
 MODEL_ID = os.environ.get("YNOT_MODAL_MODEL", "Lightricks/LTX-Video")
-STUDIO_MODEL_ID = os.environ.get("YNOT_STUDIO_MODAL_MODEL", "Wan-AI/Wan2.2-I2V-A14B-Diffusers")
+STUDIO_MODEL_ID = os.environ.get("YNOT_STUDIO_MODAL_MODEL", "Wan-AI/Wan2.2-TI2V-5B-Diffusers")
 
 app = modal.App(APP_NAME)
 
@@ -82,7 +82,7 @@ class LTXProductVideo:
         )
 
         frames = self.pipe(
-            image=source,
+            video=source_frames,
             prompt=prompt,
             negative_prompt=negative,
             num_inference_steps=num_inference_steps,
@@ -155,15 +155,15 @@ studio_image = (
     gpu="A100-80GB",
     volumes={MODEL_PATH: studio_model_cache},
     timeout=15 * 60,
-    scaledown_window=5 * 60,
+    scaledown_window=15 * 60,
 )
 class WanStudioVideo:
     @modal.enter()
     def load_model(self):
         import torch
-        from diffusers import WanImageToVideoPipeline
+        from diffusers import WanPipeline
 
-        self.pipe = WanImageToVideoPipeline.from_pretrained(
+        self.pipe = WanPipeline.from_pretrained(
             STUDIO_MODEL_ID,
             torch_dtype=torch.bfloat16,
         )
@@ -182,13 +182,13 @@ class WanStudioVideo:
         height: int = 832,
         num_frames: int = 49,
         fps: int = 16,
-        num_inference_steps: int = 28,
-        guidance_scale: float = 5.0,
+        num_inference_steps: int = 16,
+        guidance_scale: float = 4.0,
     ):
         from diffusers.utils import export_to_video, load_image
 
         started = time.time()
-        source = load_image(image_url).convert("RGB").resize((width, height))
+        source = load_image(image_url).convert("RGB").resize((width, height))\n        # TI2V conditioning: use the saved keyframe as the first-frame video condition.\n        source_frames = [source] * num_frames
         negative = (
             "low quality, blurry, jitter, flicker, warped face, deformed hands, "
             "changed product, changed logo, changed text, duplicate objects, unstable geometry"
@@ -231,7 +231,7 @@ def generate_studio_video(
     height: int = 832,
     num_frames: int = 49,
 ):
-    """High-quality Creator Studio image-to-video entrypoint. Wan I2V deployment revision 2."""
+    """Fast Standard Creator Studio route: Wan 2.2 TI2V-5B at 480-class resolution, output upscaled to 720p."""
     return WanStudioVideo().generate.remote(
         image_url=image_url,
         prompt=prompt,
