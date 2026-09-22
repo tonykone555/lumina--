@@ -9,6 +9,7 @@ from pathlib import Path
 import modal
 
 # Modal-deployed YNOT product video worker
+# Credentials-ready deployment trigger
 APP_NAME = "ynot-video-worker"
 MODEL_ID = os.environ.get("YNOT_MODAL_MODEL", "Lightricks/LTX-Video")
 
