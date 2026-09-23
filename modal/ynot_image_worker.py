@@ -18,6 +18,7 @@ model_cache = modal.Volume.from_name("ynot-image-model-cache", create_if_missing
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
+    .apt_install("git")
     .uv_pip_install(
         "accelerate>=1.10,<2",
         "huggingface-hub>=0.36,<2",
