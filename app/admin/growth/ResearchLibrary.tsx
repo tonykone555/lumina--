@@ -1,5 +1,6 @@
 "use client";
 
+import "./research-library.css";
 import {useEffect,useMemo,useState} from "react";
 
 type Item={id:string;kind:string;source?:string;title:string;summary?:string;url?:string;image_url?:string;score?:number;payload?:any;created_at?:string};
