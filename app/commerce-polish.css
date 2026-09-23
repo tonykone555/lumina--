@@ -73,3 +73,9 @@
 
 .lv4-merchant-dot-bottom{display:flex!important;width:18px!important;height:18px!important;margin:8px auto 2px!important;border:1px solid rgba(255,255,255,.72)!important;background:rgba(255,255,255,.10)!important;color:#fff!important;opacity:1!important;align-items:center!important;justify-content:center!important;border-radius:50%!important;font-size:15px!important;line-height:1!important;text-decoration:none!important}
 .lv4-merchant-dot-bottom:hover,.lv4-merchant-dot-bottom:focus-visible{background:rgba(255,255,255,.2)!important;color:#fff!important;transform:scale(1.06)}
+
+/* Final payment treatment: plain verified line directly under price, no frame. */
+.ynot-flexpay{display:flex!important;width:max-content!important;min-height:0!important;margin:4px 0 9px!important;padding:0!important;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;align-items:center!important;gap:5px!important}
+.ynot-flexpay-check{display:inline!important;width:auto!important;height:auto!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important;font:800 11px/1 Inter,ui-sans-serif,system-ui,sans-serif!important}
+.ynot-flexpay b{font:650 10px/1.2 Inter,ui-sans-serif,system-ui,sans-serif!important}
+.lv4-merchant-dot-bottom{margin:7px auto 0!important}
