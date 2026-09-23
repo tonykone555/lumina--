@@ -8,6 +8,8 @@ type Mode="meta_ads"|"tiktok_ads"|"google_ads"|"linkedin_ads"|"google_demand";
 
 function arr(v:any,...keys:string[]){for(const k of keys){if(Array.isArray(v?.[k]))return v[k]}return []}
 function cleanText(v:any){return String(v??"").replace(/\s+/g," ").trim()}
+function mediaUrl(a:any,creative:any){const assets=[creative?.imageUrl,creative?.image_url,creative?.thumbnailUrl,creative?.thumbnail_url,creative?.mediaUrl,creative?.media_url,a?.imageUrl,a?.image_url,a?.thumbnailUrl,a?.thumbnail_url,a?.mediaUrl,a?.media_url,a?.snapshot?.imageUrl,a?.snapshot?.image_url,creative?.assets?.[0]?.url,a?.assets?.[0]?.url];return cleanText(assets.find(Boolean)||"")}
+function videoUrl(a:any,creative:any){const assets=[creative?.videoUrl,creative?.video_url,a?.videoUrl,a?.video_url,creative?.assets?.find?.((x:any)=>String(x?.type||"").toLowerCase().includes("video"))?.url,a?.assets?.find?.((x:any)=>String(x?.type||"").toLowerCase().includes("video"))?.url];return cleanText(assets.find(Boolean)||"")}
 function normalizeAd(a:any,platform:string){
  const creative=a?.creative||a?.ad||a||{};
  const advertiser=a?.advertiser?.name||a?.advertiserName||a?.businessName||a?.payerName||a?.advertiser||a?.companyName||"Unknown advertiser";
@@ -18,6 +20,7 @@ function normalizeAd(a:any,platform:string){
   body:cleanText(creative?.body||creative?.text||creative?.caption||a?.body||a?.text||a?.caption),
   cta:cleanText(creative?.ctaText||creative?.callToAction||a?.ctaText||a?.callToAction),
   landingPage:cleanText(creative?.linkUrl||creative?.destinationUrl||a?.landingPageUrl||a?.linkUrl||a?.destinationUrl),
+  imageUrl:mediaUrl(a,creative),videoUrl:videoUrl(a,creative),
   format:cleanText(a?.mediaType||creative?.format||a?.format),
   started:a?.startDate||a?.shownFrom||a?.firstShownAt||null,
   ended:a?.endDate||a?.shownTo||a?.lastShownAt||null,
@@ -41,7 +44,7 @@ export async function POST(req:NextRequest){
    const related=arr(serp,"relatedSearches","related_searches").map((x:any)=>cleanText(x?.query||x?.text||x)).filter(Boolean);
    const questions=arr(serp,"peopleAlsoAsk","people_also_ask").map((x:any)=>cleanText(x?.question||x?.text||x)).filter(Boolean);
    const suggestions=arr(auto,"suggestions","completions","results").map((x:any)=>cleanText(x?.query||x?.text||x?.value||x)).filter(Boolean);
-   const discussions=arr(serp,"discussions","discussionResults").slice(0,12).map((x:any)=>({title:cleanText(x?.title),url:cleanText(x?.url),snippet:cleanText(x?.snippet)}));
+   const discussions=arr(serp,"discussions","discussionResults").slice(0,12).map((x:any)=>({title:cleanText(x?.title),url:cleanText(x?.url),snippet:cleanText(x?.snippet),imageUrl:cleanText(x?.imageUrl||x?.image_url||x?.thumbnailUrl||x?.thumbnail_url)}));
    return NextResponse.json({mode,query,country,language,signals:{suggestions:[...new Set(suggestions)].slice(0,20),questions:[...new Set(questions)].slice(0,20),related:[...new Set(related)].slice(0,20),discussions},notes:Array.isArray(serp?.notes)?serp.notes:[]});
   }
 
@@ -58,8 +61,5 @@ export async function POST(req:NextRequest){
   for(const ad of ads){const key=ad.advertiser.toLowerCase();const g=groups.get(key)||{advertiser:ad.advertiser,count:0,samples:[]};g.count++;if(g.samples.length<3)g.samples.push(ad);groups.set(key,g)}
   const advertisers=[...groups.values()].sort((a,b)=>b.count-a.count).slice(0,20);
   return NextResponse.json({mode,query,country,platform,ads,advertisers,matchedAdvertisers,notes:Array.isArray(raw?.notes)?raw.notes:[]});
- }catch(e){
-  const m=e instanceof Error?e.message:"GROWTH_INTELLIGENCE_FAILED";
-  return NextResponse.json({error:m},{status:/FETCHLAYER_NOT_CONFIGURED/.test(m)?503:adminErrorStatus(e)});
- }
+ }catch(e){const m=e instanceof Error?e.message:"GROWTH_INTELLIGENCE_FAILED";return NextResponse.json({error:m},{status:/FETCHLAYER_NOT_CONFIGURED/.test(m)?503:adminErrorStatus(e)});}
 }
