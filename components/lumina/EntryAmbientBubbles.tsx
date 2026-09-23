@@ -74,7 +74,7 @@ function submitSearch(query:string){
 }
 
 export default function EntryAmbientBubbles(){
- const[home,setHome]=useState(true);
+ const[home,setHome]=useState(()=>typeof document==="undefined"?true:Boolean(document.querySelector(".lv4-shell.depth-worlds")));
  const[dismissed,setDismissed]=useState(false);
  const[dragging,setDragging]=useState(false);
  const[hoveredCategory,setHoveredCategory]=useState("");
