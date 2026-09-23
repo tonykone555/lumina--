@@ -1,5 +1,7 @@
 import Link from "next/link";
 import "../growth.css";
+import "../growth-light.css";
+import GrowthNav from "../GrowthNav";
 export const dynamic="force-dynamic";
 
 async function rows(path:string){
@@ -20,8 +22,12 @@ export default async function GrowthContentPage(){
  const creatives=creativeIds.length?await rows(`ynot_ad_creatives?id=in.(${creativeIds.join(",")})&select=id,headline,hook,source_product_ids,payload,status`):[];
  const cm=new Map(creatives.map((c:any)=>[c.id,c]));
  return <main className="growth"><div className="ambient a"/><div className="ambient b"/>
-  <header><div><div className="eyebrow">YNOT / GROWTH</div><h1>Content Library</h1><p>Every still and video returned from Grok generation, tied back to its product and campaign.</p></div><div className="live"><i/> {assets.length} assets</div></header>
-  <nav className="growthTabs"><Link href="/admin/growth">Overview</Link><Link className="active" href="/admin/growth/content">Content</Link><Link href="/admin/growth/queue">Approval Queue</Link><Link href="/admin/growth/threads">Threads</Link></nav>
+  <header><div><div className="eyebrow">YNOT / GROWTH OS</div><h1>Content</h1><p>Create, review and prepare every reel, still, product post and social asset before distribution.</p></div><div className="live"><i/> {assets.length} assets</div></header>
+  <GrowthNav active="content"/>
+  <section className="grid growthOsOverview">
+   <div className="panel growthOsCard"><div className="panelHead"><div><span>SOURCES</span><h2>Content inputs</h2></div><b>3 layers</b></div><p>Drive video libraries, YNOT-generated creatives and live catalogue/product-led content all feed this workspace.</p></div>
+   <div className="panel growthOsCard"><div className="panelHead"><div><span>DISTRIBUTION</span><h2>TryPost-ready</h2></div><b>Queue</b></div><p>Every finished asset can carry platform copy, a YNOT /shop intent link and publishing status before scheduling.</p></div>
+  </section>
   <section className="assetGrid">{assets.length?assets.map((a:any)=>{
     const u=assetUrl(a),c:any=cm.get(a.creative_id),kind=mediaType(a,u),p=c?.payload||{};
     return <article className="assetCard" key={a.id}>
@@ -29,10 +35,10 @@ export default async function GrowthContentPage(){
       <div className="assetBody"><div className="assetTop"><span>{kind.includes("video")?"VIDEO":"STILL"}</span><em className={"status "+(a.review_status||a.status||"ready")}>{a.review_status||a.status||"ready"}</em></div>
       <h3>{c?.headline||c?.hook||"Generated creative"}</h3>
       <p>{p.branch_type?String(p.branch_type).replace(/_/g," "):"creative"}{p.variant_label?` · Variant ${p.variant_label}`:""}{p.niche?` · ${p.niche}`:""}</p>
-      <div className="assetMeta"><span>Grok Imagine</span><span>{p.generation_strategy||"image-first"}</span></div>
+      <div className="assetMeta"><span>{p.provider||"YNOT creative"}</span><span>{p.generation_strategy||"content asset"}</span></div>
       {p.product?.title&&<div className="assetProduct">{p.product.image&&<img src={p.product.image} alt=""/>}<div><strong>{p.product.title}</strong><small>{p.product.brand||c?.source_product_ids?.[0]}</small></div></div>}
       </div>
-    </article>}):<div className="assetEmpty">No generated assets have returned yet. As Grok completes image/video jobs they will appear here automatically.</div>}</section>
-  <footer><span>YNOT Growth OS</span><span>{jobs.length} recent generation jobs linked</span><Link href="/admin/growth">Back to Growth</Link></footer>
+    </article>}):<div className="assetEmpty">No content assets have returned yet. Imported videos and generated image/video assets will appear here.</div>}</section>
+  <footer><span>YNOT Growth OS</span><span>{jobs.length} recent generation jobs linked</span><Link href="/admin/growth/library">Open shared Library</Link></footer>
  </main>
 }
