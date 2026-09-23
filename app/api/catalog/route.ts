@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkoutMode } from "@/lib/commerce/checkout";
 import { dynamicLuminaPrice } from "@/lib/commerce/engine";
+import { selectCanonicalProducts } from "@/lib/commerce/multi-source";
 
 export const runtime="nodejs";
 
@@ -69,7 +70,7 @@ function applyPriceIntent(products:Product[],intent:PriceIntent){if(intent.min==
 function usable(products:Product[]){return customerSafe(products.filter(p=>Boolean(p.id&&p.title&&p.image&&p.url&&p.url!=="#")).map(p=>withYnotPrice({...p,checkout:checkoutMode(p)})))}
 function productKey(p:Product){return `${String(p.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${String(p.brand||"").toLowerCase()}`}
 function dedupeProducts(products:Product[]){const seen=new Set<string>();return products.filter(p=>{const key=productKey(p);if(!key||seen.has(key))return false;seen.add(key);return true})}
-function groupedProducts(shopify:Product[],amazon:Product[]){return dedupeProducts([...shopify,...amazon])}
+function groupedProducts(shopify:Product[],amazon:Product[]){return selectCanonicalProducts([...shopify,...amazon] as any) as Product[]}
 function nextShopifyCursor(p:any){const candidates=[p?.cursor,p?.next_cursor,p?.nextCursor,p?.end_cursor,p?.endCursor,p?.after,p?.pageInfo?.endCursor,p?.page_info?.end_cursor];const found=candidates.find(v=>typeof v==="string"&&v.length);return found||""}
 function normalizeShopifyPagination(p:any){const next=nextShopifyCursor(p);const has=Boolean(p?.has_next_page??p?.hasNextPage??p?.pageInfo?.hasNextPage??p?.page_info?.has_next_page??next);return{...(p||{}),next_cursor:next||null,has_next_page:has}}
 function amazonPrice(r:any){const raw=r?.price?.value??r?.price?.raw??r?.prices?.[0]?.value??null;if(typeof raw==="number")return raw;if(typeof raw==="string"){const parsed=Number.parseFloat(raw.replace(/[^0-9,.-]/g,"").replace(",","."));return Number.isFinite(parsed)?parsed:null}return null}
