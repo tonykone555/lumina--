@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {FormEvent,useMemo,useState} from "react";
+import ResearchLibrary from "./ResearchLibrary";
 
 type Props={trends:any[];gaps:any[];scoredProducts:any[]};
 type Bucket="all"|"rising"|"evergreen"|"low-competition"|"gaps";
@@ -11,58 +12,34 @@ function number(v:any){const n=Number(v);return Number.isFinite(n)?n:0}
 function money(p:Product){const value=number(p.price||p.supplierPrice);return value?`${p.currency||"EUR"} ${value.toFixed(value>=100?0:2)}`:"—"}
 function image(p:Product){return String(p.image||p.image_url||"")}
 function productId(p:Product,i:number){return String(p.id||p.product_id||`${p.title||"product"}-${i}`)}
-function normalizeList(j:any):Product[]{
- const candidates=[j?.products,j?.results,j?.items,j?.data?.products,j?.data?.results,j?.data?.items,j?.data];
- const found=candidates.find(Array.isArray);
- return Array.isArray(found)?found:[];
-}
-function scoreProduct(p:Product,index:number,demandBoost:number){
- let score=42;
- if(image(p))score+=8;
- if(number(p.price)>0||number(p.supplierPrice)>0)score+=8;
- const suppliers=Math.max(number(p.supplierOfferCount),Array.isArray(p.supplierOffers)?p.supplierOffers.length:0);
- score+=Math.min(18,suppliers*5);
- if(p.url)score+=5;
- if(p.description)score+=5;
- if((p.tags||[]).length)score+=4;
- if(number(p.advertability_score))score=Math.round((score+number(p.advertability_score))/2);
- score+=Math.min(10,demandBoost);
- return Math.max(0,Math.min(100,score-index));
-}
+function normalizeList(j:any):Product[]{const candidates=[j?.products,j?.results,j?.items,j?.data?.products,j?.data?.results,j?.data?.items,j?.data];const found=candidates.find(Array.isArray);return Array.isArray(found)?found:[]}
+function scoreProduct(p:Product,index:number,demandBoost:number){let score=42;if(image(p))score+=8;if(number(p.price)>0||number(p.supplierPrice)>0)score+=8;const suppliers=Math.max(number(p.supplierOfferCount),Array.isArray(p.supplierOffers)?p.supplierOffers.length:0);score+=Math.min(18,suppliers*5);if(p.url)score+=5;if(p.description)score+=5;if((p.tags||[]).length)score+=4;if(number(p.advertability_score))score=Math.round((score+number(p.advertability_score))/2);score+=Math.min(10,demandBoost);return Math.max(0,Math.min(100,score-index))}
 
 export default function ProductDiscoveryEngine({trends,gaps,scoredProducts}:Props){
  const seed=String(trends[0]?.name||gaps[0]?.niche||"beauty products");
- const[query,setQuery]=useState(seed),[country,setCountry]=useState("FR"),[busy,setBusy]=useState(false),[notice,setNotice]=useState("");
+ const[query,setQuery]=useState(seed),[country,setCountry]=useState("FR"),[busy,setBusy]=useState(false),[saving,setSaving]=useState(false),[notice,setNotice]=useState("");
  const[results,setResults]=useState<Product[]>([]),[bucket,setBucket]=useState<Bucket>("all");
  const demandNames=useMemo(()=>[...trends.map((x:any)=>x.name||x.niche),...gaps.map((x:any)=>x.niche)].filter(Boolean).slice(0,8),[trends,gaps]);
  const demandBoost=Math.min(10,Math.round((number(trends[0]?.velocity_score)||number(gaps[0]?.priority_score)||60)/10));
  const ranked=useMemo(()=>results.map((p,i)=>({...p,_score:scoreProduct(p,i,demandBoost),_suppliers:Math.max(number(p.supplierOfferCount),Array.isArray(p.supplierOffers)?p.supplierOffers.length:0)})).sort((a,b)=>b._score-a._score),[results,demandBoost]);
- const shown=useMemo(()=>ranked.filter((p:any,i)=>bucket==="all"||(bucket==="rising"&&p._score>=78)||(bucket==="evergreen"&&p._score>=66&&p._score<88)||(bucket==="low-competition"&&p._score>=62&&p._suppliers<=2)||(bucket==="gaps"&&p._suppliers<=1)),[ranked,bucket]);
+ const shown=useMemo(()=>ranked.filter((p:any)=>bucket==="all"||(bucket==="rising"&&p._score>=78)||(bucket==="evergreen"&&p._score>=66&&p._score<88)||(bucket==="low-competition"&&p._score>=62&&p._suppliers<=2)||(bucket==="gaps"&&p._suppliers<=1)),[ranked,bucket]);
 
- async function discover(e?:FormEvent){e?.preventDefault();const q=query.trim();if(q.length<2)return;setBusy(true);setNotice("");try{
-  const params=new URLSearchParams({query:q,q,country,source:"all",limit:"80"});
-  const r=await fetch(`/api/catalog?${params.toString()}`,{cache:"no-store"});const j=await r.json().catch(()=>({}));
-  if(!r.ok)throw new Error(j?.error||"Catalogue discovery failed");
-  const list=normalizeList(j);setResults(list);if(!list.length)setNotice("No live catalogue products returned for this demand yet.");
- }catch(err){setNotice(err instanceof Error?err.message:"Product discovery failed")}finally{setBusy(false)}}
-
+ async function discover(e?:FormEvent){e?.preventDefault();const q=query.trim();if(q.length<2)return;setBusy(true);setNotice("");try{const params=new URLSearchParams({query:q,q,country,source:"all",limit:"80"});const r=await fetch(`/api/catalog?${params.toString()}`,{cache:"no-store"});const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j?.error||"Catalogue discovery failed");const list=normalizeList(j);setResults(list);if(!list.length)setNotice("No live catalogue products returned for this demand yet.");}catch(err){setNotice(err instanceof Error?err.message:"Product discovery failed")}finally{setBusy(false)}}
  function useDemand(name:string){setQuery(name);setNotice("Demand seed loaded — run discovery to search the live catalogue.")}
+ async function saveShortlist(){if(!ranked.length)return;setSaving(true);setNotice("");try{const top=ranked.slice(0,30);const items=top.map((p:any)=>({kind:"product",source:p.source||"ynot-catalogue",title:p.title||"Untitled product",summary:[p.brand,money(p),`${p._suppliers||1} supplier${p._suppliers===1?"":"s"}`,p.description].filter(Boolean).join(" · ").slice(0,2600),url:p.url||null,image_url:image(p)||null,score:p._score,payload:{id:p.id||p.product_id,brand:p.brand,price:p.price,currency:p.currency,supplierPrice:p.supplierPrice,supplierOfferCount:p._suppliers,supplierOffers:p.supplierOffers||[],tags:p.tags||[]}}));const r=await fetch("/api/admin/growth/research",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:`${query.trim()} · Product Discovery`,niche:query.trim(),description:`Live YNOT catalogue shortlist for ${query.trim()} in ${country}. Ranked by demand fit, supplier depth and campaign potential.`,cover_image_url:image(top[0])||null,items})});const j=await r.json();if(!r.ok)throw new Error(j.error||"Could not save research folder");setNotice(`Saved ${items.length} products to Research Library.`);window.dispatchEvent(new Event("ynot:research-saved"));}catch(e){setNotice(e instanceof Error?e.message:"Could not save research folder")}finally{setSaving(false)}}
 
- return <section className="productDiscovery" id="product-discovery">
+ return <>
+ <section className="productDiscovery" id="product-discovery">
   <div className="productDiscoveryTop"><div><span>PRODUCT DISCOVERY ENGINE</span><h2>Turn demand into products worth pushing</h2><p>Demand signals → live YNOT catalogue → supplier depth → opportunity score → campaign-ready shortlist.</p></div><div className="productDiscoveryStatus"><i/> Live catalogue search</div></div>
-  <form className="productDiscoverySearch" onSubmit={discover}><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="e.g. pilates grip socks, small apartment storage, glowing skin serum"/><input className="country" value={country} onChange={e=>setCountry(e.target.value.toUpperCase().slice(0,3))}/><button disabled={busy||query.trim().length<2}>{busy?"Scanning catalogue…":"Discover products"}</button></form>
+  <form className="productDiscoverySearch" onSubmit={discover}><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="e.g. pilates grip socks, small apartment storage, glowing skin serum"/><input className="country" value={country} onChange={e=>setCountry(e.target.value.toUpperCase().slice(0,3))}/><button disabled={busy||query.trim().length<2}>{busy?"Scanning catalogue…":"Discover products"}</button>{ranked.length>0&&<button type="button" className="saveResearch" onClick={saveShortlist} disabled={saving}>{saving?"Saving…":"Save to folder"}</button>}</form>
   {demandNames.length>0&&<div className="demandSeeds"><span>FROM WANT GRAPH</span>{demandNames.map((x:string)=><button key={x} onClick={()=>useDemand(x)}>{x}</button>)}</div>}
   {notice&&<div className="productDiscoveryNotice">{notice}</div>}
   <div className="productBuckets">{([['all','All'],['rising','Rising now'],['evergreen','Evergreen'],['low-competition','Low competition'],['gaps','Catalogue gaps']] as [Bucket,string][]).map(([id,label])=><button key={id} className={bucket===id?"active":""} onClick={()=>setBucket(id)}>{label}</button>)}</div>
   <div className="productDiscoveryGrid">
-   <section className="productDiscoveryResults"><div className="productDiscoveryHead"><div><span>DISCOVERED PRODUCTS</span><h3>{shown.length?`${shown.length} ranked candidates`:"Search a demand signal"}</h3></div><b>Score / 100</b></div>
-    <div className="discoveryProducts">{shown.length?shown.slice(0,24).map((p:any,i:number)=><article key={productId(p,i)}><div className="discoveryImage">{image(p)?<img src={image(p)} alt=""/>:<span>Y</span>}</div><div className="discoveryMain"><strong>{p.title||"Untitled product"}</strong><small>{p.brand||p.source||"YNOT catalogue"} · {money(p)}</small><div className="discoverySignals"><span>{p._suppliers||1} supplier{p._suppliers===1?"":"s"}</span><span>{p.source||"catalogue"}</span>{p.supplierPrice&&<span>cost {p.currency||"EUR"} {number(p.supplierPrice).toFixed(2)}</span>}</div></div><b className="discoveryScore">{p._score}</b><div className="discoveryActions">{p.url&&<a href={p.url} target="_blank" rel="noreferrer">Supplier ↗</a>}<Link href={`/admin/growth/content?product=${encodeURIComponent(String(p.id||p.product_id||""))}&idea=${encodeURIComponent(query)}`}>Create campaign</Link></div></article>):<div className="demandEmpty">Use a Want Graph signal or type a product problem/category. YNOT will search the live combined catalogue and rank the returned products.</div>}</div>
-   </section>
-   <aside className="productDiscoverySide">
-    <div className="discoveryModel"><span>PRODUCT OPPORTUNITY SCORE</span><h3>What gets promoted first</h3>{["Demand strength","Trend velocity","Advertiser attention","Supplier depth","Price / margin room","Creative potential","Existing YNOT performance"].map((x,i)=><div key={x}><i>{String(i+1).padStart(2,"0")}</i><strong>{x}</strong></div>)}</div>
-    <div className="discoveryModel"><span>AUTOMATIC BUCKETS</span><h3>Different reasons to act</h3><p><b>Rising now</b> accelerating demand.</p><p><b>Evergreen</b> stable repeatable demand.</p><p><b>Low competition</b> good score with fewer visible supplier/market signals.</p><p><b>Catalogue gaps</b> demand exists but YNOT needs stronger supply.</p></div>
-    {scoredProducts?.length>0&&<div className="discoveryModel"><span>EXISTING YNOT SCORES</span><h3>Already proven internally</h3>{scoredProducts.slice(0,4).map((p:any)=><div className="existingScore" key={p.product_id}><strong>{p.title}</strong><b>{p.advertability_score??"—"}</b></div>)}</div>}
-   </aside>
+   <section className="productDiscoveryResults"><div className="productDiscoveryHead"><div><span>DISCOVERED PRODUCTS</span><h3>{shown.length?`${shown.length} ranked candidates`:"Search a demand signal"}</h3></div><b>Score / 100</b></div><div className="discoveryProducts">{shown.length?shown.slice(0,24).map((p:any,i:number)=><article key={productId(p,i)}><div className="discoveryImage">{image(p)?<img src={image(p)} alt=""/>:<span>Y</span>}</div><div className="discoveryMain"><strong>{p.title||"Untitled product"}</strong><small>{p.brand||p.source||"YNOT catalogue"} · {money(p)}</small><div className="discoverySignals"><span>{p._suppliers||1} supplier{p._suppliers===1?"":"s"}</span><span>{p.source||"catalogue"}</span>{p.supplierPrice&&<span>cost {p.currency||"EUR"} {number(p.supplierPrice).toFixed(2)}</span>}</div></div><b className="discoveryScore">{p._score}</b><div className="discoveryActions">{p.url&&<a href={p.url} target="_blank" rel="noreferrer">Supplier ↗</a>}<Link href={`/admin/growth/content?product=${encodeURIComponent(String(p.id||p.product_id||""))}&idea=${encodeURIComponent(query)}`}>Create campaign</Link></div></article>):<div className="demandEmpty">Use a Want Graph signal or type a product problem/category. YNOT will search the live combined catalogue and rank the returned products.</div>}</div></section>
+   <aside className="productDiscoverySide"><div className="discoveryModel"><span>PRODUCT OPPORTUNITY SCORE</span><h3>What gets promoted first</h3>{["Demand strength","Trend velocity","Advertiser attention","Supplier depth","Price / margin room","Creative potential","Existing YNOT performance"].map((x,i)=><div key={x}><i>{String(i+1).padStart(2,"0")}</i><strong>{x}</strong></div>)}</div><div className="discoveryModel"><span>AUTOMATIC BUCKETS</span><h3>Different reasons to act</h3><p><b>Rising now</b> accelerating demand.</p><p><b>Evergreen</b> stable repeatable demand.</p><p><b>Low competition</b> good score with fewer visible supplier/market signals.</p><p><b>Catalogue gaps</b> demand exists but YNOT needs stronger supply.</p></div>{scoredProducts?.length>0&&<div className="discoveryModel"><span>EXISTING YNOT SCORES</span><h3>Already proven internally</h3>{scoredProducts.slice(0,4).map((p:any)=><div className="existingScore" key={p.product_id}><strong>{p.title}</strong><b>{p.advertability_score??"—"}</b></div>)}</div>}</aside>
   </div>
- </section>;
+ </section>
+ <ResearchLibrary/>
+ </>;
 }
