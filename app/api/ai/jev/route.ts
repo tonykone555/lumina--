@@ -5,7 +5,8 @@ export const runtime="nodejs";
 
 const ALLOWED:JevDecisionKind[]=[
  "catalogue","economics","supplier","search","personalization","payment_presentation",
- "creator_match","commission","creative_route","ad_action","creative_qc","fulfillment"
+ "creator_match","commission","creative_route","ad_action","creative_qc","fulfillment",
+ "trend_relevance","viral_pattern","product_trend_fit","pitch_angle","prompt_strategy"
 ];
 
 export async function POST(req:NextRequest){
