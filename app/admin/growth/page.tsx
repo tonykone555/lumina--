@@ -10,6 +10,7 @@ import GrowthSocialIntel from "./GrowthSocialIntel";
 import DemandGrowthEngine from "./DemandGrowthEngine";
 import ProductDiscoveryEngine from "./ProductDiscoveryEngine";
 import GrowthThemeToggle from "./GrowthThemeToggle";
+import ResearchLibrary from "./ResearchLibrary";
 
 export const dynamic = "force-dynamic";
 
@@ -51,9 +52,10 @@ export default async function GrowthAdminPage() {
   return <main className="growth">
     <div className="ambient a"/><div className="ambient b"/>
     <header><div><div className="eyebrow">YNOT / PRIVATE CONTROL ROOM</div><h1>Growth Intelligence</h1><p>Products → demand → creative hypotheses → approval → distribution → evidence.</p></div><div className="growthHeaderActions"><GrowthThemeToggle/><div className="live"><i/> Approval gated</div></div></header>
-    <nav className="growthTabs"><Link className="active" href="/admin/growth">Overview</Link><a href="#demand-radar">Demand + Ads</a><a href="#product-discovery">Products</a><a href="#social-intelligence">Social</a><a href="#hosts">Hosts</a><Link href="/admin/growth/content">Content</Link><Link href="/admin/growth/queue">Prompt Packs</Link><Link href="/admin/growth/threads">Threads</Link></nav>
+    <nav className="growthTabs"><Link className="active" href="/admin/growth">Overview</Link><a href="#demand-radar">Demand + Ads</a><a href="#research-library">Folders</a><a href="#product-discovery">Products</a><a href="#social-intelligence">Social</a><a href="#hosts">Hosts</a><Link href="/admin/growth/content">Content</Link><Link href="/admin/growth/queue">Prompt Packs</Link><Link href="/admin/growth/threads">Threads</Link></nav>
     <CampaignBuilder/>
     <DemandGrowthEngine trends={trends} gaps={gaps} products={products}/>
+    <ResearchLibrary products={products}/>
     <ProductDiscoveryEngine trends={trends} gaps={gaps} scoredProducts={products}/>
     <GrowthSocialIntel/>
     <GrowthHosts/>
