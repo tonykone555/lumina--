@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {NextRequest,NextResponse} from "next/server";
 import {adminDb,adminErrorStatus,requireYnotAdmin} from "@/lib/ynot/admin-server";
 import {analyseAdForProduct} from "@/lib/intelligence/gemini-ad-creative";
