@@ -79,3 +79,9 @@
 .ynot-flexpay-check{display:inline!important;width:auto!important;height:auto!important;border:0!important;border-radius:0!important;background:transparent!important;color:inherit!important;font:800 11px/1 Inter,ui-sans-serif,system-ui,sans-serif!important}
 .ynot-flexpay b{font:650 10px/1.2 Inter,ui-sans-serif,system-ui,sans-serif!important}
 .lv4-merchant-dot-bottom{margin:7px auto 0!important}
+
+/* Verified-payment mark: Instagram-style verification silhouette, no surrounding payment frame. */
+.ynot-flexpay{display:flex!important;margin:4px 0 10px!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;align-items:center!important;gap:6px!important}
+.ynot-flexpay-check{position:relative!important;display:inline-flex!important;width:15px!important;height:15px!important;min-width:15px!important;border:0!important;border-radius:50%!important;background:#fff!important;color:#111!important;align-items:center!important;justify-content:center!important;font:900 9px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;clip-path:polygon(50% 0%,61% 8%,74% 5%,82% 18%,95% 24%,92% 38%,100% 50%,92% 62%,95% 76%,82% 82%,74% 95%,61% 92%,50% 100%,39% 92%,26% 95%,18% 82%,5% 76%,8% 62%,0% 50%,8% 38%,5% 24%,18% 18%,26% 5%,39% 8%)!important}
+.ynot-flexpay b{font:650 10px/1.2 Inter,ui-sans-serif,system-ui,sans-serif!important}
+.lv4-merchant-dot-bottom{display:flex!important;position:relative!important;inset:auto!important;width:18px!important;height:18px!important;min-height:18px!important;margin:12px auto 10px!important;flex:0 0 auto!important;z-index:20!important}
