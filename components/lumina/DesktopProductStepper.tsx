@@ -81,7 +81,7 @@ export default function DesktopProductStepper():null{
     frame=0;
     const desktop=window.innerWidth>=900,detail=Boolean(document.querySelector(".lv4-detail")),drawer=drawerOpen(),dealOpen=drawer&&Boolean(document.querySelector(".ynot-selected"));
     const board=desktop&&!detail&&!drawer&&cards().length>0;
-    const worldShow=desktop&&!drawer&&(detail?cards().length>1:board);
+    const worldShow=board;
     const dealShow=desktop&&dealOpen&&dealCards().length>1;
     force(prev,worldShow,board);force(next,worldShow,board);force(dealPrev,dealShow);force(dealNext,dealShow);
   };
