@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from "react";
 import Link from "next/link";
+import GrowthNav from "../GrowthNav";
 import "../growth.css";
 import "../growth-light.css";
 import "./outreach.css";
@@ -20,7 +21,8 @@ export default function IntentOutreachPage(){
  useEffect(()=>{void loadSaved()},[]);
  async function run(){setBusy(true);setError("");setResult(null);try{const r=await fetch("/api/admin/growth/intent-outreach",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({query,country,timeRange,platforms,limit:220})});const j=await r.json();if(!r.ok)throw new Error(j?.error||"Intent scan failed");setResult(j);setView("all");await loadSaved()}catch(e){setError(e instanceof Error?e.message:"Intent scan failed")}finally{setBusy(false)}}
  return <main className="growth outreachPage">
-  <header className="outreachHeader"><div><div className="eyebrow">YNOT / LIVE INTENT</div><h1>Outreach Discovery</h1><p>Recent buyer intent → qualification → catalogue match → personalized action.</p></div><Link href="/admin/growth" className="live outreachBack">← Growth</Link></header>
+  <header className="outreachHeader"><div><div className="eyebrow">YNOT / GROWTH OS</div><h1>Outreach</h1><p>Recent buyer intent → qualification → catalogue match → personalized action.</p></div><Link href="/admin/growth" className="live outreachBack">← Overview</Link></header>
+  <GrowthNav active="outreach"/>
   <section className="panel wide outreachPanel">
    <div className="panelHead outreachPanelHead"><div><span>LIVE INTENT SCANNER</span><h2>Build a long, recent lead list</h2></div><b>{savedRows.length} saved</b></div>
    <div className="outreachControls">
@@ -30,7 +32,7 @@ export default function IntentOutreachPage(){
     <button onClick={run} disabled={busy||platforms.length===0} className="approveBtn outreachScanBtn">{busy?"Scanning…":"Find recent intent"}</button>
    </div>
    <div className="inboxFilters outreachPlatforms">{ALL.map(p=><button key={p} className={platforms.includes(p)?"active":""} onClick={()=>toggle(p)}>{p}</button>)}</div>
-   <p className="outreachNote">Every paid scan result is now kept. Use <b>All scanned</b> to inspect everything FetchLayer returned and <b>Gemini filtered</b> for the stronger buying-intent shortlist. Qualified leads still receive product matching and personalized drafts.</p>
+   <p className="outreachNote">Every paid scan result is kept. Use <b>All scanned</b> to inspect everything returned and <b>Gemini filtered</b> for the stronger buying-intent shortlist. Qualified leads receive product matching and personalized drafts.</p>
    {error&&<div className="empty outreachError">{error}</div>}
    <div className="outreachViewTabs">
     <button className={view==="saved"?"approveBtn":"revokeBtn"} onClick={()=>setView("saved")}>Saved archive ({savedRows.length})</button>
