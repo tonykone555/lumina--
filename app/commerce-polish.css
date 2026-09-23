@@ -50,3 +50,5 @@
 .ynot-klarna-message b{font:700 11px/1.25 Inter,ui-sans-serif,system-ui,sans-serif;color:rgba(23,20,18,.90)}
 .ynot-klarna-message span{font:500 9px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:rgba(23,20,18,.60)}
 @media(max-width:760px){.ynot-klarna-message{margin:7px 0 10px;padding:9px 10px;border-radius:12px}.ynot-klarna-message b{font-size:10px}.ynot-klarna-message span{font-size:8px}}
+
+.ynot-bag-klarna{font:700 8px/1 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.03em;opacity:.72;text-transform:none}.lv4-actions>button:first-child>span{display:inline-flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap}
