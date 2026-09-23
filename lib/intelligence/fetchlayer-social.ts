@@ -25,3 +25,19 @@ export async function searchTikTokAdLibrary(query:string,country="FR",limit=30){
 export async function getTikTokAdvertiserAds(advertiser:string,country="FR",pages=1){
  return post<any>("tiktok-ad-library","advertiser-ads",{advertiser:advertiser.slice(0,200),country:country.toUpperCase().slice(0,3),adStatus:"all",pages:Math.max(1,Math.min(5,pages))});
 }
+
+export async function searchMetaAdLibrary(query:string,country="FR",limit=30){
+ return post<any>("facebook-ad-library","search-ads",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),activeStatus:"active",limit:Math.max(1,Math.min(100,limit))});
+}
+export async function searchLinkedInAdLibrary(query:string,country="FR",limit=30){
+ return post<any>("linkedin-ad-library","search-ads",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),dateRange:"current-year",limit:Math.max(1,Math.min(100,limit))});
+}
+export async function searchGoogleAdLibrary(query:string,region="FR",limit=30){
+ return post<any>("google-ad-library","search-ads",{query:query.slice(0,300),region:region.toUpperCase().slice(0,2),limit:Math.max(1,Math.min(100,limit))});
+}
+export async function searchGoogleIntent(query:string,country="FR",language="en"){
+ return post<any>("google-search","search",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),language:language.slice(0,12),pages:1,timeRange:"month"});
+}
+export async function googleAutocomplete(query:string,country="FR",language="en"){
+ return post<any>("google-search","autocomplete",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),language:language.slice(0,12)});
+}
