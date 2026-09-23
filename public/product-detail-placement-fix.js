@@ -13,6 +13,28 @@
     return [...root.querySelectorAll('div,span,p')].find(node=>(node.textContent||'').trim().toLowerCase()==='flexible payment')||null;
   }
 
+  function lockFlexUnderPrice(copy,flex,price){
+    if(price.nextElementSibling!==flex)price.insertAdjacentElement('afterend',flex);
+    flex.style.setProperty('display','flex','important');
+    flex.style.setProperty('position','static','important');
+    flex.style.setProperty('order','0','important');
+    flex.style.setProperty('float','none','important');
+    flex.style.setProperty('clear','both','important');
+    flex.style.setProperty('width','max-content','important');
+    flex.style.setProperty('max-width','100%','important');
+    flex.style.setProperty('margin','5px 0 9px','important');
+    flex.style.setProperty('padding','0','important');
+    flex.style.setProperty('background','transparent','important');
+    flex.style.setProperty('border','0','important');
+    flex.style.setProperty('box-shadow','none','important');
+    flex.style.setProperty('transform','none','important');
+    flex.style.setProperty('opacity','1','important');
+    flex.style.setProperty('visibility','visible','important');
+    flex.style.setProperty('align-items','center','important');
+    flex.style.setProperty('flex-direction','row','important');
+    flex.style.setProperty('gap','6px','important');
+  }
+
   function fixDrawer(selected){
     if(!(selected instanceof HTMLElement))return;
     const copy=selected.querySelector('.ynot-selected-copy');
@@ -21,23 +43,36 @@
     if(price){
       let flex=existingFlexible(selected);
       if(!flex){
-        flex=document.createElement('div');flex.className='ynot-flexpay';flex.setAttribute('aria-label','Flexible payment available');flex.innerHTML='<span class="ynot-flexpay-check" aria-hidden="true"></span><b>Flexible payment</b>';
+        flex=document.createElement('div');
+        flex.className='ynot-flexpay';
+        flex.setAttribute('aria-label','Flexible payment available');
+        flex.innerHTML='<span class="ynot-flexpay-check" aria-hidden="true"></span><b>Flexible payment</b>';
       }else if(!flex.classList.contains('ynot-flexpay'))flex.classList.add('ynot-flexpay');
       prepareBadge(flex);
-      if(price.nextElementSibling!==flex)price.insertAdjacentElement('afterend',flex);
+      lockFlexUnderPrice(copy,flex,price);
     }
 
-    const origin=selected.querySelector(':scope > .ynot-origin-dot');
-    const description=selected.querySelector('.ynot-description-toggle');
+    const origin=selected.querySelector(':scope > .ynot-origin-dot, .ynot-origin-dot-footer');
     if(origin){
       origin.classList.add('ynot-origin-dot-footer');
       origin.textContent='•';
       origin.setAttribute('title','Merchant product page');
-      if(description){
-        if(description.nextElementSibling!==origin)description.insertAdjacentElement('afterend',origin);
-      }else if(copy.lastElementChild!==origin){
-        copy.appendChild(origin);
-      }
+      origin.style.setProperty('position','static','important');
+      origin.style.setProperty('display','flex','important');
+      origin.style.setProperty('width','18px','important');
+      origin.style.setProperty('height','18px','important');
+      origin.style.setProperty('margin','10px auto 8px','important');
+      origin.style.setProperty('padding','0','important');
+      origin.style.setProperty('border','0','important');
+      origin.style.setProperty('background','transparent','important');
+      origin.style.setProperty('color','#fff','important');
+      origin.style.setProperty('opacity','1','important');
+      origin.style.setProperty('font-size','19px','important');
+      origin.style.setProperty('line-height','1','important');
+      origin.style.setProperty('align-items','center','important');
+      origin.style.setProperty('justify-content','center','important');
+      origin.style.setProperty('transform','none','important');
+      if(selected.lastElementChild!==origin)selected.appendChild(origin);
     }
   }
 
@@ -45,12 +80,15 @@
     if(!(detail instanceof HTMLElement))return;
     const copy=detail.querySelector('.lv4-detailcopy');if(!copy)return;
     const price=copy.querySelector(':scope > strong'),flex=copy.querySelector('.ynot-flexpay');
-    if(price&&flex){if(price.nextElementSibling!==flex)price.insertAdjacentElement('afterend',flex);prepareBadge(flex)}
+    if(price&&flex){prepareBadge(flex);lockFlexUnderPrice(copy,flex,price)}
     const dot=detail.querySelector('.lv4-merchant-dot-bottom');
-    if(dot){const description=[...copy.querySelectorAll('button')].find(btn=>/^description\+?$/i.test((btn.textContent||'').trim()));if(description){if(description.nextElementSibling!==dot)description.insertAdjacentElement('afterend',dot)}else if(copy.lastElementChild!==dot)copy.appendChild(dot)}
+    if(dot){
+      const description=[...copy.querySelectorAll('button')].find(btn=>/^description\+?$/i.test((btn.textContent||'').trim()));
+      if(description){if(description.nextElementSibling!==dot)description.insertAdjacentElement('afterend',dot)}else if(detail.lastElementChild!==dot)detail.appendChild(dot)
+    }
   }
 
-  function sync(){document.querySelectorAll('.ynot-drawer.open .ynot-selected').forEach(fixDrawer);document.querySelectorAll('.lv4-detail').forEach(fixWorld)}
+  function sync(){document.querySelectorAll('.ynot-selected').forEach(fixDrawer);document.querySelectorAll('.lv4-detail').forEach(fixWorld)}
   let frame=0;const queue=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;sync()})};
   const start=()=>{sync();new MutationObserver(queue).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']})};
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
