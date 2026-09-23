@@ -55,8 +55,8 @@ export async function getAdMedia(platform:AdMediaPlatform,ad:string,country="FR"
  return post<any>(base,"ad-media",body);
 }
 
-export async function searchGoogleIntent(query:string,country="FR",language="en"){
- return post<any>("google-search","search",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),language:language.slice(0,12),pages:1,timeRange:"month"});
+export async function searchGoogleIntent(query:string,country="FR",language="en",timeRange:"day"|"week"|"month"="month"){
+ return post<any>("google-search","search",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),language:language.slice(0,12),pages:1,timeRange});
 }
 export async function googleAutocomplete(query:string,country="FR",language="en"){
  return post<any>("google-search","autocomplete",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),language:language.slice(0,12)});
