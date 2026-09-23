@@ -1,0 +1,7 @@
+.growthOsTabs{position:sticky;top:0;z-index:30;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);margin-bottom:22px}
+.growthOsTabs a{font-weight:700;letter-spacing:-.01em}
+.growthOsOverview{margin-bottom:22px}
+.growthOsCard{display:block;color:inherit;text-decoration:none;min-height:150px;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.growthOsCard:hover{transform:translateY(-2px);border-color:rgba(255,255,255,.2)}
+.growthOsCard p{margin:18px 0 0;max-width:54ch;line-height:1.55;opacity:.66}
+@media(max-width:760px){.growthOsTabs{position:relative;top:auto;display:flex;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.growthOsTabs::-webkit-scrollbar{display:none}.growthOsTabs a{flex:0 0 auto}.growthOsOverview{grid-template-columns:1fr!important}.growthOsCard{min-height:130px}}
