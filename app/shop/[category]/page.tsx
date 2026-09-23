@@ -1,66 +1,45 @@
 import type {Metadata} from "next";
-import Link from "next/link";
-import {notFound} from "next/navigation";
-import {SEO_CATEGORIES,getSeoCategory} from "@/lib/seo-categories";
+import AppShell from "@/components/lumina/AppShell";
+import {getSeoCategory} from "@/lib/seo-categories";
 
 const BASE="https://ynotworld.app";
 
-type Props={params:Promise<{category:string}>};
+type SearchParams=Record<string,string|string[]|undefined>;
+type Props={params:Promise<{category:string}>;searchParams?:Promise<SearchParams>};
 
-export function generateStaticParams(){return SEO_CATEGORIES.map(category=>({category:category.slug}))}
-
-export async function generateMetadata({params}:Props):Promise<Metadata>{
-  const {category:slug}=await params;
-  const category=getSeoCategory(slug);
-  if(!category)return {};
-  const url=`${BASE}/shop/${category.slug}`;
-  return {
-    title:{absolute:category.title},
-    description:category.description,
-    alternates:{canonical:url},
-    robots:{index:true,follow:true},
-    openGraph:{type:"website",url,title:category.title,description:category.description,siteName:"YNOT",images:[{url:"/ynot-microphone.jpg",alt:`YNOT ${category.name} shopping`}]},
-    twitter:{card:"summary_large_image",title:category.title,description:category.description,images:["/ynot-microphone.jpg"]}
-  };
+function humanizeSlug(slug:string){
+ try{return decodeURIComponent(slug).replace(/[-_]+/g," ").replace(/\s+/g," ").trim()}catch{return slug.replace(/[-_]+/g," ").replace(/\s+/g," ").trim()}
+}
+function first(v:string|string[]|undefined){return Array.isArray(v)?v[0]:v}
+function buildSearch(slug:string,sp:SearchParams){
+ let q=humanizeSlug(slug);
+ const min=first(sp.min),max=first(sp.max),budget=first(sp.budget),style=first(sp.style),colour=first(sp.color)||first(sp.colour),country=first(sp.country);
+ if(style)q+=` ${style} style`;
+ if(colour)q+=` ${colour}`;
+ if(min&&max)q+=` between ${min} and ${max}`;
+ else if(max)q+=` under ${max}`;
+ else if(min)q+=` over ${min}`;
+ else if(budget)q+=` under ${budget}`;
+ if(country)q+=` available in ${String(country).toUpperCase().slice(0,2)}`;
+ return q.replace(/\s+/g," ").trim().slice(0,300);
 }
 
-export default async function ShoppingCategoryPage({params}:Props){
-  const {category:slug}=await params;
-  const category=getSeoCategory(slug);
-  if(!category)notFound();
-  const url=`${BASE}/shop/${category.slug}`;
-  const related=SEO_CATEGORIES.filter(item=>item.slug!==category.slug);
-  const jsonLd={
-    "@context":"https://schema.org",
-    "@type":"CollectionPage",
-    name:category.title,
-    description:category.description,
-    url,
-    isPartOf:{"@type":"WebSite",name:"YNOT",url:BASE},
-    about:category.searches.map(name=>({"@type":"Thing",name}))
-  };
-  return <main style={{minHeight:"100dvh",background:"#080909",color:"#f6f6f2",fontFamily:"ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif",padding:"clamp(28px,6vw,76px)"}}>
-    <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
-    <nav style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:18,maxWidth:1060,margin:"0 auto 74px"}}>
-      <Link href="/" style={{color:"inherit",textDecoration:"none",fontWeight:850,letterSpacing:"-.04em",fontSize:22}}>YNOT</Link>
-      <Link href="/" style={{color:"inherit",textDecoration:"none",border:"1px solid rgba(255,255,255,.22)",borderRadius:999,padding:"11px 17px",background:"rgba(255,255,255,.07)"}}>Open YNOT World</Link>
-    </nav>
-    <section style={{maxWidth:860,margin:"0 auto"}}>
-      <p style={{textTransform:"uppercase",letterSpacing:".18em",fontSize:11,opacity:.55,marginBottom:18}}>{category.eyebrow}</p>
-      <h1 style={{fontSize:"clamp(42px,8vw,88px)",lineHeight:.94,letterSpacing:"-.065em",margin:"0 0 26px",maxWidth:900}}>{category.name} shopping, explored visually.</h1>
-      <p style={{fontSize:"clamp(18px,2.4vw,27px)",lineHeight:1.35,letterSpacing:"-.025em",opacity:.78,maxWidth:760,margin:"0 0 28px"}}>{category.intro}</p>
-      <p style={{fontSize:16,lineHeight:1.7,opacity:.67,maxWidth:760,margin:"0 0 46px"}}>{category.guide}</p>
-      <div style={{display:"flex",flexWrap:"wrap",gap:10,marginBottom:56}}>{category.searches.map(search=><span key={search} style={{border:"1px solid rgba(255,255,255,.16)",borderRadius:999,padding:"10px 14px",background:"rgba(255,255,255,.055)",fontSize:14}}>{search}</span>)}</div>
-      <div style={{borderTop:"1px solid rgba(255,255,255,.13)",paddingTop:34,display:"grid",gap:16,maxWidth:760}}>
-        <h2 style={{fontSize:"clamp(25px,4vw,42px)",letterSpacing:"-.045em",margin:0}}>A different way to find products online</h2>
-        <p style={{fontSize:16,lineHeight:1.65,opacity:.67,margin:0}}>YNOT organizes shopping as an explorable visual world. Move between related products, compare styles and prices, discover independent stores, and follow product relationships instead of scrolling through a conventional marketplace grid.</p>
-        <p style={{fontSize:16,lineHeight:1.65,opacity:.67,margin:0}}>Availability, prices, images and product options can vary by merchant and region. Open YNOT World to search the current catalog and see live product choices.</p>
-      </div>
-      <Link href="/" style={{display:"inline-flex",marginTop:42,color:"#111",background:"#fff",textDecoration:"none",fontWeight:800,borderRadius:999,padding:"14px 22px"}}>Explore {category.name} in YNOT</Link>
-      <nav aria-label="Related shopping categories" style={{borderTop:"1px solid rgba(255,255,255,.13)",marginTop:56,paddingTop:28}}>
-        <p style={{fontSize:12,textTransform:"uppercase",letterSpacing:".16em",opacity:.45,margin:"0 0 16px"}}>Explore more shopping worlds</p>
-        <div style={{display:"flex",flexWrap:"wrap",gap:10}}>{related.map(item=><Link key={item.slug} href={`/shop/${item.slug}`} style={{color:"inherit",textDecoration:"none",border:"1px solid rgba(255,255,255,.14)",borderRadius:999,padding:"10px 14px",background:"rgba(255,255,255,.04)",fontSize:14}}>{item.name}</Link>)}</div>
-      </nav>
-    </section>
-  </main>;
+export async function generateMetadata({params}:Props):Promise<Metadata>{
+ const {category:slug}=await params;
+ const known=getSeoCategory(slug);
+ const label=known?.name||humanizeSlug(slug);
+ const title=known?.title||`${label} — shop on YNOT`;
+ const description=known?.description||`Explore ${label} across YNOT's live shopping catalogue.`;
+ const url=`${BASE}/shop/${encodeURIComponent(slug)}`;
+ return {title:{absolute:title},description,alternates:{canonical:url},robots:{index:true,follow:true},openGraph:{type:"website",url,title,description,siteName:"YNOT",images:[{url:"/ynot-microphone.jpg",alt:`YNOT ${label} shopping`}]},twitter:{card:"summary_large_image",title,description,images:["/ynot-microphone.jpg"]}};
+}
+
+export default async function ShoppingKeywordPage({params,searchParams}:Props){
+ const {category:slug}=await params;
+ const sp=searchParams?await searchParams:{};
+ const query=buildSearch(slug,sp);
+ return <>
+  <h1 style={{position:"absolute",width:1,height:1,padding:0,margin:-1,overflow:"hidden",clip:"rect(0,0,0,0)",whiteSpace:"nowrap",border:0}}>Shop {humanizeSlug(slug)} on YNOT</h1>
+  <AppShell initialQuery={query}/>
+ </>;
 }
