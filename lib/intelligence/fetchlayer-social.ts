@@ -39,11 +39,19 @@ export async function searchGoogleAdLibrary(query:string,region="FR",limit=100,p
 }
 
 export type AdMediaPlatform="meta"|"tiktok"|"google"|"linkedin";
-export async function getAdMedia(platform:AdMediaPlatform,ad:string,country="FR"){
+export async function getAdMedia(platform:AdMediaPlatform,ad:string,country="FR",advertiser=""){
  const base=platform==="meta"?"facebook-ad-library":platform+"-ad-library";
- const body:Record<string,unknown>={ad:ad.slice(0,700),kinds:["video","image","thumbnail"],probe:true,includeVariations:true};
- if(platform==="meta")body.country=country.toUpperCase().slice(0,2);
- if(platform==="meta"||platform==="linkedin")body.preferHighQuality=true;
+ const body:Record<string,unknown>={ad:ad.slice(0,1200),kinds:["video","image","thumbnail"],probe:true};
+ if(platform==="meta"){
+  body.country=country.toUpperCase().slice(0,2);
+  body.preferHighQuality=true;
+  body.includeVariations=true;
+ }
+ if(platform==="google"){
+  body.region=country.toUpperCase().slice(0,2);
+  if(advertiser)body.advertiser=advertiser.slice(0,500);
+ }
+ if(platform==="linkedin")body.preferHighQuality=true;
  return post<any>(base,"ad-media",body);
 }
 
