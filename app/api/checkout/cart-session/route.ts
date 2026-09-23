@@ -10,6 +10,7 @@ import {convertMoney,countryCurrency} from "@/lib/commerce/currency";
 export const runtime="nodejs";
 
 type CartItem=Partial<CheckoutProduct>&{productId?:string;quantity?:number;supplierPrice?:number;variantLabel?:string};
+type PaymentPreference="now"|"klarna";
 
 function normalizeCartProduct(raw:CartItem):CheckoutProduct{
  const id=String(raw.id||raw.productId||"").trim();
@@ -27,7 +28,7 @@ function normalizeCartProduct(raw:CartItem):CheckoutProduct{
 export async function POST(req:NextRequest){
  try{
   if(!checkoutEnabled())throw new Error("CHECKOUT_DISABLED");
-  const body=await req.json() as {items?:CartItem[];region?:Region},items=Array.isArray(body.items)?body.items:[],region=body.region;
+  const body=await req.json() as {items?:CartItem[];region?:Region;paymentPreference?:PaymentPreference},items=Array.isArray(body.items)?body.items:[],region=body.region,paymentPreference:PaymentPreference=body.paymentPreference==="klarna"?"klarna":"now";
   if(!items.length)throw new Error("BAG_EMPTY");
   if(items.length>20)throw new Error("TOO_MANY_BAG_ITEMS");
   if(!region?.country)throw new Error("REGION_REQUIRED");
@@ -47,8 +48,10 @@ export async function POST(req:NextRequest){
   const shippingTotal=prepared.reduce((sum,item)=>sum+Number(item.shipping.amount||0),0);
   if(shippingTotal>0)lineItems.push({quantity:1,price_data:{currency:currency.toLowerCase(),unit_amount:Math.round(shippingTotal*100),product_data:{name:`Shipping reserve to ${region.country}`}}});
   const subtotal=prepared.reduce((sum,item)=>sum+item.customerPrice*item.quantity,0),total=subtotal+shippingTotal,checkoutRef=crypto.randomUUID(),summary=prepared.map(item=>`${item.product.id}:${item.product.variantId||"default"}:${item.quantity}`).join("|").slice(0,430),jar=await cookies(),creatorId=jar.get("ynot-creator-id")?.value||"",creatorRef=jar.get("ynot-creator-ref")?.value||"",creatorProductId=jar.get("ynot-creator-product")?.value||"";
-  const stripe=stripeClient(),origin=process.env.NEXT_PUBLIC_APP_URL||req.nextUrl.origin,suffix=crypto.randomBytes(12).toString("base64url").replace(/[^a-z]/gi,"").toLowerCase().padEnd(8,"x").slice(0,8),metadata={ynotFlow:"multi_item_manual_procurement",orderStatus:"awaiting_customer_authorization",itemCount:String(prepared.length),bagSummary:summary,checkoutRef,shippingCountry:region.country,checkoutCurrency:currency,total:String(Math.round(total*100)/100),subtotalCents:String(Math.round(subtotal*100)),creatorId,creatorRef,creatorProductId};
-  const session=await stripe.checkout.sessions.create({mode:"payment",integration_identifier:`ynot${suffix}`,line_items:lineItems,billing_address_collection:"required",shipping_address_collection:{allowed_countries:[region.country as any]},phone_number_collection:{enabled:true},payment_intent_data:{capture_method:"manual",metadata},success_url:`${origin}/?checkout=pending&session_id={CHECKOUT_SESSION_ID}`,cancel_url:`${origin}/?checkout=cancelled`,metadata});
-  return NextResponse.json({url:session.url,total:Math.round(total*100)/100,currency,itemCount:prepared.length,shipping:shippingTotal});
+  const stripe=stripeClient(),origin=process.env.NEXT_PUBLIC_APP_URL||req.nextUrl.origin,suffix=crypto.randomBytes(12).toString("base64url").replace(/[^a-z]/gi,"").toLowerCase().padEnd(8,"x").slice(0,8),metadata={ynotFlow:"multi_item_manual_procurement",orderStatus:"awaiting_customer_authorization",itemCount:String(prepared.length),bagSummary:summary,checkoutRef,shippingCountry:region.country,checkoutCurrency:currency,total:String(Math.round(total*100)/100),subtotalCents:String(Math.round(subtotal*100)),creatorId,creatorRef,creatorProductId,paymentPreference};
+  const sessionParams:Stripe.Checkout.SessionCreateParams={mode:"payment",integration_identifier:`ynot${suffix}`,line_items:lineItems,billing_address_collection:"required",shipping_address_collection:{allowed_countries:[region.country as any]},phone_number_collection:{enabled:true},payment_intent_data:{capture_method:"manual",metadata},success_url:`${origin}/?checkout=pending&session_id={CHECKOUT_SESSION_ID}`,cancel_url:`${origin}/?checkout=cancelled`,metadata};
+  if(paymentPreference==="klarna")sessionParams.payment_method_types=["klarna"];
+  const session=await stripe.checkout.sessions.create(sessionParams);
+  return NextResponse.json({url:session.url,total:Math.round(total*100)/100,currency,itemCount:prepared.length,shipping:shippingTotal,paymentPreference});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"Unable to start bag checkout"},{status:400})}
 }
