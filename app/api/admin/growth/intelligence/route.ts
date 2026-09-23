@@ -1,10 +1,10 @@
 import {NextRequest,NextResponse} from "next/server";
 import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
-import {googleAutocomplete,searchGoogleAdLibrary,searchGoogleIntent,searchLinkedInAdLibrary,searchMetaAdLibrary,searchTikTokAdLibrary} from "@/lib/intelligence/fetchlayer-social";
+import {getAdMedia,googleAutocomplete,searchGoogleAdLibrary,searchGoogleIntent,searchLinkedInAdLibrary,searchMetaAdLibrary,searchTikTokAdLibrary,type AdMediaPlatform} from "@/lib/intelligence/fetchlayer-social";
 
 export const runtime="nodejs";
 
-type Mode="meta_ads"|"tiktok_ads"|"google_ads"|"linkedin_ads"|"google_demand";
+type Mode="meta_ads"|"tiktok_ads"|"google_ads"|"linkedin_ads"|"google_demand"|"ad_media";
 
 function arr(v:any,...keys:string[]){for(const k of keys){if(Array.isArray(v?.[k]))return v[k]}return []}
 function pickText(v:any):string{
@@ -12,7 +12,7 @@ function pickText(v:any):string{
  if(typeof v==="string"||typeof v==="number")return String(v).replace(/\s+/g," ").trim();
  if(Array.isArray(v))return v.map(pickText).find(Boolean)||"";
  if(typeof v==="object"){
-  for(const k of ["name","title","text","value","label","displayName","businessName","advertiserName","pageName","caption","body","description"]){const s=pickText(v?.[k]);if(s)return s}
+  for(const k of ["pageName","advertiserName","businessName","displayName","name","title","text","value","label","caption","body","description"]){const s=pickText(v?.[k]);if(s)return s}
  }
  return"";
 }
@@ -21,7 +21,7 @@ function mediaUrl(a:any,c:any){return pickUrl(c?.imageUrl,c?.image_url,c?.thumbn
 function videoUrl(a:any,c:any){return pickUrl(c?.videoUrl,c?.video_url,a?.videoUrl,a?.video_url,c?.assets?.find?.((x:any)=>pickText(x?.type).toLowerCase().includes("video"))?.url,a?.assets?.find?.((x:any)=>pickText(x?.type).toLowerCase().includes("video"))?.url)}
 function normalizeAd(a:any,platform:string){
  const c=a?.creative||a?.ad||a||{};
- const advertiser=pickText(a?.advertiser?.name)||pickText(a?.advertiser)||pickText(a?.advertiserName)||pickText(a?.businessName)||pickText(a?.pageName)||pickText(a?.payerName)||pickText(a?.companyName)||"Unknown advertiser";
+ const advertiser=pickText(a?.advertiser?.pageName)||pickText(a?.advertiser?.name)||pickText(a?.advertiser)||pickText(a?.advertiserName)||pickText(a?.businessName)||pickText(a?.pageName)||pickText(a?.payerName)||pickText(a?.companyName)||"Unknown advertiser";
  const headline=pickText(c?.headline)||pickText(c?.title)||pickText(a?.headline)||pickText(a?.title)||pickText(c?.body)||pickText(a?.body)||"Ad creative";
  return{
   id:String(a?.adArchiveId||a?.adId||a?.id||a?.creativeId||crypto.randomUUID()),platform,advertiser,headline,
@@ -30,34 +30,55 @@ function normalizeAd(a:any,platform:string){
   landingPage:pickUrl(c?.linkUrl,c?.destinationUrl,a?.landingPageUrl,a?.linkUrl,a?.destinationUrl),
   imageUrl:mediaUrl(a,c),videoUrl:videoUrl(a,c),
   previewUrl:pickUrl(a?.previewUrl,a?.preview_url,a?.adLibraryUrl,a?.ad_library_url,a?.snapshotUrl,a?.snapshot_url),
-  format:pickText(a?.mediaType)||pickText(c?.format)||pickText(a?.format)||pickText(c?.type)||pickText(a?.type),
-  started:a?.startDate||a?.shownFrom||a?.firstShownAt||null,ended:a?.endDate||a?.shownTo||a?.lastShownAt||null,
-  impressions:a?.impressions||a?.estimatedAudience||a?.impressionsRange||null,
+  format:pickText(a?.mediaType)||pickText(c?.displayFormat)||pickText(c?.format)||pickText(a?.format)||pickText(c?.type)||pickText(a?.type),
+  started:a?.startDate||a?.shownFrom||a?.firstShownAt||a?.firstShownDate||null,ended:a?.endDate||a?.shownTo||a?.lastShownAt||a?.lastShownDate||null,
+  impressions:a?.impressions||a?.estimatedAudience||a?.impressionsRange||a?.uniqueUsersSeen||null,
  };
 }
 
 export async function POST(req:NextRequest){
  try{
   await requireYnotAdmin(req);
-  const b=await req.json();const mode=String(b.mode||"") as Mode;const query=pickText(b.query).slice(0,300);const country=(pickText(b.country)||"FR").toUpperCase().slice(0,2);const language=(pickText(b.language)||"en").slice(0,12);const limit=Math.max(5,Math.min(50,Number(b.limit)||30));
+  const b=await req.json();
+  const mode=String(b.mode||"") as Mode;
+  const country=(pickText(b.country)||"FR").toUpperCase().slice(0,2);
+
+  if(mode==="ad_media"){
+   const platform=pickText(b.platform).toLowerCase() as AdMediaPlatform;
+   const ad=pickText(b.ad).slice(0,700);
+   if(!["meta","tiktok","google","linkedin"].includes(platform))return NextResponse.json({error:"PLATFORM_NOT_SUPPORTED"},{status:400});
+   if(!ad)return NextResponse.json({error:"AD_REQUIRED"},{status:400});
+   const raw=await getAdMedia(platform,ad,country);
+   const assets=arr(raw,"assets").map((x:any)=>({kind:pickText(x?.kind)||"media",quality:pickText(x?.quality),label:pickText(x?.label),url:pickUrl(x?.url),downloadUrl:pickUrl(x?.downloadUrl,x?.download_url),contentType:pickText(x?.contentType||x?.content_type),contentLength:Number(x?.contentLength||x?.content_length||0)||null,attachmentIndex:x?.attachmentIndex??x?.attachment_index??null})).filter((x:any)=>x.url||x.downloadUrl);
+   return NextResponse.json({mode,platform,adId:pickText(raw?.adId)||ad,assetCount:Number(raw?.assetCount||assets.length),assets,notes:Array.isArray(raw?.notes)?raw.notes:[]});
+  }
+
+  const query=pickText(b.query).slice(0,300);
+  const language=(pickText(b.language)||"en").slice(0,12);
+  const limit=Math.max(20,Math.min(200,Number(b.limit)||100));
+  const pages=Math.max(1,Math.min(10,Number(b.pages)||5));
   if(!query)return NextResponse.json({error:"QUERY_REQUIRED"},{status:400});
+
   if(mode==="google_demand"){
    const [serp,auto]=await Promise.all([searchGoogleIntent(query,country,language),googleAutocomplete(query,country,language)]);
    const related=arr(serp,"relatedSearches","related_searches").map((x:any)=>pickText(x?.query||x?.text||x)).filter(Boolean);
    const questions=arr(serp,"peopleAlsoAsk","people_also_ask").map((x:any)=>pickText(x?.question||x?.text||x)).filter(Boolean);
    const suggestions=arr(auto,"suggestions","completions","results").map((x:any)=>pickText(x?.query||x?.text||x?.value||x)).filter(Boolean);
-   const discussions=arr(serp,"discussions","discussionResults").slice(0,12).map((x:any)=>({title:pickText(x?.title),url:pickUrl(x?.url),snippet:pickText(x?.snippet),imageUrl:pickUrl(x?.imageUrl,x?.image_url,x?.thumbnailUrl,x?.thumbnail_url)}));
-   return NextResponse.json({mode,query,country,language,signals:{suggestions:[...new Set(suggestions)].slice(0,20),questions:[...new Set(questions)].slice(0,20),related:[...new Set(related)].slice(0,20),discussions},notes:Array.isArray(serp?.notes)?serp.notes:[]});
+   const discussions=arr(serp,"discussions","discussionResults").slice(0,20).map((x:any)=>({title:pickText(x?.title),url:pickUrl(x?.url),snippet:pickText(x?.snippet),imageUrl:pickUrl(x?.imageUrl,x?.image_url,x?.thumbnailUrl,x?.thumbnail_url)}));
+   return NextResponse.json({mode,query,country,language,signals:{suggestions:[...new Set(suggestions)].slice(0,30),questions:[...new Set(questions)].slice(0,30),related:[...new Set(related)].slice(0,30),discussions},notes:Array.isArray(serp?.notes)?serp.notes:[]});
   }
+
   let raw:any,platform="";
-  if(mode==="meta_ads"){raw=await searchMetaAdLibrary(query,country,limit);platform="Meta"}
-  else if(mode==="tiktok_ads"){raw=await searchTikTokAdLibrary(query,country,limit);platform="TikTok"}
-  else if(mode==="google_ads"){raw=await searchGoogleAdLibrary(query,country,limit);platform="Google"}
-  else if(mode==="linkedin_ads"){raw=await searchLinkedInAdLibrary(query,country,limit);platform="LinkedIn"}
+  if(mode==="meta_ads"){raw=await searchMetaAdLibrary(query,country,limit,pages);platform="Meta"}
+  else if(mode==="tiktok_ads"){raw=await searchTikTokAdLibrary(query,country,limit,pages);platform="TikTok"}
+  else if(mode==="google_ads"){raw=await searchGoogleAdLibrary(query,country,limit,pages);platform="Google"}
+  else if(mode==="linkedin_ads"){raw=await searchLinkedInAdLibrary(query,country,limit,pages);platform="LinkedIn"}
   else return NextResponse.json({error:"MODE_NOT_SUPPORTED"},{status:400});
+
   const ads=arr(raw,"ads","results","adResults").map((x:any)=>normalizeAd(x,platform));
   const matchedAdvertisers=arr(raw,"matchedAdvertisers","advertisers").map((x:any)=>pickText(x)).filter(Boolean);
-  const groups=new Map<string,{advertiser:string,count:number,samples:any[]}>();for(const ad of ads){const key=ad.advertiser.toLowerCase();const g=groups.get(key)||{advertiser:ad.advertiser,count:0,samples:[]};g.count++;if(g.samples.length<3)g.samples.push(ad);groups.set(key,g)}
-  return NextResponse.json({mode,query,country,platform,ads,advertisers:[...groups.values()].sort((a,b)=>b.count-a.count).slice(0,20),matchedAdvertisers,notes:Array.isArray(raw?.notes)?raw.notes:[]});
+  const groups=new Map<string,{advertiser:string,count:number,samples:any[]}>();
+  for(const ad of ads){const key=ad.advertiser.toLowerCase();const g=groups.get(key)||{advertiser:ad.advertiser,count:0,samples:[]};g.count++;if(g.samples.length<3)g.samples.push(ad);groups.set(key,g)}
+  return NextResponse.json({mode,query,country,platform,ads,advertisers:[...groups.values()].sort((a,b)=>b.count-a.count).slice(0,30),matchedAdvertisers,adCount:Number(raw?.adCount||ads.length),totalMatches:raw?.totalMatches??raw?.totalMatchCount??raw?.approximateTotal??null,pagesScraped:Number(raw?.pagesScraped||0)||null,pagesRequested:Number(raw?.pagesRequested||pages)||pages,hasNextPage:Boolean(raw?.hasNextPage),nextCursor:raw?.nextCursor||null,notes:Array.isArray(raw?.notes)?raw.notes:[]});
  }catch(e){const m=e instanceof Error?e.message:"GROWTH_INTELLIGENCE_FAILED";return NextResponse.json({error:m},{status:/FETCHLAYER_NOT_CONFIGURED/.test(m)?503:adminErrorStatus(e)});}
 }
