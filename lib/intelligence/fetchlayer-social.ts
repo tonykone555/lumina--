@@ -19,22 +19,33 @@ export async function getInstagramProfile(username:string){return post<any>("ins
 export async function getInstagramReels(username:string,pages=1,limit=12){
  return post<any>("instagram","user-reels",{username:username.slice(0,220),pages:Math.max(1,Math.min(3,pages)),limit:Math.max(1,Math.min(36,limit))});
 }
-export async function searchTikTokAdLibrary(query:string,country="FR",limit=30){
- return post<any>("tiktok-ad-library","search-ads",{query:query.slice(0,160),queryMode:"keyword",country:country.toUpperCase().slice(0,3),adStatus:"active",mediaType:"all",limit:Math.max(1,Math.min(100,limit))});
+
+export async function searchTikTokAdLibrary(query:string,country="FR",limit=100,pages=5){
+ return post<any>("tiktok-ad-library","search-ads",{query:query.slice(0,160),queryMode:"keyword",country:country.toUpperCase().slice(0,3),adStatus:"active",mediaType:"all",limit:Math.max(1,Math.min(2000,limit)),pages:Math.max(1,Math.min(100,pages))});
 }
 export async function getTikTokAdvertiserAds(advertiser:string,country="FR",pages=1){
  return post<any>("tiktok-ad-library","advertiser-ads",{advertiser:advertiser.slice(0,200),country:country.toUpperCase().slice(0,3),adStatus:"all",pages:Math.max(1,Math.min(5,pages))});
 }
 
-export async function searchMetaAdLibrary(query:string,country="FR",limit=30){
- return post<any>("facebook-ad-library","search-ads",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),activeStatus:"active",limit:Math.max(1,Math.min(100,limit))});
+export async function searchMetaAdLibrary(query:string,country="FR",limit=100,pages=5){
+ return post<any>("facebook-ad-library","search-ads",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),activeStatus:"active",mediaType:"all",limit:Math.max(1,Math.min(2000,limit)),pages:Math.max(1,Math.min(100,pages))});
 }
-export async function searchLinkedInAdLibrary(query:string,country="FR",limit=30){
- return post<any>("linkedin-ad-library","search-ads",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),dateRange:"current-year",limit:Math.max(1,Math.min(100,limit))});
+export async function searchLinkedInAdLibrary(query:string,country="FR",limit=100,pages=5){
+ return post<any>("linkedin-ad-library","search-ads",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),dateRange:"current-year",limit:Math.max(1,Math.min(2000,limit)),pages:Math.max(1,Math.min(100,pages))});
 }
-export async function searchGoogleAdLibrary(query:string,region="FR",limit=30){
- return post<any>("google-ad-library","search-ads",{query:query.slice(0,300),region:region.toUpperCase().slice(0,2),limit:Math.max(1,Math.min(100,limit))});
+export async function searchGoogleAdLibrary(query:string,region="FR",limit=100,pages=5){
+ return post<any>("google-ad-library","search-ads",{query:query.slice(0,300),region:region.toUpperCase().slice(0,2),advertiserLimit:5,limit:Math.max(1,Math.min(2000,limit)),pages:Math.max(1,Math.min(100,pages))});
 }
+
+export type AdMediaPlatform="meta"|"tiktok"|"google"|"linkedin";
+export async function getAdMedia(platform:AdMediaPlatform,ad:string,country="FR"){
+ const base=platform==="meta"?"facebook-ad-library":platform+"-ad-library";
+ const body:Record<string,unknown>={ad:ad.slice(0,700),kinds:["video","image","thumbnail"],probe:true};
+ if(platform==="meta")body.country=country.toUpperCase().slice(0,2);
+ if(platform==="meta"||platform==="linkedin")body.preferHighQuality=true;
+ return post<any>(base,"ad-media",body);
+}
+
 export async function searchGoogleIntent(query:string,country="FR",language="en"){
  return post<any>("google-search","search",{query:query.slice(0,300),country:country.toUpperCase().slice(0,2),language:language.slice(0,12),pages:1,timeRange:"month"});
 }
