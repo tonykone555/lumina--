@@ -7,6 +7,7 @@ import CampaignBuilder from "./CampaignBuilder";
 import GrowthHosts from "./GrowthHosts";
 import GrowthSocialIntel from "./GrowthSocialIntel";
 import DemandGrowthEngine from "./DemandGrowthEngine";
+import ProductDiscoveryEngine from "./ProductDiscoveryEngine";
 
 export const dynamic = "force-dynamic";
 
@@ -48,9 +49,10 @@ export default async function GrowthAdminPage() {
   return <main className="growth">
     <div className="ambient a"/><div className="ambient b"/>
     <header><div><div className="eyebrow">YNOT / PRIVATE CONTROL ROOM</div><h1>Growth Intelligence</h1><p>Products → demand → creative hypotheses → approval → distribution → evidence.</p></div><div className="live"><i/> Approval gated</div></header>
-    <nav className="growthTabs"><Link className="active" href="/admin/growth">Overview</Link><a href="#demand-radar">Demand + Ads</a><a href="#social-intelligence">Social</a><a href="#hosts">Hosts</a><Link href="/admin/growth/content">Content</Link><Link href="/admin/growth/queue">Prompt Packs</Link><Link href="/admin/growth/threads">Threads</Link></nav>
+    <nav className="growthTabs"><Link className="active" href="/admin/growth">Overview</Link><a href="#demand-radar">Demand + Ads</a><a href="#product-discovery">Products</a><a href="#social-intelligence">Social</a><a href="#hosts">Hosts</a><Link href="/admin/growth/content">Content</Link><Link href="/admin/growth/queue">Prompt Packs</Link><Link href="/admin/growth/threads">Threads</Link></nav>
     <CampaignBuilder/>
     <DemandGrowthEngine trends={trends} gaps={gaps} products={products}/>
+    <ProductDiscoveryEngine trends={trends} gaps={gaps} scoredProducts={products}/>
     <GrowthSocialIntel/>
     <GrowthHosts/>
     <section className="metrics">
@@ -66,7 +68,7 @@ export default async function GrowthAdminPage() {
         <div className="rows">{creatives.length ? creatives.map((c:any)=><article className="row" key={c.id}><div className="thumb">{c.thumbnail_url?<img src={c.thumbnail_url} alt=""/>:<span>Y</span>}</div><div className="grow"><strong>{c.headline||c.hook||"Untitled creative"}</strong><small>{c.hook||"No hook yet"}</small></div><em className={"status "+c.status}>{c.status||"draft"}</em><CreativeActions id={c.id} status={c.status||"review"}/></article>) : <Empty text="No creative hypotheses yet. Grok can save the first one through YNOT MCP."/ >}</div>
       </section>
       <section className="panel"><div className="panelHead"><div><span>PIPELINE</span><h2>Safety state</h2></div></div>
-        <div className="flow"><Flow n="01" t="Research" d="Want Graph + ad libraries + catalogue"/><Flow n="02" t="Creative" d="Create original hooks and content packs"/><Flow n="03" t="Review" d="Human approval required"/><Flow n="04" t="Generate" d="Image / video asset generation"/><Flow n="05" t="Distribute" d="TryPost draft / schedule"/><Flow n="06" t="Learn" d="Performance returns to YNOT"/></div>
+        <div className="flow"><Flow n="01" t="Research" d="Want Graph + ad libraries + product discovery"/><Flow n="02" t="Creative" d="Create original hooks and content packs"/><Flow n="03" t="Review" d="Human approval required"/><Flow n="04" t="Generate" d="Image / video asset generation"/><Flow n="05" t="Distribute" d="TryPost draft / schedule"/><Flow n="06" t="Learn" d="Performance returns to YNOT"/></div>
       </section>
       <section className="panel"><div className="panelHead"><div><span>OPPORTUNITIES</span><h2>Product intelligence</h2></div></div>
         <div className="products">{products.length?products.map((p:any)=><div className="product" key={p.product_id}>{p.image_url?<img src={p.image_url} alt=""/>:<div className="ph"/>}<div><strong>{p.title}</strong><small>{p.currency||""} {p.price??"—"}</small></div><b>{p.advertability_score??"—"}</b></div>):<Empty text="No scored products yet."/ >}</div>
@@ -75,7 +77,7 @@ export default async function GrowthAdminPage() {
         <div className="rows">{campaigns.length?campaigns.map((c:any)=><article className="campaign" key={c.id}><div><strong>{c.name}</strong><small>{c.platform} · {c.currency||"EUR"} {c.daily_budget||0}/day</small></div><em className={"status "+c.status}>{c.status}</em></article>):<Empty text="No campaigns connected yet."/ >}</div>
       </section>
     </div>
-    <footer><span>YNOT Growth OS</span><span>Demand intelligence, creative approval and TryPost distribution are separated so automation stays evidence-driven.</span><Link href="/">Back to YNOT</Link></footer>
+    <footer><span>YNOT Growth OS</span><span>Demand intelligence, product discovery, creative approval and TryPost distribution stay connected but evidence-driven.</span><Link href="/">Back to YNOT</Link></footer>
   </main>;
 }
 
