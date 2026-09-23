@@ -57,8 +57,11 @@ const DEFAULT_RISK:Record<string,RiskProfile> = {
 const n=(v:number)=>Math.round(v*100)/100;
 const clamp=(v:number,min=0,max=1)=>Math.min(max,Math.max(min,v));
 
-export function riskProfile(category?:string):RiskProfile {
-  return DEFAULT_RISK[(category||'default').toLowerCase()]||DEFAULT_RISK.default;
+export function riskProfile(category?:string, sourcePrice?:number):RiskProfile {
+  const key=(category||'default').toLowerCase();
+  const base=DEFAULT_RISK[key]||DEFAULT_RISK.default;
+  const highTicketBnpl=(key==='home'||key==='furniture'||key==='tech'||key==='electronics')&&Number(sourcePrice)>=500;
+  return highTicketBnpl?{...base,minMarginPct:Math.max(base.minMarginPct,.20)}:base;
 }
 
 export function reliabilityScore(q:SourceQuote){
@@ -71,7 +74,7 @@ export function reliabilityScore(q:SourceQuote){
   return n(100*(stock*.28+cancel*.22+returnPolicy*.18+region*.12+refund*.10+delivery*.10));
 }
 
-export function landedCost(q:SourceQuote, profile=riskProfile(q.category)){
+export function landedCost(q:SourceQuote, profile=riskProfile(q.category,q.price)){
   const base=q.price+q.shipping+(q.tax||0)+(q.duties||0);
   const payment=base*(q.paymentFeePct ?? .029);
   const returnReserve=base*Math.max(profile.returnReservePct,q.returnRate||0);
@@ -80,7 +83,7 @@ export function landedCost(q:SourceQuote, profile=riskProfile(q.category)){
   return n(base+payment+returnReserve+cancelReserve+safety);
 }
 
-export function dynamicLuminaPrice(q:SourceQuote, profile=riskProfile(q.category)){
+export function dynamicLuminaPrice(q:SourceQuote, profile=riskProfile(q.category,q.price)){
   const cost=landedCost(q,profile);
   const reliability=reliabilityScore(q)/100;
   const volatilityPremium=(1-reliability)*.06;
@@ -95,7 +98,7 @@ export function affiliateValue(q:SourceQuote){
 }
 
 export function buildQuote(q:SourceQuote):CommerceQuote{
-  const profile=riskProfile(q.category);
+  const profile=riskProfile(q.category,q.price);
   const cost=landedCost(q,profile);
   const price=dynamicLuminaPrice(q,profile);
   const contribution=n(price-cost);
