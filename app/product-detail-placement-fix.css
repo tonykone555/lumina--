@@ -36,60 +36,129 @@
   font-size:19px!important;line-height:1!important;text-decoration:none!important;transform:none!important;z-index:auto!important;
 }
 
-/* Desktop product galleries. Keep both the world-card gallery and the YNOT Deal
-   gallery inside the viewport. The Deal gallery is injected dynamically by
-   ynot-deal-final-media.js, so it needs its own explicit rail placement. */
-@media (min-width: 900px){
+/* Desktop product galleries: thumbnail squares only, always visible beside the main image. */
+@media (min-width:900px){
   .lv4-detail{overflow:visible!important;}
-  .lv4-detail>.lv4-gallery{
-    position:absolute!important;
-    z-index:40!important;
-    left:18px!important;
-    top:24px!important;
-    bottom:auto!important;
-    width:92px!important;
-    max-height:calc(100vh - 72px)!important;
-    margin:0!important;
-    padding:0 4px 0 0!important;
-    display:flex!important;
-    flex-direction:column!important;
-    align-items:stretch!important;
-    gap:10px!important;
-    overflow-x:hidden!important;
-    overflow-y:auto!important;
-    scroll-snap-type:y proximity!important;
-    scrollbar-width:thin!important;
-    box-sizing:border-box!important;
-  }
-  .lv4-detail>.lv4-gallery button{
-    flex:0 0 82px!important;width:82px!important;height:82px!important;min-width:82px!important;min-height:82px!important;
-    margin:0!important;padding:0!important;border-radius:16px!important;overflow:hidden!important;scroll-snap-align:start!important;
-    opacity:.72!important;background:rgba(20,20,20,.22)!important;border:1px solid rgba(255,255,255,.52)!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important;
-  }
-  .lv4-detail>.lv4-gallery button.active{opacity:1!important;border-color:rgba(255,255,255,.96)!important;box-shadow:0 0 0 2px rgba(255,255,255,.16),0 10px 28px rgba(0,0,0,.2)!important;}
-  .lv4-detail>.lv4-gallery img{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;}
 
-  /* This is the actual thumbnail rail used by the full-screen bubble/YNOT product popup. */
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery,
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{
-    position:fixed!important;
-    z-index:560!important;
-    left:28px!important;
+  /* Native gallery and hydrated gallery are both covered so moving to the next
+     bubble/product keeps the thumbnail rail in the same place. */
+  html body .lv4-detail>.lv4-gallery,
+  html body .lv4-detail>.ynot-loaded-gallery,
+  html body .lv4-detail .ynot-loaded-gallery{
+    position:absolute!important;
+    z-index:80!important;
+    left:22px!important;
     right:auto!important;
-    top:24px!important;
+    top:50%!important;
     bottom:auto!important;
-    transform:none!important;
-    width:76px!important;
-    max-width:76px!important;
+    transform:translateY(-50%)!important;
+    width:72px!important;
+    max-width:72px!important;
     height:auto!important;
-    max-height:calc(100dvh - 48px)!important;
+    max-height:min(58vh,520px)!important;
     margin:0!important;
-    padding:0 4px!important;
+    padding:0!important;
     display:flex!important;
     flex-direction:column!important;
     align-items:center!important;
     justify-content:flex-start!important;
-    gap:10px!important;
+    gap:9px!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    scrollbar-width:none!important;
+    box-sizing:border-box!important;
+    background:transparent!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+  }
+  html body .lv4-detail>.lv4-gallery::-webkit-scrollbar,
+  html body .lv4-detail>.ynot-loaded-gallery::-webkit-scrollbar,
+  html body .lv4-detail .ynot-loaded-gallery::-webkit-scrollbar{display:none!important;}
+
+  html body .lv4-detail>.lv4-gallery>button,
+  html body .lv4-detail>.ynot-loaded-gallery>.ynot-complete-thumb,
+  html body .lv4-detail .ynot-loaded-gallery>.ynot-complete-thumb{
+    position:relative!important;
+    flex:0 0 64px!important;
+    width:64px!important;
+    min-width:64px!important;
+    height:64px!important;
+    min-height:64px!important;
+    margin:0!important;
+    padding:3px!important;
+    border-radius:13px!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+    background:rgba(12,12,12,.12)!important;
+    border:1px solid rgba(255,255,255,.34)!important;
+    box-shadow:none!important;
+    opacity:.82!important;
+  }
+  html body .lv4-detail>.lv4-gallery>button.active,
+  html body .lv4-detail>.ynot-loaded-gallery>.ynot-complete-thumb.active,
+  html body .lv4-detail .ynot-loaded-gallery>.ynot-complete-thumb.active{
+    opacity:1!important;
+    border-color:rgba(255,255,255,.9)!important;
+  }
+  html body .lv4-detail>.lv4-gallery>button img,
+  html body .lv4-detail>.lv4-gallery>button video,
+  html body .lv4-detail>.ynot-loaded-gallery>.ynot-complete-thumb img,
+  html body .lv4-detail>.ynot-loaded-gallery>.ynot-complete-thumb video,
+  html body .lv4-detail .ynot-loaded-gallery>.ynot-complete-thumb img,
+  html body .lv4-detail .ynot-loaded-gallery>.ynot-complete-thumb video{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    border-radius:9px!important;
+    background:transparent!important;
+    transform:none!important;
+    filter:none!important;
+  }
+
+  /* No dock chrome / counters / arrows / +N tile on desktop. */
+  html body .lv4-detail .lv4-gallery-nav,
+  html body .lv4-detail .lv4-gallery-controls,
+  html body .lv4-detail .lv4-gallery-count,
+  html body .lv4-detail .lv4-gallery-prev,
+  html body .lv4-detail .lv4-gallery-next,
+  html body .lv4-detail .lv4-image-count,
+  html body .lv4-detail .lv4-media-count,
+  html body .lv4-detail .lv4-slide-count,
+  html body .lv4-detail .lv4-gallery-pagination,
+  html body .lv4-detail .ynot-gallery-more,
+  html body .lv4-detail .ynot-gallery-more:before,
+  html body .lv4-detail .ynot-gallery-more:after{display:none!important;}
+
+  /* Full-screen YNOT product popup: same clean square rail, lower and centered
+     alongside the main product image rather than pinned to the top edge. */
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery,
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{
+    position:fixed!important;
+    z-index:560!important;
+    left:28px!important;
+    right:auto!important;
+    top:50%!important;
+    bottom:auto!important;
+    transform:translateY(-50%)!important;
+    width:72px!important;
+    max-width:72px!important;
+    height:auto!important;
+    max-height:min(58dvh,520px)!important;
+    margin:0!important;
+    padding:0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    justify-content:flex-start!important;
+    gap:9px!important;
     overflow-x:hidden!important;
     overflow-y:auto!important;
     scrollbar-width:none!important;
@@ -97,27 +166,48 @@
     visibility:visible!important;
     opacity:1!important;
     pointer-events:auto!important;
+    background:transparent!important;
+    border:0!important;
+    box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
   }
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery::-webkit-scrollbar,
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final::-webkit-scrollbar{display:none!important;}
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery>button,
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button{
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery::-webkit-scrollbar,
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final::-webkit-scrollbar{display:none!important;}
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery>button,
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button{
     position:relative!important;
-    flex:0 0 66px!important;
-    width:66px!important;
-    min-width:66px!important;
-    height:66px!important;
-    min-height:66px!important;
+    flex:0 0 64px!important;
+    width:64px!important;
+    min-width:64px!important;
+    height:64px!important;
+    min-height:64px!important;
     margin:0!important;
     padding:3px!important;
-    border-radius:15px!important;
+    border-radius:13px!important;
     overflow:hidden!important;
     box-sizing:border-box!important;
+    background:rgba(12,12,12,.12)!important;
+    border:1px solid rgba(255,255,255,.34)!important;
+    box-shadow:none!important;
   }
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery>button img,
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery>button video,
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button img,
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button video{
-    display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;border-radius:11px!important;
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery>button img,
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery>button video,
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button img,
+  html body .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button video{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    border-radius:9px!important;
+    background:transparent!important;
   }
+
+  /* Move the map zoom control higher on desktop without changing its row-based behavior. */
+  html body .ynot-map-zoom{right:18px!important;left:auto!important;bottom:150px!important;top:auto!important;}
+}
+
+@media (max-width:899px){
+  html body .ynot-map-zoom{right:12px!important;bottom:124px!important;}
 }
