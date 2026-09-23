@@ -673,3 +673,15 @@ body:has(.lv4-shell.depth-worlds) .lv4-world-bg{
     animation:none!important;
   }
 }
+
+
+/* First-paint stability: the landing scene must render in its finished state.
+   Avoid expensive backdrop-filter work on the decorative ambient bubbles on phones;
+   their radial shading already provides the glass depth. */
+@media(max-width:760px){
+ .ynot-entry-ambient{transition:none!important;opacity:1;visibility:visible;contain:layout paint style}
+ .ynot-entry-ambient:not(.active){opacity:0!important;visibility:hidden!important}
+ .ynot-entry-ambient i{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;will-change:auto!important}
+ .ynot-entry-pointer{contain:layout paint style}
+ .ynot-entry-pointer-core{background:#fff!important}
+}
