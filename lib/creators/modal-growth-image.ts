@@ -17,10 +17,10 @@ function db(){
  return{base,key};
 }
 
-async function storeImage(data:string,contentType="image/jpeg"){
+async function storeImage(data:string,contentType="image/png"){
  const {base,key}=db();
  const bytes=Buffer.from(data,"base64");
- if(!bytes.length||bytes.byteLength>20*1024*1024)throw new Error("MODAL_IMAGE_SIZE_INVALID");
+ if(!bytes.length||bytes.byteLength>24*1024*1024)throw new Error("MODAL_IMAGE_SIZE_INVALID");
  const ext=contentType.includes("png")?"png":"jpg";
  const path=`generated/growth/${Date.now()}-${crypto.randomUUID()}.${ext}`;
  const h:Record<string,string>={apikey:key,"Content-Type":contentType,"x-upsert":"false"};
@@ -47,9 +47,9 @@ export async function generateModalAdVariants(input:{productImageUrl:string;dire
   const variants=[] as any[];
   for(const v of result.variants.slice(0,20)){
    if(!v?.image_base64)continue;
-   const url=await storeImage(String(v.image_base64),String(v.content_type||"image/jpeg"));
-   variants.push({directionId:String(v.direction_id||""),variantIndex:Number(v.variant_index||0),seed:Number(v.seed||0),url,prompt:String(v.prompt||""),contentType:String(v.content_type||"image/jpeg")});
+   const url=await storeImage(String(v.image_base64),String(v.content_type||"image/png"));
+   variants.push({directionId:String(v.direction_id||""),variantIndex:Number(v.variant_index||0),seed:Number(v.seed||0),url,prompt:String(v.prompt||""),contentType:String(v.content_type||"image/png")});
   }
-  return{provider:"modal-sdxl-img2img" as const,model:String(result.model||"stabilityai/stable-diffusion-xl-base-1.0"),gpu:String(result.gpu||"A10G"),generationSeconds:Number(result.generation_seconds||0),requestId:call.functionCallId,variants};
+  return{provider:"modal-flux2-klein-reference" as const,model:String(result.model||"black-forest-labs/FLUX.2-klein-4B"),gpu:String(result.gpu||"A10G"),generationSeconds:Number(result.generation_seconds||0),requestId:call.functionCallId,variants};
  }finally{modal.close()}
 }
