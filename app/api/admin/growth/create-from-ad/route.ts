@@ -38,13 +38,13 @@ export async function POST(req:NextRequest){
    if(!hasSource(ad))return NextResponse.json({error:"SOURCE_AD_REQUIRED"},{status:400});
    if(!productId(product)||!productImage(product))return NextResponse.json({error:"PRODUCT_WITH_IMAGE_REQUIRED"},{status:400});
    const analysis=await analyseAdForProduct({ad,product,contextAds:Array.isArray(body?.contextAds)?body.contextAds:[],sourceAnalysis:body?.sourceAnalysis||null});
-   return NextResponse.json({ok:true,stage:"adapted",analysis,imageGenerationConfigured:geminiGrowthImageConfigured(),imageProvider:"gemini-nano-banana-2-lite"});
+   return NextResponse.json({ok:true,stage:"adapted",analysis,imageGenerationConfigured:geminiGrowthImageConfigured(),imageProvider:"gemini-nano-banana-2-lite",totalVariants:10});
   }
   if(action==="generate"){
    if(!productId(product)||!productImage(product))return NextResponse.json({error:"PRODUCT_WITH_IMAGE_REQUIRED"},{status:400});
    if(!body?.analysis||!body?.direction)return NextResponse.json({error:"ANALYSIS_AND_DIRECTION_REQUIRED"},{status:400});
    if(!geminiGrowthImageConfigured())return NextResponse.json({error:"GEMINI_IMAGE_NOT_CONFIGURED"},{status:503});
-   const generated=await generateGeminiAdVariants({productImageUrl:productImage(product),directions:[body.direction],variantsPerDirection:4});
+   const generated=await generateGeminiAdVariants({productImageUrl:productImage(product),directions:[body.direction],variantsPerDirection:2});
    const basic=generated.variants.map((v:any)=>({url:v.url,variantIndex:v.variantIndex,seed:v.seed,directionId:v.directionId,prompt:v.prompt}));
    let scores:any[]=[];try{scores=await scoreCreativeVariants({product,direction:body.direction,variants:basic})}catch(e){console.error("create_from_ad_score",e)}
    const saved=await saveCreative({ad,product,analysis:body.analysis,direction:body.direction,variants:basic,scores,folderId:String(body?.folderId||"")||undefined});
