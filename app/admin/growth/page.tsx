@@ -2,6 +2,7 @@ import Link from "next/link";
 import "./growth.css";
 import "./demand-engine.css";
 import "./growth-light.css";
+import "./research-workflow.css";
 import CreativeActions from "./CreativeActions";
 import GrowthInbox from "./GrowthInbox";
 import CampaignBuilder from "./CampaignBuilder";
@@ -78,16 +79,12 @@ export default async function GrowthAdminPage() {
         <div className="products">{products.length?products.map((p:any)=><div className="product" key={p.product_id}>{p.image_url?<img src={p.image_url} alt=""/>:<div className="ph"/>}<div><strong>{p.title}</strong><small>{p.currency||""} {p.price??"—"}</small></div><b>{p.advertability_score??"—"}</b></div>):<Empty text="No scored products yet."/ >}</div>
       </section>
       <section className="panel"><div className="panelHead"><div><span>CAMPAIGNS</span><h2>Distribution</h2></div></div>
-        <div className="rows">{campaigns.length?campaigns.map((c:any)=><article className="campaign" key={c.id}><div><strong>{c.name}</strong><small>{c.platform} · {c.currency||"EUR"} {c.daily_budget||0}/day</small></div><em className={"status "+c.status}>{c.status}</em></article>):<Empty text="No campaigns connected yet."/ >}</div>
+        <div className="campaigns">{campaigns.length?campaigns.map((c:any)=><div className="campaign" key={c.id}><div><strong>{c.name}</strong><small>{c.platform} · {c.currency||"EUR"} {c.daily_budget||0}/day</small></div><em className={"status "+c.status}>{c.status}</em></div>):<Empty text="No paid campaign queued."/ >}</div>
       </section>
     </div>
-    <footer><span>YNOT Growth OS</span><span>Demand intelligence, product discovery, creative approval and TryPost distribution stay connected but evidence-driven.</span><Link href="/">Back to YNOT</Link></footer>
   </main>;
 }
 
-function Metric({label,value,sub}:{label:string,value:string,sub:string}){return <div className="metric"><span>{label}</span><strong>{value}</strong><small>{sub}</small></div>}
-function RadarColumn({title,owner,items}:{title:string,owner:string,items:any[]}){return <section className="radarColumn"><header><div><span>{title}</span><small>{items.length} loaded</small></div><em>{owner}</em></header><div className="radarCards">{items.length?items.map((x:any)=><article className="radarCard" key={x.id}><div className="radarCardTop"><b>{x.display_name||x.handle||x.niche||"Opportunity"}</b><i className={"pipeline "+x.status}>{x.status}</i></div><small>{x.platform}{x.handle?` · @${String(x.handle).replace(/^@/,"")}`:""}{x.country?` · ${x.country}`:""}</small><p>{x.summary||x.reason||x.next_action||"Qualified by YNOT Growth Radar."}</p><div className="scores">{x.intent_strength!=null&&<span>Intent {x.intent_strength}</span>}{x.creator_fit!=null&&<span>Fit {x.creator_fit}</span>}{x.followers!=null&&<span>{Number(x.followers).toLocaleString()} followers</span>}</div><footer><span>{x.owner}</span>{x.matched_product_ids?.length?<strong>{x.matched_product_ids.length} products</strong>:<strong>Match needed</strong>}</footer>{x.draft_message&&<div className="draft">Draft ready · approval required</div>}</article>):<Empty text="Waiting for Grok Radar."/ >}</div></section>}
-function TrendColumn({items}:{items:any[]}){return <section className="radarColumn"><header><div><span>Trends</span><small>{items.length} loaded</small></div><em>RADAR</em></header><div className="radarCards">{items.length?items.slice(0,12).map((x:any)=><article className="radarCard trend" key={x.id}><div className="radarCardTop"><b>{x.name}</b><i>{x.velocity_score??"—"}</i></div><small>{x.platform||"multi-source"}{x.lifecycle?` · ${x.lifecycle}`:""}</small><p>{x.recommendation||x.audience||x.niche||"Trend signal"}</p><footer><span>{x.niche||"Discovery"}</span><strong>{x.matched_product_ids?.length||0} matched</strong></footer></article>):<Empty text="No trend signals yet."/ >}</div></section>}
-function GapColumn({items}:{items:any[]}){return <section className="radarColumn"><header><div><span>Catalogue gaps</span><small>{items.length} loaded</small></div><em>STORE</em></header><div className="radarCards">{items.length?items.slice(0,12).map((x:any)=><article className="radarCard gap" key={x.id}><div className="radarCardTop"><b>{x.niche}</b><i>{x.priority_score??"—"}</i></div><small>{x.status}</small><p>{x.demand_signal||x.reason||"Demand signal awaiting sourcing."}</p><footer><span>{x.owner}</span><strong>Priority {x.priority_score??"—"}</strong></footer></article>):<Empty text="No catalogue gaps yet."/ >}</div></section>}
-function Flow({n,t,d}:{n:string;t:string;d:string}){return <div className="flowRow"><b>{n}</b><div><strong>{t}</strong><small>{d}</small></div></div>}
+function Metric({label,value,sub}:{label:string;value:string;sub:string}){return <div className="metric"><span>{label}</span><strong>{value}</strong><small>{sub}</small></div>}
+function Flow({n,t,d}:{n:string;t:string;d:string}){return <div className="flowStep"><i>{n}</i><div><strong>{t}</strong><small>{d}</small></div></div>}
 function Empty({text}:{text:string}){return <div className="empty">{text}</div>}
