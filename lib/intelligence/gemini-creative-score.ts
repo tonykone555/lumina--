@@ -1,0 +1,13 @@
+const MODEL=String(process.env.GEMINI_GROWTH_MODEL||"gemini-2.5-flash");
+function key(){const v=String(process.env.GEMINI_API_KEY||process.env.GOOGLE_API_KEY||"").trim();if(!v)throw new Error("GEMINI_NOT_CONFIGURED");return v}
+async function part(url:string){const r=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(15000)});if(!r.ok)return null;const ct=(r.headers.get("content-type")||"image/jpeg").split(";")[0];const b=Buffer.from(await r.arrayBuffer());if(!ct.startsWith("image/")||!b.length||b.length>10*1024*1024)return null;return{inlineData:{mimeType:ct,data:b.toString("base64")}}}
+function parse(v:string){const raw=String(v||"").trim().replace(/^```json\s*/i,"").replace(/```$/i,"").trim();try{return JSON.parse(raw)}catch{const s=raw.indexOf("{"),e=raw.lastIndexOf("}");if(s>=0&&e>s)return JSON.parse(raw.slice(s,e+1));throw new Error("GEMINI_SCORE_INVALID_JSON")}}
+export async function scoreCreativeVariants(input:{product:any;direction:any;variants:{url:string;variantIndex:number}[]}){
+ const prompt=`You are evaluating ORIGINAL YNOT paid-social image variants for the product below. Score each image independently from 0-100. Do not reward similarity to a competitor; reward clarity, believable product presentation, originality and ad effectiveness. Penalize distorted product packaging, unreadable labels, fake claims, clutter or obvious AI artifacts.\nPRODUCT: ${JSON.stringify({title:input.product?.title,brand:input.product?.brand,price:input.product?.price,currency:input.product?.currency})}\nCREATIVE DIRECTION: ${JSON.stringify(input.direction)}\nThere are ${input.variants.length} images attached in the same order as variantIndex values ${input.variants.map(v=>v.variantIndex).join(", ")}. Return ONLY JSON: {"scores":[{"variantIndex":1,"product_visibility":0,"visual_quality":0,"ad_feel":0,"cta_clarity":0,"originality":0,"overall":0,"summary":"","recommended_use":""}]}.`;
+ const parts:any[]=[{text:prompt}];
+ for(const v of input.variants){try{const p=await part(v.url);if(p)parts.push(p)}catch{}}
+ const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent?key=${encodeURIComponent(key())}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts}],generationConfig:{responseMimeType:"application/json",temperature:.15}}),cache:"no-store",signal:AbortSignal.timeout(120000)});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error("GEMINI_SCORE_FAILED_"+r.status+":"+String(j?.error?.message||"unknown").slice(0,200));
+ const text=(j?.candidates?.[0]?.content?.parts||[]).map((p:any)=>p?.text||"").join("");const out=parse(text);
+ return Array.isArray(out?.scores)?out.scores:[];
+}
