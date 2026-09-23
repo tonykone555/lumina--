@@ -1,0 +1,60 @@
+import {NextRequest,NextResponse} from "next/server";
+import {createHash} from "node:crypto";
+import {adminDb,adminErrorStatus,requireYnotAdmin} from "@/lib/ynot/admin-server";
+import {searchGoogleIntent,searchTikTokVideos} from "@/lib/intelligence/fetchlayer-social";
+
+export const runtime="nodejs";
+export const maxDuration=300;
+
+type Platform="TikTok"|"Reddit"|"X"|"YouTube"|"Forum";
+type Candidate={platform:Platform;title:string;text:string;url:string;handle?:string;profileUrl?:string;publishedAt?:string;raw?:any};
+
+const MODEL=String(process.env.GEMINI_GROWTH_MODEL||"gemini-3.6-flash").trim();
+const INTENT_PHRASES=["looking for","where can i buy","where to buy","recommend me","recommend a","best","need a","need an","alternative to","anyone know","what should i buy","which one should i buy"];
+function text(v:any):string{if(v==null)return"";if(typeof v==="string"||typeof v==="number")return String(v).replace(/\s+/g," ").trim();if(Array.isArray(v))return v.map(text).find(Boolean)||"";if(typeof v==="object"){for(const k of ["text","title","caption","description","snippet","name","username","author","handle","url","link"]){const s=text(v?.[k]);if(s)return s}}return""}
+function url(...xs:any[]){for(const x of xs){const s=text(x);if(/^https?:\/\//i.test(s))return s}return""}
+function arr(v:any,...keys:string[]){for(const k of keys){if(Array.isArray(v?.[k]))return v[k]}return[]}
+function hash(s:string){return createHash("sha256").update(s).digest("hex").slice(0,32)}
+function dedupe(xs:Candidate[]){const seen=new Set<string>();return xs.filter(x=>{const k=(x.url||`${x.platform}:${x.title}:${x.text}`).toLowerCase();if(!k||seen.has(k))return false;seen.add(k);return true})}
+function recentSort(a:Candidate,b:Candidate){const aa=Date.parse(a.publishedAt||"")||0,bb=Date.parse(b.publishedAt||"")||0;return bb-aa}
+function googleResults(raw:any,platform:Platform){
+ const rows=[...arr(raw,"organicResults","organic_results","results","searchResults"),...arr(raw,"discussions","discussionResults")];
+ return rows.map((r:any):Candidate=>({platform,title:text(r?.title)||text(r?.name)||platform,text:text(r?.snippet)||text(r?.description)||text(r?.text),url:url(r?.url,r?.link),publishedAt:text(r?.date||r?.publishedAt||r?.published_at)||undefined,raw:r})).filter(x=>x.url&&(x.title||x.text));
+}
+function tikTokResults(raw:any){
+ const rows=[...arr(raw,"videos","results","items")];
+ return rows.map((r:any):Candidate=>{const u=url(r?.url,r?.videoUrl,r?.shareUrl,r?.webVideoUrl);const handle=text(r?.author?.username||r?.author?.uniqueId||r?.username||r?.handle);return{platform:"TikTok",title:text(r?.title)||text(r?.caption)||"TikTok post",text:text(r?.caption)||text(r?.description)||text(r?.text),url:u,handle:handle||undefined,profileUrl:handle?`https://www.tiktok.com/@${handle.replace(/^@/,"")}`:undefined,publishedAt:text(r?.createTimeISO||r?.publishedAt||r?.createdAt)||undefined,raw:r}}).filter((x:Candidate)=>x.url&&(x.title||x.text));
+}
+async function geminiJson(prompt:string){
+ const key=String(process.env.GEMINI_API_KEY||process.env.GOOGLE_API_KEY||"").trim();if(!key)throw new Error("GEMINI_NOT_CONFIGURED");
+ const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent?key=${encodeURIComponent(key)}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:prompt}]}],generationConfig:{responseMimeType:"application/json"}}),cache:"no-store",signal:AbortSignal.timeout(180000)});
+ const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error("GEMINI_INTENT_FAILED_"+r.status+":"+String(j?.error?.message||"unknown").slice(0,240));
+ const raw=(j?.candidates?.[0]?.content?.parts||[]).map((p:any)=>p?.text||"").join("").replace(/^```json\s*/i,"").replace(/```$/i,"").trim();return JSON.parse(raw);
+}
+async function classify(candidates:Candidate[],topic:string,country:string){
+ const compact=candidates.slice(0,180).map((c,i)=>({i,platform:c.platform,title:c.title,text:c.text,url:c.url,publishedAt:c.publishedAt}));
+ const prompt=`You are YNOT's buyer-intent classifier. From the public posts/search results below, keep only entries that indicate a plausible person actively considering, seeking, comparing, asking where to buy, requesting recommendations, or expressing a concrete product need. Exclude news, pure entertainment, generic reviews with no buying intent, sellers advertising their own item, obvious spam, and ambiguous entries. Prefer recent, explicit purchase intent.\n\nTopic: ${topic||"any consumer product"}\nCountry: ${country}\n\nINPUT\n${JSON.stringify(compact)}\n\nReturn ONLY JSON {"leads":[{"i":0,"intent_strength":0,"kind":"buyer","niche":"","product_query":"","reason":"","source_quote":"","intent_tags":[],"budget_min":null,"budget_max":null,"budget_currency":"","personalization_context":"","draft_message":"","channel":"public reply","next_action":""}]}. intent_strength is 0-100. Keep only >=55. product_query must be a concise generic catalogue search, not a brand name unless the user explicitly requires that brand. draft_message must be a short helpful, non-pushy response tailored to the source signal and must not pretend we know private information. Do not invent facts not present in the input.`;
+ const out=await geminiJson(prompt);return Array.isArray(out?.leads)?out.leads:[];
+}
+async function catalogue(origin:string,cookie:string,q:string,country:string){
+ try{const p=new URLSearchParams({query:q,q,country,source:"all",limit:"8"});const r=await fetch(`${origin}/api/catalog?${p}`,{headers:cookie?{cookie}:{},cache:"no-store",signal:AbortSignal.timeout(45000)});if(!r.ok)return[];const j=await r.json();const rows=[j?.products,j?.results,j?.items,j?.data?.products,j?.data?.results,j?.data?.items,j?.data].find(Array.isArray)||[];return rows.slice(0,6).map((x:any)=>({id:String(x?.product_id||x?.id||""),title:text(x?.title),brand:text(x?.brand),image:text(x?.image_url||x?.image),price:x?.price??null,currency:text(x?.currency),ynot_url:x?.product_id||x?.id?`/p/${encodeURIComponent(String(x.product_id||x.id))}?country=${encodeURIComponent(country)}&src=growth-intent`:null,merchant_url:url(x?.url,x?.source_url)})).filter((x:any)=>x.id&&x.title)}catch{return[]}
+}
+
+export async function POST(req:NextRequest){
+ try{
+  await requireYnotAdmin(req);const body=await req.json();const topic=text(body?.query).slice(0,180);const country=(text(body?.country)||"FR").toUpperCase().slice(0,2);const language=(text(body?.language)||"en").slice(0,8);const timeRange=["day","week","month"].includes(text(body?.timeRange))?text(body.timeRange) as "day"|"week"|"month":"week";const limit=Math.max(40,Math.min(300,Number(body?.limit)||180));
+  const platforms=(Array.isArray(body?.platforms)?body.platforms:["TikTok","Reddit","X","YouTube","Forum"]).filter((x:any)=>["TikTok","Reddit","X","YouTube","Forum"].includes(x)) as Platform[];
+  const base=topic||"product recommendation";const intent=`(${INTENT_PHRASES.map(x=>`\"${x}\"`).join(" OR ")}) ${base}`;
+  const jobs:Promise<Candidate[]>[]=[];
+  if(platforms.includes("TikTok"))jobs.push(searchTikTokVideos(`${base} recommendation`,5,120).then(tikTokResults).catch(()=>[]));
+  const sites:Partial<Record<Platform,string>>={Reddit:"site:reddit.com",X:"(site:x.com OR site:twitter.com)",YouTube:"site:youtube.com",Forum:"(forum OR community OR discussion)"};
+  for(const p of platforms.filter(x=>x!=="TikTok")){const site=sites[p]||"";jobs.push(searchGoogleIntent(`${site} ${intent}`.slice(0,300),country,language,timeRange).then(r=>googleResults(r,p)).catch(()=>[]));}
+  const raw=dedupe((await Promise.all(jobs)).flat()).sort(recentSort).slice(0,limit);
+  const decisions=await classify(raw,topic,country);const byIndex=new Map(decisions.map((d:any)=>[Number(d.i),d]));
+  const qualified=raw.map((c,i)=>({c,d:byIndex.get(i)})).filter(x=>x.d&&Number(x.d.intent_strength)>=55).sort((a,b)=>Number(b.d.intent_strength)-Number(a.d.intent_strength)).slice(0,Math.min(limit,140));
+  const productQueries=[...new Set(qualified.map(x=>text(x.d.product_query)).filter(Boolean))].slice(0,18);const products=new Map<string,any[]>();for(const q of productQueries)products.set(q,await catalogue(req.nextUrl.origin,req.headers.get("cookie")||"",q,country));
+  const now=new Date().toISOString();const rows=qualified.map(({c,d})=>{const matched=products.get(text(d.product_query))||[];const key=`intent:${c.platform.toLowerCase()}:${hash(c.url||`${c.title}:${c.text}`)}`;return{external_key:key,kind:"buyer",platform:c.platform,handle:c.handle||null,display_name:c.handle||c.title.slice(0,120)||null,profile_url:c.profileUrl||null,source_post_url:c.url,niche:text(d.niche)||text(d.product_query)||topic||null,country,followers:null,engagement:null,intent_strength:Math.max(0,Math.min(100,Number(d.intent_strength)||0)),creator_fit:null,summary:c.text.slice(0,800)||c.title.slice(0,800),reason:text(d.reason).slice(0,900)||null,source_quote:text(d.source_quote).slice(0,600)||null,budget_min:Number.isFinite(Number(d.budget_min))?Number(d.budget_min):null,budget_max:Number.isFinite(Number(d.budget_max))?Number(d.budget_max):null,budget_currency:text(d.budget_currency)||null,intent_tags:Array.isArray(d.intent_tags)?d.intent_tags.slice(0,12).map(text).filter(Boolean):[],constraints:{discovered_at:now,time_range:timeRange,product_query:text(d.product_query),source_title:c.title},personalization_context:text(d.personalization_context).slice(0,1000)||null,matched_product_ids:matched.map((p:any)=>p.id),matched_products:matched,draft_message:text(d.draft_message).slice(0,1800)||null,channel:text(d.channel)||"public reply",status:"ready",owner:"ARROW",outreach_approved:false,next_action:text(d.next_action).slice(0,500)||"Review source post and draft before outreach.",updated_at:now}});
+  let saved:any[]=[];if(rows.length){saved=await adminDb("ynot_growth_opportunities?on_conflict=external_key",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=representation"},body:JSON.stringify(rows)}).catch(()=>[])}
+  return NextResponse.json({ok:true,query:topic,country,timeRange,platforms,scanned:raw.length,qualified:rows.length,saved:saved.length,opportunities:saved.length?saved:rows,sourceNotes:{TikTok:"FetchLayer TikTok video search",Reddit:"FetchLayer Google search scoped to Reddit",X:"FetchLayer Google search scoped to X/Twitter",YouTube:"FetchLayer Google-indexed YouTube pages",Forum:"FetchLayer Google search across forum/community discussions"}});
+ }catch(e){const m=e instanceof Error?e.message:"INTENT_OUTREACH_FAILED";return NextResponse.json({error:m},{status:/NOT_CONFIGURED/.test(m)?503:adminErrorStatus(e)})}
+}
