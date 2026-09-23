@@ -1,4 +1,5 @@
 import type {Metadata} from "next";
+import AdminSessionBridge from "@/components/admin/AdminSessionBridge";
 import "./admin-scroll.css";
 import "./ynot-glass-theme.css";
 
@@ -6,6 +7,7 @@ export const metadata:Metadata={title:"YNOT Ad Factory",robots:{index:false,foll
 
 export default function AdFactoryLayout({children}:{children:React.ReactNode}){
  return <div className="ynot-admin-scroll-root">
+  <AdminSessionBridge/>
   <nav className="ynot-admin-nav" aria-label="YNOT owner advertising tools">
    <a className="ynot-admin-orb" href="/admin/ads" aria-label="YNOT Ad Factory">YNOT</a>
    <a className="ynot-admin-link" href="/admin/ads">Ad Factory</a>
