@@ -8,9 +8,8 @@ const HOME_Y_OFFSET=0;
 const PRODUCT_Y_OFFSET=340;
 const DESKTOP_COLUMNS=39;
 const SLOT_BUFFER=84;
-const LAYER_TARGETS={worlds:.42,themes:.82,products:1.15,details:1.55} as const;
-const LAYER_ORDER=["worlds","themes","products","details"] as const;
-type Layer=(typeof LAYER_ORDER)[number];
+const MIN_ROW_ZOOM=.18;
+const MAX_ROW_ZOOM=2.35;
 
 function metrics(){
  const w=typeof window!=="undefined"?window.innerWidth:1440;
@@ -73,36 +72,43 @@ function applyLattice(){
  renderSlots(stage,products.length+SLOT_BUFFER);
  warmImages(products,stage);
 }
-function activeLayer(shell:HTMLElement):Layer{
- for(const layer of LAYER_ORDER)if(shell.classList.contains(`depth-${layer}`))return layer;
- return"themes";
-}
 function stageScale(stage:HTMLElement){
  const inline=stage.style.transform.match(/scale\(([-\d.]+)\)/);if(inline)return Number(inline[1])||.82;
  const matrix=getComputedStyle(stage).transform.match(/matrix\(([^)]+)\)/);if(matrix)return Math.abs(Number(matrix[1].split(",")[0]))||.82;
  return.82;
 }
+function usableHeight(){return Math.max(360,window.innerHeight-(window.innerWidth>=900?180:150))}
+function visibleRows(scale:number){const {stepY}=metrics();return Math.max(2,Math.min(18,Math.round(usableHeight()/(stepY*Math.max(.01,scale)))))}
+function zoomForRows(rows:number){const {stepY}=metrics();return Math.max(MIN_ROW_ZOOM,Math.min(MAX_ROW_ZOOM,usableHeight()/(stepY*Math.max(2,rows))))}
 function sendZoomTo(target:number){
  const world=document.querySelector<HTMLElement>(".lv4-world"),stage=document.querySelector<HTMLElement>(".lv4-stage");if(!world||!stage)return;
  let current=stageScale(stage),guard=0;
  const cx=Math.round(window.innerWidth*.5),cy=Math.round(window.innerHeight*.5);
- while(Math.abs(current-target)>.045&&guard++<36){const inward=current<target;world.dispatchEvent(new WheelEvent("wheel",{bubbles:true,cancelable:true,clientX:cx,clientY:cy,deltaY:inward?-100:100}));current*=inward?1.075:.94}
+ while(Math.abs(current-target)>.025&&guard++<48){const inward=current<target;world.dispatchEvent(new WheelEvent("wheel",{bubbles:true,cancelable:true,clientX:cx,clientY:cy,deltaY:inward?-100:100}));current*=inward?1.075:.94}
+}
+function stepByRow(direction:1|-1){
+ const stage=document.querySelector<HTMLElement>(".lv4-stage");if(!stage)return;
+ const current=stageScale(stage),rows=visibleRows(current),nextRows=Math.max(2,Math.min(18,rows+(direction>0?-1:1)));
+ if(nextRows===rows)return;
+ sendZoomTo(zoomForRows(nextRows));
+ window.setTimeout(()=>syncZoomControl(),100)
 }
 function ensureZoomControl(){
  const shell=document.querySelector<HTMLElement>(".lv4-shell");if(!shell)return null;
  let control=document.querySelector<HTMLElement>(".ynot-map-zoom");
  if(!control){
-  const style=document.createElement("style");style.id="ynot-map-zoom-style";style.textContent=`.ynot-map-zoom{position:fixed;z-index:84;left:84px;bottom:92px;display:flex;align-items:center;gap:4px;padding:4px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(18,18,20,.42);box-shadow:0 12px 38px rgba(0,0,0,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#fff}.ynot-map-zoom button{width:30px;height:30px;border:0;border-radius:50%;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;font:500 19px/1 Inter,sans-serif;cursor:pointer}.ynot-map-zoom button:hover{background:rgba(255,255,255,.16)}.ynot-map-zoom button:disabled{opacity:.28;cursor:default}.ynot-map-zoom span{min-width:58px;padding:0 7px;text-align:center;font:650 8px/1 Inter,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7)}@media(max-width:899px){.ynot-map-zoom{left:auto;right:12px;bottom:96px}.ynot-map-zoom span{display:none}.ynot-map-zoom button{width:32px;height:32px}}.ynot-app-shell.chrome-hidden .ynot-map-zoom{opacity:0;pointer-events:none}`;if(!document.getElementById(style.id))document.head.appendChild(style);
-  control=document.createElement("div");control.className="ynot-map-zoom";control.innerHTML='<button type="button" data-zoom="out" aria-label="Zoom out one layer">−</button><span>Layer</span><button type="button" data-zoom="in" aria-label="Zoom in one layer">+</button>';
+  const style=document.createElement("style");style.id="ynot-map-zoom-style";style.textContent=`.ynot-map-zoom{position:fixed;z-index:84;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;border:1px solid rgba(255,255,255,.22);border-radius:18px;background:rgba(18,18,20,.42);box-shadow:0 12px 38px rgba(0,0,0,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#fff}.ynot-map-zoom button{width:34px;height:34px;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;font:500 20px/1 Inter,sans-serif;cursor:pointer}.ynot-map-zoom button:hover{background:rgba(255,255,255,.16)}.ynot-map-zoom button:disabled{opacity:.28;cursor:default}.ynot-map-zoom span{width:34px;padding:6px 0;text-align:center;font:650 7px/1 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.62)}@media(max-width:899px){.ynot-map-zoom{right:10px;top:48%;border-radius:17px}.ynot-map-zoom button{width:32px;height:32px}.ynot-map-zoom span{width:32px;font-size:6.5px}}.ynot-app-shell.chrome-hidden .ynot-map-zoom{opacity:0;pointer-events:none}`;if(!document.getElementById(style.id))document.head.appendChild(style);
+  control=document.createElement("div");control.className="ynot-map-zoom";control.innerHTML='<button type="button" data-zoom="in" aria-label="Zoom in one row">+</button><span>rows</span><button type="button" data-zoom="out" aria-label="Zoom out one row">−</button>';
   const stop=(event:Event)=>event.stopPropagation();control.addEventListener("pointerdown",stop);control.addEventListener("wheel",stop,{passive:true});
-  control.addEventListener("click",event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>("button[data-zoom]");if(!button)return;event.preventDefault();event.stopPropagation();const current=activeLayer(shell!),index=LAYER_ORDER.indexOf(current),direction=button.dataset.zoom==="in"?1:-1,next=LAYER_ORDER[Math.max(0,Math.min(LAYER_ORDER.length-1,index+direction))];sendZoomTo(LAYER_TARGETS[next]);window.setTimeout(()=>syncZoomControl(),80)});
+  control.addEventListener("click",event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>("button[data-zoom]");if(!button)return;event.preventDefault();event.stopPropagation();stepByRow(button.dataset.zoom==="in"?1:-1)});
   document.body.appendChild(control);
  }
  syncZoomControl();return control;
 }
 function syncZoomControl(){
- const shell=document.querySelector<HTMLElement>(".lv4-shell"),control=document.querySelector<HTMLElement>(".ynot-map-zoom");if(!shell||!control)return;
- const layer=activeLayer(shell),index=LAYER_ORDER.indexOf(layer),label=control.querySelector("span"),out=control.querySelector<HTMLButtonElement>('button[data-zoom="out"]'),zoomIn=control.querySelector<HTMLButtonElement>('button[data-zoom="in"]');if(label)label.textContent=layer; if(out)out.disabled=index===0;if(zoomIn)zoomIn.disabled=index===LAYER_ORDER.length-1;
+ const stage=document.querySelector<HTMLElement>(".lv4-stage"),control=document.querySelector<HTMLElement>(".ynot-map-zoom");if(!stage||!control)return;
+ const rows=visibleRows(stageScale(stage)),label=control.querySelector("span"),out=control.querySelector<HTMLButtonElement>('button[data-zoom="out"]'),zoomIn=control.querySelector<HTMLButtonElement>('button[data-zoom="in"]');
+ if(label)label.textContent=`${rows} rows`;if(out)out.disabled=rows>=18;if(zoomIn)zoomIn.disabled=rows<=2;
 }
 
 export default function DesktopLatticeController():null{
