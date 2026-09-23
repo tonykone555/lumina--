@@ -10,7 +10,7 @@ from typing import Any
 import modal
 
 APP_NAME = "ynot-image-worker"
-MODEL_ID = os.environ.get("YNOT_IMAGE_MODEL", "stabilityai/stable-diffusion-xl-base-1.0")
+MODEL_ID = os.environ.get("YNOT_IMAGE_MODEL", "black-forest-labs/FLUX.2-klein-4B")
 MODEL_PATH = Path("/models")
 
 app = modal.App(APP_NAME)
@@ -19,17 +19,25 @@ model_cache = modal.Volume.from_name("ynot-image-model-cache", create_if_missing
 image = (
     modal.Image.debian_slim(python_version="3.12")
     .uv_pip_install(
-        "accelerate>=1.6,<2",
-        "diffusers>=0.35,<0.38",
-        "huggingface-hub>=0.36,<1",
+        "accelerate>=1.10,<2",
+        "huggingface-hub>=0.36,<2",
         "safetensors>=0.5,<1",
         "torch>=2.7,<3",
-        "transformers>=4.51,<5",
+        "transformers>=4.55,<5",
         "pillow>=11,<12",
         "requests>=2.32,<3",
+        "sentencepiece>=0.2,<1",
     )
+    .run_commands("pip install -U git+https://github.com/huggingface/diffusers.git")
     .env({"HF_HOME": str(MODEL_PATH), "HF_XET_HIGH_PERFORMANCE": "1"})
 )
+
+VARIANT_LENSES = [
+    "Create a clean hero composition with deliberate negative space and a premium commercial-photography camera angle.",
+    "Create a candid lifestyle composition in a believable real-world setting, changing camera distance, crop, lighting and staging from the other variants.",
+    "Create a direct-response social ad composition with a strong visual hook, a different environment, and clear product interaction or benefit demonstration.",
+    "Create an editorial product-story composition with a distinctly different scene, perspective, lighting direction, props and subject placement.",
+]
 
 
 @app.cls(
@@ -43,27 +51,23 @@ class YnotAdImageGenerator:
     @modal.enter()
     def load_model(self):
         import torch
-        from diffusers import AutoPipelineForImage2Image, DPMSolverMultistepScheduler
+        from diffusers import Flux2KleinPipeline
 
-        self.pipe = AutoPipelineForImage2Image.from_pretrained(
+        self.pipe = Flux2KleinPipeline.from_pretrained(
             MODEL_ID,
-            torch_dtype=torch.float16,
-            variant="fp16",
-            use_safetensors=True,
+            torch_dtype=torch.bfloat16,
         )
-        self.pipe.scheduler = DPMSolverMultistepScheduler.from_config(self.pipe.scheduler.config)
         self.pipe.enable_model_cpu_offload()
         if hasattr(self.pipe, "vae") and hasattr(self.pipe.vae, "enable_tiling"):
             self.pipe.vae.enable_tiling()
 
-    def _source_image(self, url: str, width: int, height: int):
+    def _reference_image(self, url: str):
         import requests
-        from PIL import Image, ImageOps
+        from PIL import Image
 
-        response = requests.get(url, timeout=20)
+        response = requests.get(url, timeout=25)
         response.raise_for_status()
-        source = Image.open(io.BytesIO(response.content)).convert("RGB")
-        return ImageOps.pad(source, (width, height), method=Image.Resampling.LANCZOS, color=(245, 245, 245))
+        return Image.open(io.BytesIO(response.content)).convert("RGB")
 
     @modal.method()
     def generate_batch(
@@ -73,50 +77,51 @@ class YnotAdImageGenerator:
         variants_per_direction: int = 4,
         width: int = 1024,
         height: int = 1280,
-        strength: float = 0.72,
-        steps: int = 22,
-        guidance_scale: float = 6.5,
+        steps: int = 8,
+        guidance_scale: float = 1.0,
     ):
         import torch
 
         started = time.time()
-        source = self._source_image(product_image_url, width, height)
+        reference = self._reference_image(product_image_url)
         outputs: list[dict[str, Any]] = []
         variants_per_direction = max(1, min(int(variants_per_direction), 4))
         directions = list(directions or [])[:5]
-        negative_common = (
-            "competitor logo, copied advertisement, watermark, UI chrome, unreadable text, misspelled label, "
-            "distorted product, changed bottle shape, altered product colors, duplicate product, floating object, "
-            "deformed hands, extra fingers, low resolution, blurry, oversaturated, clutter"
-        )
 
         for d_index, direction in enumerate(directions):
             direction_id = str(direction.get("direction_id") or f"dir_{d_index + 1:02d}")
-            prompt = str(direction.get("prompt") or "Premium paid-social product advertisement")
-            custom_negative = ", ".join(str(x) for x in (direction.get("negative_prompt") or []))
-            negative = negative_common + (", " + custom_negative if custom_negative else "")
+            base_prompt = str(direction.get("prompt") or "Premium paid-social product advertisement")
+            human_use = bool(direction.get("human_use")) or str(direction.get("scene_type") or "").lower() in {"human", "lifestyle", "ugc", "demonstration"}
             for v_index in range(variants_per_direction):
-                seed = int(time.time() * 1000) % 2_000_000_000 + d_index * 101 + v_index
+                seed = (int(time.time() * 1000) + d_index * 10007 + v_index * 997) % 2_000_000_000
                 generator = torch.Generator(device="cpu").manual_seed(seed)
+                diversity = VARIANT_LENSES[v_index % len(VARIANT_LENSES)]
+                human_instruction = (
+                    " Include a photorealistic adult person naturally USING, WEARING, HOLDING or INTERACTING with the referenced product in the physically correct way for that product category; the product must be clearly visible."
+                    if human_use else
+                    " Do not add a person unless the concept explicitly calls for one."
+                )
+                prompt = (
+                    f"{base_prompt}\n\n{diversity}{human_instruction}\n"
+                    "REFERENCE RULE: the supplied reference image is the exact YNOT product. Preserve its real product identity, silhouette, proportions, materials, colors, packaging, logo and label details as faithfully as possible. Use it as a reference object, not as the canvas to repaint. Do not redesign, morph, recolor, relabel or blur the product. Build a NEW scene around the product. No competitor branding. Avoid near-duplicate compositions from other variants."
+                )
                 result = self.pipe(
                     prompt=prompt,
-                    negative_prompt=negative,
-                    image=source,
-                    strength=strength,
-                    num_inference_steps=steps,
-                    guidance_scale=guidance_scale,
+                    image=reference,
+                    num_inference_steps=max(4, min(int(steps), 16)),
+                    guidance_scale=float(guidance_scale),
                     generator=generator,
                     width=width,
                     height=height,
                 ).images[0]
                 buf = io.BytesIO()
-                result.save(buf, format="JPEG", quality=90, optimize=True)
+                result.save(buf, format="PNG", optimize=True)
                 outputs.append({
                     "direction_id": direction_id,
                     "variant_index": v_index + 1,
                     "seed": seed,
                     "image_base64": base64.b64encode(buf.getvalue()).decode("ascii"),
-                    "content_type": "image/jpeg",
+                    "content_type": "image/png",
                     "prompt": prompt,
                 })
 
