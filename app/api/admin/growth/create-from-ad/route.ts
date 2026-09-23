@@ -22,18 +22,49 @@ async function saveCreative(input:{ad:any;product:any;analysis:any;direction:any
  };
  let creative:any=null;
  try{
-  const rows=await adminDb("ynot_ad_creatives",{method:"POST",headers:{Prefer:"return=representation"},body:JSON.stringify({
-   source_product_ids:[productId(input.product)].filter(Boolean),hook:String(input.direction?.hook||input.analysis?.analysis?.marketing_structure?.hook||"").slice(0,1000),
-   headline:String(input.direction?.name||input.product?.title||"Generated ad concept").slice(0,1000),status:"review",quality_score:Number(best?.score?.overall||0)||null,
-   render_url:best?.url||null,thumbnail_url:best?.url||null,payload,voice_script:null
-  })});creative=rows?.[0]||null;
+  const rows=await adminDb("ynot_ad_creatives",{
+   method:"POST",
+   headers:{Prefer:"return=representation"},
+   body:JSON.stringify({
+    source_product_ids:[productId(input.product)].filter(Boolean),
+    hook:String(input.direction?.hook||input.analysis?.analysis?.marketing_structure?.hook||"").slice(0,1000),
+    headline:String(input.direction?.name||input.product?.title||"Generated ad concept").slice(0,1000),
+    status:"review",
+    quality_score:Number(best?.score?.overall||0)||null,
+    render_url:best?.url||null,
+    thumbnail_url:best?.url||null,
+    payload,
+    voice_script:null
+   })
+  });
+  creative=rows?.[0]||null;
  }catch(e){console.error("create_from_ad_creative_save",e)}
  if(input.folderId){
-  try{await adminDb("ynot_growth_research_items",{method:"POST",headers:{Prefer:"return=minimal"},body:JSON.stringify(scored.map((v:any)=>({
-   folder_id:input.folderId,kind:"generated-ad",source:"YNOT · Gemini + Modal",title:`${input.direction?.name||"Creative direction"} · Variant ${v.variantIndex}`,
-   summary:`Original YNOT creative generated from market pattern analysis for ${input.product?.title||"selected product"}.`,image_url:v.url,score:Number(v.score?.overall||0)||null,
-   payload:{creative_id:creative?.id||null,source_ad_id:input.ad?.id||null,product_id:productId(input.product),direction:input.direction,score:v.score,seed:v.seed,provider:"modal-sdxl-img2img"}
-  }))})}catch(e){console.error("create_from_ad_research_save",e)}
+  try{
+   const researchRows=scored.map((v:any)=>({
+    folder_id:input.folderId,
+    kind:"generated-ad",
+    source:"YNOT · Gemini + Modal",
+    title:`${input.direction?.name||"Creative direction"} · Variant ${v.variantIndex}`,
+    summary:`Original YNOT creative generated from market pattern analysis for ${input.product?.title||"selected product"}.`,
+    image_url:v.url,
+    score:Number(v.score?.overall||0)||null,
+    payload:{
+     creative_id:creative?.id||null,
+     source_ad_id:input.ad?.id||null,
+     product_id:productId(input.product),
+     direction:input.direction,
+     score:v.score,
+     seed:v.seed,
+     provider:"modal-sdxl-img2img"
+    }
+   }));
+   await adminDb("ynot_growth_research_items",{
+    method:"POST",
+    headers:{Prefer:"return=minimal"},
+    body:JSON.stringify(researchRows)
+   });
+  }catch(e){console.error("create_from_ad_research_save",e)}
  }
  return{creative,variants:scored,best};
 }
@@ -55,10 +86,15 @@ export async function POST(req:NextRequest){
    if(!modalGrowthImageConfigured())return NextResponse.json({error:"MODAL_NOT_CONFIGURED"},{status:503});
    const generated=await generateModalAdVariants({productImageUrl:productImage(product),directions:[body.direction],variantsPerDirection:4});
    const basic=generated.variants.map((v:any)=>({url:v.url,variantIndex:v.variantIndex,seed:v.seed,directionId:v.directionId,prompt:v.prompt}));
-   let scores:any[]=[];try{scores=await scoreCreativeVariants({product,direction:body.direction,variants:basic})}catch(e){console.error("create_from_ad_score",e)}
+   let scores:any[]=[];
+   try{scores=await scoreCreativeVariants({product,direction:body.direction,variants:basic})}catch(e){console.error("create_from_ad_score",e)}
    const saved=await saveCreative({ad,product,analysis:body.analysis,direction:body.direction,variants:basic,scores,folderId:String(body?.folderId||"")||undefined});
    return NextResponse.json({ok:true,stage:"generated",provider:generated.provider,model:generated.model,gpu:generated.gpu,generationSeconds:generated.generationSeconds,requestId:generated.requestId,...saved});
   }
   return NextResponse.json({error:"INVALID_ACTION"},{status:400});
- }catch(e){const m=e instanceof Error?e.message:"CREATE_FROM_AD_FAILED";console.error("create_from_ad",e);return NextResponse.json({error:m},{status:/NOT_CONFIGURED/.test(m)?503:adminErrorStatus(e)});}
+ }catch(e){
+  const m=e instanceof Error?e.message:"CREATE_FROM_AD_FAILED";
+  console.error("create_from_ad",e);
+  return NextResponse.json({error:m},{status:/NOT_CONFIGURED/.test(m)?503:adminErrorStatus(e)});
+ }
 }
