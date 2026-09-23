@@ -35,3 +35,55 @@
   background:transparent!important;color:#fff!important;opacity:1!important;box-shadow:none!important;align-items:center!important;justify-content:center!important;
   font-size:19px!important;line-height:1!important;text-decoration:none!important;transform:none!important;z-index:auto!important;
 }
+
+/* Desktop bubble-product gallery: keep all side thumbnails inside the viewport and fully visible. */
+@media (min-width: 901px){
+  .lv4-detail{overflow:visible!important;}
+  .lv4-detail>.lv4-gallery{
+    position:absolute!important;
+    z-index:40!important;
+    left:18px!important;
+    top:24px!important;
+    bottom:auto!important;
+    width:92px!important;
+    max-height:calc(100vh - 72px)!important;
+    margin:0!important;
+    padding:0 4px 0 0!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    gap:10px!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    scroll-snap-type:y proximity!important;
+    scrollbar-width:thin!important;
+    box-sizing:border-box!important;
+  }
+  .lv4-detail>.lv4-gallery button{
+    flex:0 0 82px!important;
+    width:82px!important;
+    height:82px!important;
+    min-width:82px!important;
+    min-height:82px!important;
+    margin:0!important;
+    padding:0!important;
+    border-radius:16px!important;
+    overflow:hidden!important;
+    scroll-snap-align:start!important;
+    opacity:.72!important;
+    background:rgba(20,20,20,.22)!important;
+    border:1px solid rgba(255,255,255,.52)!important;
+    box-shadow:0 8px 24px rgba(0,0,0,.16)!important;
+  }
+  .lv4-detail>.lv4-gallery button.active{
+    opacity:1!important;
+    border-color:rgba(255,255,255,.96)!important;
+    box-shadow:0 0 0 2px rgba(255,255,255,.16),0 10px 28px rgba(0,0,0,.2)!important;
+  }
+  .lv4-detail>.lv4-gallery img{
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+  }
+}
