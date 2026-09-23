@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "modal/**"
+      - "modal/ynot_video_worker.py"
       - ".github/workflows/deploy-modal-video.yml"
 
 jobs:
