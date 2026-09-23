@@ -43,3 +43,10 @@
  .lv4-tagrow button{min-height:23px!important;padding:0 8px!important;font-size:7.5px!important;border-radius:8px!important}
  .lv4-direction-row button:after{width:13px;height:13px;font-size:6.5px}
 }
+
+
+/* Klarna pre-checkout messaging for high-ticket Home + Tech products. */
+.ynot-klarna-message{margin:8px 0 12px;padding:10px 12px;border-radius:13px;background:rgba(255,255,255,.36);border:1px solid rgba(24,21,19,.10);display:flex;flex-direction:column;gap:3px;max-width:360px}
+.ynot-klarna-message b{font:700 11px/1.25 Inter,ui-sans-serif,system-ui,sans-serif;color:rgba(23,20,18,.90)}
+.ynot-klarna-message span{font:500 9px/1.35 Inter,ui-sans-serif,system-ui,sans-serif;color:rgba(23,20,18,.60)}
+@media(max-width:760px){.ynot-klarna-message{margin:7px 0 10px;padding:9px 10px;border-radius:12px}.ynot-klarna-message b{font-size:10px}.ynot-klarna-message span{font-size:8px}}
