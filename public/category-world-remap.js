@@ -9,8 +9,6 @@
     retail:{label:"Digital Product",subtitle:"Software · templates · courses · downloads",query:"digital products software templates ebooks courses productivity downloads design assets",tags:["Software","Templates","Ebooks","Courses","Productivity","Design Assets","Business Tools","AI Tools","Digital Downloads","Education","Creator Tools","Subscriptions"]}
   };
   let activeKey="";
-  const setInput=(input,value)=>{const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;setter?.call(input,value);input.dispatchEvent(new Event("input",{bubbles:true}))};
-  const runSearch=(term)=>{const input=document.querySelector(".lv4-search input");if(!input)return;setInput(input,term);requestAnimationFrame(()=>document.querySelector(".lv4-search button")?.click())};
   const detectActive=()=>{
     const intent=(document.querySelector(".lv4-intent span")?.textContent||"").trim().toLowerCase();
     if(!intent)return activeKey;
@@ -21,20 +19,22 @@
   const apply=()=>{
     document.querySelectorAll(".lv4-category-bubble").forEach((bubble)=>{
       const cls=[...bubble.classList].find(x=>x.startsWith("cat-"));if(!cls)return;const key=cls.slice(4),cfg=MAP[key];if(!cfg)return;
+      bubble.dataset.ynotCategoryKey=key;
       const b=bubble.querySelector("b"),s=bubble.querySelector("span");if(b&&b.textContent!==cfg.label)b.textContent=cfg.label;if(s&&s.textContent!==cfg.subtitle)s.textContent=cfg.subtitle;
     });
     const key=detectActive();if(key)activeKey=key;const cfg=MAP[activeKey];if(!cfg)return;
     const tags=[...document.querySelectorAll(".lv4-textbubble")];
     tags.forEach((node,i)=>{const text=cfg.tags[i%cfg.tags.length];if(node.textContent!==text)node.textContent=text;node.dataset.ynotCategoryKey=activeKey;node.dataset.ynotTag=text});
-    const intent=document.querySelector(".lv4-intent span");if(intent&&intent.textContent?.trim()!==cfg.label&&!intent.textContent?.trim().includes(" "))intent.textContent=cfg.label;
   };
+  // Important: category bubbles are React buttons. Never prevent/stop their event;
+  // let LuminaWorld.chooseCategory own the actual category search and state transition.
   document.addEventListener("click",event=>{
     const target=event.target instanceof Element?event.target:null;if(!target)return;
     const category=target.closest(".lv4-category-bubble");
-    if(category){const cls=[...category.classList].find(x=>x.startsWith("cat-"));const key=cls?.slice(4)||"",cfg=MAP[key];if(cfg){activeKey=key;setTimeout(()=>{apply();runSearch(cfg.query)},30);setTimeout(apply,180)}return}
+    if(category){activeKey=category.dataset.ynotCategoryKey||[...category.classList].find(x=>x.startsWith("cat-"))?.slice(4)||activeKey;setTimeout(apply,80);return}
     const tag=target.closest(".lv4-textbubble");
-    if(tag&&activeKey&&MAP[activeKey]){const visible=(tag.dataset.ynotTag||tag.textContent||"").trim();if(visible){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();runSearch(`${MAP[activeKey].query} ${visible}`);setTimeout(apply,40)}}
-  },true);
+    if(tag){const key=tag.dataset.ynotCategoryKey||activeKey;if(key&&MAP[key])activeKey=key;setTimeout(apply,80)}
+  },false);
   const observer=new MutationObserver(()=>requestAnimationFrame(apply));observer.observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener("shop:tags-changed",()=>setTimeout(apply,0));
   apply();
