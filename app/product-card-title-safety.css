@@ -1,13 +1,120 @@
-/* YNOT product title safety. Keep copy readable and thumbnails out of the title lane. */
-.lv4-detail .lv4-detailcopy{position:relative!important;z-index:20!important;min-width:0!important}
-.lv4-detail .lv4-detailcopy h2{position:relative!important;z-index:22!important;display:block!important;max-width:100%!important;min-width:0!important;margin:8px 0!important;padding:0!important;line-height:1.08!important;overflow:hidden!important;word-break:break-word!important}
-.lv4-detail .lv4-gallery{position:relative!important;z-index:18!important;flex:0 0 auto!important;width:100%!important;max-width:100%!important;margin:8px 0 4px!important;padding:0 14px!important;overflow-x:auto!important;overflow-y:hidden!important}
-.lv4-detail .lv4-gallery button{flex:0 0 auto!important}
-.ynot-drawer.open .ynot-selected{--ynot-thumb-safe-space:74px}
-.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery{z-index:24!important}
-.ynot-drawer.open .ynot-selected .ynot-deal-copy,.ynot-drawer.open .ynot-selected .ynot-deal-info,.ynot-drawer.open .ynot-selected .ynot-selected-copy,.ynot-drawer.open .ynot-selected .ynot-card-copy,.ynot-drawer.open .ynot-selected [data-product-copy]{position:relative!important;z-index:26!important;padding-bottom:var(--ynot-thumb-safe-space)!important;min-width:0!important}
-.ynot-drawer.open .ynot-selected h1,.ynot-drawer.open .ynot-selected h2,.ynot-drawer.open .ynot-selected h3,.ynot-drawer.open .ynot-selected .ynot-deal-title,.ynot-drawer.open .ynot-selected [data-product-title]{position:relative!important;z-index:28!important;display:block!important;max-width:100%!important;min-width:0!important;line-height:1.12!important;overflow:hidden!important;word-break:break-word!important}
-.lv4-product .lv4-product-tooltip{z-index:40!important;max-width:220px!important;min-width:130px!important;pointer-events:none!important}
-.lv4-product .lv4-product-tooltip b{display:block!important;line-height:1.18!important;overflow:hidden!important;word-break:break-word!important}
+/* YNOT product-card title safety.
+   Keeps thumbnail / mini-image galleries from covering titles and preserves a clean hierarchy. */
+
+/* Product detail popup: title always owns its own readable block. */
+.lv4-detail .lv4-detailcopy{
+  position:relative!important;
+  z-index:20!important;
+  min-width:0!important;
+}
+.lv4-detail .lv4-detailcopy h2{
+  position:relative!important;
+  z-index:22!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:3!important;
+  overflow:hidden!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:8px 0 8px!important;
+  padding:0!important;
+  line-height:1.08!important;
+  text-wrap:balance!important;
+  overflow-wrap:anywhere!important;
+}
+
+/* Native gallery thumbnails stay visually separate from copy. */
+.lv4-detail .lv4-gallery{
+  position:relative!important;
+  z-index:18!important;
+  flex:0 0 auto!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:8px 0 4px!important;
+  padding:0 14px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scrollbar-width:none!important;
+}
+.lv4-detail .lv4-gallery::-webkit-scrollbar{display:none!important}
+.lv4-detail .lv4-gallery button{
+  flex:0 0 auto!important;
+}
+
+/* Deal card / drawer thumbnails: reserve space instead of floating over copy. */
+.ynot-drawer.open .ynot-selected{
+  --ynot-thumb-safe-space:74px;
+}
+.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery{
+  z-index:24!important;
+}
+
+/* Any title/copy region inside a selected deal card gets a protected bottom lane. */
+.ynot-drawer.open .ynot-selected .ynot-deal-copy,
+.ynot-drawer.open .ynot-selected .ynot-deal-info,
+.ynot-drawer.open .ynot-selected .ynot-selected-copy,
+.ynot-drawer.open .ynot-selected .ynot-card-copy,
+.ynot-drawer.open .ynot-selected [data-product-copy]{
+  position:relative!important;
+  z-index:26!important;
+  padding-bottom:var(--ynot-thumb-safe-space)!important;
+  min-width:0!important;
+}
+
+.ynot-drawer.open .ynot-selected h1,
+.ynot-drawer.open .ynot-selected h2,
+.ynot-drawer.open .ynot-selected h3,
+.ynot-drawer.open .ynot-selected .ynot-deal-title,
+.ynot-drawer.open .ynot-selected [data-product-title]{
+  position:relative!important;
+  z-index:28!important;
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:3!important;
+  overflow:hidden!important;
+  max-width:100%!important;
+  min-width:0!important;
+  line-height:1.12!important;
+  overflow-wrap:anywhere!important;
+  text-wrap:balance!important;
+}
+
+/* Bubble-card tooltip titles should never be hidden by price/media badges. */
+.lv4-product .lv4-product-tooltip{
+  z-index:40!important;
+  max-width:220px!important;
+  min-width:130px!important;
+  pointer-events:none!important;
+}
+.lv4-product .lv4-product-tooltip b{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:3!important;
+  overflow:hidden!important;
+  line-height:1.18!important;
+  overflow-wrap:anywhere!important;
+}
 .lv4-product .lv4-price{z-index:30!important}
-@media(max-width:899px){.lv4-detail .lv4-detailcopy h2{margin:6px 0 7px!important;line-height:1.1!important}.lv4-detail .lv4-gallery{order:2!important;margin:5px 0 2px!important;padding:0 12px!important}.lv4-detail .lv4-detailcopy{order:4!important;padding-top:8px!important}.ynot-drawer.open .ynot-selected{--ynot-thumb-safe-space:66px}.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery{max-width:calc(100vw - 34px)!important}}
+
+@media(max-width:899px){
+  .lv4-detail .lv4-detailcopy h2{
+    -webkit-line-clamp:3!important;
+    margin:6px 0 7px!important;
+    line-height:1.1!important;
+  }
+  .lv4-detail .lv4-gallery{
+    order:2!important;
+    margin:5px 0 2px!important;
+    padding:0 12px!important;
+  }
+  .lv4-detail .lv4-detailcopy{
+    order:4!important;
+    padding-top:8px!important;
+  }
+  .ynot-drawer.open .ynot-selected{
+    --ynot-thumb-safe-space:66px;
+  }
+  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery{
+    max-width:calc(100vw - 34px)!important;
+  }
+}
