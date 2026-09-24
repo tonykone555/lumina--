@@ -13,13 +13,10 @@
       #ynot-desktop-home-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;filter:brightness(.72) saturate(.92);background:#050606}\
       #ynot-desktop-home-video:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.04) 42%,rgba(0,0,0,.22));pointer-events:none}\
       body.ynot-desktop-home-video-active{background:#050606!important}\
-      body.ynot-desktop-home-video-active>.ynot-app-shell,\
-      body.ynot-desktop-home-video-active .ynot-app-shell,\
+      body.ynot-desktop-home-video-active .ynot-app-shell{position:relative!important;z-index:1!important;background:transparent!important}\
       body.ynot-desktop-home-video-active .lv4-shell,\
       body.ynot-desktop-home-video-active .lv4-world{background:transparent!important}\
       body.ynot-desktop-home-video-active .lv4-scene{opacity:0!important;visibility:hidden!important}\
-      body.ynot-desktop-home-video-active .lv4-shell{isolation:isolate}\
-      body.ynot-desktop-home-video-active .lv4-shell>*{position:relative;z-index:2}\
       body.ynot-desktop-home-video-active #ynot-desktop-home-video{z-index:0}\
       @media(max-width:899px){#ynot-desktop-home-video{display:none!important}}\
       @media(prefers-reduced-motion:reduce){#ynot-desktop-home-video{transition:none}}';
