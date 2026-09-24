@@ -23,6 +23,8 @@ const IMAGES={
   courtyard:"https://images.unsplash.com/photo-1758448756362-e323282ccbcc?auto=format&fit=crop&fm=jpg&q=82&w=1800",
 };
 
+const TOUR_VIDEO="https://videos.pexels.com/video-files/7239168/7239168-uhd_2160_3840_25fps.mp4";
+
 const PROJECTS=[
   {image:IMAGES.hero,eyebrow:"PRIVATE RESIDENCE · 01",title:"Sculpted living",meta:"Material · Light · Art"},
   {image:IMAGES.calm,eyebrow:"PRIVATE RESIDENCE · 02",title:"Quiet composition",meta:"Texture · Oak · Restraint"},
@@ -44,26 +46,9 @@ export default function InteriorMasterExperience(){
   const ambientVideoRef=useRef<HTMLVideoElement>(null);
   const progressRef=useRef<HTMLDivElement>(null);
   const [chapter,setChapter]=useState(0);
-  const [videoUrl,setVideoUrl]=useState<string>("");
   const [menuOpen,setMenuOpen]=useState(false);
 
   const chapterData=useMemo(()=>CHAPTERS[chapter]||CHAPTERS[0],[chapter]);
-
-  useEffect(()=>{
-    let objectUrl="";
-    let cancelled=false;
-    Promise.all(Array.from({length:8},(_,i)=>fetch(`/studio/interior/tour-chunks/${i}.txt`).then(r=>{if(!r.ok)throw new Error(`Tour chunk ${i} failed`);return r.text()})))
-      .then(parts=>{
-        if(cancelled)return;
-        const binary=atob(parts.join(""));
-        const bytes=new Uint8Array(binary.length);
-        for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
-        objectUrl=URL.createObjectURL(new Blob([bytes],{type:"video/mp4"}));
-        setVideoUrl(objectUrl);
-      })
-      .catch(()=>setVideoUrl(""));
-    return()=>{cancelled=true;if(objectUrl)URL.revokeObjectURL(objectUrl)};
-  },[]);
 
   useEffect(()=>{
     const html=document.documentElement;
@@ -189,14 +174,14 @@ export default function InteriorMasterExperience(){
 
     <section className={styles.tourSection} id="tour" ref={tourRef}>
       <div className={styles.tourSticky}>
-        <video className={styles.tourAmbient} ref={ambientVideoRef} src={videoUrl||undefined} muted playsInline preload="auto" aria-hidden="true"/>
+        <video className={styles.tourAmbient} ref={ambientVideoRef} src={TOUR_VIDEO} muted playsInline preload="auto" aria-hidden="true"/>
         <div className={styles.tourVignette}/>
         <div className={styles.tourGrid}/>
-        <video className={styles.tourVideo} ref={videoRef} src={videoUrl||undefined} muted playsInline preload="auto" poster={IMAGES.hero}/>
+        <video className={styles.tourVideo} ref={videoRef} src={TOUR_VIDEO} muted playsInline preload="auto" poster={IMAGES.hero}/>
 
         <div className={styles.tourTopbar}>
           <span>SCROLL-CONTROLLED TOUR</span>
-          <span className={styles.tourReady}>{videoUrl?"TOUR READY":"LOADING TOUR"}</span>
+          <span className={styles.tourReady}>TOUR READY</span>
         </div>
 
         <div className={styles.tourChapter} key={chapterData.label}>
