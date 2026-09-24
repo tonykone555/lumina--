@@ -5,6 +5,14 @@
   var currencyBaselineSet=false,lastCurrencySignature='';
   var CURRENCY_OPEN_DELAY_MS=320,APP_READY_DELAY_MS=520,EXPLICIT_CLOSE_DELAY_MS=1100;
 
+  function isIOSSafari(){
+    var ua=navigator.userAgent||'';
+    var ios=/iP(?:hone|ad|od)/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+    var webkit=/WebKit/i.test(ua);
+    var other=/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+    return !!(ios&&webkit&&!other);
+  }
+
   function hasStoredRegion(){
     try{
       var raw=localStorage.getItem('ynot-region');
@@ -15,7 +23,11 @@
   }
 
   function appReady(){
-    return document.readyState!=='loading'&&!!document.querySelector('.ynot-app-shell')&&!!document.querySelector('.lv4-shell');
+    if(document.readyState==='loading')return false;
+    if(!document.getElementById('ynot-welcome-host'))return false;
+    if(!document.querySelector('.ynot-app-shell'))return false;
+    if(isIOSSafari())return true;
+    return !!document.querySelector('.lv4-shell');
   }
 
   function welcomeHost(){return document.getElementById('ynot-welcome-host')||document.body}
@@ -108,6 +120,7 @@
     if(!host)return null;
     modal=document.createElement('div');
     modal.id='ynot-welcome-video';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Welcome to YNOT');modal.setAttribute('aria-hidden','true');
+    if(isIOSSafari())modal.classList.add('is-ios-safari');
     modal.innerHTML='\
       <div class="ynot-welcome__backdrop"></div>\
       <div class="ynot-welcome__panel">\
@@ -142,7 +155,8 @@
 
   function scheduleIntegrityChecks(){
     clearIntegrity();
-    [180,480,900,1600].forEach(function(delay){integrityTimers.push(setTimeout(ensureOpenIntegrity,delay))});
+    var checks=isIOSSafari()?[120,320,650,1100,1800,2800]:[180,480,900,1600];
+    checks.forEach(function(delay){integrityTimers.push(setTimeout(ensureOpenIntegrity,delay))});
   }
 
   function show(preferSound){
@@ -171,15 +185,16 @@
       appReadyTimer=0;
       if(opened||shownThisEntry)return;
       if(appReady()){
+        var delay=isIOSSafari()?180:APP_READY_DELAY_MS;
         appReadyTimer=setTimeout(function(){
           appReadyTimer=0;
           if(opened||shownThisEntry)return;
           if(!appReady()){queueShow(pendingSound);return}
           show(pendingSound);
-        },APP_READY_DELAY_MS);
+        },delay);
         return;
       }
-      if(appReadyChecks++<75)appReadyTimer=setTimeout(check,80);
+      if(appReadyChecks++<90)appReadyTimer=setTimeout(check,isIOSSafari()?60:80);
     };
     check();
   }
@@ -190,7 +205,7 @@
     savePending(preferSound);
     if(entryTimer){clearTimeout(entryTimer);entryTimer=0}
     if(currencyOpenTimer)clearTimeout(currencyOpenTimer);
-    currencyOpenTimer=setTimeout(function(){currencyOpenTimer=0;queueShow(!!preferSound)},CURRENCY_OPEN_DELAY_MS);
+    currencyOpenTimer=setTimeout(function(){currencyOpenTimer=0;queueShow(!!preferSound)},isIOSSafari()?180:CURRENCY_OPEN_DELAY_MS);
   }
 
   function pollForEntry(){
@@ -198,7 +213,15 @@
     var pending=readPending();
     if(pending){queueShow(pending==='sound');return}
     if(hasStoredRegion()){queueShow(false);return}
-    if(entryChecks++<50)entryTimer=setTimeout(pollForEntry,100);
+    if(entryChecks++<70)entryTimer=setTimeout(pollForEntry,isIOSSafari()?80:100);
+  }
+
+  function safariPageShow(){
+    if(!isIOSSafari())return;
+    setTimeout(function(){
+      if(opened){ensureOpenIntegrity();if(video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}return}
+      if(!shownThisEntry&&(hasStoredRegion()||readPending()))queueShow(readPending()==='sound');
+    },220);
   }
 
   window.addEventListener('ynot:region-changed',function(){showAfterCurrency(true)});
@@ -209,12 +232,12 @@
   });
   window.addEventListener('storage',function(event){if(event&&event.key==='ynot-region'&&event.newValue)showAfterCurrency(false)});
   window.addEventListener('ynot:show-welcome-video',function(){queueShow(false)});
-  window.addEventListener('pageshow',function(){if(!shownThisEntry)pollForEntry();else if(opened){ensureOpenIntegrity();if(video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}}});
+  window.addEventListener('pageshow',function(){safariPageShow();if(!shownThisEntry)pollForEntry();else if(opened){ensureOpenIntegrity();if(video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}}});
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&opened){ensureOpenIntegrity();if(video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}}});
   document.addEventListener('touchstart',function(){if(opened&&video&&video.paused)tryMutedAutoplay()},{passive:true});
   document.addEventListener('pointerdown',function(){if(opened&&video&&video.paused)tryMutedAutoplay()},{passive:true});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&opened&&Date.now()>=explicitCloseReadyAt)close()});
 
-  function boot(){entryChecks=0;pollForEntry()}
+  function boot(){entryChecks=0;pollForEntry();if(isIOSSafari())setTimeout(function(){if(!shownThisEntry&&(hasStoredRegion()||readPending()))queueShow(readPending()==='sound')},700)}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
