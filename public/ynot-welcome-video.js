@@ -2,6 +2,7 @@
   var SEEN_KEY='ynot:welcome-video-seen:v2';
   var PARTS=['/ynot-welcome-v1/part01.b64','/ynot-welcome-v1/part02.b64','/ynot-welcome-v1/part03.b64','/ynot-welcome-v1/part04.b64','/ynot-welcome-v1/part05.b64'];
   var modal=null,video=null,previousFocus=null,opened=false,videoUrlPromise=null;
+  var currencyBaselineSet=false,lastCurrencySignature='';
 
   function hasSeen(){try{return sessionStorage.getItem(SEEN_KEY)==='1'}catch(e){return false}}
   function markSeen(){try{sessionStorage.setItem(SEEN_KEY,'1')}catch(e){}}
@@ -88,7 +89,18 @@
     if(previousFocus&&typeof previousFocus.focus==='function'){try{previousFocus.focus({preventScroll:true})}catch(e){}}
   }
 
+  function currencySignature(detail){
+    detail=detail||{};
+    var region=detail.region||{};
+    return String(detail.currency||'')+'|'+String(region.country||region.countryCode||region.code||region.region||'');
+  }
+
   window.addEventListener('ynot:region-changed',function(){setTimeout(show,120)});
+  window.addEventListener('ynot:currency-change',function(event){
+    var signature=currencySignature(event&&event.detail);
+    if(!currencyBaselineSet){currencyBaselineSet=true;lastCurrencySignature=signature;return;}
+    if(signature&&signature!==lastCurrencySignature){lastCurrencySignature=signature;setTimeout(show,120);}
+  });
   window.addEventListener('ynot:show-welcome-video',show);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&opened)close()});
 
