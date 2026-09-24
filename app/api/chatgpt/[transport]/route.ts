@@ -30,6 +30,6 @@ const handler=createMcpHandler((server)=>{
  server.tool("find_similar_products","Find YNOT alternatives to a product.",{product:z.string().min(2).max(300),preference:z.string().max(200).default("similar alternatives"),country:z.string().length(2).default("FR"),limit:z.number().int().min(1).max(30).default(12)},async({product,preference,country,limit})=>result(await search(`${product}, ${preference}`,country,limit)),uiMeta as any);
  server.tool("get_product_images","Return product images and links for a YNOT catalogue item.",{product_id:z.string().min(1),query:z.string().min(2).max(300),country:z.string().length(2).default("FR")},async({product_id,query,country})=>{const data=await search(query,country,40);const p:any=data.products.find((x:any)=>x.id===product_id);return result(p?{id:p.id,title:p.title,images:[...new Set([p.image,...(p.images||[])].filter(Boolean))],ynot_url:p.ynot_url,merchant_url:p.merchant_url}:{error:"PRODUCT_NOT_FOUND",product_id})});
  server.tool("open_in_ynot","Return a user-openable YNOT URL for a product or shopping search.",{product_id:z.string().max(240).optional(),query:z.string().max(300).optional()},async({product_id,query})=>result({url:product_id?`${SITE}/p/${encodeURIComponent(product_id)}`:query?`${SITE}/?q=${encodeURIComponent(query)}`:SITE}));
-},{instructions:"YNOT is a visual multi-source shopping service. Never invent product details, prices, availability, shipping, or merchants."});
+},{instructions:"YNOT is a visual multi-source shopping service. Never invent product details, prices, availability, shipping, or merchants."},{basePath:"/api/chatgpt"});
 
-export {handler as GET,handler as POST};
+export {handler as GET,handler as POST,handler as DELETE};
