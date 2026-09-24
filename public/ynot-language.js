@@ -39,7 +39,7 @@
   }
  };
  const UI_SCOPE='body';
- const EXCLUDE='script,style,noscript,[data-ynot-no-translate],.ynot-language-menu,.lv4-product,.ynot-product-card,.ynot-deal-card,.ynot-product-popup,.ynot-deal-popup,[data-product-id],[data-merchant],[data-product-title]';
+ const EXCLUDE='script,style,noscript,[data-ynot-no-translate],.ynot-language-menu,.lv4-product,.ynot-product-card,.ynot-deal-card,.ynot-product-popup,.ynot-deal-popup,[data-product-id],[data-merchant],[data-product-title],[role="dialog"],[aria-modal="true"],.currency-popup,.country-popup,.region-popup,.currency-picker,.country-picker,.region-picker';
  const SOURCE_BY_RENDERED=new Map();
  Object.keys(COPY.fr).forEach(source=>SOURCE_BY_RENDERED.set(source,source));
  Object.values(COPY).forEach(table=>Object.entries(table).forEach(([source,rendered])=>{if(!SOURCE_BY_RENDERED.has(rendered))SOURCE_BY_RENDERED.set(rendered,source)}));
