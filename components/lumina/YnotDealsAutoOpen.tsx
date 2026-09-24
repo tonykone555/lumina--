@@ -21,9 +21,11 @@ export default function YnotDealsAutoOpen(){
    const target=event.target as Element|null;
    const button=target?.closest<HTMLButtonElement>("button");
    if(!button||button.matches(".ynot-peek,[data-source-only=\"true\"],.ynot-source-trigger-clean")||button.closest(".ynot-drawer,.ynot-view-source"))return;
-   const text=(button.textContent||"").replace(/\s+/g," ").trim().toUpperCase();
-   const isYnot=text==="YNOT"||(text.includes("WORLD")&&text.includes("YNOT"));
-   if(!isYnot||text.includes("BAG"))return;
+   // Never depend on translated visible copy. The header's YNOT control has a
+   // stable structural location; translated labels can change freely.
+   const isHeaderYnot=Boolean(button.closest(".ynot-world-row")&&button!==button.closest(".ynot-world-row")?.querySelector("button:first-child"));
+   const isExplicit=button.getAttribute("data-ynot-action")==="open-deals";
+   if(!isHeaderYnot&&!isExplicit)return;
    const now=Date.now();if(now-lastOpen<350)return;lastOpen=now;
    event.preventDefault();event.stopPropagation();
    openDeals();
