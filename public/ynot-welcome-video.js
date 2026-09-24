@@ -1,16 +1,19 @@
 (function(){
-  var SEEN_KEY='ynot:welcome-video-seen:v2';
   var PARTS=['/ynot-welcome-v1/part01.b64','/ynot-welcome-v1/part02.b64','/ynot-welcome-v1/part03.b64','/ynot-welcome-v1/part04.b64','/ynot-welcome-v1/part05.b64'];
-  var modal=null,video=null,previousFocus=null,opened=false,videoUrlPromise=null;
+  var modal=null,video=null,previousFocus=null,opened=false,shownThisEntry=false,videoUrlPromise=null;
   var currencyBaselineSet=false,lastCurrencySignature='';
 
-  function hasSeen(){try{return sessionStorage.getItem(SEEN_KEY)==='1'}catch(e){return false}}
-  function markSeen(){try{sessionStorage.setItem(SEEN_KEY,'1')}catch(e){}}
+  function hasCachedRegion(){
+    try{
+      var region=JSON.parse(localStorage.getItem('ynot-region')||'null');
+      return !!(region&&region.country);
+    }catch(e){return false;}
+  }
 
   function loadVideoUrl(){
     if(videoUrlPromise)return videoUrlPromise;
     videoUrlPromise=Promise.all(PARTS.map(function(path){
-      return fetch(path+'?v=2',{cache:'force-cache'}).then(function(response){
+      return fetch(path+'?v=3',{cache:'force-cache'}).then(function(response){
         if(!response.ok)throw new Error('YNOT welcome asset failed: '+path);
         return response.text();
       });
@@ -60,10 +63,10 @@
   }
 
   function show(){
-    if(opened||hasSeen())return;
+    if(opened||shownThisEntry)return;
     build();
     opened=true;
-    markSeen();
+    shownThisEntry=true;
     previousFocus=document.activeElement;
     document.body.classList.add('ynot-welcome-lock');
     modal.classList.add('is-open','is-loading');
@@ -95,14 +98,26 @@
     return String(detail.currency||'')+'|'+String(region.country||region.countryCode||region.code||region.region||'');
   }
 
+  function showForCachedEntry(){
+    if(hasCachedRegion())setTimeout(show,350);
+  }
+
   window.addEventListener('ynot:region-changed',function(){setTimeout(show,120)});
   window.addEventListener('ynot:currency-change',function(event){
     var signature=currencySignature(event&&event.detail);
-    if(!currencyBaselineSet){currencyBaselineSet=true;lastCurrencySignature=signature;return;}
+    if(!currencyBaselineSet){
+      currencyBaselineSet=true;
+      lastCurrencySignature=signature;
+      if(hasCachedRegion())setTimeout(show,120);
+      return;
+    }
     if(signature&&signature!==lastCurrencySignature){lastCurrencySignature=signature;setTimeout(show,120);}
   });
   window.addEventListener('ynot:show-welcome-video',show);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&opened)close()});
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showForCachedEntry,{once:true});
+  else showForCachedEntry();
 
   loadVideoUrl().catch(function(){});
 })();
