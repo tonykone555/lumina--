@@ -56,6 +56,16 @@ const DEFAULT_RISK:Record<string,RiskProfile> = {
 
 const n=(v:number)=>Math.round(v*100)/100;
 const clamp=(v:number,min=0,max=1)=>Math.min(max,Math.max(min,v));
+const FURNITURE_ITEM=/\b(sofa|sectional|couch|armchair|recliner|bed frame|mattress|dining table|coffee table|console table|side table|office desk|writing desk|cabinet|dresser|wardrobe|bookshelf|shelving unit|sideboard|accent chair|dining chair|office chair)\b/i;
+const FURNITURE_ACCESSORY=/\b(sample|swatch|fabric|cover|slipcover|protector|replacement|spare|part|hardware|bracket|connector|leg|handle|cushion|pillow|sheet|pad|accessory)\b/i;
+
+export function implausibleFurniturePrice(q:SourceQuote){
+  const title=String(q.title||'');
+  const category=String(q.category||'').toLowerCase();
+  const price=Number(q.price);
+  const furnitureContext=category==='home'||category==='furniture'||FURNITURE_ITEM.test(title);
+  return furnitureContext&&FURNITURE_ITEM.test(title)&&!FURNITURE_ACCESSORY.test(title)&&Number.isFinite(price)&&price>0&&price<25;
+}
 
 export function riskProfile(category?:string, sourcePrice?:number):RiskProfile {
   const key=(category||'default').toLowerCase();
@@ -84,6 +94,7 @@ export function landedCost(q:SourceQuote, profile=riskProfile(q.category,q.price
 }
 
 export function dynamicLuminaPrice(q:SourceQuote, profile=riskProfile(q.category,q.price)){
+  if(implausibleFurniturePrice(q))return 0;
   const cost=landedCost(q,profile);
   const reliability=reliabilityScore(q)/100;
   const volatilityPremium=(1-reliability)*.06;
@@ -98,9 +109,10 @@ export function affiliateValue(q:SourceQuote){
 }
 
 export function buildQuote(q:SourceQuote):CommerceQuote{
+  const invalidFurniturePrice=implausibleFurniturePrice(q);
   const profile=riskProfile(q.category,q.price);
   const cost=landedCost(q,profile);
-  const price=dynamicLuminaPrice(q,profile);
+  const price=invalidFurniturePrice?0:dynamicLuminaPrice(q,profile);
   const contribution=n(price-cost);
   const margin=price?contribution/price:0;
   const reliability=reliabilityScore(q);
@@ -111,18 +123,21 @@ export function buildQuote(q:SourceQuote):CommerceQuote{
   const marginOk=margin>=profile.minMarginPct && contribution>=profile.minContribution;
   const reliable=reliability>=58;
   const reasons:string[]=[];
+  if(invalidFurniturePrice) reasons.push('Furniture price requires verification');
   if(!stockOk) reasons.push('Low stock confidence');
   if(!marginOk) reasons.push('Below margin floor');
   if(!reliable) reasons.push('Source reliability below threshold');
   if(q.regionMatch!=null && q.regionMatch<.45) reasons.push('Weak regional fit');
   if(monetization==='affiliate') reasons.push('Affiliate route is better risk-adjusted economics');
   if(q.preferredSupplier) reasons.push('Preferred supplier relationship');
-  const state = stockOk && marginOk && reliable && monetization!=='affiliate'
-    ? 'buy-with-lumina'
-    : stockOk && reliable && monetization!=='affiliate'
-      ? 'verify-at-checkout'
-      : 'view-at-store';
-  const routingScore=n(
+  const state = invalidFurniturePrice
+    ? 'view-at-store'
+    : stockOk && marginOk && reliable && monetization!=='affiliate'
+      ? 'buy-with-lumina'
+      : stockOk && reliable && monetization!=='affiliate'
+        ? 'verify-at-checkout'
+        : 'view-at-store';
+  const routingScore=invalidFurniturePrice?0:n(
     reliability*.45 +
     clamp(contribution/Math.max(price,1))*100*.25 +
     clamp(q.regionMatch??.75)*100*.15 +
