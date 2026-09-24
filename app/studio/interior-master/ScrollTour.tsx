@@ -8,12 +8,24 @@ const HERO_POSTER="https://images.unsplash.com/photo-1758957701419-2c6e266f7988?
 
 export default function ScrollTour(){
   useEffect(()=>{
+    const html=document.documentElement;
+    const body=document.body;
+    const previousHtmlOverflow=html.style.overflow;
+    const previousHtmlHeight=html.style.height;
+    const previousBodyOverflow=body.style.overflow;
+    const previousBodyHeight=body.style.height;
+    const previousBodyBackground=body.style.background;
+    html.style.overflow="auto";
+    html.style.height="auto";
+    body.style.overflow="visible";
+    body.style.height="auto";
+    body.style.background="#ece9e2";
+
     const section=document.getElementById("interior-scroll-tour");
     const video=document.getElementById("interior-tour-video") as HTMLVideoElement|null;
     const ambient=document.getElementById("interior-tour-ambient") as HTMLVideoElement|null;
     const progress=document.getElementById("interior-tour-progress") as HTMLDivElement|null;
     const chapters=Array.from(document.querySelectorAll<HTMLElement>("[data-tour-chapter]"));
-    if(!section||!video)return;
 
     let target=0;
     let rendered=0;
@@ -32,14 +44,11 @@ export default function ScrollTour(){
 
     function tick(){
       raf=0;
+      if(!video)return;
       const distance=target-rendered;
       rendered+=distance*(Math.abs(distance)>.9?.19:.115);
-      if(video&&video.readyState>=2&&Math.abs(video.currentTime-rendered)>.012){
-        try{video.currentTime=rendered}catch{}
-      }
-      if(ambient&&ambient.readyState>=2&&Math.abs(ambient.currentTime-rendered)>.04){
-        try{ambient.currentTime=rendered}catch{}
-      }
+      if(video.readyState>=2&&Math.abs(video.currentTime-rendered)>.012){try{video.currentTime=rendered}catch{}}
+      if(ambient&&ambient.readyState>=2&&Math.abs(ambient.currentTime-rendered)>.04){try{ambient.currentTime=rendered}catch{}}
       if(Math.abs(target-rendered)>.004)raf=window.requestAnimationFrame(tick);
     }
 
@@ -61,7 +70,7 @@ export default function ScrollTour(){
 
     window.addEventListener("scroll",onScroll,{passive:true});
     window.addEventListener("resize",onResize,{passive:true});
-    video.addEventListener("loadedmetadata",onReady);
+    video?.addEventListener("loadedmetadata",onReady);
     ambient?.addEventListener("loadedmetadata",onReady);
     updateChapter(0);
     measure();
@@ -69,17 +78,21 @@ export default function ScrollTour(){
     return()=>{
       window.removeEventListener("scroll",onScroll);
       window.removeEventListener("resize",onResize);
-      video.removeEventListener("loadedmetadata",onReady);
+      video?.removeEventListener("loadedmetadata",onReady);
       ambient?.removeEventListener("loadedmetadata",onReady);
       if(raf)window.cancelAnimationFrame(raf);
+      html.style.overflow=previousHtmlOverflow;
+      html.style.height=previousHtmlHeight;
+      body.style.overflow=previousBodyOverflow;
+      body.style.height=previousBodyHeight;
+      body.style.background=previousBodyBackground;
     };
   },[]);
 
   return <section className={styles.tourSection} id="interior-scroll-tour">
     <div className={styles.tourSticky}>
       <video id="interior-tour-ambient" className={styles.tourAmbient} src={TOUR_VIDEO} muted playsInline preload="metadata" aria-hidden="true"/>
-      <div className={styles.tourVignette}/>
-      <div className={styles.tourGrid}/>
+      <div className={styles.tourVignette}/><div className={styles.tourGrid}/>
       <video id="interior-tour-video" className={styles.tourVideo} src={TOUR_VIDEO} muted playsInline preload="auto" poster={HERO_POSTER}/>
       <div className={styles.tourTopbar}><span>SCROLL-CONTROLLED TOUR</span><span className={styles.tourReady}>SCROLL TO EXPLORE</span></div>
       <div className={styles.tourChapter} data-tour-chapter="0" style={{opacity:1}}><span>01 / ARRIVAL</span><h2>Enter the atmosphere</h2></div>
