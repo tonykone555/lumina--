@@ -8,23 +8,37 @@
     var style=document.createElement('style');
     style.id='ynot-desktop-home-video-style';
     style.textContent='\
-      #ynot-desktop-home-video{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden;background:#050606;transition:opacity .38s ease,visibility .38s ease}\
+      #ynot-desktop-home-video{position:fixed;inset:0;z-index:-1;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden;background:#050606;transition:opacity .38s ease,visibility .38s ease}\
       #ynot-desktop-home-video.is-visible{opacity:1;visibility:visible}\
-      #ynot-desktop-home-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;filter:brightness(.72) saturate(.92);background:#050606}\
-      #ynot-desktop-home-video:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.04) 42%,rgba(0,0,0,.22));pointer-events:none}\
+      #ynot-desktop-home-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;filter:brightness(.78) saturate(.96);background:#050606}\
+      #ynot-desktop-home-video:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.14),rgba(0,0,0,.02) 45%,rgba(0,0,0,.18));pointer-events:none}\
       body.ynot-desktop-home-video-active{background:#050606!important}\
-      body.ynot-desktop-home-video-active .ynot-app-shell{position:relative!important;z-index:1!important;background:transparent!important}\
-      body.ynot-desktop-home-video-active .lv4-shell,\
-      body.ynot-desktop-home-video-active .lv4-world{background:transparent!important}\
-      body.ynot-desktop-home-video-active .lv4-scene{opacity:0!important;visibility:hidden!important}\
-      body.ynot-desktop-home-video-active #ynot-desktop-home-video{z-index:0}\
+      body.ynot-desktop-home-video-active .ynot-app-shell{background:transparent!important}\
+      body.ynot-desktop-home-video-active .lv4-shell{position:relative!important;isolation:isolate!important;background:transparent!important}\
+      body.ynot-desktop-home-video-active .lv4-world,\
+      body.ynot-desktop-home-video-active .lv4-stage{background:transparent!important}\
+      body.ynot-desktop-home-video-active .lv4-scene{display:none!important;opacity:0!important;visibility:hidden!important}\
+      body.ynot-desktop-home-video-active #ynot-desktop-home-video{z-index:-1!important}\
       @media(max-width:899px){#ynot-desktop-home-video{display:none!important}}\
       @media(prefers-reduced-motion:reduce){#ynot-desktop-home-video{transition:none}}';
     document.head.appendChild(style);
   }
 
+  function homeShell(){return document.querySelector('.lv4-shell.depth-worlds')}
+
+  function mountIntoShell(){
+    if(!root)return false;
+    var shell=homeShell();
+    if(shell){
+      if(root.parentNode!==shell)shell.insertBefore(root,shell.firstChild);
+      return true;
+    }
+    if(!root.isConnected&&document.body)document.body.insertBefore(root,document.body.firstChild);
+    return false;
+  }
+
   function build(){
-    if(root)return root;
+    if(root){mountIntoShell();return root}
     if(!document.body)return null;
     addStyles();
     root=document.createElement('div');
@@ -45,13 +59,11 @@
     video.setAttribute('webkit-playsinline','');
     root.appendChild(video);
     document.body.insertBefore(root,document.body.firstChild);
+    mountIntoShell();
     ['loadeddata','canplay','playing'].forEach(function(name){
       video.addEventListener(name,function(){ready=true;if(visible)root.classList.add('is-visible')});
     });
-    video.addEventListener('error',function(){
-      ready=false;
-      if(root)root.classList.add('is-visible');
-    });
+    video.addEventListener('error',function(){ready=false;if(root)root.classList.add('is-visible')});
     return root;
   }
 
@@ -65,19 +77,15 @@
     if(!video)return;
     ensureSource();
     video.muted=true;
-    try{
-      var p=video.play();
-      if(p&&typeof p.catch==='function')p.catch(function(){});
-    }catch(e){}
+    try{var p=video.play();if(p&&typeof p.catch==='function')p.catch(function(){})}catch(e){}
   }
 
-  function homepageMounted(){
-    return Boolean(document.querySelector('.ynot-app-shell')&&document.querySelector('.lv4-shell'));
-  }
+  function homepageMounted(){return Boolean(document.querySelector('.ynot-app-shell')&&homeShell())}
 
   function setVisible(next){
-    visible=Boolean(next)&&desktop.matches&&location.pathname==='/';
+    visible=Boolean(next)&&desktop.matches&&location.pathname==='/'&&homepageMounted();
     if(!build())return;
+    mountIntoShell();
     document.body.classList.toggle('ynot-desktop-home-video-active',visible);
     root.classList.toggle('is-visible',visible&&(ready||Boolean(video&&video.poster)));
     if(visible){started=true;play();root.classList.add('is-visible')}
@@ -88,8 +96,8 @@
   function restore(){started=false;setVisible(homepageMounted())}
 
   function syncHomepage(){
-    if(!desktop.matches||location.pathname!=='/'){hide();return}
-    if(!homepageMounted()){if(!started)setVisible(false);return}
+    if(!desktop.matches||location.pathname!=='/'||!homepageMounted()){hide();return}
+    mountIntoShell();
     if(!started)setVisible(true);
   }
 
@@ -114,10 +122,10 @@
     window.addEventListener('ynot:open-circle',hide);
     window.addEventListener('ynot:open-auth',hide);
     window.addEventListener('ynot:open-partner',hide);
-    window.addEventListener('ynot:world-reset',restore);
+    window.addEventListener('ynot:world-reset',function(){setTimeout(restore,80)});
     desktop.addEventListener('change',function(){if(desktop.matches)restore();else hide()});
     document.addEventListener('visibilitychange',function(){if(!document.hidden&&visible)play()});
-    window.addEventListener('pageshow',function(){if(desktop.matches&&location.pathname==='/')restore()});
+    window.addEventListener('pageshow',function(){if(desktop.matches&&location.pathname==='/')setTimeout(restore,80)});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
