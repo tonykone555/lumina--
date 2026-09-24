@@ -1,5 +1,5 @@
 (function(){
-  var VIDEO_URL='https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/ScreenRecording_09-24-2026%2014.mov.mp4';
+  var VIDEO_URL='https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/_users_7b03795e-f119-48bf-b017-4126fcff6c6d_generated_4ca87740-f44c-4319-bdae-9756c57bb8b0_generated_video.mp4';
   var root=null,video=null,observer=null,visible=false,started=false,ready=false;
   var desktop=window.matchMedia('(min-width:900px)');
 
