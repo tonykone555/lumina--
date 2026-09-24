@@ -1,6 +1,6 @@
 (function(){
   var VIDEO_URL='https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/watermark-removed%20(1).mp4';
-  var modal=null,video=null,soundButton=null,previousFocus=null,opened=false,shownThisEntry=false,retryTimers=[],entryTimer=0,entryChecks=0,currencyOpenTimer=0,explicitCloseReadyAt=0,guardTimer=0,guardObserver=null,explicitlyDismissed=false;
+  var modal=null,video=null,soundButton=null,previousFocus=null,opened=false,shownThisEntry=false,retryTimers=[],entryTimer=0,entryChecks=0,currencyOpenTimer=0,explicitCloseReadyAt=0;
   var currencyBaselineSet=false,lastCurrencySignature='';
   var CURRENCY_OPEN_DELAY_MS=320,EXPLICIT_CLOSE_DELAY_MS=1100;
 
@@ -69,34 +69,10 @@
     video.defaultMuted=true;video.muted=true;video.setAttribute('muted','');updateSoundUI();
   }
 
-  function stopGuard(){
-    if(guardTimer){clearInterval(guardTimer);guardTimer=0}
-    if(guardObserver){try{guardObserver.disconnect()}catch(e){}guardObserver=null}
-  }
-
-  function ensureOpenState(){
-    if(!opened||explicitlyDismissed||!modal||!document.body)return;
-    if(!modal.isConnected)document.body.appendChild(modal);
-    if(!modal.classList.contains('is-open'))modal.classList.add('is-open');
-    modal.setAttribute('aria-hidden','false');
-    document.body.classList.add('ynot-welcome-lock');
-    if(video&&video.paused)tryMutedAutoplay();
-  }
-
-  function startGuard(){
-    stopGuard();
-    ensureOpenState();
-    guardTimer=setInterval(ensureOpenState,120);
-    if(document.body&&typeof MutationObserver!=='undefined'){
-      guardObserver=new MutationObserver(function(){ensureOpenState()});
-      guardObserver.observe(document.body,{childList:true,subtree:false,attributes:true,attributeFilter:['class']});
-    }
-  }
-
   function requestExplicitClose(event){
     if(event){event.preventDefault();event.stopPropagation()}
     if(!opened||Date.now()<explicitCloseReadyAt)return;
-    close(true);
+    close();
   }
 
   function swallowBackdrop(event){
@@ -135,16 +111,14 @@
   function show(preferSound){
     if(opened||shownThisEntry)return;
     if(!build()){setTimeout(function(){show(preferSound)},60);return}
-    opened=true;shownThisEntry=true;explicitlyDismissed=false;explicitCloseReadyAt=Date.now()+EXPLICIT_CLOSE_DELAY_MS;previousFocus=document.activeElement;
+    opened=true;shownThisEntry=true;explicitCloseReadyAt=Date.now()+EXPLICIT_CLOSE_DELAY_MS;previousFocus=document.activeElement;
     document.body.classList.add('ynot-welcome-lock');modal.classList.add('is-open','is-loading');modal.setAttribute('aria-hidden','false');
-    startGuard();
     requestAnimationFrame(function(){startVideo(!!preferSound)});
   }
 
-  function close(explicit){
+  function close(){
     if(!modal||!opened)return;
-    if(explicit)explicitlyDismissed=true;
-    opened=false;explicitCloseReadyAt=0;stopGuard();clearRetries();modal.classList.remove('is-open','is-loading');modal.setAttribute('aria-hidden','true');document.body.classList.remove('ynot-welcome-lock');
+    opened=false;explicitCloseReadyAt=0;clearRetries();modal.classList.remove('is-open','is-loading');modal.setAttribute('aria-hidden','true');document.body.classList.remove('ynot-welcome-lock');
     if(video){video.pause();try{video.currentTime=0}catch(e){}}
     if(previousFocus&&typeof previousFocus.focus==='function'){try{previousFocus.focus({preventScroll:true})}catch(e){}}
   }
@@ -171,11 +145,11 @@
   });
   window.addEventListener('storage',function(event){if(event&&event.key==='ynot-region'&&event.newValue)showAfterCurrency(false)});
   window.addEventListener('ynot:show-welcome-video',function(){show(false)});
-  window.addEventListener('pageshow',function(){if(!shownThisEntry)pollForEntry();else if(opened){ensureOpenState();if(video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}}});
-  document.addEventListener('visibilitychange',function(){if(!document.hidden&&opened){ensureOpenState();if(video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}}});
+  window.addEventListener('pageshow',function(){if(!shownThisEntry)pollForEntry();else if(opened&&video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden&&opened&&video&&video.paused){tryMutedAutoplay();scheduleAutoplayRetries()}});
   document.addEventListener('touchstart',function(){if(opened&&video&&video.paused)tryMutedAutoplay()},{passive:true});
   document.addEventListener('pointerdown',function(){if(opened&&video&&video.paused)tryMutedAutoplay()},{passive:true});
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&opened&&Date.now()>=explicitCloseReadyAt)close(true)});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&opened)close()});
 
   function boot(){entryChecks=0;pollForEntry()}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
