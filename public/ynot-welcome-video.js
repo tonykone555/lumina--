@@ -1,6 +1,6 @@
 (function(){
-  var PARTS=['/ynot-welcome-v1/part01.b64','/ynot-welcome-v1/part02.b64','/ynot-welcome-v1/part03.b64','/ynot-welcome-v1/part04.b64','/ynot-welcome-v1/part05.b64'];
-  var modal=null,video=null,previousFocus=null,opened=false,shownThisEntry=false,videoUrlPromise=null;
+  var VIDEO_URL='https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/watermark-removed%20(1).mp4';
+  var modal=null,video=null,previousFocus=null,opened=false,shownThisEntry=false;
   var currencyBaselineSet=false,lastCurrencySignature='';
 
   function hasCachedRegion(){
@@ -11,19 +11,7 @@
   }
 
   function loadVideoUrl(){
-    if(videoUrlPromise)return videoUrlPromise;
-    videoUrlPromise=Promise.all(PARTS.map(function(path){
-      return fetch(path+'?v=3',{cache:'force-cache'}).then(function(response){
-        if(!response.ok)throw new Error('YNOT welcome asset failed: '+path);
-        return response.text();
-      });
-    })).then(function(chunks){
-      var raw=atob(chunks.join('').replace(/\s+/g,''));
-      var bytes=new Uint8Array(raw.length);
-      for(var i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
-      return URL.createObjectURL(new Blob([bytes],{type:'video/mp4'}));
-    });
-    return videoUrlPromise;
+    return Promise.resolve(VIDEO_URL);
   }
 
   function build(){
@@ -48,6 +36,8 @@
       </div>';
     document.body.appendChild(modal);
     video=modal.querySelector('.ynot-welcome__video');
+    video.src=VIDEO_URL;
+    video.load();
     modal.querySelectorAll('[data-ynot-welcome-close]').forEach(function(el){el.addEventListener('click',close)});
     video.addEventListener('ended',function(){modal.classList.add('is-ended')});
     return modal;
