@@ -1,6 +1,6 @@
 (function(){
   var VIDEO_URL='https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/watermark-removed%20(1).mp4';
-  var modal=null,video=null,previousFocus=null,opened=false,shownThisEntry=false;
+  var modal=null,video=null,soundButton=null,previousFocus=null,opened=false,shownThisEntry=false;
   var currencyBaselineSet=false,lastCurrencySignature='';
 
   function hasCachedRegion(){
@@ -10,8 +10,34 @@
     }catch(e){return false;}
   }
 
-  function loadVideoUrl(){
-    return Promise.resolve(VIDEO_URL);
+  function updateSoundUI(){
+    if(!soundButton||!video)return;
+    var soundOn=!video.muted;
+    soundButton.classList.toggle('is-on',soundOn);
+    soundButton.setAttribute('aria-pressed',soundOn?'true':'false');
+    soundButton.setAttribute('aria-label',soundOn?'Mute welcome video':'Turn sound on');
+    var label=soundButton.querySelector('span');
+    if(label)label.textContent=soundOn?'Sound on':'Sound';
+  }
+
+  function setSound(on){
+    if(!video)return Promise.resolve(false);
+    video.muted=!on;
+    video.volume=1;
+    updateSoundUI();
+    var playPromise=video.play();
+    if(playPromise&&typeof playPromise.then==='function'){
+      return playPromise.then(function(){updateSoundUI();return true;}).catch(function(){
+        if(on){
+          video.muted=true;
+          updateSoundUI();
+          var mutedPlay=video.play();
+          if(mutedPlay&&typeof mutedPlay.catch==='function')mutedPlay.catch(function(){});
+        }
+        return false;
+      });
+    }
+    return Promise.resolve(true);
   }
 
   function build(){
@@ -27,6 +53,9 @@
       <div class="ynot-welcome__panel">\
         <div class="ynot-welcome__media">\
           <video class="ynot-welcome__video" muted playsinline webkit-playsinline preload="auto"></video>\
+          <button class="ynot-welcome__sound" type="button" aria-label="Turn sound on" aria-pressed="false">\
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3.5 8h3L11 4.5v11L6.5 12h-3z"/><path class="ynot-welcome__sound-wave" d="M13.5 7.2c1.1 1.5 1.1 4.1 0 5.6M15.8 5.5c2.1 2.5 2.1 6.5 0 9"/></svg><span>Sound</span>\
+          </button>\
           <button class="ynot-welcome__close" type="button" aria-label="Close welcome video" data-ynot-welcome-close><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2l12 12M14 2L2 14"/></svg></button>\
           <div class="ynot-welcome__footer">\
             <div class="ynot-welcome__copy"><small>WELCOME TO YNOT</small><strong>Everything you want. One world.</strong></div>\
@@ -36,23 +65,26 @@
       </div>';
     document.body.appendChild(modal);
     video=modal.querySelector('.ynot-welcome__video');
+    soundButton=modal.querySelector('.ynot-welcome__sound');
     video.src=VIDEO_URL;
     video.load();
     modal.querySelectorAll('[data-ynot-welcome-close]').forEach(function(el){el.addEventListener('click',close)});
+    soundButton.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();setSound(video.muted)});
+    video.addEventListener('click',function(){if(video.muted)setSound(true)});
+    video.addEventListener('volumechange',updateSoundUI);
+    video.addEventListener('canplay',function(){if(modal)modal.classList.remove('is-loading')});
     video.addEventListener('ended',function(){modal.classList.add('is-ended')});
+    updateSoundUI();
     return modal;
   }
 
-  function playLoadedVideo(url){
+  function playVideo(preferSound){
     if(!opened||!video)return;
-    if(video.src!==url)video.src=url;
-    video.muted=true;
     try{video.currentTime=0}catch(e){}
-    var p=video.play();
-    if(p&&typeof p.catch==='function')p.catch(function(){});
+    setSound(!!preferSound);
   }
 
-  function show(){
+  function show(preferSound){
     if(opened||shownThisEntry)return;
     build();
     opened=true;
@@ -61,13 +93,7 @@
     document.body.classList.add('ynot-welcome-lock');
     modal.classList.add('is-open','is-loading');
     modal.setAttribute('aria-hidden','false');
-    loadVideoUrl().then(function(url){
-      if(!modal)return;
-      modal.classList.remove('is-loading');
-      playLoadedVideo(url);
-    }).catch(function(){
-      if(modal)modal.classList.remove('is-loading');
-    });
+    playVideo(!!preferSound);
     var closeButton=modal.querySelector('.ynot-welcome__close');
     if(closeButton)setTimeout(function(){try{closeButton.focus({preventScroll:true})}catch(e){closeButton.focus()}},40);
   }
@@ -89,25 +115,22 @@
   }
 
   function showForCachedEntry(){
-    if(hasCachedRegion())setTimeout(show,350);
+    if(hasCachedRegion())setTimeout(function(){show(false)},350);
   }
 
-  window.addEventListener('ynot:region-changed',function(){setTimeout(show,120)});
+  window.addEventListener('ynot:region-changed',function(){show(true)});
   window.addEventListener('ynot:currency-change',function(event){
     var signature=currencySignature(event&&event.detail);
     if(!currencyBaselineSet){
       currencyBaselineSet=true;
       lastCurrencySignature=signature;
-      if(hasCachedRegion())setTimeout(show,120);
       return;
     }
-    if(signature&&signature!==lastCurrencySignature){lastCurrencySignature=signature;setTimeout(show,120);}
+    if(signature&&signature!==lastCurrencySignature){lastCurrencySignature=signature;show(true)}
   });
-  window.addEventListener('ynot:show-welcome-video',show);
+  window.addEventListener('ynot:show-welcome-video',function(){show(false)});
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&opened)close()});
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',showForCachedEntry,{once:true});
   else showForCachedEntry();
-
-  loadVideoUrl().catch(function(){});
 })();
