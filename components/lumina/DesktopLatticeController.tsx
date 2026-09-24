@@ -66,7 +66,7 @@ function applyLattice(){
  const stage=shell.querySelector<HTMLElement>(".lv4-stage");if(!stage)return;
  centerDesktopHome(shell,stage);
  const products=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-product")];
- if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");stage.querySelectorAll(":scope > .ynot-bubble-slot").forEach(node=>node.remove());return}
+ if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");stage.querySelectorAll(":scope > .ynot-bubble-slot").forEach(node=>node.remove());document.querySelector(".ynot-map-zoom")?.remove();return}
  shell.classList.add("ynot-desktop-lattice-active");
  products.forEach((product,index)=>{const {cell,size,x,y}=cellPosition(index),signature=`stable6:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
  renderSlots(stage,products.length+SLOT_BUFFER);
@@ -93,11 +93,17 @@ function stepByRow(direction:1|-1){
  sendZoomTo(zoomForRows(nextRows));
  window.setTimeout(()=>syncZoomControl(),100)
 }
+function bubbleWorldReady(){
+ const shell=document.querySelector<HTMLElement>(".lv4-shell");
+ return Boolean(shell&&!shell.classList.contains("depth-worlds")&&shell.querySelector(".lv4-product"));
+}
+function removeZoomControl(){document.querySelector(".ynot-map-zoom")?.remove()}
 function ensureZoomControl(){
  const shell=document.querySelector<HTMLElement>(".lv4-shell");if(!shell)return null;
+ if(!bubbleWorldReady()){removeZoomControl();return null}
  let control=document.querySelector<HTMLElement>(".ynot-map-zoom");
  if(!control){
-  const style=document.createElement("style");style.id="ynot-map-zoom-style";style.textContent=`.ynot-map-zoom{position:fixed;z-index:84;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;border:1px solid rgba(255,255,255,.22);border-radius:18px;background:rgba(18,18,20,.42);box-shadow:0 12px 38px rgba(0,0,0,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#fff}.ynot-map-zoom button{width:34px;height:34px;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;font:500 20px/1 Inter,sans-serif;cursor:pointer}.ynot-map-zoom button:hover{background:rgba(255,255,255,.16)}.ynot-map-zoom button:disabled{opacity:.28;cursor:default}.ynot-map-zoom span{width:34px;padding:6px 0;text-align:center;font:650 7px/1 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.62)}@media(max-width:899px){.ynot-map-zoom{right:10px;top:48%;border-radius:17px}.ynot-map-zoom button{width:32px;height:32px}.ynot-map-zoom span{width:32px;font-size:6.5px}}.ynot-app-shell.chrome-hidden .ynot-map-zoom{opacity:0;pointer-events:none}`;if(!document.getElementById(style.id))document.head.appendChild(style);
+  const style=document.createElement("style");style.id="ynot-map-zoom-style";style.textContent=`.ynot-map-zoom{position:fixed;z-index:84;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;border:1px solid rgba(255,255,255,.22);border-radius:18px;background:rgba(18,18,20,.42);box-shadow:0 12px 38px rgba(0,0,0,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#fff}.ynot-map-zoom button{width:34px;height:34px;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;font:500 20px/1 Inter,sans-serif;cursor:pointer}.ynot-map-zoom button:hover{background:rgba(255,255,255,.16)}.ynot-map-zoom button:disabled{opacity:.28;cursor:default}.ynot-map-zoom span{width:34px;padding:6px 0;text-align:center;font:650 7px/1 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.62)}@media(max-width:899px){.ynot-map-zoom{right:10px;top:48%;border-radius:17px}.ynot-map-zoom button{width:32px;height:32px}.ynot-map-zoom span{width:32px;font-size:6.5px}}.ynot-app-shell.chrome-hidden .ynot-map-zoom,body.ynot-welcome-lock .ynot-map-zoom{display:none!important;opacity:0!important;pointer-events:none!important}`;if(!document.getElementById(style.id))document.head.appendChild(style);
   control=document.createElement("div");control.className="ynot-map-zoom";control.innerHTML='<button type="button" data-zoom="in" aria-label="Zoom in one row">+</button><span>rows</span><button type="button" data-zoom="out" aria-label="Zoom out one row">−</button>';
   const stop=(event:Event)=>event.stopPropagation();control.addEventListener("pointerdown",stop);control.addEventListener("wheel",stop,{passive:true});
   control.addEventListener("click",event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>("button[data-zoom]");if(!button)return;event.preventDefault();event.stopPropagation();stepByRow(button.dataset.zoom==="in"?1:-1)});
@@ -106,6 +112,7 @@ function ensureZoomControl(){
  syncZoomControl();return control;
 }
 function syncZoomControl(){
+ if(!bubbleWorldReady()){removeZoomControl();return}
  const stage=document.querySelector<HTMLElement>(".lv4-stage"),control=document.querySelector<HTMLElement>(".ynot-map-zoom");if(!stage||!control)return;
  const rows=visibleRows(stageScale(stage)),label=control.querySelector("span"),out=control.querySelector<HTMLButtonElement>('button[data-zoom="out"]'),zoomIn=control.querySelector<HTMLButtonElement>('button[data-zoom="in"]');
  if(label)label.textContent=`${rows} rows`;if(out)out.disabled=rows>=18;if(zoomIn)zoomIn.disabled=rows<=2;
@@ -116,13 +123,13 @@ export default function DesktopLatticeController():null{
   let frame=0,stageObserver:MutationObserver|null=null,shellObserver:MutationObserver|null=null,rebindTimer:number|null=null;
   const schedule=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;applyLattice();ensureZoomControl();syncZoomControl()})};
   const bindStage=()=>{stageObserver?.disconnect();const stage=document.querySelector<HTMLElement>(".lv4-stage");if(!stage)return false;stageObserver=new MutationObserver(mutations=>{if(mutations.some(m=>m.type==="childList"&&[...m.addedNodes,...m.removedNodes].some(node=>node instanceof Element&&(node.matches?.('.lv4-product')||node.querySelector?.('.lv4-product')))))schedule()});stageObserver.observe(stage,{childList:true});return true};
-  const bindShell=()=>{shellObserver?.disconnect();const shell=document.querySelector<HTMLElement>(".lv4-shell");if(!shell)return false;shellObserver=new MutationObserver(()=>syncZoomControl());shellObserver.observe(shell,{attributes:true,attributeFilter:["class"]});return true};
+  const bindShell=()=>{shellObserver?.disconnect();const shell=document.querySelector<HTMLElement>(".lv4-shell");if(!shell)return false;shellObserver=new MutationObserver(()=>{if(shell.classList.contains("depth-worlds"))removeZoomControl();else syncZoomControl()});shellObserver.observe(shell,{attributes:true,attributeFilter:["class"]});return true};
   schedule();bindStage();bindShell();
   const delayed=[80,260].map(ms=>window.setTimeout(()=>{bindStage();bindShell();schedule()},ms));
-  const onResize=()=>schedule(),onSearch=()=>{window.setTimeout(()=>{bindStage();bindShell();schedule()},0)},onFocus=()=>schedule(),onPointer=()=>{schedule();syncZoomControl()};
-  window.addEventListener("resize",onResize,{passive:true});window.addEventListener("shop:tag-search",onSearch as EventListener);window.addEventListener("ynot:world-focus",onFocus as EventListener);window.addEventListener("pointerup",onPointer,{passive:true});
-  rebindTimer=window.setInterval(()=>{if(!document.querySelector(".lv4-stage")){stageObserver?.disconnect();stageObserver=null}else if(!stageObserver)bindStage();if(!document.querySelector(".lv4-shell")){shellObserver?.disconnect();shellObserver=null}else if(!shellObserver)bindShell();ensureZoomControl();syncZoomControl()},2000);
-  return()=>{stageObserver?.disconnect();shellObserver?.disconnect();if(frame)cancelAnimationFrame(frame);delayed.forEach(clearTimeout);if(rebindTimer)clearInterval(rebindTimer);window.removeEventListener("resize",onResize);window.removeEventListener("shop:tag-search",onSearch as EventListener);window.removeEventListener("ynot:world-focus",onFocus as EventListener);window.removeEventListener("pointerup",onPointer);document.querySelector(".ynot-map-zoom")?.remove();document.getElementById("ynot-map-zoom-style")?.remove()}
+  const onResize=()=>schedule(),onSearch=()=>{window.setTimeout(()=>{bindStage();bindShell();schedule()},0)},onFocus=()=>schedule(),onPointer=()=>{if(bubbleWorldReady()){schedule();syncZoomControl()}else removeZoomControl()},onReset=()=>{removeZoomControl();window.setTimeout(schedule,0)};
+  window.addEventListener("resize",onResize,{passive:true});window.addEventListener("shop:tag-search",onSearch as EventListener);window.addEventListener("ynot:world-focus",onFocus as EventListener);window.addEventListener("ynot:world-reset",onReset as EventListener);window.addEventListener("pointerup",onPointer,{passive:true});
+  rebindTimer=window.setInterval(()=>{if(!document.querySelector(".lv4-stage")){stageObserver?.disconnect();stageObserver=null}else if(!stageObserver)bindStage();if(!document.querySelector(".lv4-shell")){shellObserver?.disconnect();shellObserver=null}else if(!shellObserver)bindShell();if(bubbleWorldReady()){ensureZoomControl();syncZoomControl()}else removeZoomControl()},2000);
+  return()=>{stageObserver?.disconnect();shellObserver?.disconnect();if(frame)cancelAnimationFrame(frame);delayed.forEach(clearTimeout);if(rebindTimer)clearInterval(rebindTimer);window.removeEventListener("resize",onResize);window.removeEventListener("shop:tag-search",onSearch as EventListener);window.removeEventListener("ynot:world-focus",onFocus as EventListener);window.removeEventListener("ynot:world-reset",onReset as EventListener);window.removeEventListener("pointerup",onPointer);removeZoomControl();document.getElementById("ynot-map-zoom-style")?.remove()}
  },[]);
  return null;
 }
