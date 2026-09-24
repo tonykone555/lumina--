@@ -1,6 +1,6 @@
 (function(){
   var VIDEO_URL='https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/ScreenRecording_09-24-2026%2014.mov.mp4';
-  var root=null,video=null,observer=null,visible=false,started=false;
+  var root=null,video=null,observer=null,visible=false,started=false,ready=false;
   var desktop=window.matchMedia('(min-width:900px)');
 
   function addStyles(){
@@ -8,12 +8,21 @@
     var style=document.createElement('style');
     style.id='ynot-desktop-home-video-style';
     style.textContent='\
-      #ynot-desktop-home-video{position:fixed;inset:0;z-index:2;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden;background:#000;transition:opacity .38s ease,visibility .38s ease}\
+      #ynot-desktop-home-video{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;opacity:0;visibility:hidden;background:#050606;transition:opacity .38s ease,visibility .38s ease}\
       #ynot-desktop-home-video.is-visible{opacity:1;visibility:visible}\
-      #ynot-desktop-home-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;filter:brightness(.72) saturate(.92)}\
-      #ynot-desktop-home-video:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.20),rgba(0,0,0,.08) 42%,rgba(0,0,0,.24));pointer-events:none}\
+      #ynot-desktop-home-video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center center;display:block;filter:brightness(.72) saturate(.92);background:#050606}\
+      #ynot-desktop-home-video:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.18),rgba(0,0,0,.04) 42%,rgba(0,0,0,.22));pointer-events:none}\
+      body.ynot-desktop-home-video-active{background:#050606!important}\
+      body.ynot-desktop-home-video-active>.ynot-app-shell,\
+      body.ynot-desktop-home-video-active .ynot-app-shell,\
+      body.ynot-desktop-home-video-active .lv4-shell,\
+      body.ynot-desktop-home-video-active .lv4-world{background:transparent!important}\
+      body.ynot-desktop-home-video-active .lv4-scene{opacity:0!important;visibility:hidden!important}\
+      body.ynot-desktop-home-video-active .lv4-shell{isolation:isolate}\
+      body.ynot-desktop-home-video-active .lv4-shell>*{position:relative;z-index:2}\
+      body.ynot-desktop-home-video-active #ynot-desktop-home-video{z-index:0}\
       @media(max-width:899px){#ynot-desktop-home-video{display:none!important}}\
-      @media(prefers-reduced-motion:reduce){#ynot-desktop-home-video{display:none!important}}';
+      @media(prefers-reduced-motion:reduce){#ynot-desktop-home-video{transition:none}}';
     document.head.appendChild(style);
   }
 
@@ -30,7 +39,8 @@
     video.loop=true;
     video.autoplay=true;
     video.playsInline=true;
-    video.preload='metadata';
+    video.preload='auto';
+    video.poster='/ynot-microphone.jpg';
     video.setAttribute('muted','');
     video.setAttribute('loop','');
     video.setAttribute('autoplay','');
@@ -38,6 +48,13 @@
     video.setAttribute('webkit-playsinline','');
     root.appendChild(video);
     document.body.insertBefore(root,document.body.firstChild);
+    ['loadeddata','canplay','playing'].forEach(function(name){
+      video.addEventListener(name,function(){ready=true;if(visible)root.classList.add('is-visible')});
+    });
+    video.addEventListener('error',function(){
+      ready=false;
+      if(root)root.classList.add('is-visible');
+    });
     return root;
   }
 
@@ -57,24 +74,25 @@
     }catch(e){}
   }
 
+  function homepageMounted(){
+    return Boolean(document.querySelector('.ynot-app-shell')&&document.querySelector('.lv4-shell'));
+  }
+
   function setVisible(next){
     visible=Boolean(next)&&desktop.matches&&location.pathname==='/';
     if(!build())return;
-    root.classList.toggle('is-visible',visible);
-    if(visible){started=true;play()}
+    document.body.classList.toggle('ynot-desktop-home-video-active',visible);
+    root.classList.toggle('is-visible',visible&&(ready||Boolean(video&&video.poster)));
+    if(visible){started=true;play();root.classList.add('is-visible')}
     else if(video){try{video.pause()}catch(e){}}
   }
 
-  function homeShellActive(){
-    return Boolean(document.querySelector('.lv4-shell.depth-worlds'));
-  }
-
   function hide(){setVisible(false)}
-  function restore(){started=false;setVisible(homeShellActive())}
+  function restore(){started=false;setVisible(homepageMounted())}
 
-  function syncFromShell(){
+  function syncHomepage(){
     if(!desktop.matches||location.pathname!=='/'){hide();return}
-    if(!homeShellActive()){hide();return}
+    if(!homepageMounted()){if(!started)setVisible(false);return}
     if(!started)setVisible(true);
   }
 
@@ -86,8 +104,8 @@
 
   function boot(){
     build();
-    syncFromShell();
-    observer=new MutationObserver(function(){syncFromShell()});
+    syncHomepage();
+    observer=new MutationObserver(function(){syncHomepage()});
     observer.observe(document.body,{subtree:true,attributes:true,attributeFilter:['class'],childList:true});
     document.addEventListener('pointerdown',onDocumentPointer,true);
     document.addEventListener('submit',hide,true);
@@ -100,9 +118,9 @@
     window.addEventListener('ynot:open-auth',hide);
     window.addEventListener('ynot:open-partner',hide);
     window.addEventListener('ynot:world-reset',restore);
-    desktop.addEventListener('change',function(){if(desktop.matches&&!started)syncFromShell();else if(!desktop.matches)hide()});
+    desktop.addEventListener('change',function(){if(desktop.matches)restore();else hide()});
     document.addEventListener('visibilitychange',function(){if(!document.hidden&&visible)play()});
-    window.addEventListener('pageshow',function(){if(visible)play();else syncFromShell()});
+    window.addEventListener('pageshow',function(){if(desktop.matches&&location.pathname==='/')restore()});
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});
