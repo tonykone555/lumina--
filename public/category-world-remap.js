@@ -10,19 +10,28 @@
     retail:{label:"Digital Products",subtitle:"Software · AI tools · templates · courses",query:"digital products software AI tools templates ebooks courses productivity downloads design assets creator tools subscriptions",tags:["Software","AI Tools","Templates","Ebooks","Courses","Productivity","Design Assets","Business Tools","Digital Downloads","Education","Creator Tools","Subscriptions"]}
   };
   const ORDER=["fashion","tech","fitness","skin","hair","home","jewelry","retail"];
-  let activeKey="";
+  const WORLD_CENTER=100000,FIT=0.78;
+  let activeKey="",fitSignature="";
   const keyOf=bubble=>bubble?.dataset?.ynotCategoryKey||[...(bubble?.classList||[])].find(x=>x.startsWith("cat-"))?.slice(4)||"";
   const runSearch=query=>{const input=document.querySelector(".lv4-search-visible input,.lv4-search input");const button=document.querySelector(".lv4-search-visible button,.lv4-search button");if(!(input instanceof HTMLInputElement)||!(button instanceof HTMLElement))return;const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,"value")?.set;setter?.call(input,query);input.dispatchEvent(new Event("input",{bubbles:true}));input.dispatchEvent(new Event("change",{bubbles:true}));requestAnimationFrame(()=>button.click())};
+  const fitTribe=()=>{
+    const world=document.querySelector('.lv4-world.level-worlds'),stage=world?.querySelector('.lv4-stage');if(!(stage instanceof HTMLElement)){fitSignature="";return}
+    const raw=stage.style.transform||"",match=raw.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)\s*scale\(([\d.]+)\)/);if(!match)return;
+    const tx=Number(match[1]),ty=Number(match[2]),zoom=Number(match[3]);if(!Number.isFinite(tx)||!Number.isFinite(ty)||!Number.isFinite(zoom))return;
+    if(stage.dataset.ynotCategoryFit==='1')return;
+    const nextZoom=zoom*FIT,cx=tx+WORLD_CENTER*zoom,cy=ty+WORLD_CENTER*zoom,nextTx=cx-WORLD_CENTER*nextZoom,nextTy=cy-WORLD_CENTER*nextZoom;
+    stage.style.transform=`translate(${nextTx}px, ${nextTy}px) scale(${nextZoom})`;stage.dataset.ynotCategoryFit='1';fitSignature=stage.style.transform;
+  };
   const ensureJewelry=()=>{
     const world=document.querySelector(".lv4-stage");if(!world)return;
     let jewelry=world.querySelector(".lv4-category-bubble.cat-jewelry");
     if(!jewelry){const source=world.querySelector(".lv4-category-bubble.cat-tech");if(!(source instanceof HTMLButtonElement))return;jewelry=source.cloneNode(true);jewelry.className="lv4-category-bubble cat-jewelry";jewelry.dataset.ynotCategoryKey="jewelry";jewelry.removeAttribute("style");jewelry.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();activeKey="jewelry";runSearch(MAP.jewelry.query)});world.appendChild(jewelry)}
     const bubbles=[...world.querySelectorAll(".lv4-category-bubble")].filter(node=>ORDER.includes(keyOf(node)));
     const byKey=new Map(bubbles.map(node=>[keyOf(node),node]));
-    ORDER.forEach((key,i)=>{const node=byKey.get(key);if(!(node instanceof HTMLElement))return;node.dataset.ynotCategoryKey=key;const a=i/ORDER.length*Math.PI*2-Math.PI/2,x=100000+Math.cos(a)*800,y=100000+Math.sin(a)*800;node.style.left=`${x}px`;node.style.top=`${y}px`;const cfg=MAP[key],b=node.querySelector("b"),s=node.querySelector("span");if(b)b.textContent=cfg.label;if(s)s.textContent=cfg.subtitle});
+    ORDER.forEach((key,i)=>{const node=byKey.get(key);if(!(node instanceof HTMLElement))return;node.dataset.ynotCategoryKey=key;const a=i/ORDER.length*Math.PI*2-Math.PI/2,x=WORLD_CENTER+Math.cos(a)*800,y=WORLD_CENTER+Math.sin(a)*800;node.style.left=`${x}px`;node.style.top=`${y}px`;const cfg=MAP[key],b=node.querySelector("b"),s=node.querySelector("span");if(b)b.textContent=cfg.label;if(s)s.textContent=cfg.subtitle});
   };
-  const apply=()=>{ensureJewelry();const intent=(document.querySelector(".lv4-intent span")?.textContent||"").toLowerCase();for(const [key,cfg] of Object.entries(MAP))if(intent.includes(cfg.label.toLowerCase()))activeKey=key;const cfg=MAP[activeKey];if(!cfg)return;document.querySelectorAll(".lv4-textbubble").forEach((node,i)=>{if(node instanceof HTMLElement)node.textContent=cfg.tags[i%cfg.tags.length]})};
+  const apply=()=>{ensureJewelry();fitTribe();const intent=(document.querySelector(".lv4-intent span")?.textContent||"").toLowerCase();for(const [key,cfg] of Object.entries(MAP))if(intent.includes(cfg.label.toLowerCase()))activeKey=key;const cfg=MAP[activeKey];if(!cfg)return;document.querySelectorAll(".lv4-textbubble").forEach((node,i)=>{if(node instanceof HTMLElement)node.textContent=cfg.tags[i%cfg.tags.length]})};
   document.addEventListener("click",event=>{const target=event.target instanceof Element?event.target:null;if(!target)return;const category=target.closest(".lv4-category-bubble");if(category&&!category.classList.contains("cat-jewelry")){activeKey=keyOf(category);setTimeout(apply,50)}},false);
-  const observer=new MutationObserver(()=>{if(document.querySelector(".lv4-category-bubble")&&!document.querySelector(".lv4-category-bubble.cat-jewelry"))requestAnimationFrame(apply)});observer.observe(document.documentElement,{childList:true,subtree:true});
-  apply();
+  const observer=new MutationObserver(()=>{const stage=document.querySelector('.lv4-world.level-worlds .lv4-stage');if(stage instanceof HTMLElement&&stage.dataset.ynotCategoryFit!=='1')requestAnimationFrame(apply);else if(document.querySelector(".lv4-category-bubble")&&!document.querySelector(".lv4-category-bubble.cat-jewelry"))requestAnimationFrame(apply)});observer.observe(document.documentElement,{childList:true,subtree:true});
+  apply();setTimeout(apply,120);setTimeout(apply,500);
 })();
