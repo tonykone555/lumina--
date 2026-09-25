@@ -1,45 +1,35 @@
 /* Final mobile category + light-default visual lock. Loaded last. */
 @media (max-width:760px){
-  /* Make the category pills themselves visibly larger, not just their type. */
-  .ynot-drawer.open .ynot-dock button,
-  .taxonomy-rail button,
-  .ynot-taxonomy-rail button,
-  .subcategory-nav button,
-  .ynot-subcategory-nav button,
-  [class*="taxonomy"] button,
-  [class*="subcategory"] button{
-    min-height:52px!important;
-    height:52px!important;
-    padding:0 22px!important;
-    border-radius:999px!important;
-    font-size:16px!important;
-    line-height:1!important;
-    font-weight:800!important;
-    letter-spacing:-.015em!important;
-  }
+  /* IMPORTANT: bottom category/tag pills keep their original sizing.
+     Do not resize .ynot-dock/taxonomy/subcategory buttons here. */
 
-  /* Main category bubbles in the world: enlarge the actual orb and its label. */
+  /* Main WORLD category bubbles only — make the circles and their labels clearly larger. */
   .lv4-category-bubble,
   [class*="category-bubble"]{
-    min-width:132px!important;
-    min-height:132px!important;
-    width:132px!important;
-    height:132px!important;
+    min-width:156px!important;
+    min-height:156px!important;
+    width:156px!important;
+    height:156px!important;
   }
-  .lv4-category-bubble,
   .lv4-category-bubble button,
+  [class*="category-bubble"] button{
+    width:100%!important;
+    height:100%!important;
+    min-width:100%!important;
+    min-height:100%!important;
+  }
   .lv4-category-bubble span,
   .lv4-category-bubble b,
   .lv4-category-bubble strong,
-  [class*="category-bubble"],
-  [class*="category-bubble"] button,
+  .lv4-category-bubble label,
   [class*="category-bubble"] span,
   [class*="category-bubble"] b,
-  [class*="category-bubble"] strong{
-    font-size:17px!important;
-    line-height:1.12!important;
+  [class*="category-bubble"] strong,
+  [class*="category-bubble"] label{
+    font-size:19px!important;
+    line-height:1.08!important;
     font-weight:800!important;
-    letter-spacing:-.018em!important;
+    letter-spacing:-.02em!important;
   }
 
   /* Search/browser blend. */
