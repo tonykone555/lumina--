@@ -17,6 +17,39 @@ html[data-ynot-theme="light"] .ynot-source-trigger-clean{border-radius:14px!impo
 .ynot-bottom-search:before,.ynot-bottom-search:after{border:0!important;box-shadow:none!important}
 .ynot-bottom-search{outline:0!important}
 
+/* Product bubble metadata is contextual, but must always render over neighbouring bubbles. */
+.lv4-product{position:relative}
+.lv4-product:hover,.lv4-product:focus,.lv4-product:focus-within,.lv4-product.is-focused,.lv4-product.is-active{z-index:120!important}
+.lv4-product .lv4-product-tooltip{
+  z-index:130!important;
+  pointer-events:none!important;
+  isolation:isolate!important;
+}
+@media (hover:hover) and (pointer:fine){
+  .lv4-product .lv4-product-tooltip{opacity:0!important;visibility:hidden!important;transform:translateY(4px) scale(.98)!important;transition:opacity .16s ease,transform .16s ease,visibility .16s ease!important}
+  .lv4-product:hover .lv4-product-tooltip,.lv4-product:focus-within .lv4-product-tooltip{opacity:1!important;visibility:visible!important;transform:translateY(0) scale(1)!important}
+}
+@media (hover:none),(pointer:coarse){
+  .lv4-product .lv4-product-tooltip{opacity:0!important;visibility:hidden!important}
+  .lv4-product:focus .lv4-product-tooltip,.lv4-product:focus-within .lv4-product-tooltip,.lv4-product.is-focused .lv4-product-tooltip,.lv4-product.is-active .lv4-product-tooltip{opacity:1!important;visibility:visible!important}
+}
+html[data-ynot-theme="light"] .lv4-product .lv4-product-tooltip{background:rgba(247,247,244,.90)!important;border-color:rgba(45,47,48,.18)!important;color:#222426!important;box-shadow:0 10px 28px rgba(35,37,38,.16)!important}
+html[data-ynot-theme="light"] .lv4-product .lv4-product-tooltip b{color:#202224!important}
+html[data-ynot-theme="light"] .lv4-product .lv4-product-tooltip small{color:#66696b!important;opacity:1!important}
+
+/* Suggestions stay readable without competing with their already-dark title. */
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest"] p,
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest"] span,
+html[data-ynot-theme="light"] [class*="suggestion"] p,
+html[data-ynot-theme="light"] [class*="suggestion"] span{
+  color:#74777a!important;
+  opacity:1!important;
+}
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest"] strong,
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest"] b,
+html[data-ynot-theme="light"] [class*="suggestion"] strong,
+html[data-ynot-theme="light"] [class*="suggestion"] b{color:#222426!important;opacity:1!important}
+
 /* YNOT Deals desktop: header controls remain available while the product feed scrolls. */
 @media(min-width:900px){
   .ynot-drawer .ynot-head{
