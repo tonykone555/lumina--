@@ -1,4 +1,4 @@
-/* Mobile search/browser-chrome blend. Subtle lower navigation haze, strongest in light mode. */
+/* Mobile search/browser-chrome blend. The page may be light, but mobile browser chrome is naturally black. */
 @media (max-width:760px){
   .ynot-search,
   .world-search,
@@ -14,18 +14,18 @@
     content:"";
     position:absolute;
     z-index:-1;
-    left:-18px;
-    right:-18px;
-    top:-10px;
-    bottom:-22px;
-    border-radius:32px;
+    left:-24px;
+    right:-24px;
+    top:-8px;
+    bottom:-42px;
+    border-radius:34px;
     pointer-events:none;
-    background:linear-gradient(to bottom,rgba(10,10,10,0),rgba(10,10,10,.16));
-    filter:blur(15px);
-    opacity:.72;
+    background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.18) 34%,rgba(0,0,0,.64) 72%,rgba(0,0,0,.94) 100%);
+    filter:blur(17px);
+    opacity:.9;
   }
 
-  /* YNOT light mode: pale browser-toolbar-like fade rather than a dark floating-card shadow. */
+  /* Light YNOT still transitions into Safari's black lower navigation chrome. */
   html.ynot-light .ynot-search::after,
   body.ynot-light .ynot-search::after,
   .ynot-light .ynot-search::after,
@@ -34,19 +34,26 @@
   html.ynot-light .world-search::after,
   body.ynot-light .world-search::after,
   .ynot-light .world-search::after,
+  html[data-theme="light"] .world-search::after,
+  body[data-theme="light"] .world-search::after,
   html.ynot-light .search-pill::after,
   body.ynot-light .search-pill::after,
-  .ynot-light .search-pill::after{
-    background:linear-gradient(to bottom,rgba(248,247,243,0),rgba(236,234,228,.72) 58%,rgba(226,224,218,.92));
-    filter:blur(17px);
-    opacity:.94;
+  .ynot-light .search-pill::after,
+  html[data-theme="light"] .search-pill::after,
+  body[data-theme="light"] .search-pill::after{
+    background:linear-gradient(to bottom,rgba(0,0,0,0) 0%,rgba(0,0,0,.14) 28%,rgba(0,0,0,.58) 68%,rgba(0,0,0,.96) 100%);
+    filter:blur(18px);
+    opacity:1;
   }
 
   html.ynot-light .ynot-search,
   body.ynot-light .ynot-search,
   .ynot-light .ynot-search,
   html[data-theme="light"] .ynot-search,
-  body[data-theme="light"] .ynot-search{
-    box-shadow:0 8px 18px rgba(80,76,68,.08),0 18px 38px rgba(80,76,68,.10)!important;
+  body[data-theme="light"] .ynot-search,
+  html.ynot-light .world-search,
+  body.ynot-light .world-search,
+  .ynot-light .world-search{
+    box-shadow:0 9px 18px rgba(0,0,0,.12),0 24px 42px rgba(0,0,0,.30)!important;
   }
 }
