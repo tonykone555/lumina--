@@ -40,7 +40,7 @@
   text-shadow:none!important;
 }
 
-/* Price is metadata too: never let the global white-card rule wash it out. */
+/* Base metadata price. */
 .ynot-drawer [class*="similar" i] [class*="price" i],
 .ynot-drawer [class*="suggest" i] [class*="price" i],
 .lv4-detail [class*="similar" i] [class*="price" i],
@@ -51,6 +51,29 @@
   visibility:visible!important;
   font-weight:700!important;
   text-shadow:none!important;
+}
+
+/* LIGHT MODE: price is intentionally BLACK, while description/suggestion copy remains grey. */
+html.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
+body.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
+.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
+html.ynot-light .ynot-drawer [class*="suggest" i] [class*="price" i],
+body.ynot-light .ynot-drawer [class*="suggest" i] [class*="price" i],
+.ynot-light .ynot-drawer [class*="suggest" i] [class*="price" i],
+html[data-theme="light"] .ynot-drawer [class*="similar" i] [class*="price" i],
+body[data-theme="light"] .ynot-drawer [class*="similar" i] [class*="price" i],
+html.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
+body.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
+.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
+html.ynot-light .lv4-detail [class*="suggest" i] [class*="price" i],
+body.ynot-light .lv4-detail [class*="suggest" i] [class*="price" i],
+.ynot-light .lv4-detail [class*="suggest" i] [class*="price" i],
+html[data-theme="light"] .lv4-detail [class*="similar" i] [class*="price" i],
+body[data-theme="light"] .lv4-detail [class*="similar" i] [class*="price" i] {
+  color:#111!important;
+  -webkit-text-fill-color:#111!important;
+  opacity:1!important;
+  font-weight:750!important;
 }
 
 @media(max-width:899px){
