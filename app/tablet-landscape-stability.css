@@ -1,70 +1,57 @@
-/* YNOT narrow-desktop / tablet composition.
-   The old 900px lower bound left resized desktop windows falling into phone rules.
-   Keep true phones <=700px untouched, and use a uniformly scaled desktop composition
-   from 701px through 1180px. */
-@media (min-width:701px) and (max-width:1180px) {
-  .ynot-reference-header{padding-left:14px!important;padding-right:14px!important}
-  .ynot-reference-left{left:14px!important}
+/* Tablet landscape safety pass.
+   IMPORTANT: do not override the existing phone/narrow-desktop breakpoint system here.
+   The previous 701px rule collided with existing responsive rules and displaced the header.
+   Keep this file intentionally scoped only to genuine landscape tablets. */
 
+@media (min-width:900px) and (max-width:1180px) and (orientation:landscape) {
+  /* Keep the existing desktop header geometry. Only prevent viewport-edge clipping. */
+  .ynot-reference-header{
+    max-width:100vw!important;
+    box-sizing:border-box!important;
+  }
+
+  .ynot-reference-left{left:12px!important}
+  .ynot-reference-right{right:12px!important}
+
+  /* Preserve the app's own desktop centering instead of introducing nested transforms. */
   .ynot-reference-center{
-    left:50%!important;width:620px!important;max-width:none!important;
-    transform:translateX(-50%) scale(.82)!important;transform-origin:top center!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    max-width:calc(100vw - 190px)!important;
   }
-  .ynot-reference-topline{width:100%!important;min-width:0!important;gap:10px!important}
-  .ynot-reference-header .ynot-top-mode{
-    width:430px!important;min-width:430px!important;height:auto!important;padding:inherit!important;flex:0 0 430px!important;
-  }
-  .ynot-reference-header .ynot-top-mode button{min-width:0!important;height:auto!important;font-size:inherit!important;white-space:nowrap!important}
-  .ynot-reference-nav-tools{flex:0 0 auto!important;gap:8px!important}
-  .ynot-reference-nav-tools button{width:52px!important;min-width:52px!important;height:52px!important;flex:0 0 52px!important;border-radius:inherit!important}
 
   .ynot-reference-header .ynot-world-controls{
-    width:470px!important;min-width:470px!important;left:50%!important;right:auto!important;transform:translateX(-50%)!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    max-width:calc(100vw - 250px)!important;
   }
-  .ynot-reference-header .ynot-world-row{width:100%!important;min-width:0!important;height:auto!important;padding:inherit!important}
-  .ynot-reference-header .ynot-world-row button{height:auto!important;font-size:inherit!important}
-  .ynot-reference-header .ynot-view-source{left:50%!important;right:auto!important;transform:translateX(-50%)!important;white-space:nowrap!important}
 
-  .ynot-reference-brand,.ynot-reference-right{transform:scale(.82)!important}
-  .ynot-reference-brand{transform-origin:left top!important}
-  .ynot-reference-right{right:14px!important;transform-origin:right top!important}
+  .ynot-reference-header .ynot-view-source{
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+  }
 
-  .ynot-compass-tools,.ynot-desktop-side-controls{right:10px!important}
-  .ynot-compass-tools button,.ynot-desktop-side-controls button{transform:scale(.84)!important;transform-origin:center!important}
-
+  /* Category rail keeps its normal desktop sizing and scrolls only if space runs out. */
   .subcategory-nav,.ynot-subcategory-nav,.taxonomy-rail,.ynot-taxonomy-rail{
-    width:max-content!important;max-width:none!important;left:50%!important;right:auto!important;
-    transform:translateX(-50%) scale(.82)!important;transform-origin:bottom center!important;
-    overflow:visible!important;flex-wrap:nowrap!important;
+    max-width:100vw!important;
+    box-sizing:border-box!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    flex-wrap:nowrap!important;
+    scrollbar-width:none!important;
+    -webkit-overflow-scrolling:touch!important;
   }
+  .subcategory-nav::-webkit-scrollbar,.ynot-subcategory-nav::-webkit-scrollbar,
+  .taxonomy-rail::-webkit-scrollbar,.ynot-taxonomy-rail::-webkit-scrollbar{display:none!important}
   .subcategory-nav button,.ynot-subcategory-nav button,.taxonomy-rail button,.ynot-taxonomy-rail button{
-    flex:0 0 auto!important;width:auto!important;min-width:max-content!important;white-space:nowrap!important;
+    flex:0 0 auto!important;
+    white-space:nowrap!important;
   }
 
-  .ynot-bottom-search{max-width:none!important;transform:translateX(-50%) scale(.84)!important;transform-origin:bottom center!important}
-
-  .ynot-earn-nav,.ynot-earn-button,[data-ynot-earn]{
-    aspect-ratio:1!important;width:52px!important;height:52px!important;min-width:52px!important;padding:0!important;border-radius:50%!important;
-    display:grid!important;place-items:center!important;border:1px solid rgba(255,255,255,.24)!important;
-    background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.025))!important;
-    box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 22px rgba(0,0,0,.22)!important;
-    backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;
+  .ynot-bottom-search{
+    max-width:min(620px,72vw)!important;
   }
-}
-
-/* Extra compression is applied to the composition, never to individual pills. */
-@media (min-width:701px) and (max-width:899px) {
-  .ynot-reference-center{transform:translateX(-50%) scale(.70)!important}
-  .ynot-reference-brand,.ynot-reference-right{transform:scale(.70)!important}
-  .subcategory-nav,.ynot-subcategory-nav,.taxonomy-rail,.ynot-taxonomy-rail{transform:translateX(-50%) scale(.70)!important}
-  .ynot-bottom-search{transform:translateX(-50%) scale(.74)!important}
-  .ynot-compass-tools button,.ynot-desktop-side-controls button{transform:scale(.74)!important}
-
-  /* Undo phone-only hero typography/geometry when a desktop window is merely narrow. */
-  .lv4-shell .ynot-entry-title,.lv4-shell .entry-title,.lv4-shell .world-title{font-size:clamp(34px,5vw,54px)!important;line-height:1!important}
-}
-
-@media (min-width:701px) and (max-width:1180px) and (max-height:820px){
-  .ynot-reference-header .ynot-world-controls{top:76px!important}
-  .ynot-reference-header .ynot-view-source{margin-top:2px!important}
 }
