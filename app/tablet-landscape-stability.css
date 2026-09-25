@@ -1,57 +1,107 @@
-/* Tablet landscape safety pass.
-   IMPORTANT: do not override the existing phone/narrow-desktop breakpoint system here.
-   The previous 701px rule collided with existing responsive rules and displaced the header.
-   Keep this file intentionally scoped only to genuine landscape tablets. */
+/* Intermediate-width YNOT layout.
+   Full desktop keeps its existing composition. Phones keep the existing mobile lock.
+   At tablet / narrow-window widths we intentionally switch to the SAME visual hierarchy
+   as mobile instead of squeezing the desktop header. */
 
-@media (min-width:900px) and (max-width:1180px) and (orientation:landscape) {
-  /* Keep the existing desktop header geometry. Only prevent viewport-edge clipping. */
+@media (min-width:600px) and (max-width:1180px){
   .ynot-reference-header{
-    max-width:100vw!important;
-    box-sizing:border-box!important;
+    position:fixed!important;inset:0 0 auto 0!important;width:100vw!important;height:190px!important;
+    padding:0!important;margin:0!important;background:transparent!important;border:0!important;
+    box-shadow:none!important;overflow:visible!important;z-index:700!important;pointer-events:none!important;
+  }
+  .ynot-reference-header button,.ynot-reference-header .ynot-view-source{pointer-events:auto!important}
+
+  /* Mobile-style identity: logo left, compact controls right. */
+  .ynot-reference-left{display:none!important}
+  .ynot-reference-right{
+    display:block!important;position:absolute!important;left:20px!important;right:auto!important;top:18px!important;
+    width:58px!important;height:58px!important;margin:0!important;padding:0!important;transform:none!important;z-index:12!important;
+  }
+  .ynot-reference-notify,.ynot-reference-signin,.ynot-packages-button{display:none!important}
+  .ynot-reference-avatar{
+    display:grid!important;place-items:center!important;width:58px!important;height:58px!important;min-width:58px!important;min-height:58px!important;
+    padding:0!important;border-radius:50%!important;overflow:hidden!important;
+  }
+  .ynot-reference-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:50%!important}
+
+  .ynot-reference-center{display:block!important;position:static!important;width:auto!important;max-width:none!important;transform:none!important}
+  .ynot-reference-topline{display:block!important;position:static!important;width:auto!important;height:auto!important;margin:0!important;padding:0!important}
+
+  /* Same hierarchy as mobile reference: top pill is compact. */
+  .ynot-top-mode{
+    position:absolute!important;left:50%!important;top:16px!important;transform:translateX(-50%)!important;
+    width:300px!important;height:58px!important;min-width:0!important;padding:5px!important;margin:0!important;
+    display:grid!important;grid-template-columns:1fr 1fr!important;align-items:stretch!important;
+    border-radius:999px!important;overflow:hidden!important;pointer-events:auto!important;z-index:10!important;
+  }
+  .ynot-top-mode button{
+    display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;
+    min-width:0!important;margin:0!important;padding:0!important;border-radius:999px!important;font-size:16px!important;line-height:1!important;
+    letter-spacing:.10em!important;white-space:nowrap!important;
   }
 
-  .ynot-reference-left{left:12px!important}
-  .ynot-reference-right{right:12px!important}
-
-  /* Preserve the app's own desktop centering instead of introducing nested transforms. */
-  .ynot-reference-center{
-    left:50%!important;
-    right:auto!important;
-    transform:translateX(-50%)!important;
-    max-width:calc(100vw - 190px)!important;
+  .ynot-reference-nav-tools{
+    display:flex!important;position:absolute!important;top:16px!important;right:18px!important;left:auto!important;
+    width:auto!important;height:58px!important;gap:10px!important;z-index:12!important;pointer-events:auto!important;
   }
+  .ynot-reference-nav-tools button{
+    display:grid!important;place-items:center!important;width:58px!important;height:58px!important;min-width:58px!important;min-height:58px!important;
+    padding:0!important;margin:0!important;border-radius:20px!important;transform:none!important;
+  }
+  .ynot-reference-nav-tools svg{width:23px!important;height:23px!important}
 
+  /* Large centered WORLD / YNOT pill exactly like the mobile composition. */
   .ynot-reference-header .ynot-world-controls{
-    left:50%!important;
-    right:auto!important;
-    transform:translateX(-50%)!important;
-    max-width:calc(100vw - 250px)!important;
+    display:grid!important;grid-template-rows:74px 34px!important;gap:8px!important;justify-items:center!important;
+    position:absolute!important;left:50%!important;right:auto!important;top:92px!important;transform:translateX(-50%)!important;
+    width:600px!important;max-width:58vw!important;min-width:430px!important;height:auto!important;margin:0!important;padding:0!important;z-index:9!important;
   }
-
+  .ynot-reference-header .ynot-world-row{
+    display:grid!important;grid-template-columns:1fr 1fr!important;align-items:stretch!important;
+    width:100%!important;height:74px!important;min-width:0!important;margin:0!important;padding:6px!important;border-radius:999px!important;
+  }
+  .ynot-reference-header .ynot-world-row button{
+    display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;height:100%!important;
+    min-width:0!important;margin:0!important;padding:0!important;border-radius:999px!important;font-size:16px!important;letter-spacing:.12em!important;
+  }
   .ynot-reference-header .ynot-view-source{
-    left:50%!important;
-    right:auto!important;
-    transform:translateX(-50%)!important;
+    position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;
+    left:auto!important;right:auto!important;width:100%!important;height:34px!important;margin:0!important;padding:0!important;transform:none!important;
+  }
+  .ynot-reference-header .ynot-source-trigger-clean{
+    display:flex!important;align-items:center!important;justify-content:center!important;height:32px!important;padding:0 8px!important;
+    font-size:15px!important;gap:8px!important;white-space:nowrap!important;
   }
 
-  /* Category rail keeps its normal desktop sizing and scrolls only if space runs out. */
+  /* Do not let old desktop side-control transforms distort icons in this state. */
+  .ynot-compass-tools button,.ynot-desktop-side-controls button{transform:none!important}
+
+  /* Mobile-style category rail: proportional pills, one line, horizontal overflow. */
   .subcategory-nav,.ynot-subcategory-nav,.taxonomy-rail,.ynot-taxonomy-rail{
-    max-width:100vw!important;
-    box-sizing:border-box!important;
-    overflow-x:auto!important;
-    overflow-y:hidden!important;
-    flex-wrap:nowrap!important;
-    scrollbar-width:none!important;
-    -webkit-overflow-scrolling:touch!important;
+    left:0!important;right:0!important;width:100vw!important;max-width:100vw!important;transform:none!important;
+    display:flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:10px!important;
+    padding-left:18px!important;padding-right:18px!important;box-sizing:border-box!important;
+    overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;
   }
-  .subcategory-nav::-webkit-scrollbar,.ynot-subcategory-nav::-webkit-scrollbar,
-  .taxonomy-rail::-webkit-scrollbar,.ynot-taxonomy-rail::-webkit-scrollbar{display:none!important}
+  .subcategory-nav::-webkit-scrollbar,.ynot-subcategory-nav::-webkit-scrollbar,.taxonomy-rail::-webkit-scrollbar,.ynot-taxonomy-rail::-webkit-scrollbar{display:none!important}
   .subcategory-nav button,.ynot-subcategory-nav button,.taxonomy-rail button,.ynot-taxonomy-rail button{
-    flex:0 0 auto!important;
-    white-space:nowrap!important;
+    flex:0 0 auto!important;width:auto!important;min-width:max-content!important;height:54px!important;
+    padding:0 24px!important;font-size:15px!important;white-space:nowrap!important;border-radius:999px!important;
   }
 
   .ynot-bottom-search{
-    max-width:min(620px,72vw)!important;
+    left:50%!important;right:auto!important;transform:translateX(-50%)!important;
+    width:min(640px,68vw)!important;max-width:640px!important;height:58px!important;
   }
+  .ynot-bottom-search input{font-size:17px!important}
+}
+
+/* As the window gets close to phone width, tighten the same mobile composition rather than reverting to desktop. */
+@media (min-width:600px) and (max-width:820px){
+  .ynot-top-mode{width:250px!important;height:52px!important}
+  .ynot-reference-nav-tools{height:52px!important}.ynot-reference-nav-tools button{width:52px!important;height:52px!important;min-width:52px!important;min-height:52px!important}
+  .ynot-reference-header .ynot-world-controls{top:82px!important;width:72vw!important;max-width:72vw!important;min-width:0!important;grid-template-rows:64px 30px!important}
+  .ynot-reference-header .ynot-world-row{height:64px!important}
+  .ynot-bottom-search{width:72vw!important}
+  .subcategory-nav button,.ynot-subcategory-nav button,.taxonomy-rail button,.ynot-taxonomy-rail button{height:48px!important;padding:0 19px!important;font-size:13px!important}
 }
