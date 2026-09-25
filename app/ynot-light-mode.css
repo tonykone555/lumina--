@@ -8,6 +8,12 @@ html[data-ynot-theme="light"] .lv4-product,html[data-ynot-theme="light"] .ynot-b
 html[data-ynot-theme="light"] .taxonomy-rail button,html[data-ynot-theme="light"] .ynot-taxonomy-rail button,html[data-ynot-theme="light"] .subcategory-nav button,html[data-ynot-theme="light"] .ynot-subcategory-nav button{background:rgba(255,255,255,.78)!important;border-color:rgba(35,37,38,.16)!important;color:#171819!important;box-shadow:inset 0 1px rgba(255,255,255,.94),0 7px 20px rgba(35,37,38,.07)!important;text-shadow:none!important}
 html[data-ynot-theme="light"] .lv4-detail,html[data-ynot-theme="light"] .ynot-selected,html[data-ynot-theme="light"] .ynot-unified-bag,html[data-ynot-theme="light"] .ynot-cart{background:rgba(249,249,246,.90)!important;border-color:rgba(35,37,38,.15)!important;color:#171819!important;box-shadow:0 24px 70px rgba(35,37,38,.16)!important}html[data-ynot-theme="light"] .lv4-detail button:not(.lv4-primary),html[data-ynot-theme="light"] .ynot-selected button{border-color:rgba(35,37,38,.14)}
 
+/* Homepage: light mode should tint the existing moving video, not replace it. */
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active{background:#e9e9e5!important}
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .ynot-app-shell,html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .lv4-shell,html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .lv4-world,html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .lv4-stage{background:transparent!important}
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active #ynot-desktop-home-video video{filter:brightness(.94) saturate(.91) contrast(.96)!important}
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active #ynot-desktop-home-video:after{background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,.055) 45%,rgba(247,247,243,.12))!important}
+
 /* YNOT Deals follows the selected appearance. Keep product imagery untouched and make all copy readable. */
 html[data-ynot-theme="light"] .ynot-backdrop{background:rgba(225,225,221,.22)!important}
 html[data-ynot-theme="light"] .ynot-drawer{background:linear-gradient(180deg,rgba(255,255,253,.96) 0%,rgba(243,243,239,.94) 62%,rgba(235,235,231,.90) 100%)!important;border-color:rgba(35,37,38,.16)!important;color:#171819!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.98),0 28px 80px rgba(35,37,38,.15)!important}
