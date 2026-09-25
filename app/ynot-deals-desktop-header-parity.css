@@ -1,24 +1,78 @@
-/* Desktop YNOT Deals header parity — final header stack: YNOT above tags, translucent search below. */
+/* FINAL YNOT Deals desktop canopy.
+   These selectors intentionally include html.ynot-deal-open so they outrank the older
+   high-specificity canopy rules in ynot-requested-ui-fixes.css. */
 @media (min-width:900px){
-  .ynot-drawer.open{position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;transform:none!important;scale:none!important;zoom:1!important;overflow:hidden!important}
-  .ynot-drawer.open .ynot-head{position:fixed!important;inset:0 0 auto 0!important;width:100vw!important;max-width:none!important;height:48px!important;min-height:48px!important;padding:0!important;margin:0!important;display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:center!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;transform:none!important;pointer-events:none!important;z-index:2147483600!important}
-  .ynot-drawer.open .ynot-head:before,.ynot-drawer.open .ynot-head:after{content:none!important;display:none!important}
-  .ynot-drawer.open .ynot-head h2{position:static!important;grid-column:2!important;justify-self:center!important;align-self:center!important;transform:none!important;translate:none!important;left:auto!important;right:auto!important;top:auto!important;width:max-content!important;max-width:none!important;margin:0!important;padding:0!important;text-align:center!important;color:#fff!important;-webkit-text-fill-color:#fff!important;z-index:2147483645!important;pointer-events:none!important}
-  .ynot-drawer.open .ynot-head-actions{position:fixed!important;top:10px!important;right:14px!important;left:auto!important;transform:none!important;z-index:2147483646!important;pointer-events:auto!important}
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open{
+    position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;
+    transform:none!important;scale:none!important;zoom:1!important;overflow:hidden!important;
+  }
 
-  /* Tags sit directly below the centered YNOT wordmark. */
-  .ynot-drawer.open .ynot-dock{position:fixed!important;top:46px!important;left:0!important;right:0!important;width:100vw!important;max-width:none!important;min-width:0!important;height:auto!important;transform:none!important;translate:none!important;margin:0!important;padding:2px 100px 7px!important;box-sizing:border-box!important;display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;justify-content:center!important;align-items:center!important;gap:7px!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;z-index:2147483590!important;pointer-events:auto!important}
-  .ynot-drawer.open .ynot-dock::-webkit-scrollbar{display:none!important}
-  .ynot-drawer.open .ynot-dock>*,.ynot-drawer.open .ynot-tags,.ynot-drawer.open .ynot-categories{margin-left:0!important;margin-right:0!important;transform:none!important}
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head{
+    position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:auto!important;
+    width:100vw!important;height:46px!important;min-height:46px!important;margin:0!important;padding:0!important;
+    display:grid!important;grid-template-columns:1fr auto 1fr!important;align-items:center!important;
+    background:transparent!important;background-color:transparent!important;background-image:none!important;
+    border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+    transform:none!important;pointer-events:none!important;z-index:2147483600!important;
+  }
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::before,
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::after{content:none!important;display:none!important}
 
-  /* Search remains centered below tags, but is now a true translucent glass surface. */
-  .ynot-drawer.open .ynot-search{position:fixed!important;top:88px!important;left:0!important;right:0!important;width:min(760px,calc(100vw - 220px))!important;max-width:760px!important;min-width:0!important;transform:none!important;translate:none!important;margin:0 auto!important;z-index:2147483580!important;background:rgba(245,245,242,.42)!important;background-image:none!important;border:1px solid rgba(255,255,255,.42)!important;box-shadow:0 8px 24px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.45)!important;backdrop-filter:blur(12px) saturate(125%)!important;-webkit-backdrop-filter:blur(12px) saturate(125%)!important;pointer-events:auto!important}
-  .ynot-drawer.open .ynot-workspace{position:absolute!important;inset:0!important;width:100vw!important;height:100%!important;min-height:0!important;padding:0!important;margin:0!important;transform:none!important;overflow:hidden!important}
-  .ynot-drawer.open .ynot-body{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;padding-top:0!important;overflow-y:auto!important;overflow-x:hidden!important}
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head h2{
+    position:static!important;grid-column:2!important;justify-self:center!important;align-self:center!important;
+    left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;transform:none!important;translate:none!important;
+    width:max-content!important;margin:0!important;padding:0!important;text-align:center!important;
+    color:#fff!important;-webkit-text-fill-color:#fff!important;z-index:2147483645!important;pointer-events:none!important;
+  }
+
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head-actions{
+    position:fixed!important;top:10px!important;right:14px!important;left:auto!important;transform:none!important;
+    z-index:2147483646!important;pointer-events:auto!important;
+  }
+
+  /* Centered category rail directly under YNOT. */
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock{
+    position:fixed!important;top:44px!important;left:0!important;right:0!important;bottom:auto!important;
+    width:100vw!important;max-width:none!important;min-width:0!important;height:auto!important;
+    margin:0!important;padding:2px 100px 7px!important;box-sizing:border-box!important;
+    display:flex!important;flex-flow:row nowrap!important;justify-content:center!important;align-items:center!important;gap:7px!important;
+    transform:none!important;translate:none!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;
+    background:transparent!important;background-color:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;z-index:2147483590!important;pointer-events:auto!important;
+  }
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::-webkit-scrollbar{display:none!important}
+
+  /* Glass search: the outer search AND its common inner shell get a visible translucent surface. */
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
+    position:fixed!important;top:86px!important;left:0!important;right:0!important;bottom:auto!important;
+    width:min(760px,calc(100vw - 220px))!important;max-width:760px!important;min-width:0!important;
+    margin:0 auto!important;padding:0!important;transform:none!important;translate:none!important;
+    background:rgba(238,238,235,.62)!important;background-color:rgba(238,238,235,.62)!important;background-image:none!important;
+    border:1px solid rgba(255,255,255,.48)!important;border-radius:999px!important;
+    box-shadow:0 10px 30px rgba(0,0,0,.13),inset 0 1px 0 rgba(255,255,255,.58)!important;
+    backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important;
+    z-index:2147483580!important;pointer-events:auto!important;opacity:1!important;
+  }
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search>form,
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search>[class*="search" i]{
+    background:rgba(238,238,235,.38)!important;background-color:rgba(238,238,235,.38)!important;
+    border-radius:inherit!important;backdrop-filter:blur(12px)!important;-webkit-backdrop-filter:blur(12px)!important;
+  }
+
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace{
+    position:absolute!important;inset:0!important;width:100vw!important;height:100%!important;min-height:0!important;
+    margin:0!important;padding:0!important;transform:none!important;overflow:hidden!important;
+  }
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body{
+    position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;
+    padding-top:0!important;overflow-y:auto!important;overflow-x:hidden!important;
+  }
+
+  /* Light mode uses the same glass geometry, only slightly brighter. */
+  html[data-ynot-theme="light"].ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
+    background:rgba(244,244,241,.66)!important;background-color:rgba(244,244,241,.66)!important;
+    border-color:rgba(255,255,255,.62)!important;box-shadow:0 10px 30px rgba(0,0,0,.11),inset 0 1px 0 rgba(255,255,255,.72)!important;
+  }
 }
 
-/* Mobile already has the correct centered behavior; only finish the visual stack and glass search. */
-@media (max-width:899px){
-  .ynot-drawer.open .ynot-head h2{position:relative!important;z-index:2147483645!important}
-  .ynot-drawer.open .ynot-search{background:rgba(245,245,242,.42)!important;background-image:none!important;border:1px solid rgba(255,255,255,.40)!important;box-shadow:0 7px 22px rgba(0,0,0,.10),inset 0 1px 0 rgba(255,255,255,.42)!important;backdrop-filter:blur(12px) saturate(120%)!important;-webkit-backdrop-filter:blur(12px) saturate(120%)!important}
-}
+/* Mobile geometry remains untouched. */
