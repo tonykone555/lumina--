@@ -1,0 +1,71 @@
+/* YNOT pearl-glass light theme.
+   Theme only: no geometry, breakpoint, transform, lattice, spacing or sizing overrides. */
+html[data-ynot-theme="light"] body{background:#efefec;color:#161718}
+html[data-ynot-theme="light"] .ynot-app-shell,
+html[data-ynot-theme="light"] .lv4-shell{background:radial-gradient(circle at 50% 42%,#fafaf8 0,#f1f1ee 42%,#e8e8e4 100%)!important;color:#171819!important}
+html[data-ynot-theme="light"] .lv4-world{background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.94),rgba(239,239,235,.88) 58%,rgba(226,226,221,.94))!important}
+
+html[data-ynot-theme="light"] .ynot-top-mode,
+html[data-ynot-theme="light"] .ynot-world-row,
+html[data-ynot-theme="light"] .ynot-reference-nav-tools button,
+html[data-ynot-theme="light"] .ynot-reference-earn-orb,
+html[data-ynot-theme="light"] .ynot-reference-avatar,
+html[data-ynot-theme="light"] .ynot-reference-notify,
+html[data-ynot-theme="light"] .ynot-reference-signin,
+html[data-ynot-theme="light"] .ynot-source-trigger-clean,
+html[data-ynot-theme="light"] .ynot-bottom-search,
+html[data-ynot-theme="light"] .ynot-profile-orb,
+html[data-ynot-theme="light"] .ynot-compass-button,
+html[data-ynot-theme="light"] .ynot-glass-side-control{
+ background:linear-gradient(145deg,rgba(255,255,255,.82),rgba(247,247,244,.58))!important;
+ border-color:rgba(35,37,38,.16)!important;
+ color:#171819!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.94),0 10px 30px rgba(36,38,39,.09)!important;
+ backdrop-filter:blur(26px) saturate(125%)!important;-webkit-backdrop-filter:blur(26px) saturate(125%)!important
+}
+html[data-ynot-theme="light"] .ynot-top-mode button,
+html[data-ynot-theme="light"] .ynot-world-row button{color:#202122!important}
+html[data-ynot-theme="light"] .ynot-top-mode button.active,
+html[data-ynot-theme="light"] .ynot-world-row button.active{background:rgba(25,26,27,.88)!important;color:#fff!important;box-shadow:0 5px 16px rgba(20,20,20,.14)!important}
+html[data-ynot-theme="light"] .ynot-reference-header svg,
+html[data-ynot-theme="light"] .ynot-bottom-search svg{color:#202122!important;stroke:#202122!important}
+html[data-ynot-theme="light"] .ynot-bottom-search input{color:#18191a!important}
+html[data-ynot-theme="light"] .ynot-bottom-search input::placeholder{color:rgba(24,25,26,.48)!important}
+html[data-ynot-theme="light"] .ynot-bottom-search button{background:#202122!important;color:#fff!important}
+
+html[data-ynot-theme="light"] .lv4-product,
+html[data-ynot-theme="light"] .ynot-bubble-slot,
+html[data-ynot-theme="light"] .lv4-category-bubble{
+ border-color:rgba(35,37,38,.17)!important;
+ background:radial-gradient(circle at 30% 22%,rgba(255,255,255,.88),rgba(255,255,255,.42) 43%,rgba(220,221,217,.20) 75%)!important;
+ box-shadow:inset 0 1px rgba(255,255,255,.96),0 14px 34px rgba(35,37,38,.10)!important
+}
+html[data-ynot-theme="light"] .lv4-product-tooltip,
+html[data-ynot-theme="light"] .lv4-orbmeta{background:rgba(255,255,255,.82)!important;border-color:rgba(35,37,38,.12)!important;color:#18191a!important}
+
+html[data-ynot-theme="light"] .taxonomy-rail button,
+html[data-ynot-theme="light"] .ynot-taxonomy-rail button,
+html[data-ynot-theme="light"] .subcategory-nav button,
+html[data-ynot-theme="light"] .ynot-subcategory-nav button{
+ background:rgba(255,255,255,.72)!important;border-color:rgba(35,37,38,.14)!important;color:#1d1e1f!important;
+ box-shadow:inset 0 1px rgba(255,255,255,.94),0 7px 20px rgba(35,37,38,.07)!important
+}
+
+html[data-ynot-theme="light"] .lv4-detail,
+html[data-ynot-theme="light"] .ynot-selected,
+html[data-ynot-theme="light"] .ynot-unified-bag,
+html[data-ynot-theme="light"] .ynot-cart{background:rgba(249,249,246,.88)!important;border-color:rgba(35,37,38,.15)!important;color:#171819!important;box-shadow:0 24px 70px rgba(35,37,38,.16)!important}
+html[data-ynot-theme="light"] .lv4-detail button:not(.lv4-primary),
+html[data-ynot-theme="light"] .ynot-selected button{border-color:rgba(35,37,38,.14)}
+
+html[data-ynot-theme="light"] .ynot-profile-backdrop{background:rgba(225,225,221,.58)!important}
+html[data-ynot-theme="light"] .ynot-profile-panel{background:linear-gradient(155deg,rgba(255,255,253,.97),rgba(237,237,233,.96))!important;border-color:rgba(35,37,38,.16)!important;color:#171819!important;box-shadow:0 26px 90px rgba(40,42,43,.20)!important}
+html[data-ynot-theme="light"] .ynot-profile-close,
+html[data-ynot-theme="light"] .ynot-profile-plans,
+html[data-ynot-theme="light"] .ynot-profile-theme,
+html[data-ynot-theme="light"] .ynot-profile-panel>label>input{background:rgba(255,255,255,.70)!important;border-color:rgba(35,37,38,.14)!important;color:#171819!important}
+html[data-ynot-theme="light"] .ynot-profile-submit{background:#1e1f20!important;color:#fff!important}
+html[data-ynot-theme="light"] .ynot-profile-mode{color:rgba(24,25,26,.66)!important}
+
+.ynot-profile-theme{width:100%;min-height:66px;margin:0 0 10px;padding:10px 12px;border:1px solid rgba(255,255,255,.16);border-radius:18px;background:rgba(255,255,255,.07);color:inherit;display:flex;align-items:center;justify-content:space-between;gap:14px;text-align:left;cursor:pointer}
+.ynot-profile-theme-copy{display:flex;align-items:center;gap:10px;min-width:0}.ynot-profile-theme-copy>svg{width:19px;height:19px;flex:0 0 auto}.ynot-profile-theme-copy>span{display:flex;flex-direction:column;gap:3px}.ynot-profile-theme-copy b{font-size:11px}.ynot-profile-theme-copy small{font-size:8px;opacity:.5}.ynot-profile-theme>i{position:relative;width:44px;height:25px;flex:0 0 44px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.14);transition:.2s}.ynot-profile-theme>i em{position:absolute;left:3px;top:3px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 2px 7px rgba(0,0,0,.22);transition:.2s}.ynot-profile-theme>i.active{background:#252627;border-color:#252627}.ynot-profile-theme>i.active em{transform:translateX(19px)}
