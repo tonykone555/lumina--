@@ -17,6 +17,36 @@ html[data-ynot-theme="light"] .ynot-source-trigger-clean{border-radius:14px!impo
 .ynot-bottom-search:before,.ynot-bottom-search:after{border:0!important;box-shadow:none!important}
 .ynot-bottom-search{outline:0!important}
 
+/* The category rail is horizontally scrollable, but its scroll viewport must not draw a visible separator above Search. */
+.ynot-taxonomy-progressive,.ynot-taxonomy-inline,.ynot-subcat,.ynot-subcat-bubbles{
+  border-bottom:0!important;
+  border-top:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  scrollbar-width:none!important;
+}
+.ynot-taxonomy-progressive::-webkit-scrollbar,.ynot-taxonomy-inline::-webkit-scrollbar,.ynot-subcat::-webkit-scrollbar,.ynot-subcat-bubbles::-webkit-scrollbar{display:none!important;height:0!important}
+.ynot-taxonomy-progressive:before,.ynot-taxonomy-progressive:after,.ynot-taxonomy-inline:before,.ynot-taxonomy-inline:after,.ynot-subcat:before,.ynot-subcat:after,.ynot-subcat-bubbles:before,.ynot-subcat-bubbles:after{border:0!important;box-shadow:none!important}
+
+/* Search: swap the decorative sparkle for a small, quiet microphone. */
+.ynot-bottom-search.shop{position:fixed!important}
+.ynot-bottom-search.shop .ynot-ai-search-star{display:none!important}
+.ynot-bottom-search.shop:before{
+  content:""!important;
+  display:block!important;
+  flex:0 0 auto!important;
+  width:18px!important;
+  height:18px!important;
+  margin-left:2px!important;
+  background:currentColor!important;
+  opacity:.88!important;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' x2='12' y1='19' y2='22'/%3E%3Cline x1='8' x2='16' y1='22' y2='22'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z'/%3E%3Cpath d='M19 10v2a7 7 0 0 1-14 0v-2'/%3E%3Cline x1='12' x2='12' y1='19' y2='22'/%3E%3Cline x1='8' x2='16' y1='22' y2='22'/%3E%3C/svg%3E") center/contain no-repeat!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+html[data-ynot-theme="light"] .ynot-bottom-search.shop:before{color:#424547!important}
+
 /* Product bubble metadata is contextual, but must always render over neighbouring bubbles. */
 .lv4-product{position:relative}
 .lv4-product:hover,.lv4-product:focus,.lv4-product:focus-within,.lv4-product.is-focused,.lv4-product.is-active{z-index:120!important}
