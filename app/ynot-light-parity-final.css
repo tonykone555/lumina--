@@ -1,0 +1,40 @@
+/* Final light-mode parity pass: keep moving world media visible and make pale-card copy readable. */
+html[data-ynot-theme="light"] .lv4-detail,
+html[data-ynot-theme="light"] .lv4-detail *{text-shadow:none}
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery,
+html[data-ynot-theme="light"] .lv4-detail .lv4-gallery,
+html[data-ynot-theme="light"] .lv4-detail [class*="similar"],
+html[data-ynot-theme="light"] .lv4-detail [class*="recommend"],
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest"]{color:#343638!important}
+html[data-ynot-theme="light"] .lv4-detail [class*="similar"] p,
+html[data-ynot-theme="light"] .lv4-detail [class*="similar"] span,
+html[data-ynot-theme="light"] .lv4-detail [class*="recommend"] p,
+html[data-ynot-theme="light"] .lv4-detail [class*="recommend"] span,
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest"] p,
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest"] span{color:#65686a!important;opacity:1!important}
+html[data-ynot-theme="light"] .lv4-detail [class*="similar"] strong,
+html[data-ynot-theme="light"] .lv4-detail [class*="similar"] b,
+html[data-ynot-theme="light"] .lv4-detail [class*="recommend"] strong,
+html[data-ynot-theme="light"] .lv4-detail [class*="recommend"] b{color:#292b2d!important;opacity:1!important}
+html[data-ynot-theme="light"] .lv4-detail button:not(.lv4-primary):not(.try){color:#424547!important}
+html[data-ynot-theme="light"] .lv4-detail .ynot-complete-thumb{border-color:rgba(38,40,42,.16)!important;background:rgba(255,255,255,.56)!important}
+
+/* Desktop gets the same light-touch treatment as mobile: video remains the world, pearl tint sits above it. */
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .ynot-app-shell,
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .lv4-shell,
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .lv4-world,
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active .lv4-stage{background:transparent!important}
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active #ynot-desktop-home-video{opacity:1!important;visibility:visible!important;display:block!important}
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active #ynot-desktop-home-video video{opacity:1!important;visibility:visible!important;filter:brightness(1.03) saturate(.88) contrast(.92)!important}
+html[data-ynot-theme="light"] body.ynot-desktop-home-video-active #ynot-desktop-home-video:after{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(255,255,255,.035) 48%,rgba(245,245,241,.09))!important}
+
+/* WORLD / YNOT uses one visual language at every viewport. */
+html[data-ynot-theme="light"] .ynot-world-row{background:linear-gradient(145deg,rgba(255,255,255,.68),rgba(231,231,227,.50))!important;border:1px solid rgba(44,46,48,.20)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.86),0 9px 24px rgba(25,27,28,.08)!important}
+html[data-ynot-theme="light"] .ynot-world-row button{color:#676a6c!important}
+html[data-ynot-theme="light"] .ynot-world-row button.active{background:linear-gradient(145deg,rgba(92,94,95,.78),rgba(73,75,76,.72))!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.20),0 6px 18px rgba(20,20,20,.12)!important}
+
+/* Product media videos: preserve card geometry and play inline without creating a new frame. */
+.lv4-detail .ynot-main-product-video,
+.lv4-detail .ynot-popup-video,
+.lv4-detail .ynot-shared-media-video{object-fit:contain!important;background:transparent!important;border:0!important;border-radius:inherit!important}
+.lv4-detail .ynot-loaded-gallery video{object-fit:cover!important}
