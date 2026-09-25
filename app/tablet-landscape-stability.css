@@ -1,80 +1,100 @@
-/* YNOT intermediate/tablet landscape stability.
-   Desktop (>1180px) and phone/mobile (<900px) keep their existing layouts.
-   Medium landscape uses a compact desktop composition instead of oversized/compressed controls. */
+/* YNOT medium/tablet landscape.
+   Preserve the desktop component geometry and scale the composition uniformly.
+   Phone (<900px) and full desktop (>1180px) remain untouched. */
 @media (min-width:900px) and (max-width:1180px) {
-  .ynot-reference-header {padding-left:14px!important;padding-right:14px!important}
-  .ynot-reference-left {left:14px!important}
+  .ynot-reference-header{padding-left:14px!important;padding-right:14px!important}
+  .ynot-reference-left{left:14px!important}
 
-  .ynot-reference-brand {
-    width:92px!important;min-width:92px!important;height:46px!important;
+  /* Header keeps the desktop pill silhouette; only the whole group is scaled. */
+  .ynot-reference-center{
+    left:50%!important;
+    width:620px!important;
+    max-width:none!important;
+    transform:translateX(-50%) scale(.82)!important;
+    transform-origin:top center!important;
   }
-  .ynot-reference-brand>span{width:32px!important;height:32px!important}
-  .ynot-reference-brand b{font-size:11px!important}
+  .ynot-reference-topline{width:100%!important;min-width:0!important;gap:10px!important}
+  .ynot-reference-header .ynot-top-mode{
+    width:430px!important;min-width:430px!important;height:auto!important;padding:inherit!important;flex:0 0 430px!important;
+  }
+  .ynot-reference-header .ynot-top-mode button{
+    min-width:0!important;height:auto!important;font-size:inherit!important;white-space:nowrap!important;
+  }
+  .ynot-reference-nav-tools{flex:0 0 auto!important;gap:8px!important}
+  .ynot-reference-nav-tools button{
+    width:52px!important;min-width:52px!important;height:52px!important;flex:0 0 52px!important;border-radius:inherit!important;
+  }
+  .ynot-reference-nav-tools svg{width:inherit!important;height:inherit!important}
 
-  .ynot-reference-center {
-    left:50%!important;width:min(550px,58vw)!important;max-width:550px!important;
+  /* WORLD / YNOT uses the same center axis as SHOP / DISCOVER. */
+  .ynot-reference-header .ynot-world-controls{
+    width:470px!important;min-width:470px!important;
+    left:50%!important;right:auto!important;
     transform:translateX(-50%)!important;
   }
-  .ynot-reference-topline {width:100%!important;min-width:0!important;gap:7px!important}
-
-  .ynot-reference-header .ynot-top-mode {
-    width:min(365px,39vw)!important;min-width:285px!important;height:46px!important;
-    padding:4px!important;flex:0 1 auto!important;
+  .ynot-reference-header .ynot-world-row{
+    width:100%!important;min-width:0!important;height:auto!important;padding:inherit!important;
   }
-  .ynot-reference-header .ynot-top-mode button {
-    min-width:0!important;height:37px!important;font-size:10px!important;white-space:nowrap!important;
+  .ynot-reference-header .ynot-world-row button{height:auto!important;font-size:inherit!important}
+  .ynot-reference-header .ynot-view-source{
+    left:50%!important;right:auto!important;transform:translateX(-50%)!important;white-space:nowrap!important;
   }
-
-  .ynot-reference-nav-tools {flex:0 0 auto!important;gap:6px!important}
-  .ynot-reference-nav-tools button {
-    width:44px!important;min-width:44px!important;height:44px!important;flex:0 0 44px!important;
-    border-radius:17px!important;
-  }
-  .ynot-reference-nav-tools svg{width:17px!important;height:17px!important}
-
-  .ynot-reference-header .ynot-world-controls {
-    width:min(410px,43vw)!important;min-width:330px!important;
-    left:50%!important;right:auto!important;transform:translateX(-50%)!important;
-  }
-  .ynot-reference-header .ynot-world-row {
-    width:100%!important;min-width:0!important;height:48px!important;padding:4px!important;
-  }
-  .ynot-reference-header .ynot-world-row button{height:39px!important;font-size:10px!important}
-  .ynot-reference-header .ynot-view-source {
-    left:50%!important;transform:translateX(-50%)!important;white-space:nowrap!important;
-  }
-  .ynot-reference-header .ynot-source-trigger-clean{height:29px!important;min-width:84px!important;font-size:10px!important}
-
-  .ynot-reference-right {right:14px!important;gap:6px!important}
-  .ynot-reference-right button,
-  .ynot-reference-right .ynot-profile-orb {
-    width:46px!important;height:46px!important;min-width:46px!important;flex:0 0 46px!important;
+  .ynot-reference-header .ynot-source-trigger-clean{
+    height:auto!important;min-width:0!important;font-size:inherit!important;
   }
 
-  .ynot-compass-tools,.ynot-desktop-side-controls {right:10px!important}
-
-  /* Reduce medium-screen edge controls too, so the world keeps the desktop proportions. */
-  .ynot-compass-tools button,
-  .ynot-desktop-side-controls button{transform:scale(.88)!important;transform-origin:center!important}
-
-  /* Bottom taxonomy remains one line, but is compact and horizontally scrollable. */
-  .subcategory-nav,.ynot-subcategory-nav,.taxonomy-rail,.ynot-taxonomy-rail {
-    max-width:100vw!important;overflow-x:auto!important;overflow-y:hidden!important;
-    flex-wrap:nowrap!important;gap:7px!important;padding-left:10px!important;padding-right:10px!important;
-    scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;
+  /* Edge items shrink as complete desktop controls, not by changing their shape. */
+  .ynot-reference-brand,
+  .ynot-reference-right{
+    transform:scale(.82)!important;
   }
-  .subcategory-nav::-webkit-scrollbar,.ynot-subcategory-nav::-webkit-scrollbar,
-  .taxonomy-rail::-webkit-scrollbar,.ynot-taxonomy-rail::-webkit-scrollbar {display:none!important}
-  .subcategory-nav button,.ynot-subcategory-nav button,.taxonomy-rail button,.ynot-taxonomy-rail button {
+  .ynot-reference-brand{transform-origin:left top!important}
+  .ynot-reference-right{right:14px!important;transform-origin:right top!important}
+  .ynot-reference-right button,.ynot-reference-right .ynot-profile-orb{flex:0 0 auto!important}
+
+  .ynot-compass-tools,.ynot-desktop-side-controls{right:10px!important}
+  .ynot-compass-tools button,.ynot-desktop-side-controls button{
+    transform:scale(.84)!important;transform-origin:center!important;
+  }
+
+  /* Categories retain desktop proportions as complete pills. */
+  .subcategory-nav,.ynot-subcategory-nav,.taxonomy-rail,.ynot-taxonomy-rail{
+    width:max-content!important;max-width:none!important;
+    left:50%!important;right:auto!important;
+    transform:translateX(-50%) scale(.82)!important;
+    transform-origin:bottom center!important;
+    overflow:visible!important;flex-wrap:nowrap!important;
+    gap:inherit!important;padding-left:inherit!important;padding-right:inherit!important;
+  }
+  .subcategory-nav button,.ynot-subcategory-nav button,.taxonomy-rail button,.ynot-taxonomy-rail button{
     flex:0 0 auto!important;width:auto!important;min-width:max-content!important;
-    min-height:38px!important;padding:0 14px!important;font-size:10px!important;white-space:nowrap!important;
+    min-height:unset!important;padding:inherit!important;font-size:inherit!important;white-space:nowrap!important;
   }
 
-  .ynot-bottom-search{max-width:min(620px,60vw)!important;height:48px!important}
-  .ynot-bottom-search input{font-size:12px!important}
+  .ynot-bottom-search{
+    max-width:none!important;
+    transform:translateX(-50%) scale(.84)!important;
+    transform-origin:bottom center!important;
+  }
+  .ynot-bottom-search input{font-size:inherit!important}
+
+  /* Earn follows the same circular glass language as the compass at this breakpoint. */
+  .ynot-earn-nav,
+  .ynot-earn-button,
+  [data-ynot-earn]{
+    aspect-ratio:1!important;
+    width:52px!important;height:52px!important;min-width:52px!important;
+    padding:0!important;border-radius:50%!important;
+    display:grid!important;place-items:center!important;
+    border:1px solid rgba(255,255,255,.24)!important;
+    background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.025))!important;
+    box-shadow:inset 0 1px rgba(255,255,255,.16),0 8px 22px rgba(0,0,0,.22)!important;
+    backdrop-filter:blur(16px)!important;
+    -webkit-backdrop-filter:blur(16px)!important;
+  }
 }
 
-@media (min-width:900px) and (max-width:1180px) and (max-height:820px) {
-  .ynot-reference-header .ynot-world-controls {top:68px!important}
-  .ynot-reference-header .ynot-view-source {margin-top:0!important}
+@media (min-width:900px) and (max-width:1180px) and (max-height:820px){
+  .ynot-reference-header .ynot-world-controls{top:76px!important}
+  .ynot-reference-header .ynot-view-source{margin-top:2px!important}
 }
