@@ -1,91 +1,13 @@
-/* YNOT Deals gallery layout lock — keep product media centered, thumbnails isolated from copy, and stale gallery chrome out. Loaded last. */
-.ynot-drawer.open .ynot-selected{
-  --ynot-gallery-size:54px;
-  --ynot-gallery-gap:8px;
-  --ynot-gallery-bottom:calc(46dvh - 16px);
-}
-
-/* The primary product media always owns the centered media stage. */
-.ynot-drawer.open .ynot-selected>img,
-.ynot-drawer.open .ynot-selected>.ynot-popup-video{
-  left:50%!important;
-  right:auto!important;
-  transform:translateX(-50%)!important;
-  object-position:center center!important;
-  margin:0!important;
-}
-
-/* Exactly one gallery rail. It gets its own reserved row ABOVE the text, never on top of it. */
-.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{
-  position:absolute!important;
-  z-index:12!important;
-  left:50%!important;
-  right:auto!important;
-  top:auto!important;
-  bottom:var(--ynot-gallery-bottom)!important;
-  transform:translateX(-50%)!important;
-  display:flex!important;
-  flex-wrap:nowrap!important;
-  align-items:center!important;
-  justify-content:flex-start!important;
-  gap:var(--ynot-gallery-gap)!important;
-  width:auto!important;
-  max-width:calc(100vw - 32px)!important;
-  height:calc(var(--ynot-gallery-size) + 4px)!important;
-  overflow-x:auto!important;
-  overflow-y:hidden!important;
-  padding:2px!important;
-  margin:0!important;
-  scrollbar-width:none!important;
-  overscroll-behavior-x:contain!important;
-  -webkit-overflow-scrolling:touch!important;
-  pointer-events:auto!important;
-}
-.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final::-webkit-scrollbar{display:none!important}
-.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button{
-  flex:0 0 var(--ynot-gallery-size)!important;
-  width:var(--ynot-gallery-size)!important;
-  min-width:var(--ynot-gallery-size)!important;
-  max-width:var(--ynot-gallery-size)!important;
-  height:var(--ynot-gallery-size)!important;
-  min-height:var(--ynot-gallery-size)!important;
-  max-height:var(--ynot-gallery-size)!important;
-  margin:0!important;
-  transform:none!important;
-}
-
-/* Kill all legacy thumbnail/slider rows so media from the previous product cannot remain hanging around. */
-.ynot-drawer.open .ynot-selected>.ynot-full-slider,
-.ynot-drawer.open .ynot-selected>.ynot-deal-full-slider,
-.ynot-drawer.open .ynot-selected>.ynot-full-slider-prev,
-.ynot-drawer.open .ynot-selected>.ynot-full-slider-next,
-.ynot-drawer.open .ynot-selected>.ynot-full-slider-count,
-.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery:not(.ynot-deal-thumb-gallery-final){display:none!important}
-
-/* Reserve the lower section for copy; thumbnails cannot intersect the title. */
-.ynot-drawer.open .ynot-selected-copy{
-  z-index:8!important;
-  max-height:31dvh!important;
-  overflow-y:auto!important;
-  overflow-x:hidden!important;
-}
-
-@media(max-width:760px){
-  .ynot-drawer.open .ynot-selected{
-    --ynot-gallery-size:52px;
-    --ynot-gallery-gap:7px;
-    --ynot-gallery-bottom:calc(44dvh - 2px);
-  }
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{max-width:calc(100vw - 36px)!important}
-  .ynot-drawer.open .ynot-selected-copy{bottom:calc(82px + env(safe-area-inset-bottom))!important;max-height:30dvh!important}
-}
-
-@media(min-width:761px){
-  .ynot-drawer.open .ynot-selected{
-    --ynot-gallery-size:58px;
-    --ynot-gallery-gap:9px;
-    --ynot-gallery-bottom:calc(37dvh + 18px);
-  }
-  .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{max-width:min(760px,calc(100vw - 120px))!important}
-  .ynot-drawer.open .ynot-selected-copy{max-height:27dvh!important}
-}
+/* YNOT Deals gallery layout lock — centered media, compact thumbnails, no stale gallery chrome. */
+.ynot-drawer.open .ynot-selected{--ynot-gallery-size:54px;--ynot-gallery-gap:8px;--ynot-gallery-bottom:calc(46dvh - 16px)}
+.ynot-drawer.open .ynot-selected>img,.ynot-drawer.open .ynot-selected>.ynot-popup-video{left:50%!important;right:auto!important;transform:translateX(-50%)!important;object-position:center center!important;margin:0!important}
+.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{position:absolute!important;z-index:12!important;left:50%!important;right:auto!important;top:auto!important;bottom:var(--ynot-gallery-bottom)!important;transform:translateX(-50%)!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:var(--ynot-gallery-gap)!important;width:max-content!important;max-width:calc(100vw - 32px)!important;height:calc(var(--ynot-gallery-size) + 4px)!important;overflow:hidden!important;padding:2px!important;margin:0!important;pointer-events:auto!important}
+.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button{flex:0 0 var(--ynot-gallery-size)!important;width:var(--ynot-gallery-size)!important;min-width:var(--ynot-gallery-size)!important;max-width:var(--ynot-gallery-size)!important;height:var(--ynot-gallery-size)!important;min-height:var(--ynot-gallery-size)!important;max-height:var(--ynot-gallery-size)!important;margin:0!important;transform:none!important;position:relative!important}
+.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>.ynot-deal-thumb-count{display:grid!important;place-items:center!important;font-weight:700!important;font-size:14px!important;letter-spacing:.02em!important}
+.ynot-drawer.open .ynot-selected>.ynot-full-slider,.ynot-drawer.open .ynot-selected>.ynot-deal-full-slider,.ynot-drawer.open .ynot-selected>.ynot-full-slider-prev,.ynot-drawer.open .ynot-selected>.ynot-full-slider-next,.ynot-drawer.open .ynot-selected>.ynot-full-slider-count,.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery:not(.ynot-deal-thumb-gallery-final){display:none!important}
+.ynot-drawer.open .ynot-selected-copy{z-index:8!important;max-height:31dvh!important;overflow-y:auto!important;overflow-x:hidden!important}
+/* Full viewer is its own layer. Its X closes only this viewer. */
+.ynot-final-media-viewer{z-index:2147483647!important}
+.ynot-final-media-close{z-index:2147483647!important;pointer-events:auto!important}
+@media(max-width:760px){.ynot-drawer.open .ynot-selected{--ynot-gallery-size:52px;--ynot-gallery-gap:7px;--ynot-gallery-bottom:calc(44dvh - 2px)}.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{max-width:calc(100vw - 36px)!important}.ynot-drawer.open .ynot-selected-copy{bottom:calc(82px + env(safe-area-inset-bottom))!important;max-height:30dvh!important}}
+@media(min-width:761px){.ynot-drawer.open .ynot-selected{--ynot-gallery-size:56px;--ynot-gallery-gap:7px;--ynot-gallery-bottom:calc(37dvh + 18px)}.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{max-width:320px!important}.ynot-drawer.open .ynot-selected-copy{max-height:27dvh!important}}
