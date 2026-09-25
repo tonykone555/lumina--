@@ -7,21 +7,22 @@ const WORLD_CY=100000;
 const HOME_Y_OFFSET=0;
 const PRODUCT_Y_OFFSET=340;
 const DESKTOP_COLUMNS=39;
-const MOBILE_COLUMNS=9;
 const SLOT_BUFFER=84;
 const MIN_ROW_ZOOM=.18;
 const MAX_ROW_ZOOM=2.35;
 
+/* Keep the product field on the same wide layered-row geometry at every width.
+   Mobile changes bubble/step size only; it must not switch to a compact 9-column grid. */
 function metrics(){
  const w=typeof window!=="undefined"?window.innerWidth:1440;
- if(w<520)return{stepX:132,stepY:118,size:92};
- if(w<700)return{stepX:142,stepY:126,size:98};
- if(w<900)return{stepX:154,stepY:136,size:104};
+ if(w<520)return{stepX:154,stepY:142,size:84};
+ if(w<700)return{stepX:160,stepY:146,size:88};
+ if(w<900)return{stepX:166,stepY:150,size:94};
  if(w<1100)return{stepX:172,stepY:154,size:116};
  return{stepX:176,stepY:156,size:126};
 }
 function signedSpread(index:number){if(index<=0)return 0;const n=Math.ceil(index/2);return index%2===1?n:-n}
-function layeredCell(index:number){const columns=typeof window!=="undefined"&&window.innerWidth<900?MOBILE_COLUMNS:DESKTOP_COLUMNS,row=Math.floor(index/columns),local=index%columns,x=signedSpread(local),y=signedSpread(row);return{x,y,ring:Math.max(Math.abs(x),Math.abs(y))}}
+function layeredCell(index:number){const row=Math.floor(index/DESKTOP_COLUMNS),local=index%DESKTOP_COLUMNS,x=signedSpread(local),y=signedSpread(row);return{x,y,ring:Math.max(Math.abs(x),Math.abs(y))}}
 function cellPosition(index:number){const {stepX,stepY,size}=metrics(),cell=layeredCell(index),stagger=(Math.abs(cell.y)%2)*stepX*.5;return{cell,size,x:WORLD_CX+cell.x*stepX+stagger,y:WORLD_CY+PRODUCT_Y_OFFSET+cell.y*stepY}}
 function setImportant(node:HTMLElement,property:string,value:string){if(node.style.getPropertyValue(property)===value&&node.style.getPropertyPriority(property)==="important")return;node.style.setProperty(property,value,"important")}
 
@@ -40,11 +41,11 @@ function warmImages(products:HTMLElement[],stage:HTMLElement){
  let scale=1,tx=0,ty=0;
  const match=transform.match(/matrix\(([^)]+)\)/);
  if(match){const values=match[1].split(',').map(Number);scale=Math.abs(values[0])||1;tx=values[4]||0;ty=values[5]||0}
- const viewport={left:-tx/scale-1100,right:(window.innerWidth-tx)/scale+1100,top:-ty/scale-1500,bottom:(window.innerHeight-ty)/scale+1100};
+ const viewport={left:-tx/scale-650,right:(window.innerWidth-tx)/scale+650,top:-ty/scale-850,bottom:(window.innerHeight-ty)/scale+650};
  products.forEach((product,index)=>{
   const image=product.querySelector<HTMLImageElement>("img");if(!image)return;
   const left=parseFloat(product.style.left)||0,top=parseFloat(product.style.top)||0,near=left>=viewport.left&&left<=viewport.right&&top>=viewport.top&&top<=viewport.bottom;
-  if(near||index<18){image.loading="eager";image.setAttribute("fetchpriority",index<8?"high":"auto");image.decoding="async";void image.decode?.().catch(()=>{})}
+  if(near||index<10){image.loading="eager";image.setAttribute("fetchpriority",index<5?"high":"auto");image.decoding="async"}
   else{image.loading="lazy";image.setAttribute("fetchpriority","low");image.decoding="async"}
  });
 }
@@ -68,7 +69,7 @@ function applyLattice(){
  const products=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-product")];
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");stage.querySelectorAll(":scope > .ynot-bubble-slot").forEach(node=>node.remove());document.querySelector(".ynot-map-zoom")?.remove();return}
  shell.classList.add("ynot-desktop-lattice-active");
- products.forEach((product,index)=>{const {cell,size,x,y}=cellPosition(index),signature=`layered7:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
+ products.forEach((product,index)=>{const {cell,size,x,y}=cellPosition(index),signature=`wide-rows8:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
  renderSlots(stage,products.length+SLOT_BUFFER);
  warmImages(products,stage);
 }
