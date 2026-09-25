@@ -7,21 +7,22 @@ const WORLD_CY=100000;
 const HOME_Y_OFFSET=0;
 const PRODUCT_Y_OFFSET=340;
 const DESKTOP_COLUMNS=39;
+const MOBILE_COLUMNS=9;
 const SLOT_BUFFER=84;
 const MIN_ROW_ZOOM=.18;
 const MAX_ROW_ZOOM=2.35;
 
 function metrics(){
  const w=typeof window!=="undefined"?window.innerWidth:1440;
- if(w<520)return{stepX:158,stepY:142,size:92};
- if(w<700)return{stepX:166,stepY:148,size:98};
- if(w<900)return{stepX:170,stepY:152,size:104};
+ if(w<520)return{stepX:132,stepY:118,size:92};
+ if(w<700)return{stepX:142,stepY:126,size:98};
+ if(w<900)return{stepX:154,stepY:136,size:104};
  if(w<1100)return{stepX:172,stepY:154,size:116};
  return{stepX:176,stepY:156,size:126};
 }
 function signedSpread(index:number){if(index<=0)return 0;const n=Math.ceil(index/2);return index%2===1?n:-n}
-function horizontalCell(index:number){const row=Math.floor(index/DESKTOP_COLUMNS),local=index%DESKTOP_COLUMNS,x=signedSpread(local),y=signedSpread(row);return{x,y,ring:Math.max(Math.abs(x),Math.abs(y))}}
-function cellPosition(index:number){const {stepX,stepY,size}=metrics(),cell=horizontalCell(index),stagger=(Math.abs(cell.y)%2)*stepX*.5;return{cell,size,x:WORLD_CX+cell.x*stepX+stagger,y:WORLD_CY+PRODUCT_Y_OFFSET+cell.y*stepY}}
+function layeredCell(index:number){const columns=typeof window!=="undefined"&&window.innerWidth<900?MOBILE_COLUMNS:DESKTOP_COLUMNS,row=Math.floor(index/columns),local=index%columns,x=signedSpread(local),y=signedSpread(row);return{x,y,ring:Math.max(Math.abs(x),Math.abs(y))}}
+function cellPosition(index:number){const {stepX,stepY,size}=metrics(),cell=layeredCell(index),stagger=(Math.abs(cell.y)%2)*stepX*.5;return{cell,size,x:WORLD_CX+cell.x*stepX+stagger,y:WORLD_CY+PRODUCT_Y_OFFSET+cell.y*stepY}}
 function setImportant(node:HTMLElement,property:string,value:string){if(node.style.getPropertyValue(property)===value&&node.style.getPropertyPriority(property)==="important")return;node.style.setProperty(property,value,"important")}
 
 function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
@@ -35,7 +36,6 @@ function centerDesktopHome(shell:HTMLElement,stage:HTMLElement){
  categories.forEach((node,index)=>{const angle=index/categories.length*Math.PI*2-Math.PI/2;setImportant(node,"left",`${WORLD_CX+Math.cos(angle)*radius}px`);setImportant(node,"top",`${centerY+Math.sin(angle)*radius}px`)})
 }
 function warmImages(products:HTMLElement[],stage:HTMLElement){
- if(window.innerWidth<900)return;
  const transform=getComputedStyle(stage).transform;
  let scale=1,tx=0,ty=0;
  const match=transform.match(/matrix\(([^)]+)\)/);
@@ -68,7 +68,7 @@ function applyLattice(){
  const products=[...stage.querySelectorAll<HTMLElement>(":scope > .lv4-product")];
  if(!products.length){shell.classList.remove("ynot-desktop-lattice-active");stage.querySelectorAll(":scope > .ynot-bubble-slot").forEach(node=>node.remove());document.querySelector(".ynot-map-zoom")?.remove();return}
  shell.classList.add("ynot-desktop-lattice-active");
- products.forEach((product,index)=>{const {cell,size,x,y}=cellPosition(index),signature=`stable6:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
+ products.forEach((product,index)=>{const {cell,size,x,y}=cellPosition(index),signature=`layered7:${size}:${cell.x}:${cell.y}`;if(product.dataset.ynotLattice===signature&&product.style.getPropertyPriority("left")==="important")return;product.dataset.ynotLattice=signature;product.dataset.ynotLatticeRow=String(cell.y);product.dataset.ynotBufferRing=String(cell.ring);delete product.dataset.hexSlot;setImportant(product,"position","absolute");setImportant(product,"left",`${x}px`);setImportant(product,"top",`${y}px`);setImportant(product,"width",`${size}px`);setImportant(product,"height",`${size}px`);product.style.setProperty("--s",`${size}px`);setImportant(product,"margin","0");setImportant(product,"z-index",String(20+(Math.abs(cell.y)%3)))})
  renderSlots(stage,products.length+SLOT_BUFFER);
  warmImages(products,stage);
 }
@@ -93,30 +93,20 @@ function stepByRow(direction:1|-1){
  sendZoomTo(zoomForRows(nextRows));
  window.setTimeout(()=>syncZoomControl(),100)
 }
-function bubbleWorldReady(){
- const shell=document.querySelector<HTMLElement>(".lv4-shell");
- return Boolean(shell&&!shell.classList.contains("depth-worlds")&&shell.querySelector(".lv4-product"));
-}
+function bubbleWorldReady(){const shell=document.querySelector<HTMLElement>(".lv4-shell");return Boolean(shell&&!shell.classList.contains("depth-worlds")&&shell.querySelector(".lv4-product"))}
 function removeZoomControl(){document.querySelector(".ynot-map-zoom")?.remove()}
 function ensureZoomControl(){
  const shell=document.querySelector<HTMLElement>(".lv4-shell");if(!shell)return null;
  if(!bubbleWorldReady()){removeZoomControl();return null}
  let control=document.querySelector<HTMLElement>(".ynot-map-zoom");
  if(!control){
-  const style=document.createElement("style");style.id="ynot-map-zoom-style";style.textContent=`.ynot-map-zoom{position:fixed;z-index:84;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;border:1px solid rgba(255,255,255,.22);border-radius:18px;background:rgba(18,18,20,.42);box-shadow:0 12px 38px rgba(0,0,0,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#fff}.ynot-map-zoom button{width:34px;height:34px;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;font:500 20px/1 Inter,sans-serif;cursor:pointer}.ynot-map-zoom button:hover{background:rgba(255,255,255,.16)}.ynot-map-zoom button:disabled{opacity:.28;cursor:default}.ynot-map-zoom span{width:34px;padding:6px 0;text-align:center;font:650 7px/1 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.62)}@media(max-width:899px){.ynot-map-zoom{right:10px;top:48%;border-radius:17px}.ynot-map-zoom button{width:32px;height:32px}.ynot-map-zoom span{width:32px;font-size:6.5px}}.ynot-app-shell.chrome-hidden .ynot-map-zoom,body.ynot-welcome-lock .ynot-map-zoom{display:none!important;opacity:0!important;pointer-events:none!important}`;if(!document.getElementById(style.id))document.head.appendChild(style);
+  const style=document.createElement("style");style.id="ynot-map-zoom-style";style.textContent=`.ynot-map-zoom{position:fixed;z-index:84;right:18px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px;border:1px solid rgba(255,255,255,.22);border-radius:18px;background:rgba(18,18,20,.42);box-shadow:0 12px 38px rgba(0,0,0,.18);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#fff}.ynot-map-zoom button{width:34px;height:34px;border:0;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;display:grid;place-items:center;font:500 20px/1 Inter,sans-serif;cursor:pointer}.ynot-map-zoom button:hover{background:rgba(255,255,255,.16)}.ynot-map-zoom button:disabled{opacity:.28;cursor:default}.ynot-map-zoom span{width:34px;padding:6px 0;text-align:center;font:650 7px/1 Inter,sans-serif;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.62)}@media(max-width:899px){.ynot-map-zoom{display:none!important}}.ynot-app-shell.chrome-hidden .ynot-map-zoom,body.ynot-welcome-lock .ynot-map-zoom{display:none!important;opacity:0!important;pointer-events:none!important}`;if(!document.getElementById(style.id))document.head.appendChild(style);
   control=document.createElement("div");control.className="ynot-map-zoom";control.innerHTML='<button type="button" data-zoom="in" aria-label="Zoom in one row">+</button><span>rows</span><button type="button" data-zoom="out" aria-label="Zoom out one row">−</button>';
-  const stop=(event:Event)=>event.stopPropagation();control.addEventListener("pointerdown",stop);control.addEventListener("wheel",stop,{passive:true});
-  control.addEventListener("click",event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>("button[data-zoom]");if(!button)return;event.preventDefault();event.stopPropagation();stepByRow(button.dataset.zoom==="in"?1:-1)});
-  document.body.appendChild(control);
+  const stop=(event:Event)=>event.stopPropagation();control.addEventListener("pointerdown",stop);control.addEventListener("wheel",stop,{passive:true});control.addEventListener("click",event=>{const button=(event.target as HTMLElement).closest<HTMLButtonElement>("button[data-zoom]");if(!button)return;event.preventDefault();event.stopPropagation();stepByRow(button.dataset.zoom==="in"?1:-1)});document.body.appendChild(control)
  }
  syncZoomControl();return control;
 }
-function syncZoomControl(){
- if(!bubbleWorldReady()){removeZoomControl();return}
- const stage=document.querySelector<HTMLElement>(".lv4-stage"),control=document.querySelector<HTMLElement>(".ynot-map-zoom");if(!stage||!control)return;
- const rows=visibleRows(stageScale(stage)),label=control.querySelector("span"),out=control.querySelector<HTMLButtonElement>('button[data-zoom="out"]'),zoomIn=control.querySelector<HTMLButtonElement>('button[data-zoom="in"]');
- if(label)label.textContent=`${rows} rows`;if(out)out.disabled=rows>=18;if(zoomIn)zoomIn.disabled=rows<=2;
-}
+function syncZoomControl(){if(!bubbleWorldReady()){removeZoomControl();return}const stage=document.querySelector<HTMLElement>(".lv4-stage"),control=document.querySelector<HTMLElement>(".ynot-map-zoom");if(!stage||!control)return;const rows=visibleRows(stageScale(stage)),label=control.querySelector("span"),out=control.querySelector<HTMLButtonElement>('button[data-zoom="out"]'),zoomIn=control.querySelector<HTMLButtonElement>('button[data-zoom="in"]');if(label)label.textContent=`${rows} rows`;if(out)out.disabled=rows>=18;if(zoomIn)zoomIn.disabled=rows<=2}
 
 export default function DesktopLatticeController():null{
  useEffect(()=>{
@@ -124,12 +114,10 @@ export default function DesktopLatticeController():null{
   const schedule=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;applyLattice();ensureZoomControl();syncZoomControl()})};
   const bindStage=()=>{stageObserver?.disconnect();const stage=document.querySelector<HTMLElement>(".lv4-stage");if(!stage)return false;stageObserver=new MutationObserver(mutations=>{if(mutations.some(m=>m.type==="childList"&&[...m.addedNodes,...m.removedNodes].some(node=>node instanceof Element&&(node.matches?.('.lv4-product')||node.querySelector?.('.lv4-product')))))schedule()});stageObserver.observe(stage,{childList:true});return true};
   const bindShell=()=>{shellObserver?.disconnect();const shell=document.querySelector<HTMLElement>(".lv4-shell");if(!shell)return false;shellObserver=new MutationObserver(()=>{if(shell.classList.contains("depth-worlds"))removeZoomControl();else syncZoomControl()});shellObserver.observe(shell,{attributes:true,attributeFilter:["class"]});return true};
-  schedule();bindStage();bindShell();
-  const delayed=[80,260].map(ms=>window.setTimeout(()=>{bindStage();bindShell();schedule()},ms));
+  schedule();bindStage();bindShell();const delayed=[80,260].map(ms=>window.setTimeout(()=>{bindStage();bindShell();schedule()},ms));
   const onResize=()=>schedule(),onSearch=()=>{window.setTimeout(()=>{bindStage();bindShell();schedule()},0)},onFocus=()=>schedule(),onPointer=()=>{if(bubbleWorldReady()){schedule();syncZoomControl()}else removeZoomControl()},onReset=()=>{removeZoomControl();window.setTimeout(schedule,0)};
   window.addEventListener("resize",onResize,{passive:true});window.addEventListener("shop:tag-search",onSearch as EventListener);window.addEventListener("ynot:world-focus",onFocus as EventListener);window.addEventListener("ynot:world-reset",onReset as EventListener);window.addEventListener("pointerup",onPointer,{passive:true});
   rebindTimer=window.setInterval(()=>{if(!document.querySelector(".lv4-stage")){stageObserver?.disconnect();stageObserver=null}else if(!stageObserver)bindStage();if(!document.querySelector(".lv4-shell")){shellObserver?.disconnect();shellObserver=null}else if(!shellObserver)bindShell();if(bubbleWorldReady()){ensureZoomControl();syncZoomControl()}else removeZoomControl()},2000);
   return()=>{stageObserver?.disconnect();shellObserver?.disconnect();if(frame)cancelAnimationFrame(frame);delayed.forEach(clearTimeout);if(rebindTimer)clearInterval(rebindTimer);window.removeEventListener("resize",onResize);window.removeEventListener("shop:tag-search",onSearch as EventListener);window.removeEventListener("ynot:world-focus",onFocus as EventListener);window.removeEventListener("ynot:world-reset",onReset as EventListener);window.removeEventListener("pointerup",onPointer);removeZoomControl();document.getElementById("ynot-map-zoom-style")?.remove()}
- },[]);
- return null;
+ },[]);return null;
 }
