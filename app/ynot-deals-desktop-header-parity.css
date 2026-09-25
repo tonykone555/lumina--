@@ -1,74 +1,20 @@
-/* Desktop YNOT Deals header parity: controls float over the scrolling feed, never as a pinned opaque block. */
+/* Desktop YNOT Deals header parity: controls float over the scrolling feed, centered like mobile, never as a pinned opaque block. */
 @media (min-width:900px){
-  .ynot-drawer.open{
-    position:fixed!important;
-    inset:0!important;
-    overflow:hidden!important;
-  }
+  .ynot-drawer.open{position:fixed!important;inset:0!important;overflow:hidden!important}
+  .ynot-drawer.open .ynot-head{position:absolute!important;inset:0 0 auto 0!important;width:100%!important;height:0!important;min-height:0!important;padding:0!important;margin:0!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;pointer-events:none!important;z-index:2147483600!important}
+  .ynot-drawer.open .ynot-head:before,.ynot-drawer.open .ynot-head:after{content:none!important;display:none!important}
 
-  /* Remove the desktop header block from layout so products can scroll directly beneath it. */
-  .ynot-drawer.open .ynot-head{
-    position:absolute!important;
-    inset:0 0 auto 0!important;
-    width:100%!important;
-    height:0!important;
-    min-height:0!important;
-    padding:0!important;
-    margin:0!important;
-    background:transparent!important;
-    background-image:none!important;
-    border:0!important;
-    box-shadow:none!important;
-    backdrop-filter:none!important;
-    -webkit-backdrop-filter:none!important;
-    pointer-events:none!important;
-    z-index:2147483600!important;
-  }
-  .ynot-drawer.open .ynot-head:before,
-  .ynot-drawer.open .ynot-head:after{content:none!important;display:none!important}
+  /* YNOT belongs to the viewport center — never the left edge. */
+  .ynot-drawer.open .ynot-head h2{position:fixed!important;top:14px!important;left:50vw!important;right:auto!important;transform:translateX(-50%)!important;width:max-content!important;max-width:none!important;margin:0!important;text-align:center!important;z-index:2147483645!important;pointer-events:none!important;color:#fff!important;-webkit-text-fill-color:#fff!important}
+  .ynot-drawer.open .ynot-head-actions{position:fixed!important;top:12px!important;right:14px!important;z-index:2147483646!important;pointer-events:auto!important}
 
-  /* Keep only the YNOT title/logo and action icons floating above the feed. */
-  .ynot-drawer.open .ynot-head h2{
-    position:fixed!important;
-    top:14px!important;
-    left:18px!important;
-    z-index:2147483645!important;
-    margin:0!important;
-    pointer-events:none!important;
-    color:#fff!important;
-    -webkit-text-fill-color:#fff!important;
-  }
-  .ynot-drawer.open .ynot-head-actions{
-    position:fixed!important;
-    top:12px!important;
-    right:14px!important;
-    z-index:2147483646!important;
-    pointer-events:auto!important;
-  }
+  /* Both category/tag rows use the viewport center, not the drawer/content origin. */
+  .ynot-drawer.open .ynot-dock{position:fixed!important;left:50vw!important;right:auto!important;top:43px!important;transform:translateX(-50%)!important;width:min(1180px,calc(100vw - 180px))!important;max-width:calc(100vw - 180px)!important;display:flex!important;justify-content:center!important;align-items:center!important;margin:0!important;padding:2px 12px!important;z-index:2147483500!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .ynot-drawer.open .ynot-dock>*,.ynot-drawer.open .ynot-tags,.ynot-drawer.open .ynot-categories{margin-left:auto!important;margin-right:auto!important}
 
-  /* Tags/search overlay the feed instead of reserving a solid header region. */
-  .ynot-drawer.open .ynot-search,
-  .ynot-drawer.open .ynot-dock{
-    position:relative!important;
-    z-index:2147483500!important;
-    background:transparent!important;
-    background-image:none!important;
-    border:0!important;
-    box-shadow:none!important;
-    backdrop-filter:none!important;
-    -webkit-backdrop-filter:none!important;
-  }
-  .ynot-drawer.open .ynot-workspace{
-    flex:1 1 0!important;
-    min-height:0!important;
-    padding-top:0!important;
-    overflow:hidden!important;
-  }
-  .ynot-drawer.open .ynot-body{
-    height:100%!important;
-    min-height:0!important;
-    overflow-y:auto!important;
-    overflow-x:hidden!important;
-    padding-top:0!important;
-  }
+  /* Search stays directly below the centered tags. */
+  .ynot-drawer.open .ynot-search{position:fixed!important;left:50vw!important;right:auto!important;top:82px!important;transform:translateX(-50%)!important;width:min(760px,calc(100vw - 220px))!important;max-width:760px!important;margin:0!important;z-index:2147483500!important;background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+
+  .ynot-drawer.open .ynot-workspace{flex:1 1 0!important;min-height:0!important;padding-top:0!important;overflow:hidden!important}
+  .ynot-drawer.open .ynot-body{height:100%!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding-top:0!important}
 }
