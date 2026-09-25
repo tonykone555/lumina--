@@ -1,0 +1,61 @@
+/* Similar Picks readability — force suggestion metadata to remain legible in both themes and on every viewport. */
+.ynot-drawer .ynot-similar-card,
+.ynot-drawer [class*="similar" i] [class*="card" i],
+.lv4-detail [class*="similar" i] [class*="card" i],
+.lv4-detail [class*="suggest" i] [class*="card" i] {
+  color:#242526!important;
+  -webkit-text-fill-color:#242526!important;
+}
+
+.ynot-drawer [class*="similar" i] [class*="card" i] p,
+.ynot-drawer [class*="similar" i] [class*="card" i] small,
+.ynot-drawer [class*="similar" i] [class*="card" i] span,
+.lv4-detail [class*="similar" i] [class*="card" i] p,
+.lv4-detail [class*="similar" i] [class*="card" i] small,
+.lv4-detail [class*="similar" i] [class*="card" i] span,
+.lv4-detail [class*="suggest" i] [class*="card" i] p,
+.lv4-detail [class*="suggest" i] [class*="card" i] small,
+.lv4-detail [class*="suggest" i] [class*="card" i] span {
+  color:#777974!important;
+  -webkit-text-fill-color:#777974!important;
+  opacity:1!important;
+  visibility:visible!important;
+  text-shadow:none!important;
+}
+
+.ynot-drawer [class*="similar" i] [class*="card" i] b,
+.ynot-drawer [class*="similar" i] [class*="card" i] strong,
+.ynot-drawer [class*="similar" i] [class*="card" i] h3,
+.ynot-drawer [class*="similar" i] [class*="card" i] h4,
+.lv4-detail [class*="similar" i] [class*="card" i] b,
+.lv4-detail [class*="similar" i] [class*="card" i] strong,
+.lv4-detail [class*="similar" i] [class*="card" i] h3,
+.lv4-detail [class*="similar" i] [class*="card" i] h4,
+.lv4-detail [class*="suggest" i] [class*="card" i] b,
+.lv4-detail [class*="suggest" i] [class*="card" i] strong {
+  color:#242526!important;
+  -webkit-text-fill-color:#242526!important;
+  opacity:1!important;
+  visibility:visible!important;
+  text-shadow:none!important;
+}
+
+/* Price is metadata too: never let the global white-card rule wash it out. */
+.ynot-drawer [class*="similar" i] [class*="price" i],
+.ynot-drawer [class*="suggest" i] [class*="price" i],
+.lv4-detail [class*="similar" i] [class*="price" i],
+.lv4-detail [class*="suggest" i] [class*="price" i] {
+  color:#5f615d!important;
+  -webkit-text-fill-color:#5f615d!important;
+  opacity:1!important;
+  visibility:visible!important;
+  font-weight:700!important;
+  text-shadow:none!important;
+}
+
+@media(max-width:899px){
+  .ynot-drawer [class*="similar" i] [class*="price" i],
+  .ynot-drawer [class*="suggest" i] [class*="price" i],
+  .lv4-detail [class*="similar" i] [class*="price" i],
+  .lv4-detail [class*="suggest" i] [class*="price" i]{opacity:1!important;visibility:visible!important}
+}
