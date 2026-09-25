@@ -1,13 +1,28 @@
-/* YNOT Deals gallery layout lock — centered media, compact thumbnails, no stale gallery chrome. */
+/* YNOT Deals gallery layout lock — centered media, compact thumbnails, reliable touch targets. */
 .ynot-drawer.open .ynot-selected{--ynot-gallery-size:54px;--ynot-gallery-gap:8px;--ynot-gallery-bottom:calc(46dvh - 16px)}
-.ynot-drawer.open .ynot-selected>img,.ynot-drawer.open .ynot-selected>.ynot-popup-video{left:50%!important;right:auto!important;transform:translateX(-50%)!important;object-position:center center!important;margin:0!important}
-.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{position:absolute!important;z-index:12!important;left:50%!important;right:auto!important;top:auto!important;bottom:var(--ynot-gallery-bottom)!important;transform:translateX(-50%)!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:var(--ynot-gallery-gap)!important;width:max-content!important;max-width:calc(100vw - 32px)!important;height:calc(var(--ynot-gallery-size) + 4px)!important;overflow:hidden!important;padding:2px!important;margin:0!important;pointer-events:auto!important}
-.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button{flex:0 0 var(--ynot-gallery-size)!important;width:var(--ynot-gallery-size)!important;min-width:var(--ynot-gallery-size)!important;max-width:var(--ynot-gallery-size)!important;height:var(--ynot-gallery-size)!important;min-height:var(--ynot-gallery-size)!important;max-height:var(--ynot-gallery-size)!important;margin:0!important;transform:none!important;position:relative!important}
+.ynot-drawer.open .ynot-selected>img,.ynot-drawer.open .ynot-selected>.ynot-popup-video{left:50%!important;right:auto!important;transform:translateX(-50%)!important;object-position:center center!important;margin:0!important;pointer-events:auto!important;touch-action:manipulation!important;z-index:10!important}
+.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{position:absolute!important;z-index:30!important;left:50%!important;right:auto!important;top:auto!important;bottom:var(--ynot-gallery-bottom)!important;transform:translateX(-50%)!important;display:flex!important;flex-wrap:nowrap!important;align-items:center!important;justify-content:center!important;gap:var(--ynot-gallery-gap)!important;width:max-content!important;max-width:calc(100vw - 32px)!important;height:calc(var(--ynot-gallery-size) + 8px)!important;overflow:visible!important;padding:4px!important;margin:0!important;pointer-events:auto!important;touch-action:manipulation!important}
+.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button{flex:0 0 var(--ynot-gallery-size)!important;width:var(--ynot-gallery-size)!important;min-width:var(--ynot-gallery-size)!important;max-width:var(--ynot-gallery-size)!important;height:var(--ynot-gallery-size)!important;min-height:var(--ynot-gallery-size)!important;max-height:var(--ynot-gallery-size)!important;margin:0!important;transform:none!important;position:relative!important;z-index:31!important;pointer-events:auto!important;touch-action:manipulation!important}
+.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>button>*{pointer-events:none!important}
 .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final>.ynot-deal-thumb-count{display:grid!important;place-items:center!important;font-weight:700!important;font-size:14px!important;letter-spacing:.02em!important}
 .ynot-drawer.open .ynot-selected>.ynot-full-slider,.ynot-drawer.open .ynot-selected>.ynot-deal-full-slider,.ynot-drawer.open .ynot-selected>.ynot-full-slider-prev,.ynot-drawer.open .ynot-selected>.ynot-full-slider-next,.ynot-drawer.open .ynot-selected>.ynot-full-slider-count,.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery:not(.ynot-deal-thumb-gallery-final){display:none!important}
 .ynot-drawer.open .ynot-selected-copy{z-index:8!important;max-height:31dvh!important;overflow-y:auto!important;overflow-x:hidden!important}
-/* Full viewer is its own layer. Its X closes only this viewer. */
-.ynot-final-media-viewer{z-index:2147483647!important}
-.ynot-final-media-close{z-index:2147483647!important;pointer-events:auto!important}
-@media(max-width:760px){.ynot-drawer.open .ynot-selected{--ynot-gallery-size:52px;--ynot-gallery-gap:7px;--ynot-gallery-bottom:calc(44dvh - 2px)}.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{max-width:calc(100vw - 36px)!important}.ynot-drawer.open .ynot-selected-copy{bottom:calc(82px + env(safe-area-inset-bottom))!important;max-height:30dvh!important}}
+
+/* Full viewer owns the whole screen and all touch input while open. */
+.ynot-final-media-viewer{position:fixed!important;inset:0!important;z-index:2147483647!important;pointer-events:auto!important;touch-action:pan-y!important;display:grid!important;place-items:center!important}
+.ynot-final-media-stage{position:absolute!important;inset:0!important;display:grid!important;place-items:center!important;pointer-events:auto!important;touch-action:pan-y!important}
+.ynot-final-media-main{display:block!important;width:auto!important;height:auto!important;max-width:90vw!important;max-height:88dvh!important;object-fit:contain!important;object-position:center!important;transform:none!important;pointer-events:auto!important}
+.ynot-final-media-close,.ynot-final-media-prev,.ynot-final-media-next{position:fixed!important;z-index:2147483647!important;pointer-events:auto!important;touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
+.ynot-final-media-close{top:max(14px,env(safe-area-inset-top))!important;right:14px!important;width:44px!important;height:44px!important}
+.ynot-final-media-prev,.ynot-final-media-next{top:50%!important;transform:translateY(-50%)!important;width:48px!important;height:58px!important}
+.ynot-final-media-prev{left:8px!important}.ynot-final-media-next{right:8px!important}
+.ynot-final-media-count{position:fixed!important;left:50%!important;bottom:max(18px,env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;z-index:2147483647!important;pointer-events:none!important}
+
+@media(max-width:760px){
+ .ynot-drawer.open .ynot-selected{--ynot-gallery-size:54px;--ynot-gallery-gap:8px;--ynot-gallery-bottom:calc(44dvh - 2px)}
+ .ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{max-width:calc(100vw - 28px)!important}
+ .ynot-drawer.open .ynot-selected-copy{bottom:calc(82px + env(safe-area-inset-bottom))!important;max-height:30dvh!important}
+ .ynot-final-media-main{max-width:88vw!important;max-height:80dvh!important}
+ .ynot-final-media-prev,.ynot-final-media-next{width:54px!important;height:68px!important}
+}
 @media(min-width:761px){.ynot-drawer.open .ynot-selected{--ynot-gallery-size:56px;--ynot-gallery-gap:7px;--ynot-gallery-bottom:calc(37dvh + 18px)}.ynot-drawer.open .ynot-selected>.ynot-deal-thumb-gallery-final{max-width:320px!important}.ynot-drawer.open .ynot-selected-copy{max-height:27dvh!important}}
