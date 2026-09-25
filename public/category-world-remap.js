@@ -22,12 +22,14 @@
   };
   const arrange=()=>{
     const world=document.querySelector(".lv4-stage");if(!world)return;
+    const mobile=window.matchMedia('(max-width: 767px)').matches;
     const bubbles=[...world.querySelectorAll(".lv4-category-bubble")].filter(node=>ORDER.includes(keyOf(node)));
     const byKey=new Map(bubbles.map(node=>[keyOf(node),node]));
-    ORDER.forEach((key,i)=>{const node=byKey.get(key);if(!(node instanceof HTMLElement))return;node.dataset.ynotCategoryKey=key;const a=i/ORDER.length*Math.PI*2-Math.PI/2,x=WORLD_CENTER+Math.cos(a)*800,y=WORLD_CENTER+Math.sin(a)*800;node.style.left=`${x}px`;node.style.top=`${y}px`;const cfg=MAP[key],b=node.querySelector("b"),s=node.querySelector("span");if(b){b.textContent=cfg.label;b.style.fontSize="30px";b.style.lineHeight="1.02"}if(s){s.textContent=cfg.subtitle;s.style.fontSize="17px";s.style.lineHeight="1.18"}});
+    ORDER.forEach((key,i)=>{const node=byKey.get(key);if(!(node instanceof HTMLElement))return;node.dataset.ynotCategoryKey=key;const a=i/ORDER.length*Math.PI*2-Math.PI/2,x=WORLD_CENTER+Math.cos(a)*800,y=WORLD_CENTER+Math.sin(a)*800;node.style.left=`${x}px`;node.style.top=`${y}px`;const cfg=MAP[key],b=node.querySelector("b"),s=node.querySelector("span");if(b){b.textContent=cfg.label;b.style.fontSize=mobile?"40px":"30px";b.style.lineHeight=mobile?"0.98":"1.02"}if(s){s.textContent=cfg.subtitle;s.style.fontSize="17px";s.style.lineHeight="1.18"}});
   };
   const apply=()=>{arrange();fitTribe();const intent=(document.querySelector(".lv4-intent span")?.textContent||"").toLowerCase();for(const [key,cfg] of Object.entries(MAP))if(intent.includes(cfg.label.toLowerCase()))activeKey=key;const cfg=MAP[activeKey];if(!cfg)return;document.querySelectorAll(".lv4-textbubble").forEach((node,i)=>{if(node instanceof HTMLElement)node.textContent=cfg.tags[i%cfg.tags.length]})};
   document.addEventListener("click",event=>{const target=event.target instanceof Element?event.target:null;if(!target)return;const category=target.closest(".lv4-category-bubble");if(category){activeKey=keyOf(category);setTimeout(apply,50)}},false);
+  addEventListener('resize',()=>requestAnimationFrame(arrange),{passive:true});
   const observer=new MutationObserver(()=>{const stage=document.querySelector('.lv4-world.level-worlds .lv4-stage');if(stage instanceof HTMLElement&&stage.dataset.ynotCategoryFit!=='1')requestAnimationFrame(apply)});observer.observe(document.documentElement,{childList:true,subtree:true});
   apply();setTimeout(apply,120);setTimeout(apply,500);
 })();
