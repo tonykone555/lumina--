@@ -16,11 +16,11 @@ MAX_PHOTOS = 8
 MAX_TOTAL_BYTES = 14 * 1024 * 1024
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/webp"}
 
-image = (
+web_image = modal.Image.debian_slim(python_version="3.12").uv_pip_install("fastapi[standard]")
+reconstruction_image = (
     modal.Image.debian_slim(python_version="3.12")
     .apt_install("git", "libgl1", "libglib2.0-0")
     .uv_pip_install(
-        "fastapi[standard]",
         "pillow",
         "numpy",
         "trimesh",
@@ -33,7 +33,7 @@ image = (
     .env({"HF_HOME": str(MODEL_PATH)})
 )
 
-app = modal.App(APP_NAME, image=image)
+app = modal.App(APP_NAME)
 volume = modal.Volume.from_name("ynot-room-jobs", create_if_missing=True)
 model_cache = modal.Volume.from_name("ynot-room-model-cache", create_if_missing=True)
 
@@ -75,7 +75,6 @@ def _build_colored_glb(points, mask, image_rgb, output_path: Path) -> dict:
     index[valid] = np.arange(int(valid.sum()), dtype=np.int32)
 
     vertices = points_small[valid].copy()
-    # OpenCV camera coordinates -> glTF/OpenGL coordinates.
     vertices *= np.array([1.0, -1.0, -1.0], dtype=np.float32)
     colors = image_small[valid].astype(np.uint8)
     alpha = np.full((len(colors), 1), 255, dtype=np.uint8)
@@ -90,7 +89,7 @@ def _build_colored_glb(points, mask, image_rgb, output_path: Path) -> dict:
                 continue
             depths = np.array([source_depth[yy, xx] for yy, xx in cell], dtype=np.float32)
             mean_depth = float(np.mean(depths))
-            if mean_depth <= 0 or float(np.max(depths) - np.min(depths)) / mean_depth > 0.08:
+            if mean_depth <= 0 or float(np.max(depths) - np.min(depths)) / mean_depth > 0.12:
                 continue
             a = int(index[y, x])
             b = int(index[y, x + 1])
@@ -99,7 +98,7 @@ def _build_colored_glb(points, mask, image_rgb, output_path: Path) -> dict:
             faces.append((a, c, b))
             faces.append((b, c, d))
 
-    if len(vertices) < 500 or len(faces) < 500:
+    if len(vertices) < 250 or len(faces) < 250:
         raise RuntimeError("Reconstruction did not produce enough valid room geometry")
 
     mesh = trimesh.Trimesh(
@@ -108,7 +107,6 @@ def _build_colored_glb(points, mask, image_rgb, output_path: Path) -> dict:
         vertex_colors=vertex_colors,
         process=False,
     )
-    # Center the seed scene around the origin for predictable browser controls.
     center = mesh.bounds.mean(axis=0)
     mesh.apply_translation(-center)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -122,18 +120,15 @@ def _build_colored_glb(points, mask, image_rgb, output_path: Path) -> dict:
 
 
 @app.function(
+    image=reconstruction_image,
     gpu="A10G",
     memory=16384,
     timeout=1800,
+    scaledown_window=600,
     volumes={str(VOLUME_PATH): volume, str(MODEL_PATH): model_cache},
 )
 def process_room(job_id: str, metadata: dict) -> dict:
-    """Create YNOT Room's first browser-loadable 3D reconstruction seed.
-
-    MoGe-2 generates metric monocular geometry from the strongest input view.
-    The remaining views are validated and preserved for the upcoming multi-view
-    alignment stage. The output is a real GLB that YNOT can orbit in Three.js.
-    """
+    """Create a browser-loadable GLB seed from the strongest uploaded room view."""
     import numpy as np
     import torch
     from PIL import Image, ImageOps
@@ -142,15 +137,12 @@ def process_room(job_id: str, metadata: dict) -> dict:
     volume.reload()
     job_dir = _job_dir(job_id)
     status_path = job_dir / "status.json"
-    _write_json(
-        status_path,
-        {
-            "id": job_id,
-            "status": "processing",
-            "stage": "reconstructing",
-            "message": "YNOT Room is reconstructing the first 3D room surface on the GPU.",
-        },
-    )
+    _write_json(status_path, {
+        "id": job_id,
+        "status": "processing",
+        "stage": "reconstructing",
+        "message": "YNOT Room is reconstructing the first 3D room surface on the GPU.",
+    })
     volume.commit()
 
     photo_dir = job_dir / "photos"
@@ -161,17 +153,14 @@ def process_room(job_id: str, metadata: dict) -> dict:
         for path in photos:
             with Image.open(path) as source:
                 image_obj = ImageOps.exif_transpose(source)
-                inspection.append(
-                    {
-                        "name": path.name,
-                        "width": image_obj.width,
-                        "height": image_obj.height,
-                        "mode": image_obj.mode,
-                        "format": source.format,
-                    }
-                )
+                inspection.append({
+                    "name": path.name,
+                    "width": image_obj.width,
+                    "height": image_obj.height,
+                    "mode": image_obj.mode,
+                    "format": source.format,
+                })
 
-        # Seed reconstruction: use the highest-resolution uploaded viewpoint.
         seed_path = max(photos, key=lambda p: p.stat().st_size)
         with Image.open(seed_path) as source:
             pil_image = ImageOps.exif_transpose(source).convert("RGB")
@@ -246,6 +235,7 @@ def process_room(job_id: str, metadata: dict) -> dict:
 
 
 @app.function(
+    image=web_image,
     memory=2048,
     timeout=60,
     volumes={str(VOLUME_PATH): volume},
@@ -290,15 +280,12 @@ async def submit_room(request: Request):
         "photos": saved,
     }
     _write_json(job_dir / "request.json", metadata)
-    _write_json(
-        job_dir / "status.json",
-        {
-            "id": safe_id,
-            "status": "queued",
-            "stage": "accepted",
-            "message": "Room job accepted by Modal.",
-        },
-    )
+    _write_json(job_dir / "status.json", {
+        "id": safe_id,
+        "status": "queued",
+        "stage": "accepted",
+        "message": "Room job accepted by Modal.",
+    })
     volume.commit()
 
     call = process_room.spawn(safe_id, metadata)
@@ -314,6 +301,7 @@ async def submit_room(request: Request):
 
 
 @app.function(
+    image=web_image,
     memory=1024,
     timeout=30,
     volumes={str(VOLUME_PATH): volume},
@@ -324,7 +312,6 @@ def room_status(request: Request, id: str):
     safe_id = _safe_id(id)
     if not safe_id:
         raise HTTPException(status_code=400, detail="Missing job id")
-
     volume.reload()
     status_path = _job_dir(safe_id) / "status.json"
     if not status_path.exists():
@@ -333,6 +320,7 @@ def room_status(request: Request, id: str):
 
 
 @app.function(
+    image=web_image,
     memory=1024,
     timeout=30,
     volumes={str(VOLUME_PATH): volume},
