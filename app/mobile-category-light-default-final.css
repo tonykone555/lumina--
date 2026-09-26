@@ -3,8 +3,8 @@
   /* IMPORTANT: bottom category/tag pills keep their original sizing.
      Do not resize .ynot-dock/taxonomy/subcategory buttons here. */
 
-  /* Prevent iOS Safari from auto-zooming when any YNOT search field receives focus.
-     iOS only performs that focus zoom when form text is rendered below 16px. */
+  /* Prevent iOS Safari from auto-zooming while rendering the search text a little
+     smaller visually. Safari keys off the computed 16px font size. */
   .ynot-bottom-search input,
   .ynot-search input,
   .world-search input,
@@ -16,176 +16,32 @@
   [class*="search-bar"] input,
   input[type="search"]{
     font-size:16px!important;
-    line-height:1.2!important;
+    line-height:1.15!important;
+    transform:scale(.92)!important;
+    transform-origin:left center!important;
+    width:108.7%!important;
   }
 
   /* Main WORLD category bubbles only. Scope to the entry world so product bubbles,
      search-result bubbles and the bottom category tags are never affected. */
-  .level-worlds .lv4-category-bubble{
-    min-width:202px!important;
-    min-height:202px!important;
-    width:202px!important;
-    height:202px!important;
-    overflow:visible!important;
-    transform-origin:center center!important;
-  }
-  .level-worlds .lv4-category-bubble button{
-    width:100%!important;
-    height:100%!important;
-    min-width:100%!important;
-    min-height:100%!important;
-    border-radius:50%!important;
-  }
-  .level-worlds .lv4-category-bubble b,
-  .level-worlds .lv4-category-bubble strong,
-  .level-worlds .lv4-category-bubble label{
-    font-size:36px!important;
-    line-height:1.02!important;
-    font-weight:900!important;
-    letter-spacing:.025em!important;
-    text-transform:uppercase!important;
-  }
-  html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble b,
-  html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble strong,
-  html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble label{
-    color:#000!important;
-    text-shadow:none!important;
-  }
+  .level-worlds .lv4-category-bubble{min-width:202px!important;min-height:202px!important;width:202px!important;height:202px!important;overflow:visible!important;transform-origin:center center!important}
+  .level-worlds .lv4-category-bubble button{width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;border-radius:50%!important}
+  .level-worlds .lv4-category-bubble b,.level-worlds .lv4-category-bubble strong,.level-worlds .lv4-category-bubble label{font-size:36px!important;line-height:1.02!important;font-weight:900!important;letter-spacing:.025em!important;text-transform:uppercase!important}
+  html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble b,html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble strong,html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble label{color:#000!important;text-shadow:none!important}
 
-  /* Mobile search/browser blend. Keep the darker fade behind it, but make the
-     actual pill clearly separate from the shadow instead of disappearing into it. */
-  .ynot-bottom-search,.ynot-search,.world-search,.search-pill,.voice-search,.world-search-bar,.world-search-pill,[class*="search-pill"],[class*="search-bar"]{
-    position:relative!important;overflow:visible!important;isolation:auto!important;z-index:700!important;
-  }
-  .ynot-bottom-search::after,.ynot-search::after,.world-search::after,.search-pill::after,.voice-search::after,.world-search-bar::after,.world-search-pill::after,[class*="search-pill"]::after,[class*="search-bar"]::after{
-    content:""!important;display:block!important;position:absolute!important;pointer-events:none!important;z-index:-1!important;left:-42px!important;right:-42px!important;top:44%!important;height:150px!important;border-radius:0!important;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.13) 15%,rgba(0,0,0,.46) 43%,rgba(0,0,0,.74) 72%,rgba(0,0,0,.9) 100%)!important;filter:blur(14px)!important;opacity:.88!important;
-  }
-  html[data-ynot-theme="light"] .ynot-bottom-search,
-  html[data-ynot-theme="light"] .ynot-search,
-  html[data-ynot-theme="light"] .world-search,
-  html[data-ynot-theme="light"] .voice-search,
-  html[data-ynot-theme="light"] .world-search-bar,
-  html[data-ynot-theme="light"] .world-search-pill{
-    background:rgba(255,255,255,.97)!important;
-    background-color:rgba(255,255,255,.97)!important;
-    border:1px solid rgba(28,28,28,.20)!important;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 7px 22px rgba(0,0,0,.20),0 0 0 1px rgba(255,255,255,.58)!important;
-    backdrop-filter:blur(18px) saturate(120%)!important;
-    -webkit-backdrop-filter:blur(18px) saturate(120%)!important;
-  }
-  html[data-ynot-theme="light"] .ynot-bottom-search input,
-  html[data-ynot-theme="light"] .ynot-search input,
-  html[data-ynot-theme="light"] .world-search input,
-  html[data-ynot-theme="light"] [class*="search-bar"] input{
-    color:#111!important;
-    -webkit-text-fill-color:#111!important;
-    opacity:1!important;
-  }
-  html[data-ynot-theme="light"] .ynot-bottom-search input::placeholder,
-  html[data-ynot-theme="light"] .ynot-search input::placeholder,
-  html[data-ynot-theme="light"] .world-search input::placeholder,
-  html[data-ynot-theme="light"] [class*="search-bar"] input::placeholder{
-    color:#666!important;
-    -webkit-text-fill-color:#666!important;
-    opacity:1!important;
-  }
+  .ynot-bottom-search,.ynot-search,.world-search,.search-pill,.voice-search,.world-search-bar,.world-search-pill,[class*="search-pill"],[class*="search-bar"]{position:relative!important;overflow:visible!important;isolation:auto!important;z-index:700!important}
+  .ynot-bottom-search::after,.ynot-search::after,.world-search::after,.search-pill::after,.voice-search::after,.world-search-bar::after,.world-search-pill::after,[class*="search-pill"]::after,[class*="search-bar"]::after{content:""!important;display:block!important;position:absolute!important;pointer-events:none!important;z-index:-1!important;left:-42px!important;right:-42px!important;top:44%!important;height:150px!important;border-radius:0!important;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.13) 15%,rgba(0,0,0,.46) 43%,rgba(0,0,0,.74) 72%,rgba(0,0,0,.9) 100%)!important;filter:blur(14px)!important;opacity:.88!important}
+  html[data-ynot-theme="light"] .ynot-bottom-search,html[data-ynot-theme="light"] .ynot-search,html[data-ynot-theme="light"] .world-search,html[data-ynot-theme="light"] .voice-search,html[data-ynot-theme="light"] .world-search-bar,html[data-ynot-theme="light"] .world-search-pill{background:rgba(255,255,255,.97)!important;background-color:rgba(255,255,255,.97)!important;border:1px solid rgba(28,28,28,.20)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,1),0 7px 22px rgba(0,0,0,.20),0 0 0 1px rgba(255,255,255,.58)!important;backdrop-filter:blur(18px) saturate(120%)!important;-webkit-backdrop-filter:blur(18px) saturate(120%)!important}
+  html[data-ynot-theme="light"] .ynot-bottom-search input,html[data-ynot-theme="light"] .ynot-search input,html[data-ynot-theme="light"] .world-search input,html[data-ynot-theme="light"] [class*="search-bar"] input{color:#111!important;-webkit-text-fill-color:#111!important;opacity:1!important}
+  html[data-ynot-theme="light"] .ynot-bottom-search input::placeholder,html[data-ynot-theme="light"] .ynot-search input::placeholder,html[data-ynot-theme="light"] .world-search input::placeholder,html[data-ynot-theme="light"] [class*="search-bar"] input::placeholder{color:#666!important;-webkit-text-fill-color:#666!important;opacity:1!important}
 
-  /* Category/tag row above search: keep it completely clear of the search fade.
-     No canopy, glow or drop shadow behind these pills; use crisp light pills with
-     dark text so each tag stays readable over products. */
-  .ynot-dock,
-  .taxonomy-rail,
-  [class*="taxonomy" i],
-  [class*="subcategory" i]{
-    position:relative!important;
-    z-index:760!important;
-    isolation:isolate!important;
-    filter:none!important;
-    box-shadow:none!important;
-    text-shadow:none!important;
-  }
-  .ynot-dock::before,.ynot-dock::after,
-  .taxonomy-rail::before,.taxonomy-rail::after,
-  [class*="taxonomy" i]::before,[class*="taxonomy" i]::after,
-  [class*="subcategory" i]::before,[class*="subcategory" i]::after{
-    content:none!important;
-    display:none!important;
-    background:none!important;
-    box-shadow:none!important;
-    filter:none!important;
-  }
-  html[data-ynot-theme="light"] .ynot-dock button,
-  html[data-ynot-theme="light"] .taxonomy-rail button,
-  html[data-ynot-theme="light"] [class*="taxonomy" i] button,
-  html[data-ynot-theme="light"] [class*="subcategory" i] button{
-    background:rgba(255,255,255,.96)!important;
-    border:1px solid rgba(20,20,20,.16)!important;
-    color:#222!important;
-    -webkit-text-fill-color:#222!important;
-    box-shadow:none!important;
-    text-shadow:none!important;
-    filter:none!important;
-    opacity:1!important;
-    backdrop-filter:blur(10px) saturate(110%)!important;
-    -webkit-backdrop-filter:blur(10px) saturate(110%)!important;
-  }
-  html[data-ynot-theme="light"] .ynot-dock button.active,
-  html[data-ynot-theme="light"] .taxonomy-rail button.active,
-  html[data-ynot-theme="light"] [class*="taxonomy" i] button.active,
-  html[data-ynot-theme="light"] [class*="subcategory" i] button.active{
-    background:#fff!important;
-    border-color:rgba(0,0,0,.28)!important;
-    color:#000!important;
-    -webkit-text-fill-color:#000!important;
-    font-weight:800!important;
-  }
+  .ynot-dock,.taxonomy-rail,[class*="taxonomy" i],[class*="subcategory" i]{position:relative!important;z-index:760!important;isolation:isolate!important;filter:none!important;box-shadow:none!important;text-shadow:none!important}
+  .ynot-dock::before,.ynot-dock::after,.taxonomy-rail::before,.taxonomy-rail::after,[class*="taxonomy" i]::before,[class*="taxonomy" i]::after,[class*="subcategory" i]::before,[class*="subcategory" i]::after{content:none!important;display:none!important;background:none!important;box-shadow:none!important;filter:none!important}
+  html[data-ynot-theme="light"] .ynot-dock button,html[data-ynot-theme="light"] .taxonomy-rail button,html[data-ynot-theme="light"] [class*="taxonomy" i] button,html[data-ynot-theme="light"] [class*="subcategory" i] button{background:rgba(255,255,255,.96)!important;border:1px solid rgba(20,20,20,.16)!important;color:#222!important;-webkit-text-fill-color:#222!important;box-shadow:none!important;text-shadow:none!important;filter:none!important;opacity:1!important;backdrop-filter:blur(10px) saturate(110%)!important;-webkit-backdrop-filter:blur(10px) saturate(110%)!important}
+  html[data-ynot-theme="light"] .ynot-dock button.active,html[data-ynot-theme="light"] .taxonomy-rail button.active,html[data-ynot-theme="light"] [class*="taxonomy" i] button.active,html[data-ynot-theme="light"] [class*="subcategory" i] button.active{background:#fff!important;border-color:rgba(0,0,0,.28)!important;color:#000!important;-webkit-text-fill-color:#000!important;font-weight:800!important}
 }
 
-/* Similar Picks / Similar Items: this section is marked at runtime by
-   ynot-deal-popup.js. Force every text field to readable grey in light mode,
-   including source/brand/title AND the price. This file is loaded last so it
-   wins over older popup rules that forced white text. */
-html[data-ynot-theme="light"] .ynot-similar-light-fix,
-html[data-ynot-theme="light"] .ynot-similar-light-fix *{
-  color:#666!important;
-  -webkit-text-fill-color:#666!important;
-  opacity:1!important;
-  visibility:visible!important;
-  text-shadow:none!important;
-  mix-blend-mode:normal!important;
-  filter:none!important;
-}
-html[data-ynot-theme="light"] .ynot-similar-light-fix strong,
-html[data-ynot-theme="light"] .ynot-similar-light-fix [class*="price" i],
-html[data-ynot-theme="light"] .ynot-similar-light-fix [data-price]{
-  color:#666!important;
-  -webkit-text-fill-color:#666!important;
-  font-weight:800!important;
-}
-
-/* Direct fallback for recommendation cards inside an open product popup. */
-html[data-ynot-theme="light"] .ynot-selected .ynot-orb-copy,
-html[data-ynot-theme="light"] .ynot-selected .ynot-orb-copy *,
-html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] *,
-html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] *{
-  color:#666!important;
-  -webkit-text-fill-color:#666!important;
-  opacity:1!important;
-  text-shadow:none!important;
-}
-
-/* Absolute final guard: while any product popup is open, hide world zoom UI
-   even if an old control stylesheet gives it a huge z-index. */
-html.ynot-any-product-open .lv4-zoom,
-html.ynot-any-product-open .lv4-zoom-controls,
-html.ynot-any-product-open .ynot-zoom-controls,
-html.ynot-any-product-open .ynot-compass-tools,
-html.ynot-any-product-open [class*="zoom-control" i],
-html.ynot-any-product-open [class*="zoom-controls" i],
-html.ynot-any-product-open button:has(>svg.lucide-plus),
-html.ynot-any-product-open button:has(>svg.lucide-minus){
-  display:none!important;
-  visibility:hidden!important;
-  opacity:0!important;
-  pointer-events:none!important;
-}
+html[data-ynot-theme="light"] .ynot-similar-light-fix,html[data-ynot-theme="light"] .ynot-similar-light-fix *{color:#666!important;-webkit-text-fill-color:#666!important;opacity:1!important;visibility:visible!important;text-shadow:none!important;mix-blend-mode:normal!important;filter:none!important}
+html[data-ynot-theme="light"] .ynot-similar-light-fix strong,html[data-ynot-theme="light"] .ynot-similar-light-fix [class*="price" i],html[data-ynot-theme="light"] .ynot-similar-light-fix [data-price]{color:#666!important;-webkit-text-fill-color:#666!important;font-weight:800!important}
+html[data-ynot-theme="light"] .ynot-selected .ynot-orb-copy,html[data-ynot-theme="light"] .ynot-selected .ynot-orb-copy *,html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] *,html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] *{color:#666!important;-webkit-text-fill-color:#666!important;opacity:1!important;text-shadow:none!important}
+html.ynot-any-product-open .lv4-zoom,html.ynot-any-product-open .lv4-zoom-controls,html.ynot-any-product-open .ynot-zoom-controls,html.ynot-any-product-open .ynot-compass-tools,html.ynot-any-product-open [class*="zoom-control" i],html.ynot-any-product-open [class*="zoom-controls" i],html.ynot-any-product-open button:has(>svg.lucide-plus),html.ynot-any-product-open button:has(>svg.lucide-minus){display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
