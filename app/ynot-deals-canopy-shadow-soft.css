@@ -70,3 +70,17 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
 
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-orb :is(.ynot-orb-copy,h1,h2,h3,h4,p,small,span,b,strong,label){color:#fff!important;-webkit-text-fill-color:#fff!important;text-shadow:0 1px 4px rgba(0,0,0,.55)!important;opacity:1!important}
 }
+
+/* Desktop: restore category tabs after the generic rule above. */
+@media(min-width:900px){
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock{
+    position:fixed!important;display:flex!important;visibility:visible!important;opacity:1!important;
+    top:44px!important;left:50vw!important;right:auto!important;width:100vw!important;max-width:none!important;height:auto!important;
+    padding:2px 100px 7px!important;margin:0!important;box-sizing:border-box!important;flex-flow:row nowrap!important;justify-content:center!important;align-items:center!important;gap:7px!important;
+    transform:translateX(-50%)!important;overflow-x:auto!important;overflow-y:hidden!important;pointer-events:auto!important;z-index:2147483590!important;background:transparent!important;box-shadow:none!important;filter:none!important
+  }
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock button{display:inline-flex!important;visibility:visible!important;opacity:1!important;flex:0 0 auto!important}
+}
+
+/* Region still sets currency and mic language; don't show its flag beside YNOT. */
+.ynot-region-symbol{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
