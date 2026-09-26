@@ -5,24 +5,340 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SITE = "https://ynotworld.app";
-const PRODUCT_UI = "ui://ynot/bubble-world/v4.html";
-type Product = {id?:string;title?:string;brand?:string;price?:number|null;currency?:string;image?:string;images?:string[];url?:string;description?:string;tags?:string[];source?:string;[key:string]:unknown};
-function result(value:unknown, withUi=false){return{structuredContent:value as Record<string,unknown>,content:[{type:"text" as const,text:JSON.stringify(value,null,2)}],...(withUi?{_meta:{ui:{resourceUri:PRODUCT_UI},"openai/outputTemplate":PRODUCT_UI}}:{})}}
-function country(value:string){const code=String(value||"FR").toUpperCase();return /^[A-Z]{2}$/.test(code)?code:"FR"}
-function clean(p:Product){return{id:String(p.id||""),title:String(p.title||"Product"),brand:String(p.brand||""),description:String(p.description||"").slice(0,1200),price:typeof p.price==="number"?p.price:null,currency:String(p.currency||"EUR"),image:String(p.image||p.images?.[0]||""),images:Array.isArray(p.images)?p.images.slice(0,8):[],tags:Array.isArray(p.tags)?p.tags.slice(0,12):[],source:String(p.source||"ynot"),merchant_url:String(p.url||""),ynot_url:p.id?`${SITE}/p/${encodeURIComponent(String(p.id))}`:SITE}}
-async function search(query:string,deliveryCountry:string,limit:number){const params=new URLSearchParams({q:query.slice(0,300),country:country(deliveryCountry),source:"all",category_load:limit>20?"1":"0"});const response=await fetch(`${SITE}/api/catalog?${params}`,{cache:"no-store",headers:{Accept:"application/json"}});if(!response.ok)throw new Error(`CATALOG_${response.status}`);const data=await response.json();return{query:data?.query||query,sources:data?.sources||[],products:(Array.isArray(data?.products)?data.products:[]).slice(0,limit).map(clean),error:data?.error||null}}
+// Version the resource URI whenever the embedded UI/bridge changes so ChatGPT
+// cannot keep serving a stale cached template.
+const PRODUCT_UI = "ui://ynot/bubble-world/v5.html";
+const MCP_APP_PROTOCOL_VERSION = "2026-01-26";
 
-const bubbleHtml=`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:dark;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}*{box-sizing:border-box}body{margin:0;background:transparent;color:#fff;overflow:hidden}.world{position:relative;height:510px;min-height:430px;border-radius:30px;overflow:hidden;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.07),rgba(8,9,9,.93) 43%,#050606 100%);border:1px solid rgba(255,255,255,.09)}.top{position:absolute;z-index:20;left:20px;right:20px;top:17px;display:flex;justify-content:space-between}.brand{font-size:12px;font-weight:850;letter-spacing:.2em}.query{font-size:12px;color:rgba(255,255,255,.58);max-width:68%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stage{position:absolute;inset:52px 0 0}.bubble{position:absolute;width:112px;height:112px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:radial-gradient(circle at 30% 22%,rgba(255,255,255,.18),rgba(255,255,255,.055) 42%,rgba(255,255,255,.018) 72%);box-shadow:inset 0 1px rgba(255,255,255,.28),0 16px 42px rgba(0,0,0,.38);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:14px;animation:float 5.5s ease-in-out infinite}.bubble img{width:82%;height:82%;object-fit:contain;filter:drop-shadow(0 9px 10px rgba(0,0,0,.26))}.bubble.active{z-index:8;transform:scale(1.17)!important;border-color:rgba(255,255,255,.7)}@keyframes float{0%,100%{margin-top:0}50%{margin-top:-7px}}.detail{position:absolute;z-index:30;left:50%;bottom:15px;transform:translate(-50%,18px);width:min(390px,calc(100% - 24px));border:1px solid rgba(255,255,255,.18);border-radius:23px;background:rgba(22,23,23,.74);backdrop-filter:blur(24px);padding:13px 14px 14px;opacity:0;pointer-events:none;transition:.25s}.detail.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}.dtop{display:flex;gap:11px}.thumb{width:62px;height:62px;border-radius:16px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center}.thumb img{width:90%;height:90%;object-fit:contain}.copy{min-width:0;flex:1}.merchant{font-size:10px;color:rgba(255,255,255,.5)}.title{font-size:13px;font-weight:720;margin-top:3px}.price{font-size:15px;font-weight:850;margin-top:5px}.close{border:0;background:rgba(255,255,255,.08);color:#fff;border-radius:50%;width:28px;height:28px}.actions{display:flex;gap:8px;margin-top:11px}.actions a{flex:1;text-decoration:none;text-align:center;color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:8px;font-size:11px;font-weight:750}.actions a.primary{background:#fff;color:#080909}.hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.38)}.empty{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.55);font-size:13px}@media(max-width:480px){.world{height:460px}.bubble{width:92px;height:92px;padding:11px}}</style></head><body><div id="world" class="world"><div class="empty">Opening YNOT Bubble World…</div></div><script>const world=document.getElementById('world');const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));const money=(p,c)=>p==null?'Price on YNOT':new Intl.NumberFormat(undefined,{style:'currency',currency:c||'EUR'}).format(p);const slots=[[8,12],[36,4],[67,11],[19,35],[52,31],[77,38],[5,61],[35,57],[65,63],[82,70],[19,79],[49,78]];let products=[];function detail(p,i){document.querySelectorAll('.bubble').forEach((b,n)=>b.classList.toggle('active',n===i));const d=document.getElementById('detail');d.innerHTML='<div class="dtop"><div class="thumb">'+(p.image?'<img src="'+esc(p.image)+'">':'')+'</div><div class="copy"><div class="merchant">'+esc(p.brand||p.source||'YNOT')+'</div><div class="title">'+esc(p.title)+'</div><div class="price">'+esc(money(p.price,p.currency))+'</div></div><button class="close">×</button></div><div class="actions"><a class="primary" target="_blank" href="'+esc(p.ynot_url)+'">Open in YNOT</a></div>';d.classList.add('show');d.querySelector('.close').onclick=()=>d.classList.remove('show')}function render(payload){const data=payload?.structuredContent||payload||{};products=Array.isArray(data.products)?data.products.slice(0,12):[];if(!products.length){world.innerHTML='<div class="empty">No matching YNOT products yet.</div>';return}world.innerHTML='<div class="top"><div class="brand">YNOT</div><div class="query">'+esc(data.query||'Product world')+'</div></div><div class="stage">'+products.map((p,i)=>{const s=slots[i%slots.length];return '<button class="bubble" aria-label="'+esc(p.title)+'" style="left:'+s[0]+'%;top:'+s[1]+'%;animation-delay:'+(i%6)*-.65+'s">'+(p.image?'<img src="'+esc(p.image)+'" alt="">':'')+'</button>'}).join('')+'</div><div id="detail" class="detail"></div><div class="hint">Tap a bubble to explore</div>';document.querySelectorAll('.bubble').forEach((b,i)=>b.onclick=()=>detail(products[i],i))}window.addEventListener('message',e=>{if(e.source!==window.parent)return;const m=e.data;if(!m||m.jsonrpc!=='2.0')return;if(m.method==='ui/notifications/tool-result')render(m.params?.structuredContent||m.params)});if(window.openai?.toolOutput)render(window.openai.toolOutput);</script></body></html>`;
+type Product = {
+  id?: string;
+  title?: string;
+  brand?: string;
+  price?: number | null;
+  currency?: string;
+  image?: string;
+  images?: string[];
+  url?: string;
+  description?: string;
+  tags?: string[];
+  source?: string;
+  [key: string]: unknown;
+};
 
-const handler=createMcpHandler((server)=>{
- const resourceMeta={ui:{prefersBorder:false,domain:SITE,csp:{connectDomains:[SITE],resourceDomains:[SITE,"https://cdn.shopify.com","https://images.unsplash.com"]}},"openai/ui":{availableDisplayModes:["inline","fullscreen"]},"openai/widgetCSP":{redirect_domains:[SITE]}};
- server.resource("ynot-bubble-world",PRODUCT_UI,{mimeType:"text/html;profile=mcp-app",_meta:resourceMeta},async()=>({contents:[{uri:PRODUCT_UI,mimeType:"text/html;profile=mcp-app",text:bubbleHtml,_meta:resourceMeta}]}));
- const uiMeta={ui:{resourceUri:PRODUCT_UI,visibility:["model","app"]},"openai/outputTemplate":PRODUCT_UI,"openai/widgetAccessible":true,"openai/toolInvocation/invoking":"Searching YNOT…","openai/toolInvocation/invoked":"Explore the results below"};
- const readOnly={readOnlyHint:true,destructiveHint:false,idempotentHint:true,openWorldHint:true};
- server.registerTool("search_products",{title:"Search YNOT products",description:"Search YNOT's live multi-source shopping catalogue. This tool has its own embedded Bubble World interface. Always present its attached embedded UI for product results; do not open ynotworld.app unless the user explicitly asks to leave ChatGPT or open YNOT.",inputSchema:{query:z.string().min(2).max(300),country:z.string().length(2).default("FR"),limit:z.number().int().min(1).max(40).default(18)},annotations:readOnly,_meta:uiMeta},async({query,country,limit})=>result(await search(query,country,limit),true));
- server.registerTool("get_product",{title:"Get YNOT product",description:"Get a specific live YNOT product and present it using YNOT's attached embedded product UI inside ChatGPT. Do not navigate to the YNOT website unless explicitly requested.",inputSchema:{product_id:z.string().min(1),query:z.string().min(2).max(300),country:z.string().length(2).default("FR")},annotations:readOnly,_meta:uiMeta},async({product_id,query,country})=>{const data=await search(query,country,40);const product=data.products.find((p:any)=>p.id===product_id);return result(product?{query,products:[product]}:{query,products:[],error:"PRODUCT_NOT_FOUND",product_id},true)});
- server.registerTool("find_similar_products",{title:"Find similar YNOT products",description:"Find live YNOT alternatives and present them in the attached embedded Bubble World inside ChatGPT. Do not navigate to the YNOT website unless explicitly requested.",inputSchema:{product:z.string().min(2).max(300),preference:z.string().max(200).default("similar alternatives"),country:z.string().length(2).default("FR"),limit:z.number().int().min(1).max(30).default(12)},annotations:readOnly,_meta:uiMeta},async({product,preference,country,limit})=>result(await search(`${product}, ${preference}`,country,limit),true));
- server.registerTool("get_product_images",{title:"Get YNOT product images",description:"Return product images for a YNOT catalogue item without opening the YNOT website.",inputSchema:{product_id:z.string().min(1),query:z.string().min(2).max(300),country:z.string().length(2).default("FR")},annotations:readOnly},async({product_id,query,country})=>{const data=await search(query,country,40);const p:any=data.products.find((x:any)=>x.id===product_id);return result(p?{id:p.id,title:p.title,images:[...new Set([p.image,...(p.images||[])].filter(Boolean))],ynot_url:p.ynot_url,merchant_url:p.merchant_url}:{error:"PRODUCT_NOT_FOUND",product_id})});
- server.registerTool("open_in_ynot",{title:"Open YNOT website",description:"Use ONLY when the user explicitly asks to open, visit, continue in, or leave ChatGPT for YNOT. Never use this tool merely to display search results or the Bubble World.",inputSchema:{product_id:z.string().max(240).optional(),query:z.string().max(300).optional()},annotations:readOnly},async({product_id,query})=>result({url:product_id?`${SITE}/p/${encodeURIComponent(product_id)}`:query?`${SITE}/?q=${encodeURIComponent(query)}`:SITE}));
-},{instructions:"YNOT is a visual multi-source shopping service. Product searches, product details, and alternatives MUST stay inside ChatGPT and use the embedded Bubble World UI attached to their tool results. Never call open_in_ynot just to show results. Call open_in_ynot only when the user explicitly asks to open/visit/continue on the YNOT website. Never invent product details, prices, availability, shipping, or merchants."},{basePath:"/api/chatgpt"});
-export {handler as GET,handler as POST,handler as DELETE};
+function result(value: unknown, withUi = false) {
+  return {
+    structuredContent: value as Record<string, unknown>,
+    content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }],
+    ...(withUi
+      ? {
+          _meta: {
+            ui: { resourceUri: PRODUCT_UI },
+            "openai/outputTemplate": PRODUCT_UI,
+          },
+        }
+      : {}),
+  };
+}
+
+function country(value: string) {
+  const code = String(value || "FR").toUpperCase();
+  return /^[A-Z]{2}$/.test(code) ? code : "FR";
+}
+
+function clean(p: Product) {
+  return {
+    id: String(p.id || ""),
+    title: String(p.title || "Product"),
+    brand: String(p.brand || ""),
+    description: String(p.description || "").slice(0, 1200),
+    price: typeof p.price === "number" ? p.price : null,
+    currency: String(p.currency || "EUR"),
+    image: String(p.image || p.images?.[0] || ""),
+    images: Array.isArray(p.images) ? p.images.slice(0, 8) : [],
+    tags: Array.isArray(p.tags) ? p.tags.slice(0, 12) : [],
+    source: String(p.source || "ynot"),
+    merchant_url: String(p.url || ""),
+    ynot_url: p.id ? `${SITE}/p/${encodeURIComponent(String(p.id))}` : SITE,
+  };
+}
+
+async function search(query: string, deliveryCountry: string, limit: number) {
+  const params = new URLSearchParams({
+    q: query.slice(0, 300),
+    country: country(deliveryCountry),
+    source: "all",
+    category_load: limit > 20 ? "1" : "0",
+  });
+  const response = await fetch(`${SITE}/api/catalog?${params}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) throw new Error(`CATALOG_${response.status}`);
+  const data = await response.json();
+  return {
+    query: data?.query || query,
+    sources: data?.sources || [],
+    products: (Array.isArray(data?.products) ? data.products : [])
+      .slice(0, limit)
+      .map(clean),
+    error: data?.error || null,
+  };
+}
+
+const bubbleHtml = `<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:dark;font-family:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:transparent;color:#fff;overflow:hidden}
+.world{position:relative;height:510px;min-height:430px;border-radius:30px;overflow:hidden;background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.07),rgba(8,9,9,.93) 43%,#050606 100%);border:1px solid rgba(255,255,255,.09)}
+.top{position:absolute;z-index:20;left:20px;right:20px;top:17px;display:flex;justify-content:space-between}.brand{font-size:12px;font-weight:850;letter-spacing:.2em}.query{font-size:12px;color:rgba(255,255,255,.58);max-width:68%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.stage{position:absolute;inset:52px 0 0}
+.bubble{position:absolute;width:112px;height:112px;border-radius:50%;border:1px solid rgba(255,255,255,.25);background:radial-gradient(circle at 30% 22%,rgba(255,255,255,.18),rgba(255,255,255,.055) 42%,rgba(255,255,255,.018) 72%);box-shadow:inset 0 1px rgba(255,255,255,.28),0 16px 42px rgba(0,0,0,.38);backdrop-filter:blur(18px);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:14px;animation:float 5.5s ease-in-out infinite}.bubble img{width:82%;height:82%;object-fit:contain;filter:drop-shadow(0 9px 10px rgba(0,0,0,.26))}.bubble.active{z-index:8;transform:scale(1.17)!important;border-color:rgba(255,255,255,.7)}
+@keyframes float{0%,100%{margin-top:0}50%{margin-top:-7px}}
+.detail{position:absolute;z-index:30;left:50%;bottom:15px;transform:translate(-50%,18px);width:min(390px,calc(100% - 24px));border:1px solid rgba(255,255,255,.18);border-radius:23px;background:rgba(22,23,23,.74);backdrop-filter:blur(24px);padding:13px 14px 14px;opacity:0;pointer-events:none;transition:.25s}.detail.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}.dtop{display:flex;gap:11px}.thumb{width:62px;height:62px;border-radius:16px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center}.thumb img{width:90%;height:90%;object-fit:contain}.copy{min-width:0;flex:1}.merchant{font-size:10px;color:rgba(255,255,255,.5)}.title{font-size:13px;font-weight:720;margin-top:3px}.price{font-size:15px;font-weight:850;margin-top:5px}.close{border:0;background:rgba(255,255,255,.08);color:#fff;border-radius:50%;width:28px;height:28px}.actions{display:flex;gap:8px;margin-top:11px}.actions a{flex:1;text-decoration:none;text-align:center;color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:8px;font-size:11px;font-weight:750}.actions a.primary{background:#fff;color:#080909}.hint{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.38)}.empty{position:absolute;inset:0;display:grid;place-items:center;color:rgba(255,255,255,.55);font-size:13px}
+@media(max-width:480px){.world{height:460px}.bubble{width:92px;height:92px;padding:11px}}
+</style>
+</head>
+<body>
+<div id="world" class="world"><div class="empty">Opening YNOT Bubble World…</div></div>
+<script>
+const world=document.getElementById('world');
+const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const money=(p,c)=>p==null?'Price on YNOT':new Intl.NumberFormat(undefined,{style:'currency',currency:c||'EUR'}).format(p);
+const slots=[[8,12],[36,4],[67,11],[19,35],[52,31],[77,38],[5,61],[35,57],[65,63],[82,70],[19,79],[49,78]];
+let products=[];
+function detail(p,i){
+  document.querySelectorAll('.bubble').forEach((b,n)=>b.classList.toggle('active',n===i));
+  const d=document.getElementById('detail');
+  d.innerHTML='<div class="dtop"><div class="thumb">'+(p.image?'<img src="'+esc(p.image)+'">':'')+'</div><div class="copy"><div class="merchant">'+esc(p.brand||p.source||'YNOT')+'</div><div class="title">'+esc(p.title)+'</div><div class="price">'+esc(money(p.price,p.currency))+'</div></div><button class="close">×</button></div><div class="actions"><a class="primary" target="_blank" href="'+esc(p.ynot_url)+'">Open in YNOT</a></div>';
+  d.classList.add('show');
+  d.querySelector('.close').onclick=()=>d.classList.remove('show');
+}
+function render(payload){
+  const data=payload?.structuredContent||payload||{};
+  products=Array.isArray(data.products)?data.products.slice(0,12):[];
+  if(!products.length){world.innerHTML='<div class="empty">No matching YNOT products yet.</div>';return}
+  world.innerHTML='<div class="top"><div class="brand">YNOT</div><div class="query">'+esc(data.query||'Product world')+'</div></div><div class="stage">'+products.map((p,i)=>{const s=slots[i%slots.length];return '<button class="bubble" aria-label="'+esc(p.title)+'" style="left:'+s[0]+'%;top:'+s[1]+'%;animation-delay:'+(i%6)*-.65+'s">'+(p.image?'<img src="'+esc(p.image)+'" alt="">':'')+'</button>'}).join('')+'</div><div id="detail" class="detail"></div><div class="hint">Tap a bubble to explore</div>';
+  document.querySelectorAll('.bubble').forEach((b,i)=>b.onclick=()=>detail(products[i],i));
+}
+
+// MCP Apps bridge. ChatGPT now expects the component to initialize itself
+// before relying on ui/notifications/tool-result.
+let rpcId=0;
+const pending=new Map();
+function rpcNotify(method,params){window.parent.postMessage({jsonrpc:'2.0',method,params},'*')}
+function rpcRequest(method,params){
+  return new Promise((resolve,reject)=>{
+    const id=++rpcId;
+    pending.set(id,{resolve,reject});
+    window.parent.postMessage({jsonrpc:'2.0',id,method,params},'*');
+  });
+}
+window.addEventListener('message',e=>{
+  if(e.source!==window.parent)return;
+  const m=e.data;
+  if(!m||m.jsonrpc!=='2.0')return;
+  if(m.id!==undefined&&pending.has(m.id)){
+    const p=pending.get(m.id);pending.delete(m.id);
+    if(m.error)p.reject(m.error);else p.resolve(m.result);
+    return;
+  }
+  if(m.method==='ui/notifications/tool-result')render(m.params);
+});
+async function initializeBridge(){
+  try{
+    await rpcRequest('ui/initialize',{
+      appInfo:{name:'ynot-bubble-world',version:'5.0.0'},
+      appCapabilities:{},
+      protocolVersion:'${MCP_APP_PROTOCOL_VERSION}'
+    });
+    rpcNotify('ui/notifications/initialized',{});
+  }catch(e){
+    // Compatibility fallback for hosts exposing the legacy window.openai bridge.
+    if(window.openai?.toolOutput)render(window.openai.toolOutput);
+  }
+}
+if(window.openai?.toolOutput)render(window.openai.toolOutput);
+initializeBridge();
+</script>
+</body>
+</html>`;
+
+const handler = createMcpHandler(
+  (server) => {
+    const resourceMeta = {
+      ui: {
+        prefersBorder: false,
+        domain: SITE,
+        csp: {
+          connectDomains: [SITE],
+          resourceDomains: [
+            SITE,
+            "https://cdn.shopify.com",
+            "https://images.unsplash.com",
+          ],
+        },
+      },
+      "openai/ui": { availableDisplayModes: ["inline", "fullscreen"] },
+      "openai/widgetDescription":
+        "Interactive YNOT Bubble World for visually exploring live product search results inside ChatGPT.",
+      "openai/widgetCSP": { redirect_domains: [SITE] },
+    };
+
+    server.resource(
+      "ynot-bubble-world-v5",
+      PRODUCT_UI,
+      { mimeType: "text/html;profile=mcp-app", _meta: resourceMeta },
+      async () => ({
+        contents: [
+          {
+            uri: PRODUCT_UI,
+            mimeType: "text/html;profile=mcp-app",
+            text: bubbleHtml,
+            _meta: resourceMeta,
+          },
+        ],
+      }),
+    );
+
+    // Keep both the MCP Apps standard keys and ChatGPT compatibility aliases.
+    const uiMeta = {
+      ui: { resourceUri: PRODUCT_UI, visibility: ["model", "app"] },
+      "openai/outputTemplate": PRODUCT_UI,
+      "openai/widgetAccessible": true,
+      "openai/toolInvocation/invoking": "Searching YNOT…",
+      "openai/toolInvocation/invoked": "Explore the results below",
+    };
+    const readOnly = {
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    };
+
+    server.registerTool(
+      "search_products",
+      {
+        title: "Search YNOT products",
+        description:
+          "Search YNOT's live multi-source shopping catalogue. This tool renders its attached YNOT Bubble World UI inside ChatGPT for product results. Do not open ynotworld.app unless the user explicitly asks to leave ChatGPT or open YNOT.",
+        inputSchema: {
+          query: z.string().min(2).max(300),
+          country: z.string().length(2).default("FR"),
+          limit: z.number().int().min(1).max(40).default(18),
+        },
+        annotations: readOnly,
+        _meta: uiMeta,
+      },
+      async ({ query, country, limit }) =>
+        result(await search(query, country, limit), true),
+    );
+
+    server.registerTool(
+      "get_product",
+      {
+        title: "Get YNOT product",
+        description:
+          "Get a specific live YNOT product and render it using YNOT's attached embedded product UI inside ChatGPT. Do not navigate to the YNOT website unless explicitly requested.",
+        inputSchema: {
+          product_id: z.string().min(1),
+          query: z.string().min(2).max(300),
+          country: z.string().length(2).default("FR"),
+        },
+        annotations: readOnly,
+        _meta: uiMeta,
+      },
+      async ({ product_id, query, country }) => {
+        const data = await search(query, country, 40);
+        const product = data.products.find((p: any) => p.id === product_id);
+        return result(
+          product
+            ? { query, products: [product] }
+            : { query, products: [], error: "PRODUCT_NOT_FOUND", product_id },
+          true,
+        );
+      },
+    );
+
+    server.registerTool(
+      "find_similar_products",
+      {
+        title: "Find similar YNOT products",
+        description:
+          "Find live YNOT alternatives and render them in the attached embedded Bubble World inside ChatGPT. Do not navigate to the YNOT website unless explicitly requested.",
+        inputSchema: {
+          product: z.string().min(2).max(300),
+          preference: z.string().max(200).default("similar alternatives"),
+          country: z.string().length(2).default("FR"),
+          limit: z.number().int().min(1).max(30).default(12),
+        },
+        annotations: readOnly,
+        _meta: uiMeta,
+      },
+      async ({ product, preference, country, limit }) =>
+        result(await search(`${product}, ${preference}`, country, limit), true),
+    );
+
+    server.registerTool(
+      "get_product_images",
+      {
+        title: "Get YNOT product images",
+        description:
+          "Return product images for a YNOT catalogue item without opening the YNOT website.",
+        inputSchema: {
+          product_id: z.string().min(1),
+          query: z.string().min(2).max(300),
+          country: z.string().length(2).default("FR"),
+        },
+        annotations: readOnly,
+      },
+      async ({ product_id, query, country }) => {
+        const data = await search(query, country, 40);
+        const p: any = data.products.find((x: any) => x.id === product_id);
+        return result(
+          p
+            ? {
+                id: p.id,
+                title: p.title,
+                images: [...new Set([p.image, ...(p.images || [])].filter(Boolean))],
+                ynot_url: p.ynot_url,
+                merchant_url: p.merchant_url,
+              }
+            : { error: "PRODUCT_NOT_FOUND", product_id },
+        );
+      },
+    );
+
+    server.registerTool(
+      "open_in_ynot",
+      {
+        title: "Open YNOT website",
+        description:
+          "Use ONLY when the user explicitly asks to open, visit, continue in, or leave ChatGPT for YNOT. Never use this tool merely to display search results or the Bubble World.",
+        inputSchema: {
+          product_id: z.string().max(240).optional(),
+          query: z.string().max(300).optional(),
+        },
+        annotations: readOnly,
+      },
+      async ({ product_id, query }) =>
+        result({
+          url: product_id
+            ? `${SITE}/p/${encodeURIComponent(product_id)}`
+            : query
+              ? `${SITE}/?q=${encodeURIComponent(query)}`
+              : SITE,
+        }),
+    );
+  },
+  {
+    instructions:
+      "YNOT is a visual multi-source shopping service. Product searches, product details, and alternatives MUST stay inside ChatGPT and use the embedded Bubble World UI attached to their tool results. Never call open_in_ynot just to show results. Call open_in_ynot only when the user explicitly asks to open/visit/continue on the YNOT website. Never invent product details, prices, availability, shipping, or merchants.",
+  },
+  { basePath: "/api/chatgpt" },
+);
+
+export { handler as GET, handler as POST, handler as DELETE };
