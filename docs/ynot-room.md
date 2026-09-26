@@ -91,6 +91,8 @@ Clicking an outlined object triggers a category-specific search through the exis
 
 The commerce resolver also accepts Shopify Global Catalog IDs (`gid://shopify/...`) directly. It calls Shopify's UCP `get_product` tool for the full selected product/variant data, then applies YNOT retail pricing before returning the customer-facing popup payload. Raw supplier price is not returned by this live fallback, including in variant prices.
 
+The live resolver regression uses `gid://shopify/p/59woe13TkTaPtMBhF7sAvz`: the endpoint returns HTTP 200, the product and its variant expose the same YNOT retail price, and the underlying supplier price is absent from the response.
+
 This preserves the existing creator/referral URL structure:
 
 `/p/{productId}?ref={creatorCode}`
@@ -167,7 +169,7 @@ The browser never calls that endpoint directly. The Next.js server route obtains
 
 ## CI verification
 
-The feature branch contains separate deployment/smoke workflows for reconstruction, structure extraction, matched-camera QA, visual QA assets, repair, high-detail fallback, the lightweight submit worker, autopilot and furniture object detection.
+The feature branch contains separate deployment/smoke workflows for reconstruction, structure extraction, matched-camera QA, visual evidence assets, repair, high-detail fallback, the lightweight submit worker, autopilot and furniture object detection.
 
 The final reconstruction workflow verifies:
 
