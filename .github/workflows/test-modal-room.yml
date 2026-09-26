@@ -2,13 +2,6 @@ name: Test Modal room worker
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - feat/ynot-room-poc
-    paths:
-      - "app/api/room/jobs/route.ts"
-      - "workers/ynot_room_modal.py"
-      - ".github/workflows/test-modal-room.yml"
 
 jobs:
   smoke:
@@ -18,7 +11,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install pillow requests
-      - name: Submit synthetic room and verify GPU preflight
+      - name: Submit synthetic room and verify deployed GLB
         env:
           SUBMIT_URL: https://tonykone555--ynot-room-submit-room.modal.run
           STATUS_URL: https://tonykone555--ynot-room-room-status.modal.run
@@ -30,42 +23,27 @@ jobs:
 
           files=[]
           for i in range(3):
-              image=Image.new("RGB", (640, 480), (225-i*12, 220-i*6, 210+i*8))
+              image=Image.new("RGB", (768, 576), (226-i*10, 220-i*4, 211+i*7))
               draw=ImageDraw.Draw(image)
-              draw.rectangle((70+i*20, 170, 570-i*20, 400), outline=(60,60,60), width=8)
-              draw.line((320, 40, 320+i*35, 430), fill=(90,90,90), width=5)
-              buffer=io.BytesIO()
-              image.save(buffer, format="JPEG", quality=88)
-              buffer.seek(0)
+              draw.polygon([(0,340),(768,310),(768,576),(0,576)], fill=(187,176,158))
+              draw.line((0,340,768,310), fill=(90,86,80), width=5)
+              draw.rectangle((220+i*8,275,555-i*8,430), fill=(100,99,96), outline=(62,62,60), width=6)
+              buffer=io.BytesIO(); image.save(buffer, format="JPEG", quality=90)
               files.append(("photos", (f"view-{i+1}.jpg", buffer.getvalue(), "image/jpeg")))
 
-          response=requests.post(
-              os.environ["SUBMIT_URL"],
-              files=files,
-              data={"style":"modern","roomType":"living_room","budget":"2500","source":"github-smoke"},
-              timeout=45,
-          )
-          print("submit", response.status_code, response.text)
-          response.raise_for_status()
-          job=response.json()
-          job_id=job["id"]
-
+          response=requests.post(os.environ["SUBMIT_URL"],files=files,data={"style":"modern","roomType":"living_room","budget":"2500","source":"github-manual-smoke"},timeout=60)
+          print("submit",response.status_code,response.text); response.raise_for_status()
+          job_id=response.json()["id"]
           terminal=None
-          for attempt in range(30):
-              time.sleep(3)
-              status=requests.get(os.environ["STATUS_URL"], params={"id":job_id}, timeout=20)
-              print("status", attempt+1, status.status_code, status.text)
-              status.raise_for_status()
+          for attempt in range(60):
+              time.sleep(5)
+              status=requests.get(os.environ["STATUS_URL"],params={"id":job_id},timeout=30)
+              print("status",attempt+1,status.status_code,status.text); status.raise_for_status()
               payload=status.json()
-              if payload.get("status") in {"ready_for_reconstruction","failed"}:
-                  terminal=payload
-                  break
-
-          if terminal is None:
-              raise SystemExit("Room worker did not reach a terminal preflight state")
-          if terminal.get("status") != "ready_for_reconstruction":
-              raise SystemExit(f"Room worker failed: {terminal}")
-          if terminal.get("photoCount") != 3:
-              raise SystemExit(f"Unexpected photo count: {terminal}")
-          print("YNOT Room Modal GPU smoke test passed", terminal)
+              if payload.get("status") in {"ready","failed"}:
+                  terminal=payload; break
+          if not terminal or terminal.get("status")!="ready": raise SystemExit(f"Room reconstruction failed: {terminal}")
+          scene=requests.get(terminal["sceneUrl"],timeout=60); scene.raise_for_status()
+          if not scene.content.startswith(b"glTF") or len(scene.content)<10_000: raise SystemExit("Invalid GLB")
+          print("YNOT Room deployed GLB smoke test passed",terminal)
           PY
