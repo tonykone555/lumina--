@@ -18,7 +18,7 @@ jobs:
       - run: pip install requests pillow
       - name: Submit fast room, trigger autopilot, verify final gate
         env:
-          SUBMIT_URL: https://tonykone555--ynot-room-submit-room.modal.run
+          SUBMIT_URL: https://tonykone555--ynot-room-submit-submit-room.modal.run
           STATUS_URL: https://tonykone555--ynot-room-room-status.modal.run
           QA_URL: https://tonykone555--ynot-room-qa-room-qa.modal.run
           AUTOPILOT_URL: https://tonykone555--ynot-room-autopilot-schedule-repair.modal.run
@@ -41,8 +41,9 @@ jobs:
               buf=io.BytesIO();image.save(buf,format="JPEG",quality=90)
               files.append(("photos",(f"view-{i+1}.jpg",buf.getvalue(),"image/jpeg")))
 
-          submit=requests.post(os.environ["SUBMIT_URL"],files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room","budget":"2500","source":"autopilot-e2e"},timeout=60)
-          print("submit",submit.status_code,submit.text)
+          started=time.time()
+          submit=requests.post(os.environ["SUBMIT_URL"],files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room","budget":"2500","source":"autopilot-e2e"},timeout=30)
+          print("submit",submit.status_code,round(time.time()-started,2),submit.text)
           submit.raise_for_status();job_id=submit.json()["id"]
 
           fast_ready=None
