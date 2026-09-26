@@ -5,9 +5,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const SITE = "https://ynotworld.app";
-// Version the resource URI whenever the embedded UI/bridge changes so ChatGPT
+// Version the resource URI whenever the embedded UI/bridge changes so MCP hosts
 // cannot keep serving a stale cached template.
-const PRODUCT_UI = "ui://ynot/bubble-world/v5.html";
+const PRODUCT_UI = "ui://ynot/bubble-world/v6.html";
 const MCP_APP_PROTOCOL_VERSION = "2026-01-26";
 
 type Product = {
@@ -125,8 +125,7 @@ function render(payload){
   document.querySelectorAll('.bubble').forEach((b,i)=>b.onclick=()=>detail(products[i],i));
 }
 
-// MCP Apps bridge. ChatGPT now expects the component to initialize itself
-// before relying on ui/notifications/tool-result.
+// MCP Apps bridge. Supported hosts initialize the component before sending tool results.
 let rpcId=0;
 const pending=new Map();
 function rpcNotify(method,params){window.parent.postMessage({jsonrpc:'2.0',method,params},'*')}
@@ -151,7 +150,7 @@ window.addEventListener('message',e=>{
 async function initializeBridge(){
   try{
     await rpcRequest('ui/initialize',{
-      appInfo:{name:'ynot-bubble-world',version:'5.0.0'},
+      appInfo:{name:'ynot-bubble-world',version:'6.0.0'},
       appCapabilities:{},
       protocolVersion:'${MCP_APP_PROTOCOL_VERSION}'
     });
@@ -184,12 +183,12 @@ const handler = createMcpHandler(
       },
       "openai/ui": { availableDisplayModes: ["inline", "fullscreen"] },
       "openai/widgetDescription":
-        "Interactive YNOT Bubble World for visually exploring live product search results inside ChatGPT.",
+        "Interactive YNOT Bubble World for visually exploring live product search results inside supported MCP hosts.",
       "openai/widgetCSP": { redirect_domains: [SITE] },
     };
 
     server.resource(
-      "ynot-bubble-world-v5",
+      "ynot-bubble-world-v6",
       PRODUCT_UI,
       { mimeType: "text/html;profile=mcp-app", _meta: resourceMeta },
       async () => ({
@@ -204,7 +203,7 @@ const handler = createMcpHandler(
       }),
     );
 
-    // Keep both the MCP Apps standard keys and ChatGPT compatibility aliases.
+    // Keep the host-neutral MCP Apps keys plus OpenAI compatibility aliases.
     const uiMeta = {
       ui: { resourceUri: PRODUCT_UI, visibility: ["model", "app"] },
       "openai/outputTemplate": PRODUCT_UI,
@@ -224,7 +223,7 @@ const handler = createMcpHandler(
       {
         title: "Search YNOT products",
         description:
-          "Search YNOT's live multi-source shopping catalogue. This tool renders its attached YNOT Bubble World UI inside ChatGPT for product results. Do not open ynotworld.app unless the user explicitly asks to leave ChatGPT or open YNOT.",
+          "Search YNOT's live multi-source shopping catalogue. This tool renders its attached YNOT Bubble World UI inside the current conversation when the host supports MCP Apps. Do not open ynotworld.app unless the user explicitly asks to leave the conversation or open YNOT.",
         inputSchema: {
           query: z.string().min(2).max(300),
           country: z.string().length(2).default("FR"),
@@ -242,7 +241,7 @@ const handler = createMcpHandler(
       {
         title: "Get YNOT product",
         description:
-          "Get a specific live YNOT product and render it using YNOT's attached embedded product UI inside ChatGPT. Do not navigate to the YNOT website unless explicitly requested.",
+          "Get a specific live YNOT product and render it using YNOT's attached embedded product UI inside the current conversation when supported. Do not navigate to the YNOT website unless explicitly requested.",
         inputSchema: {
           product_id: z.string().min(1),
           query: z.string().min(2).max(300),
@@ -268,7 +267,7 @@ const handler = createMcpHandler(
       {
         title: "Find similar YNOT products",
         description:
-          "Find live YNOT alternatives and render them in the attached embedded Bubble World inside ChatGPT. Do not navigate to the YNOT website unless explicitly requested.",
+          "Find live YNOT alternatives and render them in the attached embedded Bubble World inside the current conversation when supported. Do not navigate to the YNOT website unless explicitly requested.",
         inputSchema: {
           product: z.string().min(2).max(300),
           preference: z.string().max(200).default("similar alternatives"),
@@ -317,7 +316,7 @@ const handler = createMcpHandler(
       {
         title: "Open YNOT website",
         description:
-          "Use ONLY when the user explicitly asks to open, visit, continue in, or leave ChatGPT for YNOT. Never use this tool merely to display search results or the Bubble World.",
+          "Use ONLY when the user explicitly asks to open, visit, continue in, or leave the current conversation for YNOT. Never use this tool merely to display search results or the Bubble World.",
         inputSchema: {
           product_id: z.string().max(240).optional(),
           query: z.string().max(300).optional(),
@@ -336,7 +335,7 @@ const handler = createMcpHandler(
   },
   {
     instructions:
-      "YNOT is a visual multi-source shopping service. Product searches, product details, and alternatives MUST stay inside ChatGPT and use the embedded Bubble World UI attached to their tool results. Never call open_in_ynot just to show results. Call open_in_ynot only when the user explicitly asks to open/visit/continue on the YNOT website. Never invent product details, prices, availability, shipping, or merchants.",
+      "YNOT is a visual multi-source shopping service for MCP hosts. Product searches, product details, and alternatives should stay inside the current conversation and use the embedded Bubble World UI when the host supports MCP Apps. Never call open_in_ynot just to show results. Call open_in_ynot only when the user explicitly asks to open, visit, or continue on the YNOT website. Never invent product details, prices, availability, shipping, or merchants.",
   },
   { basePath: "/api/chatgpt" },
 );
