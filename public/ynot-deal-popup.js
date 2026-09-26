@@ -55,27 +55,42 @@
       node.removeAttribute('data-ynot-hidden-for-product');
     });
   }
-  function syncWorldZoomControls(selected){
+  function activeProductPopup(){return document.querySelector('.ynot-drawer.open .ynot-selected,.lv4-detail,.ynot-story')}
+  function syncWorldZoomControls(popup){
     restoreHiddenZoomControls();
-    if(!selected)return;
-    const vw=window.visualViewport?.width||window.innerWidth;
+    if(!popup)return;
     document.querySelectorAll('button').forEach(button=>{
-      if(!(button instanceof HTMLElement)||selected.contains(button))return;
+      if(!(button instanceof HTMLElement)||popup.contains(button))return;
       const text=(button.textContent||'').trim();
       const aria=(button.getAttribute('aria-label')||'').trim().toLowerCase();
       const title=(button.getAttribute('title')||'').trim().toLowerCase();
       const cls=String(button.className||'').toLowerCase();
       const exactGlyph=text==='+'||text==='−'||text==='–'||text==='—'||text==='-';
-      const namedZoom=/zoom|magnif|scale/.test(`${aria} ${title} ${cls}`);
+      const namedZoom=/zoom|magnif|scale|far-button|compass-tools/.test(`${aria} ${title} ${cls}`);
       if(!exactGlyph&&!namedZoom)return;
-      const rect=button.getBoundingClientRect();
-      const rightSide=rect.left>=vw*.62;
-      const verticalControl=rect.width<=90&&rect.height<=90;
-      if(!namedZoom&&!(rightSide&&verticalControl))return;
       button.dataset.ynotHiddenForProduct='1';
       button.style.setProperty('display','none','important');
       button.style.setProperty('visibility','hidden','important');
       button.style.setProperty('opacity','0','important');
+      button.style.setProperty('pointer-events','none','important');
+    });
+    document.querySelectorAll('.ynot-compass-tools,.lv4-zoom,.lv4-zoom-controls,.ynot-zoom-controls,[class*="zoom-control" i],[class*="zoom-controls" i]').forEach(node=>{
+      if(!(node instanceof HTMLElement)||popup.contains(node))return;
+      node.dataset.ynotHiddenForProduct='1';
+      node.style.setProperty('display','none','important');
+      node.style.setProperty('visibility','hidden','important');
+      node.style.setProperty('opacity','0','important');
+      node.style.setProperty('pointer-events','none','important');
+    });
+  }
+  function markSimilarSections(){
+    document.querySelectorAll('.lv4-detail,.ynot-selected,.ynot-story').forEach(popup=>{
+      [...popup.querySelectorAll('h1,h2,h3,h4,b,strong,span,p,small')].forEach(label=>{
+        const text=(label.textContent||'').trim().toLowerCase();
+        if(!/^(similar picks|similar items|more like this|you may also like)$/.test(text))return;
+        const host=label.closest('section,article,div')||label.parentElement;
+        if(host instanceof HTMLElement)host.classList.add('ynot-similar-light-fix');
+      });
     });
   }
   function sync(){
@@ -84,7 +99,10 @@
     document.documentElement.classList.toggle('ynot-deal-open',open);
     const selected=document.querySelector('.ynot-drawer.open .ynot-selected');
     document.documentElement.classList.toggle('ynot-deal-product-open',Boolean(selected));
-    syncWorldZoomControls(selected);
+    const popup=activeProductPopup();
+    document.documentElement.classList.toggle('ynot-any-product-open',Boolean(popup));
+    syncWorldZoomControls(popup);
+    markSimilarSections();
     if(selected)decorateSelected(selected);
   }
   function queue(){if(queued)return;queued=true;requestAnimationFrame(sync)}
