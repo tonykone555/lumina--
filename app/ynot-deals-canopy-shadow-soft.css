@@ -1,4 +1,4 @@
-/* YNOT Deals pinned canopy: retain a very subtle readability fade, never a dark block. */
+/* YNOT Deals canopy cleanup: no broad shadow/gradient band over the product grid. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
@@ -9,33 +9,19 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock{
   box-shadow:none!important;
   text-shadow:none!important;
 }
-/* Search keeps only a tiny local lift, not the large canopy shadow. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
   box-shadow:0 3px 10px rgba(0,0,0,.055),inset 0 1px 0 rgba(255,255,255,.42)!important;
 }
-/* Remove broad pseudo-element shading left by older header/feed rules. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::before,
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::after{
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::after,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{
   content:none!important;
   display:none!important;
   background:none!important;
-  box-shadow:none!important;
-  filter:none!important;
-}
-/* Keep only a shallow transparent top fade so white controls remain readable over imagery. */
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{
-  content:""!important;
-  display:block!important;
-  position:fixed!important;
-  z-index:2147483400!important;
-  pointer-events:none!important;
-  top:0!important;
-  left:0!important;
-  right:0!important;
-  height:88px!important;
-  background:linear-gradient(180deg,rgba(0,0,0,.13) 0%,rgba(0,0,0,.045) 52%,rgba(0,0,0,0) 100%)!important;
+  background-image:none!important;
   box-shadow:none!important;
   filter:none!important;
   backdrop-filter:none!important;
