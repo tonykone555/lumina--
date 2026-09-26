@@ -130,22 +130,23 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
 }
 
 @media(max-width:760px){
-  /* Compact sticky canopy: stop the fade before it reaches the first product row. */
+  /* Header shade only: end it BEFORE the category chips begin. */
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before{
-    height:205px!important;
+    height:118px!important;
     background:linear-gradient(180deg,
       rgba(5,6,7,.94) 0%,
-      rgba(6,7,8,.84) 42%,
-      rgba(7,8,9,.48) 70%,
-      rgba(7,8,9,.12) 90%,
-      rgba(7,8,9,0) 100%)!important;
+      rgba(5,6,7,.82) 48%,
+      rgba(5,6,7,.38) 76%,
+      rgba(5,6,7,0) 100%)!important;
+    backdrop-filter:blur(8px) saturate(105%)!important;
+    -webkit-backdrop-filter:blur(8px) saturate(105%)!important;
   }
 
-  /* Keep the category chips visible directly under the YNOT header. */
+  /* Chips live completely below the canopy and above the product feed. */
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock{
     position:fixed!important;
-    z-index:720!important;
-    top:calc(env(safe-area-inset-top) + 82px)!important;
+    z-index:780!important;
+    top:calc(env(safe-area-inset-top) + 68px)!important;
     left:0!important;
     right:0!important;
     margin:0!important;
@@ -156,13 +157,22 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
     background:transparent!important;
     box-shadow:none!important;
     filter:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+  html[data-ynot-theme="light"].ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock button{
+    opacity:1!important;
+    visibility:visible!important;
+    filter:none!important;
+    text-shadow:none!important;
+    box-shadow:none!important;
   }
 
-  /* Search sits immediately below the tags instead of floating in the feed. */
+  /* Search immediately follows the chips, with no dark band between them. */
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
     position:fixed!important;
-    z-index:721!important;
-    top:calc(env(safe-area-inset-top) + 132px)!important;
+    z-index:781!important;
+    top:calc(env(safe-area-inset-top) + 112px)!important;
     left:18px!important;
     right:18px!important;
     width:auto!important;
