@@ -53,27 +53,50 @@
   text-shadow:none!important;
 }
 
-/* LIGHT MODE: price is intentionally BLACK, while description/suggestion copy remains grey. */
-html.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
-body.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
-.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
-html.ynot-light .ynot-drawer [class*="suggest" i] [class*="price" i],
-body.ynot-light .ynot-drawer [class*="suggest" i] [class*="price" i],
-.ynot-light .ynot-drawer [class*="suggest" i] [class*="price" i],
-html[data-theme="light"] .ynot-drawer [class*="similar" i] [class*="price" i],
-body[data-theme="light"] .ynot-drawer [class*="similar" i] [class*="price" i],
-html.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
-body.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
-.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
-html.ynot-light .lv4-detail [class*="suggest" i] [class*="price" i],
-body.ynot-light .lv4-detail [class*="suggest" i] [class*="price" i],
-.ynot-light .lv4-detail [class*="suggest" i] [class*="price" i],
-html[data-theme="light"] .lv4-detail [class*="similar" i] [class*="price" i],
-body[data-theme="light"] .lv4-detail [class*="similar" i] [class*="price" i] {
+/* Current theme uses data-ynot-theme. In light mode all Similar Picks monetary text must be solid black. */
+html[data-ynot-theme="light"] .ynot-drawer [class*="similar" i] [class*="price" i],
+html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] [class*="price" i],
+html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] [class*="price" i],
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] [class*="price" i],
+html[data-ynot-theme="light"] .ynot-drawer [class*="similar" i] strong,
+html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] strong,
+html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] strong,
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] strong {
   color:#111!important;
   -webkit-text-fill-color:#111!important;
   opacity:1!important;
-  font-weight:750!important;
+  visibility:visible!important;
+  font-weight:800!important;
+  text-shadow:none!important;
+}
+
+/* Legacy light-theme aliases retained for older sessions. */
+html.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
+body.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
+.ynot-light .ynot-drawer [class*="similar" i] [class*="price" i],
+html[data-theme="light"] .ynot-drawer [class*="similar" i] [class*="price" i],
+html.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
+body.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
+.ynot-light .lv4-detail [class*="similar" i] [class*="price" i],
+html[data-theme="light"] .lv4-detail [class*="similar" i] [class*="price" i] {
+  color:#111!important;
+  -webkit-text-fill-color:#111!important;
+  opacity:1!important;
+  visibility:visible!important;
+  font-weight:800!important;
+}
+
+/* A product popup owns the viewport: world +/- zoom controls must not bleed through it. */
+body:has(.lv4-detail) .lv4-zoom,
+body:has(.lv4-detail) .lv4-zoom-controls,
+body:has(.lv4-detail) .ynot-zoom-controls,
+body:has(.lv4-detail) [class*="zoom-control" i],
+body:has(.ynot-drawer .lv4-detail) .ynot-glass-side-control,
+body:has(.ynot-drawer .lv4-detail) .ynot-desktop-side-controls,
+body:has(.ynot-drawer .lv4-detail) .ynot-compass-tools {
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
 }
 
 @media(max-width:899px){
