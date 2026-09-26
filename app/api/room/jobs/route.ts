@@ -22,6 +22,13 @@ function modalHeaders():HeadersInit{
   return headers;
 }
 
+function submitHeaders(requestId:string):HeadersInit{
+  const headers:HeadersInit={...modalHeaders(),"X-YNOT-Room-Request":requestId};
+  const oidc=String(process.env.VERCEL_OIDC_TOKEN||"").trim();
+  if(oidc)headers["X-Vercel-OIDC-Token"]=oidc;
+  return headers;
+}
+
 function numeric(value:unknown){
   const parsed=Number(value);
   return Number.isFinite(parsed)?parsed:0;
@@ -67,10 +74,10 @@ function buildQualityGate(data:Record<string,unknown>,qa?:Record<string,unknown>
       reconstruction:{status:reconstructionPass?"pass":"pending",detail:reconstructionPass?"A browser-loadable GLB was generated.":"3D reconstruction is still running."},
       referenceCoverage:{status:coveragePass?"pass":reconstructionPass?"review":"pending",detail:coveragePass?"Reference coverage meets the QA threshold.":reconstructionPass?"Reference coverage is below the QA threshold.":"Reference coverage will be measured after reconstruction."},
       matchedCameraValidation:{status:cameraPass?(blockers.length?"review":"pass"):qaComplete?"review":"pending",detail:qaComplete?`${numeric(qa?.matchedCameraCount)} recovered camera views were rendered and compared with their references.`:"Matched-camera render comparison has not completed yet."},
-      physicalLogic:{status:"pending",detail:"Support, mounting, intersections, holes and impossible geometry are reserved for the physical-logic pass."},
+      physicalLogic:{status:"pending",detail:"Support, mounting, intersections, holes and impossible geometry are reserved for the object-aware physical-logic contract extension."},
       defectAudit:{status:qaComplete?(blockers.length?"review":"pass"):"pending",detail:qaComplete?`${blockers.length} visual blocker${blockers.length===1?"":"s"} detected.`:"Visual blocker classification has not completed yet."},
     },
-    releaseRule:"Matched-camera QA and automatic repair must clear critical and major visual blockers before publishability. Physical-logic validation remains a separate release gate.",
+    releaseRule:"Matched-camera QA and automatic repair must clear critical and major visual blockers before v1 publishability. Object-aware physical-logic validation is a later contract extension.",
   };
 }
 
@@ -128,7 +135,7 @@ export async function GET(request:Request){
   const url=new URL(request.url);
   const id=String(url.searchParams.get("id")||"").trim();
   const statusEndpoint=String(process.env.MODAL_ROOM_STATUS_ENDPOINT||DEFAULT_STATUS_ENDPOINT).trim();
-  if(!id)return NextResponse.json({ok:true,configured:true,worker:"modal",qualityContract:"ynot-home-wizard-v1",qa:"matched-camera-v2",autoRepair:true,maxPhotos:MAX_PHOTOS,accepted:[...ALLOWED_TYPES]},{headers:{"Cache-Control":"no-store"}});
+  if(!id)return NextResponse.json({ok:true,configured:true,worker:"modal",qualityContract:"ynot-home-wizard-v1",qa:"matched-camera-v2",autoRepair:true,submitAuth:{vercelOidc:Boolean(process.env.VERCEL_OIDC_TOKEN),sharedSecret:Boolean(process.env.MODAL_ROOM_TOKEN)},maxPhotos:MAX_PHOTOS,accepted:[...ALLOWED_TYPES]},{headers:{"Cache-Control":"no-store"}});
 
   try{
     const response=await fetch(`${statusEndpoint}?id=${encodeURIComponent(id)}`,{headers:modalHeaders(),cache:"no-store",signal:AbortSignal.timeout(12_000)});
@@ -162,14 +169,15 @@ export async function POST(request:Request){
   const outbound=new FormData();
   photos.forEach((photo,index)=>outbound.append("photos",photo,photo.name||`room-${index+1}.jpg`));
   outbound.set("requestId",requestId);outbound.set("style",style);outbound.set("roomType",roomType);if(rawBudget)outbound.set("budget",rawBudget);outbound.set("source","ynot-room-web");
-  const headers:HeadersInit={...modalHeaders(),"X-YNOT-Room-Request":requestId};
+  const headers=submitHeaders(requestId);
+  if(!("X-Vercel-OIDC-Token" in headers)&&!("Authorization" in headers))return jsonError(503,"Secure Room worker identity is not configured for this deployment.","ROOM_WORKER_AUTH_NOT_CONFIGURED",{id:requestId});
 
   let workerResponse:Response;
   try{workerResponse=await fetch(endpoint,{method:"POST",headers,body:outbound,cache:"no-store",signal:AbortSignal.timeout(25_000)})}
   catch(error){console.error("[ynot-room] worker handoff failed",{requestId,error:error instanceof Error?error.message:"unknown"});return jsonError(502,"The room worker could not be reached.","ROOM_WORKER_UNREACHABLE",{id:requestId})}
   const contentType=workerResponse.headers.get("content-type")||"";
   const workerData=(contentType.includes("application/json")?await workerResponse.json().catch(()=>({})): {}) as Record<string,unknown>;
-  if(!workerResponse.ok)return jsonError(502,String(workerData?.detail||workerData?.error||workerData?.message||"The room worker rejected the job."),"ROOM_WORKER_REJECTED",{id:requestId});
+  if(!workerResponse.ok)return jsonError(workerResponse.status===401?502:502,String(workerData?.detail||workerData?.error||workerData?.message||"The room worker rejected the job."),workerResponse.status===401?"ROOM_WORKER_AUTH_REJECTED":"ROOM_WORKER_REJECTED",{id:requestId});
   const jobId=String(workerData?.id||workerData?.jobId||requestId);
   return NextResponse.json({id:jobId,status:String(workerData?.status||"queued"),stage:String(workerData?.stage||"accepted"),releaseStatus:"processing",sceneUrl:typeof workerData?.sceneUrl==="string"&&workerData.sceneUrl?`/api/room/jobs/${encodeURIComponent(jobId)}/scene`:undefined,previewUrl:typeof workerData?.previewUrl==="string"?workerData.previewUrl:undefined,message:String(workerData?.message||"Your room has been sent to the YNOT reconstruction worker.")},{status:202,headers:{"Cache-Control":"no-store"}});
 }
