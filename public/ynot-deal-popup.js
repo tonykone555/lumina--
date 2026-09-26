@@ -46,12 +46,45 @@
       tryButton.remove();
     }
   }
+  function restoreHiddenZoomControls(){
+    document.querySelectorAll('[data-ynot-hidden-for-product="1"]').forEach(node=>{
+      if(!(node instanceof HTMLElement))return;
+      node.style.removeProperty('display');
+      node.style.removeProperty('visibility');
+      node.style.removeProperty('opacity');
+      node.removeAttribute('data-ynot-hidden-for-product');
+    });
+  }
+  function syncWorldZoomControls(selected){
+    restoreHiddenZoomControls();
+    if(!selected)return;
+    const vw=window.visualViewport?.width||window.innerWidth;
+    document.querySelectorAll('button').forEach(button=>{
+      if(!(button instanceof HTMLElement)||selected.contains(button))return;
+      const text=(button.textContent||'').trim();
+      const aria=(button.getAttribute('aria-label')||'').trim().toLowerCase();
+      const title=(button.getAttribute('title')||'').trim().toLowerCase();
+      const cls=String(button.className||'').toLowerCase();
+      const exactGlyph=text==='+'||text==='−'||text==='–'||text==='—'||text==='-';
+      const namedZoom=/zoom|magnif|scale/.test(`${aria} ${title} ${cls}`);
+      if(!exactGlyph&&!namedZoom)return;
+      const rect=button.getBoundingClientRect();
+      const rightSide=rect.left>=vw*.62;
+      const verticalControl=rect.width<=90&&rect.height<=90;
+      if(!namedZoom&&!(rightSide&&verticalControl))return;
+      button.dataset.ynotHiddenForProduct='1';
+      button.style.setProperty('display','none','important');
+      button.style.setProperty('visibility','hidden','important');
+      button.style.setProperty('opacity','0','important');
+    });
+  }
   function sync(){
     queued=false;
     const open=Boolean(document.querySelector('.ynot-drawer.open'));
     document.documentElement.classList.toggle('ynot-deal-open',open);
     const selected=document.querySelector('.ynot-drawer.open .ynot-selected');
     document.documentElement.classList.toggle('ynot-deal-product-open',Boolean(selected));
+    syncWorldZoomControls(selected);
     if(selected)decorateSelected(selected);
   }
   function queue(){if(queued)return;queued=true;requestAnimationFrame(sync)}
