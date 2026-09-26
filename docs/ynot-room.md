@@ -8,8 +8,8 @@ The implementation is isolated from the existing YNOT Shop, Discover and Earn fl
 
 1. `/room` accepts 3–8 JPEG/PNG/WebP room photos.
 2. The browser downsizes uploads before sending them to reduce latency and GPU cost.
-3. `/api/room/jobs` validates the request and sends it server-to-server to the lightweight `ynot-room-submit` Modal app.
-4. The submit app persists the photos and job metadata to the shared `ynot-room-jobs` Modal Volume, then asynchronously spawns the GPU reconstruction function.
+3. `/api/room/jobs` validates the request, obtains a short-lived Vercel project OIDC identity, and sends the upload server-to-server to the lightweight `ynot-room-submit` Modal app.
+4. The submit app verifies the server identity, persists the photos and job metadata to the shared `ynot-room-jobs` Modal Volume, then asynchronously spawns the GPU reconstruction function.
 5. The fast A10G reconstruction uses MoGe-2 metric point maps, SIFT correspondences and PnP camera recovery to align multiple viewpoints and export a fused GLB.
 6. The matched-camera QA worker renders the reconstructed geometry from each recovered reference camera and compares it with the corresponding source photo.
 7. QA records reference coverage, camera matches, structure similarity, photometric similarity, blockers and per-view evidence assets.
@@ -28,7 +28,7 @@ The implementation is isolated from the existing YNOT Shop, Discover and Earn fl
 
 ### Modal workers
 
-- `workers/ynot_room_submit_modal.py` — lightweight warm upload/enqueue service.
+- `workers/ynot_room_submit_modal.py` — lightweight authenticated upload/enqueue service that scales down when idle.
 - `workers/ynot_room_modal.py` — fast MoGe-2 A10G reconstruction and GLB export.
 - `workers/ynot_room_structure_modal.py` — room bounds, dominant planes, wall candidates and recovered camera structure model.
 - `workers/ynot_room_qa_modal.py` — matched-camera render comparison, scoring, blockers and evidence images.
@@ -111,30 +111,36 @@ Automatic recovery is deliberately bounded.
 
 ## Submission architecture
 
-Room uploads use a separate lightweight Modal app rather than the heavy GPU reconstruction app. This prevents a GPU/model cold start from blocking the HTTP upload response.
+Room uploads use a separate lightweight Modal app rather than the heavy GPU reconstruction app. This prevents a GPU/model cold start from blocking the HTTP upload response while allowing the submit container to scale back down when it is idle.
 
 Default submit endpoint:
 
 `https://tonykone555--ynot-room-submit-submit-room.modal.run`
 
-The Next.js server route supports environment-variable overrides, so deployment-specific Modal URLs and optional credentials remain server-side.
+The browser never calls that endpoint directly. The Next.js server route obtains a short-lived Vercel OIDC token at runtime and forwards it to Modal with the upload. CI uses a short-lived GitHub Actions OIDC token for the same purpose.
 
 ## Security
 
-- The browser talks to YNOT same-origin APIs, not directly to privileged administration endpoints.
-- `MODAL_ROOM_TOKEN` / `YNOT_ROOM_TOKEN` can be used as an optional shared bearer token when a Modal secret is attached to the corresponding web functions.
+- The browser talks only to YNOT same-origin APIs for Room job creation/status/assets.
+- Direct unauthenticated calls to the Modal submit endpoint are rejected with HTTP 401 before photos are accepted or GPU work can be queued.
+- Production/preview submissions use Vercel OIDC and are constrained to the exact YNOT Vercel project/team identity.
+- GitHub Actions smoke/E2E submissions use GitHub OIDC and are constrained to the exact `tonykone555/lumina--` repository and approved refs.
+- These identities are short-lived; no permanent public GPU-spawn credential is embedded in browser code.
+- `MODAL_ROOM_TOKEN` / `YNOT_ROOM_TOKEN` remains an optional server-side shared-secret fallback, but it is not required for the normal Vercel/CI path.
+- CI verifies both sides of the boundary: unauthenticated submission is rejected and a signed GitHub identity is accepted.
+- The Vercel preview was also verified end-to-end: the runtime obtained its project OIDC identity, Modal accepted the signature/claims, and the request reached ordinary form validation.
 - Tokens and API secrets must never be written into client responses or committed to the repository.
 - Job IDs are sanitized before they are used as Volume paths.
 
 ## CI verification
 
-The feature branch contains separate deployment/smoke workflows for reconstruction, structure extraction, matched-camera QA, visual QA assets, repair, high-detail fallback, the lightweight submit worker and autopilot.
+The feature branch contains separate deployment/smoke workflows for reconstruction, structure extraction, matched-camera QA, visual evidence assets, repair, high-detail fallback, the lightweight submit worker and autopilot.
 
 The final end-to-end workflow creates a fresh synthetic three-view room and verifies:
 
-`submit → fast reconstruction → QA → autopilot → repair/escalation → final QA release gate`
+`authenticated submit → fast reconstruction → QA → autopilot → repair/escalation → final QA release gate`
 
-This end-to-end workflow must be green before the feature is merged to `main`.
+The authenticated recovery test is green. Its known synthetic recovery path completes the fast pass around 63.2% QA, escalates automatically, and completes the high-detail pass around 84.05% with zero blockers and `releaseStatus=publishable`.
 
 ## Known next product layers
 
