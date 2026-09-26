@@ -1,96 +1,70 @@
 /* FINAL Similar Picks + popup control lock. Loaded near the end of app/layout.tsx. */
 
-/* Keep normal Similar Picks copy readable. */
-.ynot-drawer [class*="similar" i] [class*="card" i],
-.lv4-detail [class*="similar" i] [class*="card" i],
-.lv4-detail [class*="suggest" i] [class*="card" i]{
-  color:#242526!important;
-  -webkit-text-fill-color:#242526!important;
-}
-
-.ynot-drawer [class*="similar" i] [class*="card" i] p,
-.ynot-drawer [class*="similar" i] [class*="card" i] small,
-.ynot-drawer [class*="similar" i] [class*="card" i] span,
-.lv4-detail [class*="similar" i] [class*="card" i] p,
-.lv4-detail [class*="similar" i] [class*="card" i] small,
-.lv4-detail [class*="similar" i] [class*="card" i] span,
-.lv4-detail [class*="suggest" i] [class*="card" i] p,
-.lv4-detail [class*="suggest" i] [class*="card" i] small,
-.lv4-detail [class*="suggest" i] [class*="card" i] span{
-  opacity:1!important;
-  visibility:visible!important;
-  text-shadow:none!important;
-}
-
-/* Price hard-lock: price can be rendered as a classed node, strong, small or the
-   final metadata node depending on product source. Force every monetary-looking
-   leaf inside the recommendation card to inherit a visible foreground. */
-.ynot-drawer [class*="similar" i] [class*="card" i],
-.ynot-drawer [class*="suggest" i] [class*="card" i],
-.lv4-detail [class*="similar" i] [class*="card" i],
-.lv4-detail [class*="suggest" i] [class*="card" i]{
+/* Similar Picks cards: in light mode every textual field must remain readable.
+   Brand/title/meta use dark grey; price stays black and stronger. */
+html[data-ynot-theme="light"] .ynot-selected [class*="similar" i] [class*="card" i],
+html[data-ynot-theme="light"] .ynot-selected [class*="suggest" i] [class*="card" i],
+html[data-ynot-theme="light"] .ynot-drawer [class*="similar" i] [class*="card" i],
+html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] [class*="card" i],
+html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] [class*="card" i],
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] [class*="card" i]{
+  color:#555!important;
+  -webkit-text-fill-color:#555!important;
   --ynot-similar-price:#111;
 }
-
-.ynot-drawer [class*="similar" i] [class*="price" i],
-.ynot-drawer [class*="suggest" i] [class*="price" i],
-.lv4-detail [class*="similar" i] [class*="price" i],
-.lv4-detail [class*="suggest" i] [class*="price" i],
-.ynot-drawer [class*="similar" i] [class*="card" i] strong,
-.ynot-drawer [class*="suggest" i] [class*="card" i] strong,
-.lv4-detail [class*="similar" i] [class*="card" i] strong,
-.lv4-detail [class*="suggest" i] [class*="card" i] strong{
-  color:var(--ynot-similar-price)!important;
-  -webkit-text-fill-color:var(--ynot-similar-price)!important;
+html[data-ynot-theme="light"] .ynot-selected [class*="similar" i] [class*="card" i] :is(p,span,small,b,label,div),
+html[data-ynot-theme="light"] .ynot-selected [class*="suggest" i] [class*="card" i] :is(p,span,small,b,label,div),
+html[data-ynot-theme="light"] .ynot-drawer [class*="similar" i] [class*="card" i] :is(p,span,small,b,label,div),
+html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] [class*="card" i] :is(p,span,small,b,label,div),
+html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] [class*="card" i] :is(p,span,small,b,label,div),
+html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] [class*="card" i] :is(p,span,small,b,label,div){
+  color:#555!important;
+  -webkit-text-fill-color:#555!important;
   opacity:1!important;
   visibility:visible!important;
-  font-weight:800!important;
   text-shadow:none!important;
   mix-blend-mode:normal!important;
   filter:none!important;
 }
-
-/* Light mode: recommendation metadata and especially prices must never inherit
-   white/transparent text from the glass product popup. */
-html[data-ynot-theme="light"] .ynot-drawer [class*="similar" i] [class*="card" i] *,
-html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] [class*="card" i] *,
-html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] [class*="card" i] *,
-html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] [class*="card" i] *{
-  text-shadow:none!important;
-}
+html[data-ynot-theme="light"] .ynot-selected [class*="similar" i] [class*="price" i],
+html[data-ynot-theme="light"] .ynot-selected [class*="suggest" i] [class*="price" i],
 html[data-ynot-theme="light"] .ynot-drawer [class*="similar" i] [class*="price" i],
 html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] [class*="price" i],
 html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] [class*="price" i],
 html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] [class*="price" i],
+html[data-ynot-theme="light"] .ynot-selected [class*="similar" i] [class*="card" i] strong,
+html[data-ynot-theme="light"] .ynot-selected [class*="suggest" i] [class*="card" i] strong,
 html[data-ynot-theme="light"] .ynot-drawer [class*="similar" i] [class*="card" i] strong,
-html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] [class*="card" i] strong,
-html[data-ynot-theme="light"] .lv4-detail [class*="similar" i] [class*="card" i] strong,
-html[data-ynot-theme="light"] .lv4-detail [class*="suggest" i] [class*="card" i] strong{
-  color:#000!important;
-  -webkit-text-fill-color:#000!important;
+html[data-ynot-theme="light"] .ynot-drawer [class*="suggest" i] [class*="card" i] strong{
+  color:#111!important;
+  -webkit-text-fill-color:#111!important;
   opacity:1!important;
   visibility:visible!important;
-  font-weight:900!important;
+  font-weight:850!important;
+  text-shadow:none!important;
 }
 
-/* Product popup owns the viewport. Hide every known +/- world zoom/control
-   implementation, on mobile and desktop, whenever a detail popup exists. */
-html:has(.lv4-detail) .lv4-zoom,
-html:has(.lv4-detail) .lv4-zoom-controls,
-html:has(.lv4-detail) .ynot-zoom-controls,
-html:has(.lv4-detail) [class*="zoom-control" i],
-html:has(.lv4-detail) [class*="zoom-controls" i],
-html:has(.lv4-detail) .ynot-glass-side-control,
-html:has(.lv4-detail) .ynot-desktop-side-controls,
-html:has(.lv4-detail) .ynot-compass-tools,
-body:has(.lv4-detail) .lv4-zoom,
-body:has(.lv4-detail) .lv4-zoom-controls,
-body:has(.lv4-detail) .ynot-zoom-controls,
-body:has(.lv4-detail) [class*="zoom-control" i],
-body:has(.lv4-detail) [class*="zoom-controls" i],
-body:has(.lv4-detail) .ynot-glass-side-control,
-body:has(.lv4-detail) .ynot-desktop-side-controls,
-body:has(.lv4-detail) .ynot-compass-tools{
+/* When a YNOT Deal product popup is open the underlying world +/- controls must
+   not remain visible through the glass card. Cover both class-based and fixed
+   right-edge button implementations. */
+html.ynot-deal-product-open .lv4-zoom,
+html.ynot-deal-product-open .lv4-zoom-controls,
+html.ynot-deal-product-open .ynot-zoom-controls,
+html.ynot-deal-product-open [class*="zoom-control" i],
+html.ynot-deal-product-open [class*="zoom-controls" i],
+html.ynot-deal-product-open .ynot-glass-side-control,
+html.ynot-deal-product-open .ynot-desktop-side-controls,
+html.ynot-deal-product-open .ynot-compass-tools,
+html.ynot-deal-product-open .level-worlds > button,
+html.ynot-deal-product-open .level-products > button,
+body:has(.ynot-drawer.open .ynot-selected) .lv4-zoom,
+body:has(.ynot-drawer.open .ynot-selected) .lv4-zoom-controls,
+body:has(.ynot-drawer.open .ynot-selected) .ynot-zoom-controls,
+body:has(.ynot-drawer.open .ynot-selected) [class*="zoom-control" i],
+body:has(.ynot-drawer.open .ynot-selected) [class*="zoom-controls" i],
+body:has(.ynot-drawer.open .ynot-selected) .ynot-glass-side-control,
+body:has(.ynot-drawer.open .ynot-selected) .ynot-desktop-side-controls,
+body:has(.ynot-drawer.open .ynot-selected) .ynot-compass-tools{
   display:none!important;
   opacity:0!important;
   visibility:hidden!important;
