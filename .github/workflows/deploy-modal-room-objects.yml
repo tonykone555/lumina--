@@ -1,0 +1,25 @@
+name: Deploy Modal room objects worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - "workers/ynot_room_objects_modal.py"
+      - ".github/workflows/deploy-modal-room-objects.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "modal>=1.5,<2" "fastapi[standard]"
+      - name: Deploy YNOT Room object worker
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy workers/ynot_room_objects_modal.py --name ynot-room-objects
