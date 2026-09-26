@@ -46,7 +46,20 @@ const SCENES:Record<string,Scene>={
  retail:{a:"#d0cdc4",b:"#777870",c:"#282923",image:"https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=2200&q=88",query:"Interesting trending products worth discovering",labels:["Trending","Best Value","New","Popular","Under €50","Unexpected"]}
 };
 
-function money(p:Product){if(p.price==null)return"";try{return new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"EUR",maximumFractionDigits:0}).format(p.price)}catch{return String(p.price)}}
+function displayPriceValue(p:Product){
+ const price=Number(p.price);
+ const retail=Number(p.retailPrice);
+ const supplier=Number(p.supplierPrice);
+ if(Number.isFinite(retail)&&retail>0){
+  if(!Number.isFinite(price)||price<=0)return retail;
+  if(price<retail*.2)return retail;
+ }
+ if(Number.isFinite(supplier)&&supplier>100&&Number.isFinite(price)&&price>0&&price<supplier*.2){
+  return Number.isFinite(retail)&&retail>0?retail:supplier;
+ }
+ return Number.isFinite(price)&&price>0?price:null;
+}
+function money(p:Product){const value=displayPriceValue(p);if(value==null)return"";try{return new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"EUR",maximumFractionDigits:value<100?2:0}).format(value)}catch{return String(value)}}
 function hash(s:string){let h=0;for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0;return Math.abs(h)}
 function productSize(p:Product){const variation=1.08+(hash(p.id||p.title)%19)/100,depth=1+(p.z||0)*.04,context=p.contextual?.94:1;return Math.round(112*variation*depth*context)}
 function cleanTitle(s:string){return String(s||"").replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu,"").replace(/\s{2,}/g," ").replace(/^\s*[|·—–-]+\s*|\s*[|·—–-]+\s*$/g,"").trim()}
