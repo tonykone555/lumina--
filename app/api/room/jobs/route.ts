@@ -20,6 +20,13 @@ function modalHeaders():HeadersInit{
   return headers;
 }
 
+function browserSafeStatus(data:Record<string,unknown>,id:string){
+  return {
+    ...data,
+    ...(typeof data.sceneUrl==="string"&&data.sceneUrl?{sceneUrl:`/api/room/jobs/${encodeURIComponent(id)}/scene`}:{}),
+  };
+}
+
 export async function GET(request:Request){
   const url=new URL(request.url);
   const id=String(url.searchParams.get("id")||"").trim();
@@ -41,9 +48,9 @@ export async function GET(request:Request){
       cache:"no-store",
       signal:AbortSignal.timeout(12_000),
     });
-    const data=await response.json().catch(()=>({}));
+    const data=await response.json().catch(()=>({})) as Record<string,unknown>;
     if(!response.ok)return jsonError(response.status===404?404:502,String(data?.detail||data?.error||"Could not read room status."),"ROOM_STATUS_UNAVAILABLE",{id});
-    return NextResponse.json(data,{headers:{"Cache-Control":"no-store"}});
+    return NextResponse.json(browserSafeStatus(data,id),{headers:{"Cache-Control":"no-store"}});
   }catch(error){
     console.error("[ynot-room] status lookup failed",{id,error:error instanceof Error?error.message:"unknown"});
     return jsonError(502,"The room worker status endpoint could not be reached.","ROOM_STATUS_UNREACHABLE",{id});
@@ -91,17 +98,18 @@ export async function POST(request:Request){
   }
 
   const contentType=workerResponse.headers.get("content-type")||"";
-  const workerData=contentType.includes("application/json")?await workerResponse.json().catch(()=>({})):{};
+  const workerData=(contentType.includes("application/json")?await workerResponse.json().catch(()=>({})): {}) as Record<string,unknown>;
   if(!workerResponse.ok){
     console.error("[ynot-room] worker rejected job",{requestId,status:workerResponse.status,workerCode:workerData?.code});
     return jsonError(502,String(workerData?.detail||workerData?.error||workerData?.message||"The room worker rejected the job."),"ROOM_WORKER_REJECTED",{id:requestId});
   }
 
+  const jobId=String(workerData?.id||workerData?.jobId||requestId);
   return NextResponse.json({
-    id:String(workerData?.id||workerData?.jobId||requestId),
+    id:jobId,
     status:String(workerData?.status||"queued"),
     stage:String(workerData?.stage||"accepted"),
-    sceneUrl:typeof workerData?.sceneUrl==="string"?workerData.sceneUrl:undefined,
+    sceneUrl:typeof workerData?.sceneUrl==="string"&&workerData.sceneUrl?`/api/room/jobs/${encodeURIComponent(jobId)}/scene`:undefined,
     previewUrl:typeof workerData?.previewUrl==="string"?workerData.previewUrl:undefined,
     message:String(workerData?.message||"Your room has been sent to the YNOT reconstruction worker."),
   },{status:202,headers:{"Cache-Control":"no-store"}});
