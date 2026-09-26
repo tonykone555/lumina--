@@ -43,6 +43,12 @@ jobs:
           python - <<'PY'
           import io, os, time, uuid, requests
           from PIL import Image
+
+          unauthorized=requests.post(os.environ["SUBMIT_URL"],timeout=15)
+          print("unauthenticated",unauthorized.status_code,unauthorized.text)
+          if unauthorized.status_code != 401:
+              raise SystemExit(f"Unauthenticated submit was not rejected: {unauthorized.status_code}")
+
           request_id="submit-smoke-"+uuid.uuid4().hex[:10]
           files=[]
           for i in range(3):
@@ -51,7 +57,7 @@ jobs:
           started=time.time()
           response=requests.post(os.environ["SUBMIT_URL"],headers={"X-GitHub-OIDC-Token":os.environ["GITHUB_OIDC_TOKEN"]},files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room"},timeout=25)
           elapsed=time.time()-started
-          print("submit",response.status_code,round(elapsed,2),response.text)
+          print("authenticated submit",response.status_code,round(elapsed,2),response.text)
           response.raise_for_status()
           data=response.json()
           if data.get("status")!="queued": raise SystemExit(f"Unexpected submit response: {data}")
