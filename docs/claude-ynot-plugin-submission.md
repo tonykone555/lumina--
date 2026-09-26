@@ -72,13 +72,19 @@ No authentication is required for the initial public read-only connector.
 
 If authentication is introduced later, the connector must use secure OAuth 2.0 and be re-reviewed for the Claude directory.
 
+## Privacy and support
+
+- Privacy policy: `https://ynotworld.app/privacy`
+- Support/privacy contact: `tonykone555@gmail.com`
+- Website: `https://ynotworld.app`
+
+The existing YNOT privacy policy describes YNOT data handling, third-party services, deletion requests, security, international processing, and Meta/Threads integrations.
+
 ## Directory-review items still required before public submission
 
-- Public privacy-policy URL on `ynotworld.app`.
-- Verified developer/support contact channel.
-- Standard test account/sample data only if Anthropic requests credentials for functionality that cannot be tested publicly. The current read-only search flow should not require login.
 - Confirm ownership/control of `ynotworld.app` during submission.
 - Complete Anthropic's data-handling and compliance questionnaire.
+- Standard test account/sample data only if Anthropic requests credentials for functionality that cannot be tested publicly. The current read-only search flow should not require login.
 - Run Claude-side tests on web/desktop/mobile to confirm the Bubble World renders and interactions work.
 
 ## Review notes
@@ -94,8 +100,8 @@ YNOT is a product-discovery/search connector. It must not serve sponsored placem
 - [x] MCP Apps bridge initialization
 - [x] Three documented example prompts
 - [x] No in-chat purchase execution
-- [ ] Public privacy policy
-- [ ] Verified support contact
+- [x] Public privacy policy
+- [x] Verified support contact in the privacy page
 - [ ] Claude custom-connector smoke test
 - [ ] Claude MCP App rendering test
 - [ ] Directory submission
