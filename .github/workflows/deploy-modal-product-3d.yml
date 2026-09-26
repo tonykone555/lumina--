@@ -1,0 +1,58 @@
+name: Deploy Modal product 3D worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - "workers/ynot_product_3d_modal.py"
+      - ".github/workflows/deploy-modal-product-3d.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "modal>=1.5,<2" "fastapi[standard]" requests
+      - name: Configure gated Hugging Face model access
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HUGGINGFACE_TOKEN: ${{ secrets.HUGGINGFACE_TOKEN }}
+        run: |
+          TOKEN="${HF_TOKEN:-${HUGGINGFACE_TOKEN:-}}"
+          if [ -z "$TOKEN" ]; then
+            echo "::error::SPAR3D is gated. Add the approved Hugging Face read token as HF_TOKEN (or HUGGINGFACE_TOKEN) in GitHub Actions secrets."
+            exit 1
+          fi
+          modal secret create ynot-huggingface HF_TOKEN="$TOKEN" --force
+      - name: Deploy SPAR3D product worker
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy workers/ynot_product_3d_modal.py --name ynot-product-3d
+      - name: Let Modal route traffic to the new deployment
+        run: sleep 15
+      - name: Verify worker health and authentication boundary
+        env:
+          STATUS_URL: https://tonykone555--ynot-product-3d-product-status.modal.run
+          SUBMIT_URL: https://tonykone555--ynot-product-3d-submit-product.modal.run
+        run: |
+          python - <<'PY'
+          import os, requests
+          health=requests.get(os.environ["STATUS_URL"],timeout=30)
+          print("health",health.status_code,health.text[:1000])
+          health.raise_for_status()
+          body={"productId":"gid://shopify/p/security-probe","imageUrl":"https://cdn.shopify.com/s/files/1/1/files/probe.jpg","title":"probe","category":"sofa"}
+          unauth=requests.post(os.environ["SUBMIT_URL"],json=body,timeout=30)
+          print("unauth",unauth.status_code,unauth.text[:500])
+          if unauth.status_code!=401: raise SystemExit("Unauthenticated product generation must be rejected")
+          PY
