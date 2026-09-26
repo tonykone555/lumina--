@@ -23,6 +23,8 @@ jobs:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
         run: modal deploy workers/ynot_room_modal.py --name ynot-room
+      - name: Let Modal route traffic to the new deployment
+        run: sleep 20
       - name: Reconstruct synthetic room and verify GLB
         env:
           SUBMIT_URL: https://tonykone555--ynot-room-submit-room.modal.run
@@ -37,7 +39,6 @@ jobs:
           for i in range(3):
               image=Image.new("RGB", (768, 576), (226-i*10, 220-i*4, 211+i*7))
               draw=ImageDraw.Draw(image)
-              # Give the geometry model a simple room-like perspective with a floor/wall split and furniture block.
               draw.polygon([(0,340),(768,310),(768,576),(0,576)], fill=(187,176,158))
               draw.line((0,340,768,310), fill=(90,86,80), width=5)
               draw.line((80,0,175+i*20,340), fill=(118,114,108), width=5)
@@ -76,6 +77,9 @@ jobs:
               raise SystemExit(f"Room reconstruction failed: {terminal}")
           if terminal.get("photoCount") != 3:
               raise SystemExit(f"Unexpected photo count: {terminal}")
+          # The multiview worker always exposes this field, even when synthetic views fall back to the seed.
+          if "fusedViewCount" not in terminal:
+              raise SystemExit(f"Stale Modal worker answered the smoke test: {terminal}")
           scene_url=terminal.get("sceneUrl")
           if not scene_url:
               raise SystemExit(f"Missing sceneUrl: {terminal}")
@@ -87,5 +91,5 @@ jobs:
               raise SystemExit("Returned scene is not a binary glTF/GLB")
           if len(scene.content) < 10_000:
               raise SystemExit("Returned GLB is unexpectedly small")
-          print("YNOT Room GLB reconstruction smoke test passed", terminal)
+          print("YNOT Room multiview GLB smoke test passed", terminal)
           PY
