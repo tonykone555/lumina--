@@ -3,6 +3,22 @@
   /* IMPORTANT: bottom category/tag pills keep their original sizing.
      Do not resize .ynot-dock/taxonomy/subcategory buttons here. */
 
+  /* Prevent iOS Safari from auto-zooming when any YNOT search field receives focus.
+     iOS only performs that focus zoom when form text is rendered below 16px. */
+  .ynot-bottom-search input,
+  .ynot-search input,
+  .world-search input,
+  .search-pill input,
+  .voice-search input,
+  .world-search-bar input,
+  .world-search-pill input,
+  [class*="search-pill"] input,
+  [class*="search-bar"] input,
+  input[type="search"]{
+    font-size:16px!important;
+    line-height:1.2!important;
+  }
+
   /* Main WORLD category bubbles only. Scope to the entry world so product bubbles,
      search-result bubbles and the bottom category tags are never affected. */
   .level-worlds .lv4-category-bubble{
