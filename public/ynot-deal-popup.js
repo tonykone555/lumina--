@@ -39,12 +39,13 @@
     restoreHiddenZoomControls();if(!popup)return;
     document.querySelectorAll('button').forEach(button=>{
       if(!(button instanceof HTMLElement)||popup.contains(button))return;
+      if(button.matches('.ynot-glass-side-control,[class*="side-control" i],[class*="product-nav" i],[aria-label*="previous product" i],[aria-label*="next product" i]'))return;
       const text=(button.textContent||'').trim(),aria=(button.getAttribute('aria-label')||'').trim().toLowerCase(),title=(button.getAttribute('title')||'').trim().toLowerCase(),cls=String(button.className||'').toLowerCase();
       const svg=button.querySelector('svg');
       const svgClass=String(svg?.getAttribute('class')||'').toLowerCase();
       const exactGlyph=text==='+'||text==='−'||text==='–'||text==='—'||text==='-';
       const lucideZoom=/lucide-plus|lucide-minus|lucide-zoom-in|lucide-zoom-out/.test(svgClass);
-      const namedZoom=/zoom|magnif|scale|far-button|compass-tools/.test(`${aria} ${title} ${cls}`);
+      const namedZoom=/zoom|magnif|scale|compass-tools/.test(`${aria} ${title} ${cls}`);
       if(exactGlyph||lucideZoom||namedZoom)hideNode(button,popup)
     });
     document.querySelectorAll('.ynot-compass-tools,.lv4-zoom,.lv4-zoom-controls,.ynot-zoom-controls,[class*="zoom-control" i],[class*="zoom-controls" i]').forEach(node=>hideNode(node,popup));
