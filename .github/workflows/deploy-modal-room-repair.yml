@@ -25,22 +25,20 @@ jobs:
         run: modal deploy workers/ynot_room_repair_modal.py --name ynot-room-repair
       - name: Let Modal route traffic to the new deployment
         run: sleep 15
-      - name: Verify blocker-aware repair routing
+      - name: Verify asynchronous repair queue
         env:
           REPAIR_URL: https://tonykone555--ynot-room-repair-room-repair.modal.run
           TEST_ROOM_ID: b8eb5d66-47df-43de-bfe9-9e9c93ae4bb8
         run: |
           python - <<'PY'
           import os, requests
-          response=requests.post(os.environ["REPAIR_URL"],params={"id":os.environ["TEST_ROOM_ID"]},timeout=240)
-          print("repair",response.status_code,response.text[:8000])
+          response=requests.post(os.environ["REPAIR_URL"],params={"id":os.environ["TEST_ROOM_ID"]},timeout=45)
+          print("repair",response.status_code,response.text[:4000])
           response.raise_for_status()
           data=response.json()
-          if data.get("status") not in {"repaired","escalated","no_repair_needed","repair_limit_reached"}:
-              raise SystemExit(f"Unexpected repair status: {data}")
+          if data.get("status") != "repair_queued":
+              raise SystemExit(f"Repair endpoint did not enqueue asynchronously: {data}")
           if "releaseStatus" not in data:
               raise SystemExit(f"Missing release status: {data}")
-          if data.get("status")=="repaired" and not data.get("qa"):
-              raise SystemExit(f"Repair did not rerun QA: {data}")
-          print("YNOT Room auto-repair smoke test passed", {"status":data.get("status"),"nextAction":data.get("nextAction"),"releaseStatus":data.get("releaseStatus")})
+          print("YNOT Room asynchronous repair queue smoke test passed", data)
           PY
