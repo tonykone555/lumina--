@@ -1,12 +1,10 @@
 import type {Metadata} from "next";
-import RoomExperience from "./RoomExperience";
+import QuickRoomExperience from "./QuickRoomExperience";
 
 export const metadata:Metadata={
-  title:"YNOT Room — Turn your room into a shoppable world",
-  description:"Upload photos of a room, prepare a 3D reconstruction and explore a shoppable room with YNOT.",
+  title:"YNOT Room — Tap your room. Shop anything.",
+  description:"Take one photo and let YNOT identify objects, suggest what to add, and find matching products automatically.",
   alternates:{canonical:"https://ynotworld.app/room"},
 };
 
-export default function RoomPage(){
-  return <RoomExperience/>;
-}
+export default function RoomPage(){return <QuickRoomExperience/>}
