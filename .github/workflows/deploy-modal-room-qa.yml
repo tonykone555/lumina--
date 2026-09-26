@@ -1,0 +1,72 @@
+name: Deploy Modal room QA worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - "workers/ynot_room_qa_modal.py"
+      - ".github/workflows/deploy-modal-room-qa.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "modal>=1.2,<2" "fastapi[standard]" requests
+      - name: Deploy YNOT Room QA worker
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy workers/ynot_room_qa_modal.py --name ynot-room-qa
+      - name: Let Modal route traffic to the new deployment
+        run: sleep 15
+      - name: Verify matched-camera QA and evidence assets
+        env:
+          QA_URL: https://tonykone555--ynot-room-qa-room-qa.modal.run
+          ASSET_URL: https://tonykone555--ynot-room-qa-room-qa-asset.modal.run
+          TEST_ROOM_ID: b8eb5d66-47df-43de-bfe9-9e9c93ae4bb8
+        run: |
+          python - <<'PY'
+          import os, requests
+          response=requests.get(
+              os.environ["QA_URL"],
+              params={"id":os.environ["TEST_ROOM_ID"],"refresh":"true"},
+              timeout=180,
+          )
+          print("qa",response.status_code,response.text[:6000])
+          response.raise_for_status()
+          data=response.json()
+          if data.get("status") != "complete":
+              raise SystemExit(f"QA did not complete: {data}")
+          if data.get("matchedCameraCount",0) < 3:
+              raise SystemExit(f"Expected 3 matched cameras: {data}")
+          reports=data.get("viewReports") or []
+          if len(reports) < 3:
+              raise SystemExit(f"Expected per-view QA reports: {data}")
+          if data.get("version",0) < 2:
+              raise SystemExit(f"Expected QA evidence contract v2: {data}")
+          first=next((item for item in reports if item.get("matched") and item.get("viewKey")),None)
+          if not first:
+              raise SystemExit(f"No matched view with evidence key: {data}")
+          for kind in ("render","heatmap","edges"):
+              asset=requests.get(
+                  os.environ["ASSET_URL"],
+                  params={"id":data["id"],"view":first["viewKey"],"kind":kind},
+                  timeout=60,
+              )
+              print("asset",kind,asset.status_code,asset.headers.get("content-type"),len(asset.content))
+              asset.raise_for_status()
+              if not asset.headers.get("content-type","").startswith("image/jpeg") or len(asset.content)<1000:
+                  raise SystemExit(f"Invalid {kind} evidence asset")
+          print("YNOT Room QA evidence smoke test passed", {
+              "matchedCameraCount":data.get("matchedCameraCount"),
+              "referenceCoverage":data.get("referenceCoverage"),
+              "averageScore":data.get("averageScore"),
+              "releaseStatus":data.get("releaseStatus"),
+          })
+          PY

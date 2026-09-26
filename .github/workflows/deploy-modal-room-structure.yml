@@ -1,0 +1,65 @@
+name: Deploy Modal room structure worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - "workers/ynot_room_structure_modal.py"
+      - ".github/workflows/deploy-modal-room-structure.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "modal>=1.2,<2" "fastapi[standard]" requests
+      - name: Deploy YNOT Room structure worker
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy workers/ynot_room_structure_modal.py --name ynot-room-structure
+      - name: Let Modal route traffic to the new deployment
+        run: sleep 15
+      - name: Verify structure model on reconstructed room
+        env:
+          STRUCTURE_URL: https://tonykone555--ynot-room-structure-room-model.modal.run
+          TEST_ROOM_ID: b8eb5d66-47df-43de-bfe9-9e9c93ae4bb8
+        run: |
+          python - <<'PY'
+          import os, requests
+
+          response=requests.get(
+              os.environ["STRUCTURE_URL"],
+              params={"id":os.environ["TEST_ROOM_ID"],"refresh":"true"},
+              timeout=120,
+          )
+          print("structure",response.status_code,response.text[:4000])
+          response.raise_for_status()
+          data=response.json()
+          if data.get("id") != os.environ["TEST_ROOM_ID"]:
+              raise SystemExit(f"Wrong room returned: {data.get('id')}")
+          bounds=data.get("bounds") or {}
+          size=bounds.get("size") or []
+          if len(size) != 3 or not all(float(v) > 0 for v in size):
+              raise SystemExit(f"Invalid room bounds: {bounds}")
+          cameras=data.get("cameras") or []
+          if len(cameras) < 3:
+              raise SystemExit(f"Expected camera evidence for all reference views: {cameras}")
+          structure=data.get("structure") or {}
+          planes=structure.get("planeCandidates") or []
+          if not planes:
+              raise SystemExit(f"No structural plane candidates returned: {structure}")
+          print("YNOT Room structure smoke test passed", {
+              "bounds": size,
+              "cameras": len(cameras),
+              "planes": len(planes),
+              "floor": bool(structure.get("floor")),
+              "ceiling": bool(structure.get("ceiling")),
+              "walls": len(structure.get("walls") or []),
+          })
+          PY

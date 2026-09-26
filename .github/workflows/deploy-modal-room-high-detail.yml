@@ -1,0 +1,49 @@
+name: Deploy Modal room high-detail worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - "workers/ynot_room_high_detail_modal.py"
+      - ".github/workflows/deploy-modal-room-high-detail.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "modal>=1.2,<2" "fastapi[standard]" requests
+      - name: Deploy YNOT Room high-detail worker
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy workers/ynot_room_high_detail_modal.py --name ynot-room-high-detail
+      - name: Let Modal route traffic to the new deployment
+        run: sleep 15
+      - name: Verify high-detail fallback and refreshed QA
+        env:
+          HIGH_DETAIL_URL: https://tonykone555--ynot-room-high-detail-high-detail-reconstruct.modal.run
+          TEST_ROOM_ID: b8eb5d66-47df-43de-bfe9-9e9c93ae4bb8
+        run: |
+          python - <<'PY'
+          import os, requests
+          response=requests.post(os.environ["HIGH_DETAIL_URL"],params={"id":os.environ["TEST_ROOM_ID"]},timeout=1800)
+          print("high-detail",response.status_code,response.text[:10000])
+          response.raise_for_status()
+          data=response.json()
+          if data.get("status") != "ready":
+              raise SystemExit(f"High-detail reconstruction failed: {data}")
+          if data.get("reconstruction") != "moge2_vitl_high_detail_multiview":
+              raise SystemExit(f"Wrong reconstruction profile: {data}")
+          mesh=data.get("mesh") or {}
+          if mesh.get("vertices",0)<1000 or mesh.get("faces",0)<1000:
+              raise SystemExit(f"High-detail mesh is invalid: {mesh}")
+          if not data.get("qa") or "releaseStatus" not in data:
+              raise SystemExit(f"High-detail pass did not refresh QA: {data}")
+          print("YNOT Room high-detail fallback smoke test passed", {"views":data.get("fusedViewCount"),"vertices":mesh.get("vertices"),"faces":mesh.get("faces"),"releaseStatus":data.get("releaseStatus"),"qaScore":(data.get("qa") or {}).get("averageScore")})
+          PY

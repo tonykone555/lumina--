@@ -1,0 +1,95 @@
+name: Test YNOT Room autopilot end-to-end
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - ".github/workflows/test-room-autopilot-e2e.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests pillow
+      - name: Request GitHub OIDC identity
+        id: oidc
+        run: |
+          TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=ynot-room-modal" | python -c 'import json,sys; print(json.load(sys.stdin)["value"])')
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+      - name: Submit fast room, trigger autopilot, verify final gate
+        env:
+          SUBMIT_URL: https://tonykone555--ynot-room-submit-submit-room.modal.run
+          STATUS_URL: https://tonykone555--ynot-room-room-status.modal.run
+          QA_URL: https://tonykone555--ynot-room-qa-room-qa.modal.run
+          AUTOPILOT_URL: https://tonykone555--ynot-room-autopilot-schedule-repair.modal.run
+          GITHUB_OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
+        run: |
+          python - <<'PY'
+          import io, os, time, uuid, requests
+          from PIL import Image, ImageDraw
+
+          request_id="autopilot-e2e-"+uuid.uuid4().hex[:12]
+          files=[]
+          for i in range(3):
+              image=Image.new("RGB",(768,576),(226-i*10,220-i*4,211+i*7))
+              draw=ImageDraw.Draw(image)
+              draw.polygon([(0,340),(768,310),(768,576),(0,576)],fill=(187,176,158))
+              draw.line((0,340,768,310),fill=(90,86,80),width=5)
+              draw.line((80,0,175+i*20,340),fill=(118,114,108),width=5)
+              draw.line((690,0,590-i*18,320),fill=(118,114,108),width=5)
+              draw.rectangle((220+i*8,275,555-i*8,430),fill=(100,99,96),outline=(62,62,60),width=6)
+              draw.rectangle((285,220,490,305),fill=(121,119,114),outline=(62,62,60),width=5)
+              buf=io.BytesIO();image.save(buf,format="JPEG",quality=90)
+              files.append(("photos",(f"view-{i+1}.jpg",buf.getvalue(),"image/jpeg")))
+
+          started=time.time()
+          submit=requests.post(os.environ["SUBMIT_URL"],headers={"X-GitHub-OIDC-Token":os.environ["GITHUB_OIDC_TOKEN"]},files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room","budget":"2500","source":"autopilot-e2e"},timeout=30)
+          print("submit",submit.status_code,round(time.time()-started,2),submit.text)
+          submit.raise_for_status();job_id=submit.json()["id"]
+
+          fast_ready=None
+          for attempt in range(90):
+              time.sleep(4)
+              r=requests.get(os.environ["STATUS_URL"],params={"id":job_id},timeout=30);r.raise_for_status();status=r.json()
+              print("fast-status",attempt+1,status.get("status"),status.get("stage"),status.get("reconstruction"))
+              if status.get("status")=="ready":fast_ready=status;break
+              if status.get("status")=="failed":raise SystemExit(f"Fast reconstruction failed: {status}")
+          if not fast_ready:raise SystemExit("Fast reconstruction did not finish")
+
+          qa=requests.get(os.environ["QA_URL"],params={"id":job_id,"refresh":"true"},timeout=180);qa.raise_for_status();qa_data=qa.json()
+          print("fast-qa",qa_data.get("averageScore"),qa_data.get("canPublish"),qa_data.get("blockers"))
+          if qa_data.get("canPublish"):
+              print("Fast pass already publishable; autopilot correctly has nothing to repair")
+          else:
+              auto=requests.post(os.environ["AUTOPILOT_URL"],params={"id":job_id},timeout=45);auto.raise_for_status();print("autopilot",auto.text)
+              if auto.json().get("status") not in {"repair_queued","repair_already_queued","high_detail_in_progress"}:
+                  raise SystemExit(f"Autopilot did not schedule recovery: {auto.json()}")
+
+          final=None
+          for attempt in range(240):
+              time.sleep(5)
+              r=requests.get(os.environ["STATUS_URL"],params={"id":job_id},timeout=30);r.raise_for_status();status=r.json()
+              if attempt%3==0:print("recovery-status",attempt+1,status.get("status"),status.get("stage"),status.get("reconstruction"))
+              if status.get("status")=="failed":raise SystemExit(f"Recovery failed: {status}")
+              if status.get("status")=="ready" and status.get("reconstruction")=="moge2_vitl_high_detail_multiview":
+                  final=status;break
+              if qa_data.get("canPublish") and status.get("status")=="ready":
+                  final=status;break
+          if not final:raise SystemExit("Autopilot recovery did not reach a final ready state")
+
+          final_qa=requests.get(os.environ["QA_URL"],params={"id":job_id},timeout=120);final_qa.raise_for_status();fq=final_qa.json()
+          print("final",{"id":job_id,"reconstruction":final.get("reconstruction"),"qa":fq.get("averageScore"),"canPublish":fq.get("canPublish"),"releaseStatus":fq.get("releaseStatus"),"blockers":len(fq.get("blockers") or [])})
+          if not fq.get("canPublish") or fq.get("releaseStatus")!="publishable":
+              raise SystemExit(f"Autopilot did not clear release gate: {fq}")
+          print("YNOT Room unattended autopilot recovery passed")
+          PY

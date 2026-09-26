@@ -1,0 +1,44 @@
+name: Deploy Modal room repair worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - "workers/ynot_room_repair_modal.py"
+      - ".github/workflows/deploy-modal-room-repair.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "modal>=1.2,<2" "fastapi[standard]" requests
+      - name: Deploy YNOT Room repair worker
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy workers/ynot_room_repair_modal.py --name ynot-room-repair
+      - name: Let Modal route traffic to the new deployment
+        run: sleep 15
+      - name: Verify asynchronous repair queue
+        env:
+          REPAIR_URL: https://tonykone555--ynot-room-repair-room-repair.modal.run
+          TEST_ROOM_ID: b8eb5d66-47df-43de-bfe9-9e9c93ae4bb8
+        run: |
+          python - <<'PY'
+          import os, requests
+          response=requests.post(os.environ["REPAIR_URL"],params={"id":os.environ["TEST_ROOM_ID"]},timeout=45)
+          print("repair",response.status_code,response.text[:4000])
+          response.raise_for_status()
+          data=response.json()
+          if data.get("status") != "repair_queued":
+              raise SystemExit(f"Repair endpoint did not enqueue asynchronously: {data}")
+          if "releaseStatus" not in data:
+              raise SystemExit(f"Missing release status: {data}")
+          print("YNOT Room asynchronous repair queue smoke test passed", data)
+          PY

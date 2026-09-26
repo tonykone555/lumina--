@@ -1,0 +1,49 @@
+name: Test Modal room worker
+
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pillow requests
+      - name: Submit synthetic room and verify deployed GLB
+        env:
+          SUBMIT_URL: https://tonykone555--ynot-room-submit-room.modal.run
+          STATUS_URL: https://tonykone555--ynot-room-room-status.modal.run
+        run: |
+          python - <<'PY'
+          import io, os, time
+          import requests
+          from PIL import Image, ImageDraw
+
+          files=[]
+          for i in range(3):
+              image=Image.new("RGB", (768, 576), (226-i*10, 220-i*4, 211+i*7))
+              draw=ImageDraw.Draw(image)
+              draw.polygon([(0,340),(768,310),(768,576),(0,576)], fill=(187,176,158))
+              draw.line((0,340,768,310), fill=(90,86,80), width=5)
+              draw.rectangle((220+i*8,275,555-i*8,430), fill=(100,99,96), outline=(62,62,60), width=6)
+              buffer=io.BytesIO(); image.save(buffer, format="JPEG", quality=90)
+              files.append(("photos", (f"view-{i+1}.jpg", buffer.getvalue(), "image/jpeg")))
+
+          response=requests.post(os.environ["SUBMIT_URL"],files=files,data={"style":"modern","roomType":"living_room","budget":"2500","source":"github-manual-smoke"},timeout=60)
+          print("submit",response.status_code,response.text); response.raise_for_status()
+          job_id=response.json()["id"]
+          terminal=None
+          for attempt in range(60):
+              time.sleep(5)
+              status=requests.get(os.environ["STATUS_URL"],params={"id":job_id},timeout=30)
+              print("status",attempt+1,status.status_code,status.text); status.raise_for_status()
+              payload=status.json()
+              if payload.get("status") in {"ready","failed"}:
+                  terminal=payload; break
+          if not terminal or terminal.get("status")!="ready": raise SystemExit(f"Room reconstruction failed: {terminal}")
+          scene=requests.get(terminal["sceneUrl"],timeout=60); scene.raise_for_status()
+          if not scene.content.startswith(b"glTF") or len(scene.content)<10_000: raise SystemExit("Invalid GLB")
+          print("YNOT Room deployed GLB smoke test passed",terminal)
+          PY
