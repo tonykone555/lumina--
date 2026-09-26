@@ -51,7 +51,6 @@ export async function POST(request:Request){
   outbound.set("roomType",roomType);
   if(rawBudget)outbound.set("budget",rawBudget);
   outbound.set("source","ynot-room-web");
-  outbound.set("callbackUrl",new URL("/api/room/jobs/callback",request.url).toString());
 
   const headers:HeadersInit={"X-YNOT-Room-Request":requestId};
   const token=String(process.env.MODAL_ROOM_TOKEN||"").trim();
