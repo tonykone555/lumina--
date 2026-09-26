@@ -3,11 +3,13 @@ from pathlib import Path
 
 import modal
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
 
 APP_NAME = "ynot-room-qa"
 VOLUME_PATH = Path("/ynot-room")
 MAX_RENDER_POINTS = 90000
 RENDER_MAX_EDGE = 420
+ASSET_KINDS = {"render", "heatmap", "edges"}
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -26,6 +28,10 @@ volume = modal.Volume.from_name("ynot-room-jobs", create_if_missing=True)
 
 def _safe_id(value: str) -> str:
     return "".join(ch for ch in str(value) if ch.isalnum() or ch in "-_")[:80]
+
+
+def _safe_view(value: str) -> str:
+    return "".join(ch for ch in Path(str(value)).stem if ch.isalnum() or ch in "-_")[:80]
 
 
 def _job_dir(job_id: str) -> Path:
@@ -116,16 +122,7 @@ def _occupancy_score(points, center_offset, intrinsics, width, height):
     import numpy as np
 
     colors = np.zeros((len(points), 3), dtype=np.uint8)
-    projected = _project(
-        points,
-        colors,
-        center_offset,
-        np.eye(3),
-        np.zeros(3),
-        intrinsics,
-        width,
-        height,
-    )
+    projected = _project(points, colors, center_offset, np.eye(3), np.zeros(3), intrinsics, width, height)
     if projected is None:
         return 0.0
     u, v, _depth, _colors = projected
@@ -138,14 +135,11 @@ def _occupancy_score(points, center_offset, intrinsics, width, height):
     inside_ratio = min(1.0, len(u) / max(1.0, len(points) * 0.55))
     qx = np.percentile(u, [5, 95])
     qy = np.percentile(v, [5, 95])
-    bbox = max(0.0, min(1.0, (qx[1] - qx[0]) / max(1.0, width))) * max(
-        0.0, min(1.0, (qy[1] - qy[0]) / max(1.0, height))
-    )
+    bbox = max(0.0, min(1.0, (qx[1] - qx[0]) / max(1.0, width))) * max(0.0, min(1.0, (qy[1] - qy[0]) / max(1.0, height))
     return float(0.55 * occupied + 0.25 * inside_ratio + 0.20 * bbox)
 
 
 def _estimate_center(points, intrinsics, width, height):
-    """Recover the GLB centering translation from the seed camera when old manifests lack it."""
     import numpy as np
 
     low = np.percentile(points, 2.0, axis=0)
@@ -156,20 +150,16 @@ def _estimate_center(points, intrinsics, width, height):
     z_near = high[2] + max(0.1, 0.04 * size[2])
     z_far = high[2] + max(1.2, 0.65 * size[2])
     zs = np.linspace(z_near, z_far, 7)
-
     best_score = -1.0
     best_camera = np.array([0.0, 0.0, z_near])
     for px in xs:
         for py in ys:
             for pz in zs:
                 camera_position = np.array([px, py, pz], dtype=np.float64)
-                center = -camera_position
-                score = _occupancy_score(points, center, intrinsics, width, height)
+                score = _occupancy_score(points, -camera_position, intrinsics, width, height)
                 if score > best_score:
                     best_score = score
                     best_camera = camera_position
-
-    # Small local refinement around the coarse solution.
     steps = np.maximum(size * np.array([0.10, 0.10, 0.08]), np.array([0.15, 0.15, 0.15]))
     for _ in range(2):
         current = best_camera.copy()
@@ -177,8 +167,7 @@ def _estimate_center(points, intrinsics, width, height):
             for dy in (-steps[1], 0.0, steps[1]):
                 for dz in (-steps[2], 0.0, steps[2]):
                     candidate = current + np.array([dx, dy, dz])
-                    center = -candidate
-                    score = _occupancy_score(points, center, intrinsics, width, height)
+                    score = _occupancy_score(points, -candidate, intrinsics, width, height)
                     if score > best_score:
                         best_score = score
                         best_camera = candidate
@@ -208,7 +197,6 @@ def _render_points(points, colors, center_offset, camera, intrinsics, width, hei
     x, y, rgb = x[chosen], y[chosen], rgb[chosen]
     render[y, x] = rgb
     mask[y, x] = 255
-
     kernel = np.ones((3, 3), dtype=np.uint8)
     for _ in range(2):
         render = cv2.dilate(render, kernel, iterations=1)
@@ -225,13 +213,7 @@ def _compare(source_rgb, render_rgb, render_mask):
     coverage_raw = float(mask.mean())
     coverage = min(1.0, coverage_raw / 0.58)
     if mask.sum() < 80:
-        return {
-            "coverageScore": round(coverage, 4),
-            "structureScore": 0.0,
-            "photometricScore": 0.0,
-            "score": round(0.45 * coverage, 4),
-        }
-
+        return {"coverageScore": round(coverage, 4), "structureScore": 0.0, "photometricScore": 0.0, "score": round(0.45 * coverage, 4)}
     source_gray = cv2.cvtColor(source_rgb, cv2.COLOR_RGB2GRAY)
     render_gray = cv2.cvtColor(render_rgb, cv2.COLOR_RGB2GRAY)
     source_edges = cv2.Canny(source_gray, 55, 145)
@@ -243,19 +225,36 @@ def _compare(source_rgb, render_rgb, render_mask):
     a = float(np.mean(np.clip(src_dt[re] / 8.0, 0, 1))) if re.any() else 1.0
     b = float(np.mean(np.clip(rnd_dt[se] / 8.0, 0, 1))) if se.any() else 1.0
     structure = max(0.0, 1.0 - (a + b) / 2.0)
-
     source_f = source_rgb.astype(np.float32) / 255.0
     render_f = render_rgb.astype(np.float32) / 255.0
     mae = float(np.mean(np.abs(source_f[mask] - render_f[mask])))
     photometric = max(0.0, 1.0 - mae / 0.48)
     score = 0.45 * coverage + 0.35 * structure + 0.20 * photometric
-    return {
-        "coverageScore": round(float(coverage), 4),
-        "coverageRaw": round(float(coverage_raw), 4),
-        "structureScore": round(float(structure), 4),
-        "photometricScore": round(float(photometric), 4),
-        "score": round(float(score), 4),
-    }
+    return {"coverageScore": round(float(coverage), 4), "coverageRaw": round(float(coverage_raw), 4), "structureScore": round(float(structure), 4), "photometricScore": round(float(photometric), 4), "score": round(float(score), 4)}
+
+
+def _evidence_images(source_rgb, render_rgb, render_mask):
+    import cv2
+    import numpy as np
+
+    mask = render_mask > 0
+    diff = np.mean(np.abs(source_rgb.astype(np.float32) - render_rgb.astype(np.float32)), axis=2)
+    diff[~mask] = 255.0
+    diff_u8 = np.clip(diff, 0, 255).astype(np.uint8)
+    heat_bgr = cv2.applyColorMap(diff_u8, cv2.COLORMAP_TURBO)
+    heat_rgb = cv2.cvtColor(heat_bgr, cv2.COLOR_BGR2RGB)
+    heat_rgb = cv2.addWeighted(source_rgb, 0.42, heat_rgb, 0.58, 0)
+
+    src_gray = cv2.cvtColor(source_rgb, cv2.COLOR_RGB2GRAY)
+    rnd_gray = cv2.cvtColor(render_rgb, cv2.COLOR_RGB2GRAY)
+    src_edges = cv2.Canny(src_gray, 55, 145)
+    rnd_edges = cv2.Canny(rnd_gray, 55, 145)
+    overlay = (source_rgb.astype(np.float32) * 0.32).astype(np.uint8)
+    overlay[src_edges > 0] = [70, 230, 120]
+    overlay[rnd_edges > 0] = [255, 85, 85]
+    both = (src_edges > 0) & (rnd_edges > 0)
+    overlay[both] = [245, 225, 80]
+    return heat_rgb, overlay
 
 
 def _build_qa(job_id: str):
@@ -269,7 +268,6 @@ def _build_qa(job_id: str):
     photo_dir = job_dir / "photos"
     if not manifest_path.exists() or not scene_path.exists():
         raise FileNotFoundError("Room reconstruction is not ready for QA")
-
     manifest = _load_json(manifest_path)
     reconstruction = manifest.get("reconstruction") or {}
     alignments = reconstruction.get("alignment") or []
@@ -277,7 +275,6 @@ def _build_qa(job_id: str):
     photos = manifest.get("photos") or []
     seed_name = reconstruction.get("sourceView")
     points, colors = _load_scene_points(scene_path)
-
     seed_record = alignment_by_view.get(seed_name, {"view": seed_name, "seed": True, "used": True})
     seed_intrinsics, seed_intrinsics_source = _normalized_intrinsics(manifest, seed_record)
     seed_photo_meta = next((p for p in photos if p.get("name") == seed_name), photos[0] if photos else None)
@@ -285,39 +282,28 @@ def _build_qa(job_id: str):
         raise RuntimeError("No reference photos were recorded")
     seed_w = int(seed_photo_meta.get("width") or 768)
     seed_h = int(seed_photo_meta.get("height") or 576)
-
     stored_center = (reconstruction.get("mesh") or {}).get("centerOffset")
     if stored_center is not None:
-        center_offset = stored_center
-        center_source = "manifest"
-        center_score = None
+        center_offset, center_source, center_score = stored_center, "manifest", None
     else:
         center_offset, center_score = _estimate_center(points, seed_intrinsics, seed_w, seed_h)
         center_source = "qa_recovered"
 
     qa_dir = job_dir / "qa"
-    render_dir = qa_dir / "renders"
-    render_dir.mkdir(parents=True, exist_ok=True)
-    view_reports = []
-    matched_views = []
-    blockers = []
+    asset_dirs = {kind: qa_dir / kind for kind in ASSET_KINDS}
+    for directory in asset_dirs.values():
+        directory.mkdir(parents=True, exist_ok=True)
+    view_reports, matched_views, blockers = [], [], []
 
     for photo_meta in photos:
         name = str(photo_meta.get("name") or "")
+        view_key = _safe_view(name)
         camera = alignment_by_view.get(name, {})
         used = bool(camera.get("used", name == seed_name))
         if not used:
-            report = {
-                "view": name,
-                "matched": False,
-                "status": "blocked",
-                "score": 0.0,
-                "blockers": ["camera_not_aligned"],
-            }
-            view_reports.append(report)
+            view_reports.append({"view": name, "matched": False, "status": "blocked", "score": 0.0, "blockers": ["camera_not_aligned"]})
             blockers.append({"view": name, "code": "camera_not_aligned", "severity": "major"})
             continue
-
         source_path = photo_dir / name
         if not source_path.exists():
             view_reports.append({"view": name, "matched": False, "status": "blocked", "score": 0.0, "blockers": ["reference_missing"]})
@@ -346,16 +332,20 @@ def _build_qa(job_id: str):
             codes.append("low_view_similarity")
             blockers.append({"view": name, "code": "low_view_similarity", "severity": "major"})
 
-        render_bgr = cv2.cvtColor(render_rgb, cv2.COLOR_RGB2BGR)
-        cv2.imwrite(str(render_dir / f"{Path(name).stem}.jpg"), render_bgr, [cv2.IMWRITE_JPEG_QUALITY, 88])
+        heat_rgb, edges_rgb = _evidence_images(source_rgb, render_rgb, render_mask)
+        cv2.imwrite(str(asset_dirs["render"] / f"{view_key}.jpg"), cv2.cvtColor(render_rgb, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 90])
+        cv2.imwrite(str(asset_dirs["heatmap"] / f"{view_key}.jpg"), cv2.cvtColor(heat_rgb, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 90])
+        cv2.imwrite(str(asset_dirs["edges"] / f"{view_key}.jpg"), cv2.cvtColor(edges_rgb, cv2.COLOR_RGB2BGR), [cv2.IMWRITE_JPEG_QUALITY, 90])
         matched_views.append(name)
         view_reports.append({
             "view": name,
+            "viewKey": view_key,
             "matched": True,
             "status": "pass" if not codes else "review_required",
             "intrinsicsSource": intrinsics_source,
             **metrics,
             "blockers": codes,
+            "assets": {"render": "render", "heatmap": "heatmap", "edges": "edges"},
         })
 
     photo_count = max(1, len(photos))
@@ -365,17 +355,10 @@ def _build_qa(job_id: str):
     average_score = float(np.mean(scored)) if scored else 0.0
     critical = [b for b in blockers if b["severity"] == "critical"]
     major = [b for b in blockers if b["severity"] == "major"]
-    can_publish = (
-        matched_camera_count >= min(3, photo_count)
-        and reference_coverage >= 0.67
-        and average_score >= 0.52
-        and not critical
-        and not major
-    )
+    can_publish = matched_camera_count >= min(3, photo_count) and reference_coverage >= 0.67 and average_score >= 0.52 and not critical and not major
     release_status = "publishable" if can_publish else "review_required"
-
     payload = {
-        "version": 1,
+        "version": 2,
         "id": job_id,
         "status": "complete",
         "referenceCoverage": round(float(reference_coverage), 4),
@@ -386,19 +369,8 @@ def _build_qa(job_id: str):
         "blockers": blockers,
         "canPublish": bool(can_publish),
         "releaseStatus": release_status,
-        "cameraOrigin": {
-            "centerOffset": [round(float(v), 6) for v in center_offset],
-            "source": center_source,
-            "recoveryScore": center_score,
-            "seedIntrinsicsSource": seed_intrinsics_source,
-        },
-        "policy": {
-            "minimumMatchedCameras": min(3, photo_count),
-            "minimumReferenceCoverage": 0.67,
-            "minimumAverageScore": 0.52,
-            "criticalBlockersAllowed": 0,
-            "majorBlockersAllowed": 0,
-        },
+        "cameraOrigin": {"centerOffset": [round(float(v), 6) for v in center_offset], "source": center_source, "recoveryScore": center_score, "seedIntrinsicsSource": seed_intrinsics_source},
+        "policy": {"minimumMatchedCameras": min(3, photo_count), "minimumReferenceCoverage": 0.67, "minimumAverageScore": 0.52, "criticalBlockersAllowed": 0, "majorBlockersAllowed": 0},
     }
     _write_json(qa_dir / "qa.json", payload)
     volume.commit()
@@ -421,3 +393,18 @@ def room_qa(id: str, refresh: bool = False):
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Matched-camera QA failed: {str(exc)[:700]}") from exc
+
+
+@app.function(memory=1024, timeout=30, volumes={str(VOLUME_PATH): volume})
+@modal.fastapi_endpoint(method="GET")
+def room_qa_asset(id: str, view: str, kind: str):
+    safe_id = _safe_id(id)
+    safe_view = _safe_view(view)
+    safe_kind = str(kind or "").strip().lower()
+    if not safe_id or not safe_view or safe_kind not in ASSET_KINDS:
+        raise HTTPException(status_code=400, detail="Invalid QA asset request")
+    volume.reload()
+    path = _job_dir(safe_id) / "qa" / safe_kind / f"{safe_view}.jpg"
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="QA evidence image not found")
+    return FileResponse(path, media_type="image/jpeg", filename=f"ynot-room-{safe_id}-{safe_view}-{safe_kind}.jpg", headers={"Cache-Control": "private, max-age=3600"})
