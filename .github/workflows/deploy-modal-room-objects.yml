@@ -17,9 +17,34 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install "modal>=1.5,<2" "fastapi[standard]"
+      - run: pip install "modal>=1.5,<2" "fastapi[standard]" requests
       - name: Deploy YNOT Room object worker
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
         run: modal deploy workers/ynot_room_objects_modal.py --name ynot-room-objects
+      - name: Let Modal route traffic to the new object deployment
+        run: sleep 12
+      - name: Verify stable furniture objects
+        env:
+          OBJECTS_URL: https://tonykone555--ynot-room-objects-room-objects.modal.run
+          ROOM_ID: autopilot-e2e-70eb36839b1b
+        run: |
+          python - <<'PY'
+          import math, os, requests
+          response=requests.get(os.environ["OBJECTS_URL"],params={"id":os.environ["ROOM_ID"],"refresh":"true"},timeout=180)
+          print("objects",response.status_code,response.text[:2000])
+          response.raise_for_status();data=response.json()
+          if data.get("status")!="complete": raise SystemExit(f"Object worker did not complete: {data}")
+          objects=data.get("objects") or []
+          if not objects: raise SystemExit("Object worker returned no objects for the regression room")
+          ids=[str(item.get("id") or "") for item in objects]
+          if len(ids)!=len(set(ids)) or any(not value for value in ids): raise SystemExit(f"Object IDs are not stable/unique: {ids}")
+          for item in objects:
+              position=item.get("position") or []
+              size=item.get("size") or []
+              if len(position)!=3 or len(size)!=3: raise SystemExit(f"Invalid object geometry: {item}")
+              if any(not math.isfinite(float(v)) for v in [*position,*size]): raise SystemExit(f"Non-finite object geometry: {item}")
+              if any(float(v)<=0 for v in size): raise SystemExit(f"Non-positive object size: {item}")
+          print("YNOT Room furniture object smoke test passed",{"count":len(objects),"ids":ids})
+          PY
