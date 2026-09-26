@@ -6,10 +6,10 @@
   /* Main WORLD category bubbles only. Scope to the entry world so product bubbles,
      search-result bubbles and the bottom category tags are never affected. */
   .level-worlds .lv4-category-bubble{
-    min-width:184px!important;
-    min-height:184px!important;
-    width:184px!important;
-    height:184px!important;
+    min-width:202px!important;
+    min-height:202px!important;
+    width:202px!important;
+    height:202px!important;
     overflow:visible!important;
     transform-origin:center center!important;
   }
@@ -23,10 +23,11 @@
   .level-worlds .lv4-category-bubble b,
   .level-worlds .lv4-category-bubble strong,
   .level-worlds .lv4-category-bubble label{
-    font-size:34px!important;
-    line-height:1.04!important;
-    font-weight:700!important;
-    letter-spacing:-.015em!important;
+    font-size:36px!important;
+    line-height:1.02!important;
+    font-weight:900!important;
+    letter-spacing:.025em!important;
+    text-transform:uppercase!important;
   }
   html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble b,
   html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble strong,
