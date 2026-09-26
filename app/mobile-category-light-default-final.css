@@ -73,6 +73,56 @@
     -webkit-text-fill-color:#666!important;
     opacity:1!important;
   }
+
+  /* Category/tag row above search: keep it completely clear of the search fade.
+     No canopy, glow or drop shadow behind these pills; use crisp light pills with
+     dark text so each tag stays readable over products. */
+  .ynot-dock,
+  .taxonomy-rail,
+  [class*="taxonomy" i],
+  [class*="subcategory" i]{
+    position:relative!important;
+    z-index:760!important;
+    isolation:isolate!important;
+    filter:none!important;
+    box-shadow:none!important;
+    text-shadow:none!important;
+  }
+  .ynot-dock::before,.ynot-dock::after,
+  .taxonomy-rail::before,.taxonomy-rail::after,
+  [class*="taxonomy" i]::before,[class*="taxonomy" i]::after,
+  [class*="subcategory" i]::before,[class*="subcategory" i]::after{
+    content:none!important;
+    display:none!important;
+    background:none!important;
+    box-shadow:none!important;
+    filter:none!important;
+  }
+  html[data-ynot-theme="light"] .ynot-dock button,
+  html[data-ynot-theme="light"] .taxonomy-rail button,
+  html[data-ynot-theme="light"] [class*="taxonomy" i] button,
+  html[data-ynot-theme="light"] [class*="subcategory" i] button{
+    background:rgba(255,255,255,.96)!important;
+    border:1px solid rgba(20,20,20,.16)!important;
+    color:#222!important;
+    -webkit-text-fill-color:#222!important;
+    box-shadow:none!important;
+    text-shadow:none!important;
+    filter:none!important;
+    opacity:1!important;
+    backdrop-filter:blur(10px) saturate(110%)!important;
+    -webkit-backdrop-filter:blur(10px) saturate(110%)!important;
+  }
+  html[data-ynot-theme="light"] .ynot-dock button.active,
+  html[data-ynot-theme="light"] .taxonomy-rail button.active,
+  html[data-ynot-theme="light"] [class*="taxonomy" i] button.active,
+  html[data-ynot-theme="light"] [class*="subcategory" i] button.active{
+    background:#fff!important;
+    border-color:rgba(0,0,0,.28)!important;
+    color:#000!important;
+    -webkit-text-fill-color:#000!important;
+    font-weight:800!important;
+  }
 }
 
 /* Similar Picks / Similar Items: this section is marked at runtime by
