@@ -1,48 +1,102 @@
-/* YNOT Deals canopy cleanup. Floating controls remain on top, but the canopy itself
-   must not paint a full-width dark line/gradient over the feed. */
+/* FINAL YNOT Deals visual lock. This file is imported last in app/layout.tsx. */
+
+/* 1) Similar Picks inside the open YNOT Deal popup.
+   A broader legacy rule paints all .ynot-card copy white, including in light mode.
+   Override the ACTUAL recommendation cards here rather than guessing similar-* wrappers. */
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected .ynot-card,
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected [class*="product-card" i],
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected [class*="deal-card" i]{
+  color:#555!important;
+  -webkit-text-fill-color:#555!important;
+}
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected .ynot-card :is(h1,h2,h3,h4,p,small,span,b,label,div),
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected [class*="product-card" i] :is(h1,h2,h3,h4,p,small,span,b,label,div),
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected [class*="deal-card" i] :is(h1,h2,h3,h4,p,small,span,b,label,div){
+  color:#5d5f5c!important;
+  -webkit-text-fill-color:#5d5f5c!important;
+  opacity:1!important;
+  visibility:visible!important;
+  text-shadow:none!important;
+  mix-blend-mode:normal!important;
+  filter:none!important;
+}
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected .ynot-card :is(strong,[class*="price" i]),
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected [class*="product-card" i] :is(strong,[class*="price" i]),
+html[data-ynot-theme="light"] .ynot-drawer.open .ynot-selected [class*="deal-card" i] :is(strong,[class*="price" i]){
+  color:#111!important;
+  -webkit-text-fill-color:#111!important;
+  opacity:1!important;
+  visibility:visible!important;
+  font-weight:850!important;
+  text-shadow:none!important;
+}
+
+/* 2) Product popup owns the viewport. Runtime JS also removes the right-edge +/-
+   controls, but keep a CSS fallback for known control implementations. */
+html.ynot-deal-product-open .lv4-zoom,
+html.ynot-deal-product-open .lv4-zoom-controls,
+html.ynot-deal-product-open .ynot-zoom-controls,
+html.ynot-deal-product-open [class*="zoom-control" i],
+html.ynot-deal-product-open [class*="zoom-controls" i],
+html.ynot-deal-product-open .ynot-glass-side-control,
+html.ynot-deal-product-open .ynot-desktop-side-controls,
+html.ynot-deal-product-open .ynot-compass-tools{
+  display:none!important;
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* 3) YNOT Deals canopy: floating logo/tags/search stay pinned, but no full-width
+   shadow/fade may be painted over the scrolling products. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i],
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]{
-  filter:none!important;
-  text-shadow:none!important;
   border-bottom:0!important;
   border-bottom-color:transparent!important;
   outline:0!important;
+  filter:none!important;
+  box-shadow:none!important;
 }
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i],
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]{box-shadow:none!important}
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{box-shadow:0 2px 7px rgba(0,0,0,.045),inset 0 1px 0 rgba(255,255,255,.42)!important}
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body{
+  background-image:none!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+}
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::after,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace::before,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace::after,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body::before,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i]::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i]::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{
-  content:none!important;display:none!important;background:none!important;background-image:none!important;box-shadow:none!important;border:0!important;filter:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  border:0!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
 }
-@media(max-width:760px){
-  /* The visible seam in iOS was the fade/mask below the sticky Deals chrome.
-     Explicitly remove masks and gradients from the header stack while leaving
-     the individual logo/tags/search controls untouched. */
-  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
-  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
-  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i],
-  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]{
-    background-image:none!important;
-    -webkit-mask-image:none!important;
-    mask-image:none!important;
-    filter:none!important;
-    box-shadow:none!important;
-    border:0!important;
-  }
+
+/* Search pill can keep only its own tiny local depth; never a screen-width shadow. */
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
+  box-shadow:0 2px 7px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.42)!important;
 }
