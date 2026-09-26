@@ -4,6 +4,7 @@ import uuid
 from pathlib import Path
 
 import modal
+from fastapi import HTTPException, Request
 
 APP_NAME = "ynot-room"
 VOLUME_PATH = Path("/ynot-room")
@@ -29,6 +30,14 @@ def _write_json(path: Path, payload: dict) -> None:
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
+def _authorize(request: Request) -> None:
+    expected_token = os.environ.get("YNOT_ROOM_TOKEN", "").strip()
+    if expected_token:
+        authorization = request.headers.get("authorization", "")
+        if authorization != f"Bearer {expected_token}":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+
+
 @app.function(
     gpu="A10G",
     memory=16384,
@@ -38,9 +47,9 @@ def _write_json(path: Path, payload: dict) -> None:
 def process_room(job_id: str, metadata: dict) -> dict:
     """GPU-backed first stage for YNOT Room.
 
-    Today this validates the staged images, records the GPU allocation and writes a
-    reconstruction manifest. The next stage plugs the chosen reconstruction model
-    and Unreal/GLB exporter into this same function without changing the web API.
+    This first milestone validates the staged images on a real GPU-backed Modal
+    worker and writes a reconstruction manifest. Reconstruction, Unreal assembly
+    and GLB export plug into this function next without changing YNOT's web API.
     """
     from PIL import Image, ImageOps
 
@@ -76,13 +85,12 @@ def process_room(job_id: str, metadata: dict) -> dict:
                     }
                 )
 
-        gpu_name = os.environ.get("MODAL_GPU_TYPE", "A10G")
         manifest = {
             "version": 1,
             "id": job_id,
             "input": metadata,
             "photos": inspection,
-            "compute": {"provider": "modal", "gpu": gpu_name},
+            "compute": {"provider": "modal", "requestedGpu": "A10G"},
             "pipeline": {
                 "preflight": "complete",
                 "reconstruction": "pending",
@@ -120,18 +128,8 @@ def process_room(job_id: str, metadata: dict) -> dict:
     volumes={str(VOLUME_PATH): volume},
 )
 @modal.fastapi_endpoint(method="POST")
-async def submit_room(request):
-    from fastapi import HTTPException, Request
-
-    if not isinstance(request, Request):
-        raise HTTPException(status_code=400, detail="Invalid request")
-
-    expected_token = os.environ.get("YNOT_ROOM_TOKEN", "").strip()
-    if expected_token:
-        authorization = request.headers.get("authorization", "")
-        if authorization != f"Bearer {expected_token}":
-            raise HTTPException(status_code=401, detail="Unauthorized")
-
+async def submit_room(request: Request):
+    _authorize(request)
     form = await request.form()
     photos = form.getlist("photos")
     if len(photos) < 3:
@@ -201,9 +199,8 @@ async def submit_room(request):
     volumes={str(VOLUME_PATH): volume},
 )
 @modal.fastapi_endpoint(method="GET")
-def room_status(id: str):
-    from fastapi import HTTPException
-
+def room_status(request: Request, id: str):
+    _authorize(request)
     safe_id = "".join(ch for ch in id if ch.isalnum() or ch in "-_")[:80]
     if not safe_id:
         raise HTTPException(status_code=400, detail="Missing job id")
