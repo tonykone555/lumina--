@@ -25,9 +25,10 @@ jobs:
         run: modal deploy workers/ynot_room_qa_modal.py --name ynot-room-qa
       - name: Let Modal route traffic to the new deployment
         run: sleep 15
-      - name: Verify matched-camera QA on reconstructed room
+      - name: Verify matched-camera QA and evidence assets
         env:
           QA_URL: https://tonykone555--ynot-room-qa-room-qa.modal.run
+          ASSET_URL: https://tonykone555--ynot-room-qa-room-qa-asset.modal.run
           TEST_ROOM_ID: b8eb5d66-47df-43de-bfe9-9e9c93ae4bb8
         run: |
           python - <<'PY'
@@ -44,15 +45,28 @@ jobs:
               raise SystemExit(f"QA did not complete: {data}")
           if data.get("matchedCameraCount",0) < 3:
               raise SystemExit(f"Expected 3 matched cameras: {data}")
-          if len(data.get("viewReports") or []) < 3:
+          reports=data.get("viewReports") or []
+          if len(reports) < 3:
               raise SystemExit(f"Expected per-view QA reports: {data}")
-          if "averageScore" not in data or "releaseStatus" not in data or "canPublish" not in data:
-              raise SystemExit(f"Missing aggregate QA fields: {data}")
-          print("YNOT Room matched-camera QA smoke test passed", {
+          if data.get("version",0) < 2:
+              raise SystemExit(f"Expected QA evidence contract v2: {data}")
+          first=next((item for item in reports if item.get("matched") and item.get("viewKey")),None)
+          if not first:
+              raise SystemExit(f"No matched view with evidence key: {data}")
+          for kind in ("render","heatmap","edges"):
+              asset=requests.get(
+                  os.environ["ASSET_URL"],
+                  params={"id":data["id"],"view":first["viewKey"],"kind":kind},
+                  timeout=60,
+              )
+              print("asset",kind,asset.status_code,asset.headers.get("content-type"),len(asset.content))
+              asset.raise_for_status()
+              if not asset.headers.get("content-type","").startswith("image/jpeg") or len(asset.content)<1000:
+                  raise SystemExit(f"Invalid {kind} evidence asset")
+          print("YNOT Room QA evidence smoke test passed", {
               "matchedCameraCount":data.get("matchedCameraCount"),
               "referenceCoverage":data.get("referenceCoverage"),
               "averageScore":data.get("averageScore"),
-              "blockers":len(data.get("blockers") or []),
               "releaseStatus":data.get("releaseStatus"),
           })
           PY
