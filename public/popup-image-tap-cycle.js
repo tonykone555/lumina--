@@ -3,6 +3,7 @@
   const norm=value=>String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
   const isVideo=url=>/\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(String(url||''));
   const mobile=()=>matchMedia('(max-width:760px)').matches;
+  const lockWorld=(ms=700)=>{window.__ynotProductGestureLockUntil=Date.now()+ms};
   function titleFor(card){return (card.querySelector('.lv4-detailcopy h2,.ynot-selected-copy h3')?.textContent||'').trim()}
   function currentImage(card){return card.querySelector(':scope > img')?.src||''}
   function preload(url){if(!url||isVideo(url)||preloaded.has(url))return;preloaded.add(url);const img=new Image();img.decoding='async';img.src=url;img.decode?.().catch(()=>{})}
@@ -26,16 +27,34 @@
   function syncThumbs(card,url){card.querySelectorAll('.ynot-loaded-gallery button,.ynot-rich-gallery button,.lv4-gallery button,.ynot-deal-thumb-gallery button').forEach(button=>{const src=button.dataset.mediaUrl||button.querySelector('img,video')?.src||'';button.classList.toggle('active',src===url)})}
   function showMedia(card,url){if(!url)return;resetForProduct(card);let video=card.querySelector(':scope > .ynot-popup-video');const image=card.querySelector(':scope > img');if(isVideo(url)){if(!video){video=document.createElement('video');video.className='ynot-popup-video';video.controls=true;video.playsInline=true;video.muted=true;image?.insertAdjacentElement('afterend',video)}video.src=url;video.load();card.classList.add('ynot-showing-video');video.play().catch(()=>{})}else{preload(url);if(video){video.pause();video.removeAttribute('src');video.load()}card.classList.remove('ynot-showing-video');if(image){image.decoding='async';image.src=url}syncThumbs(card,url)}card.dataset.ynotFullMediaUrl=url}
   function thumbUrl(button){return button.dataset.mediaUrl||button.querySelector('img,video')?.src||''}
-  async function cycle(card,event){resetForProduct(card);const now=Date.now();if((lastCycle.get(card)||0)>now-700)return;lastCycle.set(card,now);event?.preventDefault?.();event?.stopPropagation?.();const media=await loadMedia(card);if(media.length<2)return;const current=card.dataset.ynotFullMediaUrl||currentImage(card);let index=media.findIndex(url=>url===current);if(index<0)index=0;const next=media[(index+1)%media.length];preload(media[(index+2)%media.length]);showMedia(card,next)}
+  async function cycle(card){resetForProduct(card);const now=Date.now();if((lastCycle.get(card)||0)>now-500)return;lastCycle.set(card,now);lockWorld();const media=await loadMedia(card);if(media.length<2)return;const current=card.dataset.ynotFullMediaUrl||currentImage(card);let index=media.findIndex(url=>url===current);if(index<0)index=0;const next=media[(index+1)%media.length];preload(media[(index+2)%media.length]);showMedia(card,next)}
+  function mainDealImage(target){if(!(target instanceof Element))return null;const card=target.closest('.ynot-drawer.open .ynot-selected');if(!card)return null;const main=card.querySelector(':scope > img');return target===main?{card,main}:null}
 
-  document.addEventListener('pointerdown',e=>{const t=e.target;if(!(t instanceof Element))return;const card=t.closest('.lv4-detail,.ynot-selected');if(!card)return;if(mobile()&&card.classList.contains('ynot-selected'))return;resetForProduct(card);const main=card.querySelector(':scope > img');if(t===main)starts.set(e.pointerId,{x:e.clientX,y:e.clientY,card})},true);
-  document.addEventListener('pointerup',e=>{const s=starts.get(e.pointerId);if(!s)return;starts.delete(e.pointerId);const dx=e.clientX-s.x,dy=e.clientY-s.y;if(Math.hypot(dx,dy)<=14)void cycle(s.card,e)},true);
+  /* Mobile hero image fully owns the gesture. Stop it before any world/card handler
+     behind the glass drawer can see pointer/touch/click events. */
+  document.addEventListener('pointerdown',e=>{
+    const hit=mainDealImage(e.target);
+    if(mobile()&&hit){e.preventDefault();e.stopImmediatePropagation();lockWorld();starts.set(e.pointerId,{x:e.clientX,y:e.clientY,card:hit.card,mobileDeal:true});return}
+    const t=e.target;if(!(t instanceof Element))return;const card=t.closest('.lv4-detail,.ynot-selected');if(!card)return;resetForProduct(card);const main=card.querySelector(':scope > img');if(t===main)starts.set(e.pointerId,{x:e.clientX,y:e.clientY,card})
+  },true);
+  document.addEventListener('pointerup',e=>{
+    const s=starts.get(e.pointerId);if(!s)return;starts.delete(e.pointerId);const dx=e.clientX-s.x,dy=e.clientY-s.y;
+    if(s.mobileDeal){e.preventDefault();e.stopImmediatePropagation();lockWorld();if(Math.hypot(dx,dy)<=16)void cycle(s.card);return}
+    if(Math.hypot(dx,dy)<=14)void cycle(s.card)
+  },true);
   document.addEventListener('pointercancel',e=>starts.delete(e.pointerId),true);
 
-  document.addEventListener('click',event=>{const target=event.target;if(!(target instanceof Element))return;const card=target.closest('.lv4-detail,.ynot-selected');if(!card)return;resetForProduct(card);const thumb=target.closest('.ynot-loaded-gallery button,.ynot-rich-gallery button,.lv4-gallery button,.ynot-deal-thumb-gallery button');if(thumb){const url=thumbUrl(thumb);if(url){event.preventDefault();event.stopPropagation();showMedia(card,url)}return}if(mobile()&&card.classList.contains('ynot-selected')){if(target===card.querySelector(':scope > img')){event.preventDefault();event.stopPropagation()}return}if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){void cycle(card,event);return}if(target===card.querySelector(':scope > img')){void cycle(card,event);return}if(card.classList.contains('ynot-selected')){if(target.closest('button,a,input,select,textarea,video,.ynot-deal-thumb-gallery,.ynot-selected-copy,.ynot-variants'))return;void cycle(card,event)}},true);
+  document.addEventListener('click',event=>{
+    const hit=mainDealImage(event.target);
+    if(mobile()&&hit){event.preventDefault();event.stopImmediatePropagation();lockWorld();return}
+    const target=event.target;if(!(target instanceof Element))return;const card=target.closest('.lv4-detail,.ynot-selected');if(!card)return;resetForProduct(card);const thumb=target.closest('.ynot-loaded-gallery button,.ynot-rich-gallery button,.lv4-gallery button,.ynot-deal-thumb-gallery button');if(thumb){const url=thumbUrl(thumb);if(url){event.preventDefault();event.stopPropagation();showMedia(card,url)}return}if(target instanceof HTMLVideoElement&&target.classList.contains('ynot-popup-video')){event.preventDefault();event.stopPropagation();void cycle(card);return}if(target===card.querySelector(':scope > img')){event.preventDefault();event.stopPropagation();void cycle(card);return}if(card.classList.contains('ynot-selected')){if(target.closest('button,a,input,select,textarea,video,.ynot-deal-thumb-gallery,.ynot-selected-copy,.ynot-variants'))return;event.preventDefault();event.stopPropagation();void cycle(card)}
+  },true);
 
-  document.addEventListener('touchstart',e=>{const t=e.target;if(!(t instanceof Element))return;const card=t.closest('.ynot-drawer.open .ynot-selected');if(!card||t!==card.querySelector(':scope > img'))return;const touch=e.changedTouches?.[0];if(touch)card.__ynotTouchStart={x:touch.clientX,y:touch.clientY,time:Date.now()}},{passive:true,capture:true});
-  document.addEventListener('touchend',e=>{const t=e.target;if(!(t instanceof Element))return;const card=t.closest('.ynot-drawer.open .ynot-selected');if(!card||t!==card.querySelector(':scope > img'))return;const touch=e.changedTouches?.[0],start=card.__ynotTouchStart;delete card.__ynotTouchStart;if(!touch||!start)return;if(Date.now()-start.time>500||Math.hypot(touch.clientX-start.x,touch.clientY-start.y)>14)return;e.preventDefault();e.stopPropagation();void cycle(card,e)}, {passive:false,capture:true});
+  /* Touch fallback for older iOS only when Pointer Events are unavailable. */
+  if(!window.PointerEvent){
+    document.addEventListener('touchstart',e=>{const hit=mainDealImage(e.target);if(!hit)return;const touch=e.changedTouches?.[0];if(!touch)return;e.preventDefault();e.stopImmediatePropagation();lockWorld();hit.card.__ynotTouchStart={x:touch.clientX,y:touch.clientY,time:Date.now()}},{passive:false,capture:true});
+    document.addEventListener('touchend',e=>{const hit=mainDealImage(e.target);if(!hit)return;const touch=e.changedTouches?.[0],start=hit.card.__ynotTouchStart;delete hit.card.__ynotTouchStart;e.preventDefault();e.stopImmediatePropagation();lockWorld();if(!touch||!start)return;if(Date.now()-start.time>500||Math.hypot(touch.clientX-start.x,touch.clientY-start.y)>16)return;void cycle(hit.card)},{passive:false,capture:true});
+  }
 
   const observer=new MutationObserver(()=>{document.querySelectorAll('.lv4-detail,.ynot-selected').forEach(card=>{resetForProduct(card);const main=card.querySelector(':scope > img');if(main){main.decoding='async';main.style.cursor='pointer';preload(main.src)}void loadMedia(card)})});
   const start=()=>{observer.observe(document.body,{subtree:true,childList:true,characterData:true});document.querySelectorAll('.lv4-detail,.ynot-selected').forEach(card=>void loadMedia(card))};
