@@ -1,0 +1,48 @@
+name: Deploy Modal room submit worker
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/ynot-room-poc
+    paths:
+      - "workers/ynot_room_submit_modal.py"
+      - ".github/workflows/deploy-modal-room-submit.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "modal>=1.5,<2" "fastapi[standard]"
+      - name: Deploy YNOT Room submit worker
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+        run: modal deploy workers/ynot_room_submit_modal.py --name ynot-room-submit
+      - name: Let Modal route traffic to the new deployment
+        run: sleep 12
+      - name: Verify lightweight submit endpoint
+        env:
+          SUBMIT_URL: https://tonykone555--ynot-room-submit-submit-room.modal.run
+        run: |
+          python - <<'PY'
+          import io, os, time, uuid, requests
+          from PIL import Image
+          request_id="submit-smoke-"+uuid.uuid4().hex[:10]
+          files=[]
+          for i in range(3):
+              buf=io.BytesIO(); Image.new("RGB",(320,240),(210+i*5,205,200)).save(buf,format="JPEG",quality=82)
+              files.append(("photos",(f"view-{i+1}.jpg",buf.getvalue(),"image/jpeg")))
+          started=time.time()
+          response=requests.post(os.environ["SUBMIT_URL"],files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room"},timeout=25)
+          elapsed=time.time()-started
+          print("submit",response.status_code,round(elapsed,2),response.text)
+          response.raise_for_status()
+          data=response.json()
+          if data.get("status")!="queued": raise SystemExit(f"Unexpected submit response: {data}")
+          if elapsed>20: raise SystemExit(f"Submit endpoint is still too slow: {elapsed:.2f}s")
+          PY
