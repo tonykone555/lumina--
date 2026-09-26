@@ -50,7 +50,6 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open{
   outline:0!important;
   box-shadow:none!important;
 }
-
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before{
   content:""!important;
   display:block!important;
@@ -62,41 +61,22 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before{
   top:0!important;
   height:255px!important;
   border:0!important;
-  background:linear-gradient(180deg,
-    rgba(5,6,7,.88) 0%,
-    rgba(7,8,9,.76) 38%,
-    rgba(8,9,10,.52) 63%,
-    rgba(8,9,10,.20) 84%,
-    rgba(8,9,10,0) 100%)!important;
+  background:linear-gradient(180deg,rgba(5,6,7,.88) 0%,rgba(7,8,9,.76) 38%,rgba(8,9,10,.52) 63%,rgba(8,9,10,.20) 84%,rgba(8,9,10,0) 100%)!important;
   box-shadow:none!important;
   filter:none!important;
   backdrop-filter:blur(10px) saturate(108%)!important;
   -webkit-backdrop-filter:blur(10px) saturate(108%)!important;
   opacity:1!important;
 }
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{
-  content:none!important;
-  display:none!important;
-}
-
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{content:none!important;display:none!important}
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
-  position:relative!important;
-  z-index:700!important;
-  filter:none!important;
-  text-shadow:none!important;
+  position:relative!important;z-index:700!important;filter:none!important;text-shadow:none!important;
 }
-
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body{
-  background-image:none!important;
-  -webkit-mask-image:none!important;
-  mask-image:none!important;
-  border:0!important;
-  outline:0!important;
-  filter:none!important;
-  box-shadow:none!important;
+  background-image:none!important;-webkit-mask-image:none!important;mask-image:none!important;border:0!important;outline:0!important;filter:none!important;box-shadow:none!important;
 }
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace::after,
@@ -104,48 +84,34 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body::b
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]::after{
-  content:none!important;
-  display:none!important;
-  background:none!important;
-  background-image:none!important;
-  box-shadow:none!important;
-  filter:none!important;
+  content:none!important;display:none!important;background:none!important;background-image:none!important;box-shadow:none!important;filter:none!important;
 }
-
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="search-pill" i]::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="search-pill" i]::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="search-bar" i]::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="search-bar" i]::after{
-  content:none!important;
-  display:none!important;
-  background:none!important;
-  opacity:0!important;
-  filter:none!important;
+  content:none!important;display:none!important;background:none!important;opacity:0!important;filter:none!important;
 }
-
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
   box-shadow:0 3px 12px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.55)!important;
 }
 
 @media(max-width:760px){
-  /* Header shade only: end it BEFORE the category chips begin. */
+  /* Very short shade: only the top YNOT/header controls sit on it. */
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before{
-    height:118px!important;
-    background:linear-gradient(180deg,
-      rgba(5,6,7,.94) 0%,
-      rgba(5,6,7,.82) 48%,
-      rgba(5,6,7,.38) 76%,
-      rgba(5,6,7,0) 100%)!important;
-    backdrop-filter:blur(8px) saturate(105%)!important;
-    -webkit-backdrop-filter:blur(8px) saturate(105%)!important;
+    height:82px!important;
+    z-index:500!important;
+    background:linear-gradient(180deg,rgba(5,6,7,.94) 0%,rgba(5,6,7,.72) 48%,rgba(5,6,7,.18) 78%,rgba(5,6,7,0) 100%)!important;
+    backdrop-filter:blur(6px) saturate(104%)!important;
+    -webkit-backdrop-filter:blur(6px) saturate(104%)!important;
   }
 
-  /* Chips live completely below the canopy and above the product feed. */
+  /* Tags are a separate foreground layer, never tinted by the canopy. */
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock{
     position:fixed!important;
-    z-index:780!important;
+    z-index:5000!important;
     top:calc(env(safe-area-inset-top) + 68px)!important;
     left:0!important;
     right:0!important;
@@ -159,19 +125,33 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
     filter:none!important;
     backdrop-filter:none!important;
     -webkit-backdrop-filter:none!important;
+    isolation:isolate!important;
   }
   html[data-ynot-theme="light"].ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock button{
+    position:relative!important;
+    z-index:5001!important;
     opacity:1!important;
     visibility:visible!important;
     filter:none!important;
     text-shadow:none!important;
     box-shadow:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    background:rgba(248,248,246,.96)!important;
+    color:#333!important;
+    -webkit-text-fill-color:#333!important;
+    border-color:rgba(30,30,30,.12)!important;
+  }
+  html[data-ynot-theme="light"].ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock button.active{
+    background:rgba(70,72,72,.96)!important;
+    color:#fff!important;
+    -webkit-text-fill-color:#fff!important;
   }
 
-  /* Search immediately follows the chips, with no dark band between them. */
+  /* Search immediately follows the tags. */
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
     position:fixed!important;
-    z-index:781!important;
+    z-index:4990!important;
     top:calc(env(safe-area-inset-top) + 112px)!important;
     left:18px!important;
     right:18px!important;
