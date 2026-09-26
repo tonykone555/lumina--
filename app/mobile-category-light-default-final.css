@@ -28,6 +28,12 @@
     font-weight:700!important;
     letter-spacing:-.015em!important;
   }
+  html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble b,
+  html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble strong,
+  html[data-ynot-theme="light"] .level-worlds .lv4-category-bubble label{
+    color:#000!important;
+    text-shadow:none!important;
+  }
 
   /* Search/browser blend. */
   .ynot-bottom-search,.ynot-search,.world-search,.search-pill,.voice-search,.world-search-bar,.world-search-pill,[class*="search-pill"],[class*="search-bar"]{
