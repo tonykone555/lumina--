@@ -1,21 +1,38 @@
-/* YNOT Deals canopy cleanup: no broad shadow/gradient band over the product grid. */
+/* YNOT Deals canopy cleanup: the floating controls stay on top, but the header layer itself
+   must be visually transparent so it cannot paint a horizontal shadow/seam across products. */
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
   filter:none!important;
-}
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock{
-  box-shadow:none!important;
   text-shadow:none!important;
 }
-html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
-  box-shadow:0 3px 10px rgba(0,0,0,.055),inset 0 1px 0 rgba(255,255,255,.42)!important;
+
+/* Remove the actual pinned-header/canopy shadow rather than only softening it. */
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i],
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]{
+  box-shadow:none!important;
+  border-bottom-color:transparent!important;
+  outline:none!important;
 }
+
+/* Keep only a tiny local shadow on the search pill itself; never a full-width band. */
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
+  box-shadow:0 2px 7px rgba(0,0,0,.045),inset 0 1px 0 rgba(255,255,255,.42)!important;
+}
+
+/* Kill every canopy/header pseudo-element that previously produced the horizontal line. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock::after,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i]::before,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i]::after,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]::before,
+html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="canopy" i]::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{
   content:none!important;
@@ -23,7 +40,19 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{
   background:none!important;
   background-image:none!important;
   box-shadow:none!important;
+  border:0!important;
   filter:none!important;
   backdrop-filter:none!important;
   -webkit-backdrop-filter:none!important;
+}
+
+@media(max-width:760px){
+  /* iOS Safari: explicitly prevent the sticky Deals chrome from compositing a dark strip. */
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="header" i]{
+    filter:none!important;
+    box-shadow:none!important;
+    border-bottom:0!important;
+  }
 }
