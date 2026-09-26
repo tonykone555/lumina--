@@ -8,6 +8,10 @@ on:
     paths:
       - ".github/workflows/test-room-autopilot-e2e.yml"
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,12 +20,19 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install requests pillow
+      - name: Request GitHub OIDC identity
+        id: oidc
+        run: |
+          TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=ynot-room-modal" | python -c 'import json,sys; print(json.load(sys.stdin)["value"])')
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Submit fast room, trigger autopilot, verify final gate
         env:
           SUBMIT_URL: https://tonykone555--ynot-room-submit-submit-room.modal.run
           STATUS_URL: https://tonykone555--ynot-room-room-status.modal.run
           QA_URL: https://tonykone555--ynot-room-qa-room-qa.modal.run
           AUTOPILOT_URL: https://tonykone555--ynot-room-autopilot-schedule-repair.modal.run
+          GITHUB_OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
         run: |
           python - <<'PY'
           import io, os, time, uuid, requests
@@ -42,7 +53,7 @@ jobs:
               files.append(("photos",(f"view-{i+1}.jpg",buf.getvalue(),"image/jpeg")))
 
           started=time.time()
-          submit=requests.post(os.environ["SUBMIT_URL"],files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room","budget":"2500","source":"autopilot-e2e"},timeout=30)
+          submit=requests.post(os.environ["SUBMIT_URL"],headers={"X-GitHub-OIDC-Token":os.environ["GITHUB_OIDC_TOKEN"]},files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room","budget":"2500","source":"autopilot-e2e"},timeout=30)
           print("submit",submit.status_code,round(time.time()-started,2),submit.text)
           submit.raise_for_status();job_id=submit.json()["id"]
 
