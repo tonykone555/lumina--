@@ -20,11 +20,46 @@ function modalHeaders():HeadersInit{
   return headers;
 }
 
-function browserSafeStatus(data:Record<string,unknown>,id:string){
+function numeric(value:unknown){
+  const parsed=Number(value);
+  return Number.isFinite(parsed)?parsed:0;
+}
+
+function buildQualityGate(data:Record<string,unknown>){
+  const status=String(data.status||"");
+  const photoCount=numeric(data.photoCount);
+  const fusedViewCount=numeric(data.fusedViewCount);
+  const hasScene=typeof data.sceneUrl==="string"&&Boolean(data.sceneUrl);
+  const coverageRatio=photoCount>0?Math.min(1,fusedViewCount/photoCount):0;
+  const reconstructionPass=status==="ready"&&hasScene;
+  const coveragePass=photoCount>=3&&fusedViewCount===photoCount;
+
   return {
+    contract:"ynot-home-wizard-v1",
+    releaseStatus:reconstructionPass?"review_required":"processing",
+    canPublish:false,
+    evidence:{
+      uploadedViews:photoCount,
+      alignedViews:fusedViewCount,
+      coverageRatio:Number(coverageRatio.toFixed(3)),
+    },
+    checks:{
+      reconstruction:{status:reconstructionPass?"pass":"pending",detail:reconstructionPass?"A browser-loadable GLB was generated.":"3D reconstruction is still running."},
+      referenceCoverage:{status:coveragePass?"pass":reconstructionPass?"review":"pending",detail:coveragePass?"Every uploaded reference view contributed to the fused scene.":reconstructionPass?"One or more reference views did not contribute to the fused scene.":"Reference coverage will be measured after reconstruction."},
+      matchedCameraValidation:{status:"pending",detail:"Render-versus-reference camera matching has not run yet."},
+      physicalLogic:{status:"pending",detail:"Support, mounting, intersections, holes and impossible geometry have not been audited yet."},
+      defectAudit:{status:"pending",detail:"Critical/major/minor defect classification has not run yet."},
+    },
+    releaseRule:"Do not mark the room final until matched-camera, physical-logic and defect audits have zero critical and zero major defects.",
+  };
+}
+
+function browserSafeStatus(data:Record<string,unknown>,id:string){
+  const safe={
     ...data,
     ...(typeof data.sceneUrl==="string"&&data.sceneUrl?{sceneUrl:`/api/room/jobs/${encodeURIComponent(id)}/scene`}:{}),
   };
+  return {...safe,qualityGate:buildQualityGate(data)};
 }
 
 export async function GET(request:Request){
@@ -37,6 +72,7 @@ export async function GET(request:Request){
       ok:true,
       configured:true,
       worker:"modal",
+      qualityContract:"ynot-home-wizard-v1",
       maxPhotos:MAX_PHOTOS,
       accepted:[...ALLOWED_TYPES],
     },{headers:{"Cache-Control":"no-store"}});
@@ -109,6 +145,7 @@ export async function POST(request:Request){
     id:jobId,
     status:String(workerData?.status||"queued"),
     stage:String(workerData?.stage||"accepted"),
+    releaseStatus:"processing",
     sceneUrl:typeof workerData?.sceneUrl==="string"&&workerData.sceneUrl?`/api/room/jobs/${encodeURIComponent(jobId)}/scene`:undefined,
     previewUrl:typeof workerData?.previewUrl==="string"?workerData.previewUrl:undefined,
     message:String(workerData?.message||"Your room has been sent to the YNOT reconstruction worker."),
