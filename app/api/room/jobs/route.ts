@@ -9,6 +9,7 @@ const ALLOWED_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
 const DEFAULT_SUBMIT_ENDPOINT="https://tonykone555--ynot-room-submit-room.modal.run";
 const DEFAULT_STATUS_ENDPOINT="https://tonykone555--ynot-room-room-status.modal.run";
 const DEFAULT_QA_ENDPOINT="https://tonykone555--ynot-room-qa-room-qa.modal.run";
+const DEFAULT_AUTOPILOT_ENDPOINT="https://tonykone555--ynot-room-autopilot-schedule-repair.modal.run";
 
 function jsonError(status:number,error:string,code:string,extra:Record<string,unknown>={}){
   return NextResponse.json({error,code,...extra},{status});
@@ -37,7 +38,7 @@ function safeViewReports(id:string,value:unknown){
   });
 }
 
-function buildQualityGate(data:Record<string,unknown>,qa?:Record<string,unknown>|null){
+function buildQualityGate(data:Record<string,unknown>,qa?:Record<string,unknown>|null,repair?:Record<string,unknown>|null){
   const status=String(data.status||"");
   const photoCount=numeric(data.photoCount);
   const fusedViewCount=numeric(data.fusedViewCount);
@@ -49,40 +50,36 @@ function buildQualityGate(data:Record<string,unknown>,qa?:Record<string,unknown>
   const blockers=Array.isArray(qa?.blockers)?qa.blockers:[];
   const cameraPass=qaComplete&&numeric(qa?.matchedCameraCount)>=Math.min(3,Math.max(1,photoCount));
   const qaCanPublish=qaComplete&&qa?.canPublish===true;
+  const repairStatus=String(repair?.status||"");
 
   return {
     contract:"ynot-home-wizard-v1",
     releaseStatus:qaComplete?String(qa?.releaseStatus||"review_required"):reconstructionPass?"draft":"processing",
     canPublish:qaCanPublish,
     evidence:{uploadedViews:photoCount,alignedViews:fusedViewCount,matchedCameraCount:qaComplete?numeric(qa?.matchedCameraCount):0,coverageRatio:Number(coverageRatio.toFixed(3)),blockerCount:blockers.length},
+    repair:{status:repairStatus||(!qaCanPublish&&qaComplete?"pending":"not_needed"),automatic:true},
     checks:{
       reconstruction:{status:reconstructionPass?"pass":"pending",detail:reconstructionPass?"A browser-loadable GLB was generated.":"3D reconstruction is still running."},
-      referenceCoverage:{status:coveragePass?"pass":reconstructionPass?"review":"pending",detail:coveragePass?"Reference coverage meets the Phase 1 threshold.":reconstructionPass?"Reference coverage is below the Phase 1 threshold.":"Reference coverage will be measured after reconstruction."},
+      referenceCoverage:{status:coveragePass?"pass":reconstructionPass?"review":"pending",detail:coveragePass?"Reference coverage meets the QA threshold.":reconstructionPass?"Reference coverage is below the QA threshold.":"Reference coverage will be measured after reconstruction."},
       matchedCameraValidation:{status:cameraPass?(blockers.length?"review":"pass"):qaComplete?"review":"pending",detail:qaComplete?`${numeric(qa?.matchedCameraCount)} recovered camera views were rendered and compared with their references.`:"Matched-camera render comparison has not completed yet."},
       physicalLogic:{status:"pending",detail:"Support, mounting, intersections, holes and impossible geometry are reserved for the physical-logic pass."},
       defectAudit:{status:qaComplete?(blockers.length?"review":"pass"):"pending",detail:qaComplete?`${blockers.length} visual blocker${blockers.length===1?"":"s"} detected.`:"Visual blocker classification has not completed yet."},
     },
-    releaseRule:"Matched-camera QA must pass before publishability; physical-logic and auto-repair gates are added in the following phase.",
+    releaseRule:"Matched-camera QA and automatic repair must clear critical and major visual blockers before publishability. Physical-logic validation remains a separate release gate.",
   };
 }
 
-function browserSafeStatus(data:Record<string,unknown>,id:string,qa?:Record<string,unknown>|null){
+function browserSafeStatus(data:Record<string,unknown>,id:string,qa?:Record<string,unknown>|null,repair?:Record<string,unknown>|null){
   const safe={...data,...(typeof data.sceneUrl==="string"&&data.sceneUrl?{sceneUrl:`/api/room/jobs/${encodeURIComponent(id)}/scene`}:{})};
-  const qualityGate=buildQualityGate(data,qa);
-  if(!qa)return {...safe,releaseStatus:qualityGate.releaseStatus,qualityGate};
+  const qualityGate=buildQualityGate(data,qa,repair);
+  if(!qa)return {...safe,releaseStatus:qualityGate.releaseStatus,repair,qualityGate};
   return {
     ...safe,
     referenceCoverage:numeric(qa.referenceCoverage),
     matchedCameraCount:numeric(qa.matchedCameraCount),
     matchedViews:Array.isArray(qa.matchedViews)?qa.matchedViews:[],
-    qa:{
-      status:String(qa.status||"complete"),
-      version:numeric(qa.version),
-      averageScore:numeric(qa.averageScore),
-      viewReports:safeViewReports(id,qa.viewReports),
-      blockers:Array.isArray(qa.blockers)?qa.blockers:[],
-      canPublish:qa.canPublish===true,
-    },
+    qa:{status:String(qa.status||"complete"),version:numeric(qa.version),averageScore:numeric(qa.averageScore),viewReports:safeViewReports(id,qa.viewReports),blockers:Array.isArray(qa.blockers)?qa.blockers:[],canPublish:qa.canPublish===true},
+    repair:repair||undefined,
     releaseStatus:String(qa.releaseStatus||qualityGate.releaseStatus),
     qualityGate,
   };
@@ -101,11 +98,25 @@ async function readQa(id:string){
   }
 }
 
+async function runAutopilot(id:string,qa:Record<string,unknown>|null){
+  if(!qa||String(qa.status||"")!=="complete"||qa.canPublish===true)return null;
+  const endpoint=String(process.env.MODAL_ROOM_AUTOPILOT_ENDPOINT||DEFAULT_AUTOPILOT_ENDPOINT).trim();
+  const url=new URL(endpoint);url.searchParams.set("id",id);
+  try{
+    const response=await fetch(url,{method:"POST",headers:modalHeaders(),cache:"no-store",signal:AbortSignal.timeout(20_000)});
+    if(!response.ok)return {status:"autopilot_unavailable"};
+    return await response.json().catch(()=>({status:"autopilot_unknown"})) as Record<string,unknown>;
+  }catch(error){
+    console.warn("[ynot-room] autopilot scheduling failed",{id,error:error instanceof Error?error.message:"unknown"});
+    return {status:"autopilot_unreachable"};
+  }
+}
+
 export async function GET(request:Request){
   const url=new URL(request.url);
   const id=String(url.searchParams.get("id")||"").trim();
   const statusEndpoint=String(process.env.MODAL_ROOM_STATUS_ENDPOINT||DEFAULT_STATUS_ENDPOINT).trim();
-  if(!id)return NextResponse.json({ok:true,configured:true,worker:"modal",qualityContract:"ynot-home-wizard-v1",qa:"matched-camera-v2",maxPhotos:MAX_PHOTOS,accepted:[...ALLOWED_TYPES]},{headers:{"Cache-Control":"no-store"}});
+  if(!id)return NextResponse.json({ok:true,configured:true,worker:"modal",qualityContract:"ynot-home-wizard-v1",qa:"matched-camera-v2",autoRepair:true,maxPhotos:MAX_PHOTOS,accepted:[...ALLOWED_TYPES]},{headers:{"Cache-Control":"no-store"}});
 
   try{
     const response=await fetch(`${statusEndpoint}?id=${encodeURIComponent(id)}`,{headers:modalHeaders(),cache:"no-store",signal:AbortSignal.timeout(12_000)});
@@ -113,7 +124,8 @@ export async function GET(request:Request){
     if(!response.ok)return jsonError(response.status===404?404:502,String(data?.detail||data?.error||"Could not read room status."),"ROOM_STATUS_UNAVAILABLE",{id});
     const ready=String(data.status||"")==="ready"&&typeof data.sceneUrl==="string"&&Boolean(data.sceneUrl);
     const qa=ready?await readQa(id):null;
-    return NextResponse.json(browserSafeStatus(data,id,qa),{headers:{"Cache-Control":"no-store"}});
+    const repair=ready?await runAutopilot(id,qa):null;
+    return NextResponse.json(browserSafeStatus(data,id,qa,repair),{headers:{"Cache-Control":"no-store"}});
   }catch(error){
     console.error("[ynot-room] status lookup failed",{id,error:error instanceof Error?error.message:"unknown"});
     return jsonError(502,"The room worker status endpoint could not be reached.","ROOM_STATUS_UNREACHABLE",{id});
