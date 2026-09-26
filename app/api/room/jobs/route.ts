@@ -8,6 +8,7 @@ const MAX_TOTAL_BYTES=14*1024*1024;
 const ALLOWED_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
 const DEFAULT_SUBMIT_ENDPOINT="https://tonykone555--ynot-room-submit-room.modal.run";
 const DEFAULT_STATUS_ENDPOINT="https://tonykone555--ynot-room-room-status.modal.run";
+const DEFAULT_QA_ENDPOINT="https://tonykone555--ynot-room-qa-room-qa.modal.run";
 
 function jsonError(status:number,error:string,code:string,extra:Record<string,unknown>={}){
   return NextResponse.json({error,code,...extra},{status});
@@ -25,41 +26,77 @@ function numeric(value:unknown){
   return Number.isFinite(parsed)?parsed:0;
 }
 
-function buildQualityGate(data:Record<string,unknown>){
+function buildQualityGate(data:Record<string,unknown>,qa?:Record<string,unknown>|null){
   const status=String(data.status||"");
   const photoCount=numeric(data.photoCount);
   const fusedViewCount=numeric(data.fusedViewCount);
   const hasScene=typeof data.sceneUrl==="string"&&Boolean(data.sceneUrl);
-  const coverageRatio=photoCount>0?Math.min(1,fusedViewCount/photoCount):0;
+  const coverageRatio=qa?numeric(qa.referenceCoverage):(photoCount>0?Math.min(1,fusedViewCount/photoCount):0);
   const reconstructionPass=status==="ready"&&hasScene;
-  const coveragePass=photoCount>=3&&fusedViewCount===photoCount;
+  const coveragePass=qa?coverageRatio>=.67:(photoCount>=3&&fusedViewCount===photoCount);
+  const qaComplete=String(qa?.status||"")==="complete";
+  const blockers=Array.isArray(qa?.blockers)?qa.blockers:[];
+  const cameraPass=qaComplete&&numeric(qa?.matchedCameraCount)>=Math.min(3,Math.max(1,photoCount));
+  const qaCanPublish=qaComplete&&qa?.canPublish===true;
 
   return {
     contract:"ynot-home-wizard-v1",
-    releaseStatus:reconstructionPass?"review_required":"processing",
-    canPublish:false,
+    releaseStatus:qaComplete?String(qa?.releaseStatus||"review_required"):reconstructionPass?"draft":"processing",
+    canPublish:qaCanPublish,
     evidence:{
       uploadedViews:photoCount,
       alignedViews:fusedViewCount,
+      matchedCameraCount:qaComplete?numeric(qa?.matchedCameraCount):0,
       coverageRatio:Number(coverageRatio.toFixed(3)),
+      blockerCount:blockers.length,
     },
     checks:{
       reconstruction:{status:reconstructionPass?"pass":"pending",detail:reconstructionPass?"A browser-loadable GLB was generated.":"3D reconstruction is still running."},
-      referenceCoverage:{status:coveragePass?"pass":reconstructionPass?"review":"pending",detail:coveragePass?"Every uploaded reference view contributed to the fused scene.":reconstructionPass?"One or more reference views did not contribute to the fused scene.":"Reference coverage will be measured after reconstruction."},
-      matchedCameraValidation:{status:"pending",detail:"Render-versus-reference camera matching has not run yet."},
-      physicalLogic:{status:"pending",detail:"Support, mounting, intersections, holes and impossible geometry have not been audited yet."},
-      defectAudit:{status:"pending",detail:"Critical/major/minor defect classification has not run yet."},
+      referenceCoverage:{status:coveragePass?"pass":reconstructionPass?"review":"pending",detail:coveragePass?"Reference coverage meets the Phase 1 threshold.":reconstructionPass?"Reference coverage is below the Phase 1 threshold.":"Reference coverage will be measured after reconstruction."},
+      matchedCameraValidation:{status:cameraPass?(blockers.length?"review":"pass"):qaComplete?"review":"pending",detail:qaComplete?`${numeric(qa?.matchedCameraCount)} recovered camera views were rendered and compared with their references.`:"Matched-camera render comparison has not completed yet."},
+      physicalLogic:{status:"pending",detail:"Support, mounting, intersections, holes and impossible geometry are reserved for the physical-logic pass."},
+      defectAudit:{status:qaComplete?(blockers.length?"review":"pass"):"pending",detail:qaComplete?`${blockers.length} Phase 1 visual blocker${blockers.length===1?"":"s"} detected.`:"Visual blocker classification has not completed yet."},
     },
-    releaseRule:"Do not mark the room final until matched-camera, physical-logic and defect audits have zero critical and zero major defects.",
+    releaseRule:"Matched-camera QA must pass before publishability; physical-logic and auto-repair gates are added in the following phases.",
   };
 }
 
-function browserSafeStatus(data:Record<string,unknown>,id:string){
+function browserSafeStatus(data:Record<string,unknown>,id:string,qa?:Record<string,unknown>|null){
   const safe={
     ...data,
     ...(typeof data.sceneUrl==="string"&&data.sceneUrl?{sceneUrl:`/api/room/jobs/${encodeURIComponent(id)}/scene`}:{}),
   };
-  return {...safe,qualityGate:buildQualityGate(data)};
+  const qualityGate=buildQualityGate(data,qa);
+  if(!qa)return {...safe,releaseStatus:qualityGate.releaseStatus,qualityGate};
+  return {
+    ...safe,
+    referenceCoverage:numeric(qa.referenceCoverage),
+    matchedCameraCount:numeric(qa.matchedCameraCount),
+    matchedViews:Array.isArray(qa.matchedViews)?qa.matchedViews:[],
+    qa:{
+      status:String(qa.status||"complete"),
+      averageScore:numeric(qa.averageScore),
+      viewReports:Array.isArray(qa.viewReports)?qa.viewReports:[],
+      blockers:Array.isArray(qa.blockers)?qa.blockers:[],
+      canPublish:qa.canPublish===true,
+    },
+    releaseStatus:String(qa.releaseStatus||qualityGate.releaseStatus),
+    qualityGate,
+  };
+}
+
+async function readQa(id:string){
+  const endpoint=String(process.env.MODAL_ROOM_QA_ENDPOINT||DEFAULT_QA_ENDPOINT).trim();
+  const url=new URL(endpoint);
+  url.searchParams.set("id",id);
+  try{
+    const response=await fetch(url,{headers:modalHeaders(),cache:"no-store",signal:AbortSignal.timeout(40_000)});
+    if(!response.ok)return null;
+    return await response.json().catch(()=>null) as Record<string,unknown>|null;
+  }catch(error){
+    console.warn("[ynot-room] matched-camera QA not ready",{id,error:error instanceof Error?error.message:"unknown"});
+    return null;
+  }
 }
 
 export async function GET(request:Request){
@@ -73,6 +110,7 @@ export async function GET(request:Request){
       configured:true,
       worker:"modal",
       qualityContract:"ynot-home-wizard-v1",
+      qa:"matched-camera-v1",
       maxPhotos:MAX_PHOTOS,
       accepted:[...ALLOWED_TYPES],
     },{headers:{"Cache-Control":"no-store"}});
@@ -86,7 +124,9 @@ export async function GET(request:Request){
     });
     const data=await response.json().catch(()=>({})) as Record<string,unknown>;
     if(!response.ok)return jsonError(response.status===404?404:502,String(data?.detail||data?.error||"Could not read room status."),"ROOM_STATUS_UNAVAILABLE",{id});
-    return NextResponse.json(browserSafeStatus(data,id),{headers:{"Cache-Control":"no-store"}});
+    const ready=String(data.status||"")==="ready"&&typeof data.sceneUrl==="string"&&Boolean(data.sceneUrl);
+    const qa=ready?await readQa(id):null;
+    return NextResponse.json(browserSafeStatus(data,id,qa),{headers:{"Cache-Control":"no-store"}});
   }catch(error){
     console.error("[ynot-room] status lookup failed",{id,error:error instanceof Error?error.message:"unknown"});
     return jsonError(502,"The room worker status endpoint could not be reached.","ROOM_STATUS_UNREACHABLE",{id});
