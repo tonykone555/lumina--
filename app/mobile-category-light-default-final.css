@@ -3,33 +3,30 @@
   /* IMPORTANT: bottom category/tag pills keep their original sizing.
      Do not resize .ynot-dock/taxonomy/subcategory buttons here. */
 
-  /* Main WORLD category bubbles only — make the circles and their labels clearly larger. */
-  .lv4-category-bubble,
-  [class*="category-bubble"]{
-    min-width:156px!important;
-    min-height:156px!important;
-    width:156px!important;
-    height:156px!important;
+  /* Main WORLD category bubbles only. Scope to the entry world so product bubbles,
+     search-result bubbles and the bottom category tags are never affected. */
+  .level-worlds .lv4-category-bubble{
+    min-width:184px!important;
+    min-height:184px!important;
+    width:184px!important;
+    height:184px!important;
+    overflow:visible!important;
+    transform-origin:center center!important;
   }
-  .lv4-category-bubble button,
-  [class*="category-bubble"] button{
+  .level-worlds .lv4-category-bubble button{
     width:100%!important;
     height:100%!important;
     min-width:100%!important;
     min-height:100%!important;
+    border-radius:50%!important;
   }
-  .lv4-category-bubble span,
-  .lv4-category-bubble b,
-  .lv4-category-bubble strong,
-  .lv4-category-bubble label,
-  [class*="category-bubble"] span,
-  [class*="category-bubble"] b,
-  [class*="category-bubble"] strong,
-  [class*="category-bubble"] label{
-    font-size:19px!important;
-    line-height:1.08!important;
-    font-weight:800!important;
-    letter-spacing:-.02em!important;
+  .level-worlds .lv4-category-bubble b,
+  .level-worlds .lv4-category-bubble strong,
+  .level-worlds .lv4-category-bubble label{
+    font-size:34px!important;
+    line-height:1.04!important;
+    font-weight:700!important;
+    letter-spacing:-.015em!important;
   }
 
   /* Search/browser blend. */
