@@ -6,7 +6,7 @@ export const dynamic="force-dynamic";
 const MAX_PHOTOS=8;
 const MAX_TOTAL_BYTES=14*1024*1024;
 const ALLOWED_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
-const DEFAULT_SUBMIT_ENDPOINT="https://tonykone555--ynot-room-submit-room.modal.run";
+const DEFAULT_SUBMIT_ENDPOINT="https://tonykone555--ynot-room-submit-submit-room.modal.run";
 const DEFAULT_STATUS_ENDPOINT="https://tonykone555--ynot-room-room-status.modal.run";
 const DEFAULT_QA_ENDPOINT="https://tonykone555--ynot-room-qa-room-qa.modal.run";
 const DEFAULT_AUTOPILOT_ENDPOINT="https://tonykone555--ynot-room-autopilot-schedule-repair.modal.run";
@@ -25,6 +25,11 @@ function modalHeaders():HeadersInit{
 function numeric(value:unknown){
   const parsed=Number(value);
   return Number.isFinite(parsed)?parsed:0;
+}
+
+function recoveryInProgress(repair?:Record<string,unknown>|null){
+  const status=String(repair?.status||"");
+  return status==="repair_queued"||status==="repair_already_queued"||status==="high_detail_in_progress";
 }
 
 function safeViewReports(id:string,value:unknown){
@@ -70,7 +75,14 @@ function buildQualityGate(data:Record<string,unknown>,qa?:Record<string,unknown>
 }
 
 function browserSafeStatus(data:Record<string,unknown>,id:string,qa?:Record<string,unknown>|null,repair?:Record<string,unknown>|null){
-  const safe={...data,...(typeof data.sceneUrl==="string"&&data.sceneUrl?{sceneUrl:`/api/room/jobs/${encodeURIComponent(id)}/scene`}:{})};
+  const baseSafe={...data,...(typeof data.sceneUrl==="string"&&data.sceneUrl?{sceneUrl:`/api/room/jobs/${encodeURIComponent(id)}/scene`}:{})};
+  const recovering=qa?.canPublish!==true&&recoveryInProgress(repair);
+  const safe=recovering?{
+    ...baseSafe,
+    status:"processing",
+    stage:String(repair?.status||"")==="high_detail_in_progress"?"high_detail_reconstruction":"qa_repair",
+    message:String(repair?.status||"")==="high_detail_in_progress"?"YNOT Room is rebuilding this room with the high-detail model.":"YNOT Room is automatically repairing the reconstruction against the reference photos.",
+  }:baseSafe;
   const qualityGate=buildQualityGate(data,qa,repair);
   if(!qa)return {...safe,releaseStatus:qualityGate.releaseStatus,repair,qualityGate};
   return {
