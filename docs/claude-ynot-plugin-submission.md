@@ -20,25 +20,26 @@ Visual multi-store product discovery. Search YNOT's live catalogue, inspect prod
 
 ## Intended Claude experience
 
-When a product-search, product-detail, or similar-product tool is used, Claude should render the attached MCP App UI (`ui://ynot/bubble-world/...`) directly in the conversation when the host supports MCP Apps. The user should remain inside Claude unless they explicitly ask to open or continue on the YNOT website.
+For product search, the host should call `search_products` to retrieve catalogue data and then call `render_bubble_world` with that returned payload. Product-detail and similar-product tools retain their direct MCP App linkage for host compatibility. The Bubble World (`ui://ynot/bubble-world/...`) should render directly in the conversation when the host supports MCP Apps. The user should remain inside Claude unless they explicitly ask to open or continue on the YNOT website.
 
 YNOT does not execute purchases or financial transactions inside Claude. `open_in_ynot` only returns a YNOT URL when the user explicitly asks to visit/continue on the website.
 
 ## Public tools
 
 1. `search_products` — Search YNOT's live multi-source product catalogue.
-2. `get_product` — Retrieve a specific product from live YNOT results.
-3. `find_similar_products` — Find alternatives/similar products.
-4. `get_product_images` — Retrieve product images for a catalogue item.
-5. `open_in_ynot` — Return a YNOT website URL only when explicitly requested by the user.
+2. `render_bubble_world` — Render a `search_products` catalogue payload in the interactive Bubble World.
+3. `get_product` — Retrieve a specific product from live YNOT results.
+4. `find_similar_products` — Find alternatives/similar products.
+5. `get_product_images` — Retrieve product images for a catalogue item.
+6. `open_in_ynot` — Return a YNOT website URL only when explicitly requested by the user.
 
-All five tools are read-only from the MCP client's perspective. They do not expose YNOT administration, environment variables, API keys, Supabase credentials, merchant credentials, or internal MCP tokens.
+All six tools are read-only from the MCP client's perspective. They do not expose YNOT administration, environment variables, API keys, Supabase credentials, merchant credentials, or internal MCP tokens.
 
 ## MCP Apps UI
 
 - Resource URI: versioned `ui://ynot/bubble-world/<version>.html`
 - MIME type: `text/html;profile=mcp-app`
-- Tool metadata uses the MCP Apps `ui.resourceUri` linkage.
+- `render_bubble_world`, `get_product`, and `find_similar_products` use the MCP Apps `ui.resourceUri` linkage. `search_products` intentionally has no UI metadata and returns catalogue data only.
 - The app performs the MCP Apps `ui/initialize` / `ui/notifications/initialized` bridge handshake.
 - OpenAI compatibility metadata may coexist with the host-neutral MCP Apps metadata and should be ignored by other hosts.
 
@@ -58,7 +59,7 @@ All tools should expose:
 2. `Find alternatives similar to this YNOT product but cheaper and available for delivery to France.`
 3. `Show me YNOT products for minimalist living-room lighting and let me explore them visually.`
 
-Expected behavior: product results come from the live YNOT catalogue and, on hosts supporting MCP Apps, render in the YNOT Bubble World inside the conversation.
+Expected behavior: product results come from the live YNOT catalogue; the host follows `search_products` with `render_bubble_world`; and, on hosts supporting MCP Apps, results render in the YNOT Bubble World inside the conversation.
 
 ## Data handling summary
 
