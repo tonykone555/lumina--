@@ -10,6 +10,14 @@ const MAX_PHOTOS=8;
 const MAX_EDGE=1600;
 const JPEG_QUALITY=.82;
 
+type QaReport={
+  status?:string;
+  averageScore?:number;
+  viewReports?:Array<Record<string,unknown>>;
+  blockers?:Array<Record<string,unknown>>;
+  canPublish?:boolean;
+};
+
 type RoomJob={
   id?:string;
   status?:string;
@@ -17,6 +25,11 @@ type RoomJob={
   sceneUrl?:string;
   previewUrl?:string;
   message?:string;
+  releaseStatus?:string;
+  referenceCoverage?:number;
+  matchedCameraCount?:number;
+  matchedViews?:string[];
+  qa?:QaReport;
 };
 
 async function compressImage(file:File){
@@ -77,6 +90,13 @@ function RoomViewer({sceneUrl}:{sceneUrl?:string}){
   </div>;
 }
 
+function releaseLabel(value?:string){
+  if(value==="publishable")return "Publishable";
+  if(value==="review_required")return "Review required";
+  if(value==="processing")return "Draft";
+  return "Draft";
+}
+
 export default function RoomExperience(){
   const[files,setFiles]=useState<File[]>([]);
   const[style,setStyle]=useState("modern");
@@ -89,7 +109,8 @@ export default function RoomExperience(){
   useEffect(()=>()=>previews.forEach(preview=>URL.revokeObjectURL(preview.url)),[previews]);
 
   useEffect(()=>{
-    if(!job?.id||job.status==="ready"||job.status==="failed")return;
+    const qaComplete=job?.qa?.status==="complete";
+    if(!job?.id||job.status==="failed"||(job.status==="ready"&&qaComplete))return;
     let cancelled=false;
     const poll=async()=>{
       try{
@@ -102,9 +123,9 @@ export default function RoomExperience(){
       }
     };
     poll();
-    const timer=window.setInterval(poll,2500);
+    const timer=window.setInterval(poll,3000);
     return()=>{cancelled=true;window.clearInterval(timer)};
-  },[job?.id,job?.status]);
+  },[job?.id,job?.status,job?.qa?.status]);
 
   useEffect(()=>{
     if(job?.status==="failed")setError(job.message||"Room reconstruction failed. Try another set of photos.");
@@ -135,6 +156,10 @@ export default function RoomExperience(){
 
   const reconstructing=Boolean(job?.id&&job.status!=="ready"&&job.status!=="failed");
   const ready=job?.status==="ready"&&Boolean(job.sceneUrl);
+  const qaRunning=ready&&job?.qa?.status!=="complete";
+  const qaScore=typeof job?.qa?.averageScore==="number"?Math.round(job.qa.averageScore*100):null;
+  const coverage=typeof job?.referenceCoverage==="number"?Math.round(job.referenceCoverage*100):null;
+  const blockerCount=job?.qa?.blockers?.length||0;
 
   return <main style={{minHeight:"100vh",background:"#080909",color:"#f5f5ef",fontFamily:"ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif"}}>
     <header style={{height:72,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 clamp(18px,4vw,52px)",borderBottom:"1px solid rgba(255,255,255,.08)",position:"sticky",top:0,zIndex:20,backdropFilter:"blur(22px)",background:"rgba(8,9,9,.82)"}}>
@@ -148,7 +173,7 @@ export default function RoomExperience(){
         <div>
           <div style={{display:"inline-flex",alignItems:"center",gap:7,padding:"7px 11px",borderRadius:999,border:"1px solid rgba(255,255,255,.12)",background:"rgba(255,255,255,.05)",fontSize:12,letterSpacing:".04em",marginBottom:20}}><Sparkles size={14}/>YNOT ROOM</div>
           <h1 style={{fontSize:"clamp(42px,6vw,78px)",lineHeight:.96,letterSpacing:"-.065em",margin:"0 0 22px",maxWidth:680}}>Turn your room into a shoppable world.</h1>
-          <p style={{fontSize:"clamp(16px,2vw,20px)",lineHeight:1.55,opacity:.65,maxWidth:620,margin:"0 0 34px"}}>Photograph the room from several angles. YNOT reconstructs a browser-ready 3D room seed on a GPU, then uses the extra views for the multi-view upgrade and catalogue matching.</p>
+          <p style={{fontSize:"clamp(16px,2vw,20px)",lineHeight:1.55,opacity:.65,maxWidth:620,margin:"0 0 34px"}}>Photograph the room from several angles. YNOT reconstructs the room, aligns the recovered cameras, then checks the generated scene against your original reference views before it is considered ready for release.</p>
 
           <div style={{display:"grid",gap:14}}>
             <label style={{display:"grid",placeItems:"center",minHeight:156,border:"1px dashed rgba(255,255,255,.23)",borderRadius:24,background:"rgba(255,255,255,.035)",cursor:"pointer",padding:24,textAlign:"center"}}>
@@ -163,15 +188,28 @@ export default function RoomExperience(){
               <label style={{display:"grid",gap:7,fontSize:12,opacity:.72}}>Target budget<input inputMode="numeric" value={budget} onChange={e=>setBudget(e.target.value.replace(/[^0-9]/g,""))} style={{height:46,borderRadius:14,border:"1px solid rgba(255,255,255,.12)",background:"#111212",color:"#f5f5ef",padding:"0 13px",fontSize:14}} placeholder="2500"/></label>
             </div>
 
-            <button type="button" onClick={createRoom} disabled={loading||reconstructing||files.length<3} style={{height:54,borderRadius:999,border:0,background:files.length>=3?"#f4f3ed":"#434442",color:files.length>=3?"#0a0b0b":"#92938f",fontWeight:750,fontSize:15,cursor:files.length>=3&&!loading&&!reconstructing?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>{loading||reconstructing?<><LoaderCircle size={18} className="ynot-room-spin"/>{job?.stage==="reconstructing"?"Building 3D room…":"Preparing room…"}</>:ready?<><Check size={18}/>Room ready</>:<><Camera size={18}/>Create my room</>}</button>
+            <button type="button" onClick={createRoom} disabled={loading||reconstructing||files.length<3} style={{height:54,borderRadius:999,border:0,background:files.length>=3?"#f4f3ed":"#434442",color:files.length>=3?"#0a0b0b":"#92938f",fontWeight:750,fontSize:15,cursor:files.length>=3&&!loading&&!reconstructing?"pointer":"default",display:"flex",alignItems:"center",justifyContent:"center",gap:9}}>{loading||reconstructing?<><LoaderCircle size={18} className="ynot-room-spin"/>{job?.stage==="reconstructing"?"Building 3D room…":"Preparing room…"}</>:qaRunning?<><LoaderCircle size={18} className="ynot-room-spin"/>Checking reference views…</>:ready?<><Check size={18}/>Room reconstructed</>:<><Camera size={18}/>Create my room</>}</button>
             {error&&<p style={{margin:0,color:"#ffb1a8",fontSize:13,lineHeight:1.45}}>{error}</p>}
-            {job&&<div style={{padding:"14px 16px",borderRadius:16,border:"1px solid rgba(132,255,174,.18)",background:"rgba(80,177,111,.09)",fontSize:13,lineHeight:1.5}}><strong style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>{reconstructing?<LoaderCircle size={15} className="ynot-room-spin"/>:<Check size={15}/>} {ready?"3D room ready":reconstructing?"Reconstructing room":"Room job"}</strong><span style={{opacity:.72}}>{job.message||`Status: ${job.status||"queued"}`}</span>{job.id&&<div style={{opacity:.42,marginTop:3}}>Job {job.id}</div>}</div>}
+            {job&&<div style={{padding:"14px 16px",borderRadius:16,border:"1px solid rgba(132,255,174,.18)",background:"rgba(80,177,111,.09)",fontSize:13,lineHeight:1.5}}>
+              <strong style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,marginBottom:5}}>
+                <span style={{display:"flex",alignItems:"center",gap:7}}>{reconstructing||qaRunning?<LoaderCircle size={15} className="ynot-room-spin"/>:<Check size={15}/>} {ready?"3D room":reconstructing?"Reconstructing room":"Room job"}</span>
+                <span style={{padding:"4px 8px",borderRadius:999,border:"1px solid rgba(255,255,255,.13)",background:"rgba(255,255,255,.06)",fontSize:11,letterSpacing:".03em"}}>{releaseLabel(job.releaseStatus)}</span>
+              </strong>
+              <span style={{opacity:.72}}>{qaRunning?"Comparing the reconstructed room with the recovered reference cameras…":job.message||`Status: ${job.status||"queued"}`}</span>
+              {job.qa?.status==="complete"&&<div style={{display:"flex",flexWrap:"wrap",gap:8,marginTop:9,fontSize:11,opacity:.7}}>
+                {job.matchedCameraCount!==undefined&&<span>{job.matchedCameraCount} matched cameras</span>}
+                {coverage!==null&&<span>· {coverage}% reference coverage</span>}
+                {qaScore!==null&&<span>· QA {qaScore}%</span>}
+                <span>· {blockerCount} blocker{blockerCount===1?"":"s"}</span>
+              </div>}
+              {job.id&&<div style={{opacity:.42,marginTop:3}}>Job {job.id}</div>}
+            </div>}
           </div>
         </div>
 
         <div style={{position:"sticky",top:96,height:"min(70vh,700px)"}}>
           <RoomViewer sceneUrl={job?.sceneUrl}/>
-          <div style={{position:"absolute",left:18,right:18,bottom:18,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:18,background:"rgba(10,11,11,.7)",backdropFilter:"blur(18px)",border:"1px solid rgba(255,255,255,.1)",fontSize:12,pointerEvents:"none"}}><span style={{opacity:.62}}>{ready?"Generated room surface":reconstructing?"GPU reconstruction in progress":"Interactive preview shell"}</span><span style={{opacity:.45}}>Drag to orbit · pinch/scroll to zoom</span></div>
+          <div style={{position:"absolute",left:18,right:18,bottom:18,display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,padding:"11px 14px",borderRadius:18,background:"rgba(10,11,11,.7)",backdropFilter:"blur(18px)",border:"1px solid rgba(255,255,255,.1)",fontSize:12,pointerEvents:"none"}}><span style={{opacity:.62}}>{qaRunning?"Matched-camera QA in progress":ready?`${releaseLabel(job?.releaseStatus)} room surface`:reconstructing?"GPU reconstruction in progress":"Interactive preview shell"}</span><span style={{opacity:.45}}>Drag to orbit · pinch/scroll to zoom</span></div>
         </div>
       </div>
     </section>
