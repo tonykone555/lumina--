@@ -6,24 +6,52 @@ export const dynamic="force-dynamic";
 const MAX_PHOTOS=8;
 const MAX_TOTAL_BYTES=14*1024*1024;
 const ALLOWED_TYPES=new Set(["image/jpeg","image/png","image/webp"]);
+const DEFAULT_SUBMIT_ENDPOINT="https://tonykone555--ynot-room-submit-room.modal.run";
+const DEFAULT_STATUS_ENDPOINT="https://tonykone555--ynot-room-room-status.modal.run";
 
 function jsonError(status:number,error:string,code:string,extra:Record<string,unknown>={}){
   return NextResponse.json({error,code,...extra},{status});
 }
 
-export async function GET(){
-  return NextResponse.json({
-    ok:true,
-    configured:Boolean(process.env.MODAL_ROOM_ENDPOINT),
-    worker:"modal",
-    maxPhotos:MAX_PHOTOS,
-    accepted:[...ALLOWED_TYPES],
-  },{headers:{"Cache-Control":"no-store"}});
+function modalHeaders():HeadersInit{
+  const headers:HeadersInit={};
+  const token=String(process.env.MODAL_ROOM_TOKEN||"").trim();
+  if(token)headers.Authorization=`Bearer ${token}`;
+  return headers;
+}
+
+export async function GET(request:Request){
+  const url=new URL(request.url);
+  const id=String(url.searchParams.get("id")||"").trim();
+  const statusEndpoint=String(process.env.MODAL_ROOM_STATUS_ENDPOINT||DEFAULT_STATUS_ENDPOINT).trim();
+
+  if(!id){
+    return NextResponse.json({
+      ok:true,
+      configured:true,
+      worker:"modal",
+      maxPhotos:MAX_PHOTOS,
+      accepted:[...ALLOWED_TYPES],
+    },{headers:{"Cache-Control":"no-store"}});
+  }
+
+  try{
+    const response=await fetch(`${statusEndpoint}?id=${encodeURIComponent(id)}`,{
+      headers:modalHeaders(),
+      cache:"no-store",
+      signal:AbortSignal.timeout(12_000),
+    });
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok)return jsonError(response.status===404?404:502,String(data?.detail||data?.error||"Could not read room status."),"ROOM_STATUS_UNAVAILABLE",{id});
+    return NextResponse.json(data,{headers:{"Cache-Control":"no-store"}});
+  }catch(error){
+    console.error("[ynot-room] status lookup failed",{id,error:error instanceof Error?error.message:"unknown"});
+    return jsonError(502,"The room worker status endpoint could not be reached.","ROOM_STATUS_UNREACHABLE",{id});
+  }
 }
 
 export async function POST(request:Request){
-  const endpoint=String(process.env.MODAL_ROOM_ENDPOINT||"").trim();
-  if(!endpoint)return jsonError(503,"YNOT Room worker is not connected yet.","ROOM_WORKER_NOT_CONFIGURED");
+  const endpoint=String(process.env.MODAL_ROOM_ENDPOINT||DEFAULT_SUBMIT_ENDPOINT).trim();
 
   let incoming:FormData;
   try{incoming=await request.formData()}catch{return jsonError(400,"Invalid room upload.","INVALID_FORM_DATA")}
@@ -52,9 +80,7 @@ export async function POST(request:Request){
   if(rawBudget)outbound.set("budget",rawBudget);
   outbound.set("source","ynot-room-web");
 
-  const headers:HeadersInit={"X-YNOT-Room-Request":requestId};
-  const token=String(process.env.MODAL_ROOM_TOKEN||"").trim();
-  if(token)headers.Authorization=`Bearer ${token}`;
+  const headers:HeadersInit={...modalHeaders(),"X-YNOT-Room-Request":requestId};
 
   let workerResponse:Response;
   try{
@@ -68,12 +94,13 @@ export async function POST(request:Request){
   const workerData=contentType.includes("application/json")?await workerResponse.json().catch(()=>({})):{};
   if(!workerResponse.ok){
     console.error("[ynot-room] worker rejected job",{requestId,status:workerResponse.status,workerCode:workerData?.code});
-    return jsonError(502,String(workerData?.error||workerData?.message||"The room worker rejected the job."),"ROOM_WORKER_REJECTED",{id:requestId});
+    return jsonError(502,String(workerData?.detail||workerData?.error||workerData?.message||"The room worker rejected the job."),"ROOM_WORKER_REJECTED",{id:requestId});
   }
 
   return NextResponse.json({
     id:String(workerData?.id||workerData?.jobId||requestId),
     status:String(workerData?.status||"queued"),
+    stage:String(workerData?.stage||"accepted"),
     sceneUrl:typeof workerData?.sceneUrl==="string"?workerData.sceneUrl:undefined,
     previewUrl:typeof workerData?.previewUrl==="string"?workerData.previewUrl:undefined,
     message:String(workerData?.message||"Your room has been sent to the YNOT reconstruction worker."),
