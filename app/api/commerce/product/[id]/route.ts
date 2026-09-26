@@ -8,7 +8,7 @@ export const dynamic="force-dynamic";
 const SHOPIFY_CATALOG="https://catalog.shopify.com/api/ucp/mcp";
 const AGENT_PROFILE="https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json";
 
-type LiveProduct={id:string;title:string;brand:string;price:number|null;currency:string;image:string;images:string[];url:string;tags:string[];source:string;category?:string;description:string;variants?:unknown[];supplierPrice?:number|null};
+type LiveProduct={id:string;title:string;brand:string;price:number|null;currency:string;image:string;images:string[];url:string;tags:string[];source:string;category?:string;description:string;variants?:unknown[]};
 
 function text(value:unknown){
   if(typeof value==="string")return value.replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
@@ -30,6 +30,10 @@ function centsPrice(value:any){
   const amount=Number(value.amount);
   return Number.isFinite(amount)&&amount>0?amount/100:null;
 }
+function ynotRetailPrice(input:{id:string;title:string;category:string;price:number|null;currency:string}){
+  if(!input.price||!Number.isFinite(input.price)||input.price<=0)return null;
+  return dynamicLuminaPrice({sourceId:"shopify-global-catalog",productId:input.id,title:input.title,category:input.category,price:input.price,currency:input.currency,shipping:0,stockConfidence:.75,returnPolicyScore:.7,regionMatch:.75});
+}
 async function getLiveShopifyProduct(id:string,country="FR"):Promise<LiveProduct|null>{
   if(!id.startsWith("gid://shopify/"))return null;
   const payload={jsonrpc:"2.0",method:"tools/call",id:1,params:{name:"get_product",arguments:{meta:{"ucp-agent":{profile:AGENT_PROFILE}},catalog:{id,context:{address_country:country}}}}};
@@ -38,13 +42,19 @@ async function getLiveShopifyProduct(id:string,country="FR"):Promise<LiveProduct
   const product=raw?.result?.structuredContent?.product;
   if(!response.ok||!product||String(product.id||"")!==id)return null;
 
+  const description=text(product.description)||`${String(product.title||"This product")} from the original Shopify merchant.`;
+  const title=String(product.title||"Shopify product").trim();
+  const category=inferCategory(title,description);
   const variants=(Array.isArray(product.variants)?product.variants:[]).map((variant:any)=>{
-    const price=variant?.price||product?.price_range?.min;
+    const sourcePrice=variant?.price||product?.price_range?.min;
+    const sourceAmount=centsPrice(sourcePrice);
+    const currency=String(sourcePrice?.currency||product?.price_range?.min?.currency||"USD");
     const media=[variant?.image?.url,...(variant?.media||[]).map((entry:any)=>entry?.url||entry?.image?.url)].filter(Boolean);
+    const variantId=String(variant.id||variant.variant_id||"");
+    const label=String(variant.title||variant.name||(variant?.selected_options||[]).map((option:any)=>option?.label||option?.value).filter(Boolean).join(" · ")||"Option");
     return{
-      id:String(variant.id||variant.variant_id||""),
-      label:String(variant.title||variant.name||(variant?.selected_options||[]).map((option:any)=>option?.label||option?.value).filter(Boolean).join(" · ")||"Option"),
-      price:centsPrice(price),currency:String(price?.currency||product?.price_range?.min?.currency||"USD"),image:String(media[0]||""),
+      id:variantId,label,
+      price:ynotRetailPrice({id:variantId||id,title:`${title} ${label}`,category,price:sourceAmount,currency}),currency,image:String(media[0]||""),
       url:String(variant.checkout_url||variant.url||variant?.seller?.url||product.url||"#"),available:variant.available!==false&&variant.availability!=="out_of_stock",
       selectedOptions:Array.isArray(variant.selected_options)?variant.selected_options:[],
     };
@@ -54,15 +64,13 @@ async function getLiveShopifyProduct(id:string,country="FR"):Promise<LiveProduct
   const variantImages=variants.map((variant:any)=>variant.image).filter(Boolean);
   const images=[...new Set<string>([...media,...variantImages])].slice(0,10);
   const basePrice=product?.price_range?.min||product?.variants?.[0]?.price;
-  const supplierPrice=centsPrice(basePrice);
-  const description=text(product.description)||`${String(product.title||"This product")} from the original Shopify merchant.`;
-  const title=String(product.title||"Shopify product").trim();
-  const category=inferCategory(title,description);
-  const ynotPrice=supplierPrice?dynamicLuminaPrice({sourceId:"shopify-global-catalog",productId:id,title,category,price:supplierPrice,currency:String(basePrice?.currency||"USD"),shipping:0,stockConfidence:.75,returnPolicyScore:.7,regionMatch:.75}):null;
+  const sourceAmount=centsPrice(basePrice);
+  const currency=String(basePrice?.currency||"USD");
   return{
-    id,title,brand:String(product?.seller?.name||product?.variants?.[0]?.seller?.name||"Shopify merchant"),price:ynotPrice,currency:String(basePrice?.currency||"USD"),
+    id,title,brand:String(product?.seller?.name||product?.variants?.[0]?.seller?.name||"Shopify merchant"),
+    price:ynotRetailPrice({id,title,category,price:sourceAmount,currency}),currency,
     image:images[0]||"",images,url:String(product.url||product?.variants?.[0]?.seller?.url||"#"),tags:Array.isArray(product.tags)?product.tags.map(String).slice(0,12):[],
-    source:"shopify-global-catalog",category,description,variants,supplierPrice,
+    source:"shopify-global-catalog",category,description,variants,
   };
 }
 
