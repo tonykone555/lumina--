@@ -19,7 +19,23 @@
     }catch{return null}})();cache.set(key,job);return job
   }
 
-  const collectMedia=(p,f)=>[...new Set([p?.image,...(p?.images||[]),...(p?.variants||[]).map(v=>v?.image),...(p?.videos||[]),p?.video,p?.videoUrl,p?.video_url,...(p?.media||[]).map(mediaUrl),f].filter(Boolean).map(String))];
+  function collectMedia(p,fallback){
+    const primary=[p?.image,...(p?.images||[]),...(p?.variants||[]).map(v=>v?.image),...(p?.videos||[]),p?.video,p?.videoUrl,p?.video_url,...(p?.media||[]).map(mediaUrl)].filter(Boolean).map(String);
+    return [...new Set(primary.length?primary:(fallback?[String(fallback)]:[]))]
+  }
+
+  function resetProductState(s,key){
+    if(s.dataset.ynotMediaProductKey===key)return false;
+    s.dataset.ynotMediaProductKey=key;
+    delete s.dataset.ynotFinalMedia;
+    delete s.dataset.ynotFullMediaUrl;
+    delete s.dataset.ynotMediaIndex;
+    s.querySelectorAll(':scope > .ynot-deal-thumb-gallery-final').forEach(n=>n.remove());
+    const v=s.querySelector(':scope > .ynot-popup-video');if(v){v.pause();v.removeAttribute('src');v.load();v.remove()}
+    s.classList.remove('ynot-showing-video');
+    s.classList.add('ynot-product-switching');
+    return true
+  }
 
   function lockStage(s){
     const img=s.querySelector(':scope > img');if(!img)return;
@@ -36,6 +52,7 @@
     }
     s.dataset.ynotFullMediaUrl=url;
     s.querySelectorAll('.ynot-deal-thumb-gallery-final button[data-media-url]').forEach(b=>b.classList.toggle('active',b.dataset.mediaUrl===url));
+    s.classList.remove('ynot-product-switching');
     lockStage(s)
   }
 
@@ -62,17 +79,19 @@
   }
 
   async function rebuild(s){
-    killViewers();const title=titleOf(s),img=s.querySelector(':scope > img');if(!title||!img)return;const key=norm(title);lockStage(s);
-    const existing=s.querySelector(':scope > .ynot-deal-thumb-gallery-final');if(existing?.dataset.productKey===key&&s.dataset.ynotFinalMedia){bindMain(s,img,key);return}
-    existing?.remove();const p=await exactProduct(title);if(!s.isConnected||productKey(s)!==key)return;const media=collectMedia(p,img.src);if(!media.length)return;
-    s.dataset.ynotFinalMedia=JSON.stringify(media);if(!s.dataset.ynotFullMediaUrl)s.dataset.ynotFullMediaUrl=img.src||media[0];
+    killViewers();const title=titleOf(s),img=s.querySelector(':scope > img');if(!title||!img)return;const key=norm(title);const changed=resetProductState(s,key);lockStage(s);
+    const existing=s.querySelector(':scope > .ynot-deal-thumb-gallery-final');if(!changed&&existing?.dataset.productKey===key&&s.dataset.ynotFinalMedia){bindMain(s,img,key);s.classList.remove('ynot-product-switching');return}
+    existing?.remove();const p=await exactProduct(title);if(!s.isConnected||productKey(s)!==key)return;
+    const media=collectMedia(p,changed?'':img.src);if(!media.length){s.classList.remove('ynot-product-switching');return}
+    s.dataset.ynotFinalMedia=JSON.stringify(media);s.dataset.ynotMediaIndex='0';s.dataset.ynotFullMediaUrl=media[0];
+    if(img.src!==media[0])img.src=media[0];
     const g=document.createElement('div');g.className='ynot-deal-thumb-gallery ynot-deal-thumb-gallery-final';g.dataset.productKey=key;const limit=Math.min(media.length,4);
-    media.slice(0,limit).forEach((url,i)=>{const b=buildThumb(url,title,i,s,key);if((s.dataset.ynotFullMediaUrl||img.src)===url)b.classList.add('active');g.appendChild(b)});
+    media.slice(0,limit).forEach((url,i)=>{const b=buildThumb(url,title,i,s,key);if(i===0)b.classList.add('active');g.appendChild(b)});
     if(media.length>limit){const more=document.createElement('button');more.type='button';more.className='ynot-deal-thumb ynot-deal-thumb-count';more.textContent=`+${media.length-limit}`;more.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();nextMedia(s)},true);g.appendChild(more)}
-    img.insertAdjacentElement('afterend',g);bindMain(s,img,key)
+    img.insertAdjacentElement('afterend',g);bindMain(s,img,key);s.classList.remove('ynot-product-switching')
   }
 
   let queued=false;function sync(){queued=false;killViewers();const s=document.querySelector('.ynot-drawer.open .ynot-selected');if(!s)return;void rebuild(s)}function queue(){if(!queued){queued=true;requestAnimationFrame(sync)}}
-  const start=()=>{killViewers();new MutationObserver(queue).observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});sync()};
+  const start=()=>{killViewers();new MutationObserver(queue).observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','src']});sync()};
   document.readyState==='loading'?document.addEventListener('DOMContentLoaded',start,{once:true}):start();
 })();
