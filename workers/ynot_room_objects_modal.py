@@ -102,12 +102,13 @@ def _detect(image, processor, detector):
     result = processor.post_process_grounded_object_detection(
         outputs,
         inputs.input_ids,
-        box_threshold=0.30,
+        threshold=0.30,
         text_threshold=0.24,
         target_sizes=[(image.height, image.width)],
     )[0]
+    text_labels = result.get("text_labels") or result.get("labels") or []
     detections = []
-    for score, label, box in zip(result["scores"], result["labels"], result["boxes"]):
+    for score, label, box in zip(result["scores"], text_labels, result["boxes"]):
         category = _canonical_label(label)
         if not category:
             continue
@@ -116,7 +117,6 @@ def _detect(image, processor, detector):
             continue
         detections.append({"category": category, "label": str(label), "confidence": float(score), "box": [x1, y1, x2, y2]})
     detections.sort(key=lambda item: item["confidence"], reverse=True)
-    # Remove same-category boxes that heavily overlap.
     kept = []
     for candidate in detections:
         x1, y1, x2, y2 = candidate["box"]
@@ -156,7 +156,6 @@ def _lift(detections, points, mask, center_offset, floor_height=None):
         cloud = crop_points[valid]
         if len(cloud) < 50:
             continue
-        # Remove background points captured by the rectangular detector box.
         depth = cloud[:, 2]
         median_depth = float(np.median(depth))
         near = cloud[(depth >= np.percentile(depth, 8)) & (depth <= min(np.percentile(depth, 72), median_depth * 1.22))]
@@ -170,7 +169,6 @@ def _lift(detections, points, mask, center_offset, floor_height=None):
         size = np.maximum(raw_size, minimum)
         position = (low + high) / 2
         if floor_height is not None and detection["category"] in FLOOR_SUPPORTED:
-            # Anchor floor-supported furniture without pretending dimensions are survey-grade.
             position[1] = float(floor_height) + size[1] / 2
         lifted.append({
             **detection,
@@ -258,7 +256,6 @@ def _run(job_id: str):
         "measurementDisclaimer": "Furniture positions and dimensions are reconstruction-derived visual estimates, not architectural measurements.",
     }
     _write_json(job / "objects.json", payload)
-    # Fold stable object IDs into room.json when structure analysis already exists.
     if room_path.exists():
         try:
             room = _read_json(room_path)
