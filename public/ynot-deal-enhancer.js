@@ -118,12 +118,37 @@
     });
     main.insertAdjacentElement('afterend',gallery);
 
-    /* Mobile: tapping the large product picture only advances to the next image.
-       Never launch the full-screen gallery viewer on phones. */
     if(!main.dataset.ynotMobileTapCycle){
       main.dataset.ynotMobileTapCycle='1';
       main.addEventListener('click',e=>{if(!isMobile())return;e.preventDefault();e.stopImmediatePropagation();nextImage(selected,images,gallery)},true);
     }
+  }
+
+  function installDockSwipe(){
+    const dock=document.querySelector('.ynot-drawer.open .ynot-dock');
+    if(!dock||dock.dataset.ynotSwipeRail==='1')return;
+    dock.dataset.ynotSwipeRail='1';
+    let sx=0,sy=0,startScroll=0,moved=false;
+    dock.addEventListener('touchstart',e=>{
+      if(!isMobile()||!e.touches?.length)return;
+      const t=e.touches[0];sx=t.clientX;sy=t.clientY;startScroll=dock.scrollLeft;moved=false;
+      e.stopPropagation();
+    },{capture:true,passive:true});
+    dock.addEventListener('touchmove',e=>{
+      if(!isMobile()||!e.touches?.length)return;
+      const t=e.touches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+      if(Math.abs(dx)<=Math.abs(dy)||Math.abs(dx)<3)return;
+      moved=true;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      dock.scrollLeft=startScroll-dx;
+    },{capture:true,passive:false});
+    dock.addEventListener('touchend',e=>{
+      if(moved){e.preventDefault();e.stopImmediatePropagation();}
+      moved=false;
+    },{capture:true,passive:false});
+    dock.addEventListener('touchcancel',()=>{moved=false},{capture:true,passive:true});
+    dock.addEventListener('click',e=>{if(!moved)return;e.preventDefault();e.stopImmediatePropagation()},true);
   }
 
   function decorateProduct(){
@@ -131,5 +156,5 @@
     const h3=copy.querySelector('h3');if(!h3)return;const title=(h3.textContent||'').trim();void decorateDescription(copy,title);void decorateGallery(selected,title);
   }
 
-  function sync(){decorateHeader();decorateProduct()}let frame=0;const queue=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;sync()})};const observer=new MutationObserver(queue);const start=()=>{observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','src']});sync()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+  function sync(){decorateHeader();installDockSwipe();decorateProduct()}let frame=0;const queue=()=>{if(frame)return;frame=requestAnimationFrame(()=>{frame=0;sync()})};const observer=new MutationObserver(queue);const start=()=>{observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class','src']});sync()};if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
