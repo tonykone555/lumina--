@@ -44,10 +44,7 @@ html.ynot-deal-product-open .ynot-compass-tools{
   pointer-events:none!important;
 }
 
-/* 3) YNOT Deals header canopy.
-   The dark fade now belongs ONLY to the fixed header zone behind YNOT,
-   Marketplace, category tags and the search pill. It never sits in the middle
-   of the product feed. */
+/* 3) YNOT Deals header canopy. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open{
   border:0!important;
   outline:0!important;
@@ -82,7 +79,6 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::after{
   display:none!important;
 }
 
-/* Keep the real controls above the canopy while the product grid scrolls below. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-head,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
@@ -92,7 +88,6 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
   text-shadow:none!important;
 }
 
-/* Remove every old canopy/fade from the scrolling body itself. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-workspace,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-body{
   background-image:none!important;
@@ -117,9 +112,6 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="cano
   filter:none!important;
 }
 
-/* Critical: the generic mobile search rule used to paint its own 150px dark
-   gradient below the search bar. Disable that inside YNOT Deals so there is only
-   one shadow, at the top header. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search::before,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search::after,
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="search-pill" i]::before,
@@ -133,19 +125,50 @@ html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open [class*="sear
   filter:none!important;
 }
 
-/* Search pill keeps only local depth. */
 html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
   box-shadow:0 3px 12px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.55)!important;
 }
 
 @media(max-width:760px){
+  /* Compact sticky canopy: stop the fade before it reaches the first product row. */
   html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open::before{
-    height:270px!important;
+    height:205px!important;
     background:linear-gradient(180deg,
-      rgba(5,6,7,.92) 0%,
-      rgba(6,7,8,.80) 38%,
-      rgba(7,8,9,.54) 64%,
-      rgba(7,8,9,.18) 86%,
+      rgba(5,6,7,.94) 0%,
+      rgba(6,7,8,.84) 42%,
+      rgba(7,8,9,.48) 70%,
+      rgba(7,8,9,.12) 90%,
       rgba(7,8,9,0) 100%)!important;
+  }
+
+  /* Keep the category chips visible directly under the YNOT header. */
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-dock{
+    position:fixed!important;
+    z-index:720!important;
+    top:calc(env(safe-area-inset-top) + 82px)!important;
+    left:0!important;
+    right:0!important;
+    margin:0!important;
+    transform:none!important;
+    opacity:1!important;
+    visibility:visible!important;
+    pointer-events:auto!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    filter:none!important;
+  }
+
+  /* Search sits immediately below the tags instead of floating in the feed. */
+  html.ynot-deal-open:not(.ynot-deal-product-open) .ynot-drawer.open .ynot-search{
+    position:fixed!important;
+    z-index:721!important;
+    top:calc(env(safe-area-inset-top) + 132px)!important;
+    left:18px!important;
+    right:18px!important;
+    width:auto!important;
+    margin:0!important;
+    transform:none!important;
+    opacity:1!important;
+    visibility:visible!important;
   }
 }
