@@ -9,6 +9,10 @@ on:
       - "workers/ynot_room_submit_modal.py"
       - ".github/workflows/deploy-modal-room-submit.yml"
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -25,9 +29,16 @@ jobs:
         run: modal deploy workers/ynot_room_submit_modal.py --name ynot-room-submit
       - name: Let Modal route traffic to the new deployment
         run: sleep 12
+      - name: Request GitHub OIDC identity
+        id: oidc
+        run: |
+          TOKEN=$(curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=ynot-room-modal" | python -c 'import json,sys; print(json.load(sys.stdin)["value"])')
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
       - name: Verify lightweight submit endpoint
         env:
           SUBMIT_URL: https://tonykone555--ynot-room-submit-submit-room.modal.run
+          GITHUB_OIDC_TOKEN: ${{ steps.oidc.outputs.token }}
         run: |
           python - <<'PY'
           import io, os, time, uuid, requests
@@ -38,7 +49,7 @@ jobs:
               buf=io.BytesIO(); Image.new("RGB",(320,240),(210+i*5,205,200)).save(buf,format="JPEG",quality=82)
               files.append(("photos",(f"view-{i+1}.jpg",buf.getvalue(),"image/jpeg")))
           started=time.time()
-          response=requests.post(os.environ["SUBMIT_URL"],files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room"},timeout=25)
+          response=requests.post(os.environ["SUBMIT_URL"],headers={"X-GitHub-OIDC-Token":os.environ["GITHUB_OIDC_TOKEN"]},files=files,data={"requestId":request_id,"style":"modern","roomType":"living_room"},timeout=25)
           elapsed=time.time()-started
           print("submit",response.status_code,round(elapsed,2),response.text)
           response.raise_for_status()
