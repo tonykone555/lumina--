@@ -1,4 +1,5 @@
 import {NextResponse} from "next/server";
+import {getVercelOidcToken} from "@vercel/oidc";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -10,6 +11,8 @@ const DEFAULT_SUBMIT_ENDPOINT="https://tonykone555--ynot-room-submit-submit-room
 const DEFAULT_STATUS_ENDPOINT="https://tonykone555--ynot-room-room-status.modal.run";
 const DEFAULT_QA_ENDPOINT="https://tonykone555--ynot-room-qa-room-qa.modal.run";
 const DEFAULT_AUTOPILOT_ENDPOINT="https://tonykone555--ynot-room-autopilot-schedule-repair.modal.run";
+const VERCEL_PROJECT="prj_xDNNAY7MBUIbDHLaJkOdPsUz2C7X";
+const VERCEL_TEAM="team_9yqHjLzE6wUmudwIHFS4EutR";
 
 function jsonError(status:number,error:string,code:string,extra:Record<string,unknown>={}){
   return NextResponse.json({error,code,...extra},{status});
@@ -22,9 +25,18 @@ function modalHeaders():HeadersInit{
   return headers;
 }
 
-function submitHeaders(requestId:string):HeadersInit{
+async function runtimeOidcToken(){
+  try{
+    return String(await getVercelOidcToken({project:VERCEL_PROJECT,team:VERCEL_TEAM})||"").trim();
+  }catch(error){
+    console.warn("[ynot-room] Vercel OIDC unavailable",error instanceof Error?error.message:"unknown");
+    return "";
+  }
+}
+
+async function submitHeaders(requestId:string):Promise<HeadersInit>{
   const headers:HeadersInit={...modalHeaders(),"X-YNOT-Room-Request":requestId};
-  const oidc=String(process.env.VERCEL_OIDC_TOKEN||"").trim();
+  const oidc=await runtimeOidcToken();
   if(oidc)headers["X-Vercel-OIDC-Token"]=oidc;
   return headers;
 }
@@ -135,7 +147,10 @@ export async function GET(request:Request){
   const url=new URL(request.url);
   const id=String(url.searchParams.get("id")||"").trim();
   const statusEndpoint=String(process.env.MODAL_ROOM_STATUS_ENDPOINT||DEFAULT_STATUS_ENDPOINT).trim();
-  if(!id)return NextResponse.json({ok:true,configured:true,worker:"modal",qualityContract:"ynot-home-wizard-v1",qa:"matched-camera-v2",autoRepair:true,submitAuth:{vercelOidc:Boolean(process.env.VERCEL_OIDC_TOKEN),sharedSecret:Boolean(process.env.MODAL_ROOM_TOKEN)},maxPhotos:MAX_PHOTOS,accepted:[...ALLOWED_TYPES]},{headers:{"Cache-Control":"no-store"}});
+  if(!id){
+    const oidc=await runtimeOidcToken();
+    return NextResponse.json({ok:true,configured:true,worker:"modal",qualityContract:"ynot-home-wizard-v1",qa:"matched-camera-v2",autoRepair:true,submitAuth:{vercelOidc:Boolean(oidc),sharedSecret:Boolean(process.env.MODAL_ROOM_TOKEN)},maxPhotos:MAX_PHOTOS,accepted:[...ALLOWED_TYPES]},{headers:{"Cache-Control":"no-store"}});
+  }
 
   try{
     const response=await fetch(`${statusEndpoint}?id=${encodeURIComponent(id)}`,{headers:modalHeaders(),cache:"no-store",signal:AbortSignal.timeout(12_000)});
@@ -169,7 +184,7 @@ export async function POST(request:Request){
   const outbound=new FormData();
   photos.forEach((photo,index)=>outbound.append("photos",photo,photo.name||`room-${index+1}.jpg`));
   outbound.set("requestId",requestId);outbound.set("style",style);outbound.set("roomType",roomType);if(rawBudget)outbound.set("budget",rawBudget);outbound.set("source","ynot-room-web");
-  const headers=submitHeaders(requestId);
+  const headers=await submitHeaders(requestId);
   if(!("X-Vercel-OIDC-Token" in headers)&&!("Authorization" in headers))return jsonError(503,"Secure Room worker identity is not configured for this deployment.","ROOM_WORKER_AUTH_NOT_CONFIGURED",{id:requestId});
 
   let workerResponse:Response;
@@ -177,7 +192,7 @@ export async function POST(request:Request){
   catch(error){console.error("[ynot-room] worker handoff failed",{requestId,error:error instanceof Error?error.message:"unknown"});return jsonError(502,"The room worker could not be reached.","ROOM_WORKER_UNREACHABLE",{id:requestId})}
   const contentType=workerResponse.headers.get("content-type")||"";
   const workerData=(contentType.includes("application/json")?await workerResponse.json().catch(()=>({})): {}) as Record<string,unknown>;
-  if(!workerResponse.ok)return jsonError(workerResponse.status===401?502:502,String(workerData?.detail||workerData?.error||workerData?.message||"The room worker rejected the job."),workerResponse.status===401?"ROOM_WORKER_AUTH_REJECTED":"ROOM_WORKER_REJECTED",{id:requestId});
+  if(!workerResponse.ok)return jsonError(502,String(workerData?.detail||workerData?.error||workerData?.message||"The room worker rejected the job."),workerResponse.status===401?"ROOM_WORKER_AUTH_REJECTED":"ROOM_WORKER_REJECTED",{id:requestId});
   const jobId=String(workerData?.id||workerData?.jobId||requestId);
   return NextResponse.json({id:jobId,status:String(workerData?.status||"queued"),stage:String(workerData?.stage||"accepted"),releaseStatus:"processing",sceneUrl:typeof workerData?.sceneUrl==="string"&&workerData.sceneUrl?`/api/room/jobs/${encodeURIComponent(jobId)}/scene`:undefined,previewUrl:typeof workerData?.previewUrl==="string"?workerData.previewUrl:undefined,message:String(workerData?.message||"Your room has been sent to the YNOT reconstruction worker.")},{status:202,headers:{"Cache-Control":"no-store"}});
 }
