@@ -64,6 +64,7 @@ export default async function GrowthAdminPage() {
       <Link className="panel growthOsCard" href="/admin/growth/ads"><div className="panelHead"><div><span>ADS</span><h2>Research → creative</h2></div><b>Engine</b></div><p>Winning-ad research, product matching, create-from-ad, campaign building and performance evidence.</p></Link>
       <Link className="panel growthOsCard" href="/admin/growth/outreach"><div className="panelHead"><div><span>OUTREACH</span><h2>Live intent</h2></div><b>{opportunities.length}</b></div><p>Recent buyer signals, Gemini filtering, catalogue matches, personalized drafts and approval status.</p></Link>
       <Link className="panel growthOsCard" href="/admin/growth/library"><div className="panelHead"><div><span>LIBRARY</span><h2>Shared memory</h2></div><b>{creatives.length}</b></div><p>Reusable videos, generated assets, research, hooks, ad references and product-linked creative material.</p></Link>
+      <Link className="panel growthOsCard" href="/admin/etsy"><div className="panelHead"><div><span>INTEGRATIONS</span><h2>Etsy publishing</h2></div><b>Admin</b></div><p>Private Etsy OAuth status, reconnect controls and the publishing bridge for digital products.</p></Link>
     </section>
     <CampaignBuilder/>
     <DemandGrowthEngine trends={trends} gaps={gaps} products={products}/>
