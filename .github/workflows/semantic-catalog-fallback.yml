@@ -25,8 +25,7 @@ jobs:
           s=p.read_text()
           old='if(/sofa|chair|furniture|lamp|rug|decor|table|home|bed|desk|mirror/.test(q))return"home";'
           new='if(/sofa|chair|furniture|lamp|rug|decor|table|home|bed|desk|mirror|kitchen|island|urn|vase|planter|pot|cabinet|sideboard|shelf|shelving|console|bench|stool|ottoman|couch|sectional|loveseat|wardrobe|dresser|nightstand|chandelier|lighting|sculpture|statue|bowl|tray/.test(q))return"home";'
-          if old not in s: raise SystemExit('home domain marker not found')
-          s=s.replace(old,new,1)
+          if old in s: s=s.replace(old,new,1)
           start=s.index('function expandCatalogQueries(query:string){')
           end=s.index('\nfunction enrichedTags(', start)
           replacement=r'''function expandCatalogQueries(query:string){
@@ -36,10 +35,13 @@ jobs:
  const lower=clean.toLowerCase();
  const words=significantWords(clean);
  const queries:string[]=[clean];
+ // Universal fallback: progressively reduce any product phrase rather than
+ // requiring the object to exist in a hand-written category dictionary.
  if(words.length>1){
   for(let i=1;i<words.length;i++)queries.push(words.slice(i).join(" "));
-  const maxN=Math.min(4,words.length);
-  for(let n=maxN;n>=1;n--){for(let i=0;i+n<=words.length;i++)queries.push(words.slice(i,i+n).join(" "))}
+  for(let n=Math.min(4,words.length);n>=1;n--){
+   for(let i=0;i+n<=words.length;i++)queries.push(words.slice(i,i+n).join(" "));
+  }
  }
  const aliases:Record<string,string[]>={
   urn:["floor vase","decorative urn","large vase"],vase:["floor vase","decorative vase","urn"],
@@ -74,8 +76,7 @@ jobs:
           s=s[:start]+replacement+s[end:]
           oldq='const queries=expandCatalogQueries(query).filter(q=>q.toLowerCase()!==query.toLowerCase()).slice(0,forceDeep?12:4);'
           newq='const queries=expandCatalogQueries(query).filter(q=>q.toLowerCase()!==query.toLowerCase()).slice(0,forceDeep?18:10);'
-          if oldq not in s: raise SystemExit('discovery query marker not found')
-          s=s.replace(oldq,newq,1)
+          if oldq in s: s=s.replace(oldq,newq,1)
           p.write_text(s)
           PY
       - name: Commit patch
@@ -86,3 +87,4 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m "Improve semantic fallback for arbitrary product searches"
           git push origin main
+# universal-fallback-trigger: 2026-09-27
