@@ -2,7 +2,7 @@ import {createHash,randomBytes} from "crypto";
 import type {NextRequest,NextResponse} from "next/server";
 
 export const ETSY_REDIRECT_URI="https://ynotworld.app/api/etsy/oauth/callback";
-export const ETSY_SCOPES="listings_r shops_r";
+export const ETSY_SCOPES="listings_r listings_w shops_r";
 
 export function etsyKeystring(){return process.env.ETSY_KEYSTRING||process.env.ETSY_API_KEYSTRING||""}
 export function etsySharedSecret(){return process.env.ETSY_SHARED_SECRET||""}
