@@ -12,10 +12,10 @@ type EtsyStoredConnection={
 type EtsyTokenResponse={access_token:string;token_type?:string;expires_in:number;refresh_token:string;scope?:string};
 
 function supabaseUrl(){return process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL||""}
-function supabaseServiceKey(){return process.env.SUPABASE_SERVICE_ROLE_KEY||""}
+function supabaseServiceKey(){return process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SECRET_KEY||""}
 
 export function etsyKeystring(){
- const explicit=process.env.ETSY_API_KEYSTRING||"";
+ const explicit=process.env.ETSY_KEYSTRING||process.env.ETSY_API_KEYSTRING||"";
  if(explicit)return explicit;
  const combined=process.env.ETSY_API_KEY||"";
  return combined.includes(":")?combined.split(":",1)[0]:combined;
@@ -103,7 +103,7 @@ export async function getEtsyAccessToken(){
 
 export async function exchangeEtsyCode(args:{code:string;codeVerifier:string;redirectUri:string}){
  const clientId=etsyKeystring();
- if(!clientId)throw new Error("ETSY_API_KEYSTRING_MISSING");
+ if(!clientId)throw new Error("ETSY_KEYSTRING_MISSING");
  const body=new URLSearchParams({
   grant_type:"authorization_code",
   client_id:clientId,
