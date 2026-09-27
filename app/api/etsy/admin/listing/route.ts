@@ -4,7 +4,23 @@ import {etsyApiHeader,getEtsyAccessToken,readEtsyConnection} from "@/lib/etsy/oa
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
-const DEFAULT_TAGS=["ai selling guide","chatgpt business","ai marketing guide","digital marketing","ecommerce guide","shopify marketing","etsy seller guide","small business ai","product seo guide","ai seo guide","online sales guide","business playbook","marketing ebook"];
+// 13 varied buyer-intent phrases, each within Etsy's 20-character tag limit.
+// Pinterest is included because the playbook covers discovery/promotion channels; the tag describes that content rather than promising Pinterest distribution.
+const DEFAULT_TAGS=[
+ "ai shopping guide",
+ "ai ecommerce",
+ "chatgpt business",
+ "ai business guide",
+ "ecommerce guide",
+ "shopify marketing",
+ "product discovery",
+ "ai marketing guide",
+ "product seo guide",
+ "online selling",
+ "small business ai",
+ "pinterest marketing",
+ "business playbook"
+];
 
 function cleanTags(input:unknown){
  const raw=Array.isArray(input)?input:String(input||"").split(",");
@@ -36,7 +52,7 @@ export async function GET(){try{const [s,t]=await Promise.all([shop(),taxonomy()
 export async function POST(req:NextRequest){
  try{
   const form=await req.formData(); const s=await shop();
-  const title=String(form.get("title")||"Sell Through AI: Get Your Products Found in ChatGPT, Google AI & More").trim().slice(0,140);
+  const title=String(form.get("title")||"AI Shopping & Ecommerce Playbook for ChatGPT Business and Product Discovery").trim().slice(0,140);
   const description=String(form.get("description")||"").trim(); if(!description)throw new Error("DESCRIPTION_REQUIRED");
   const price=Math.max(.2,Number(form.get("price")||19));
   const tax=Number(form.get("taxonomyId")||0)||(await taxonomy())?.id; if(!tax)throw new Error("TAXONOMY_REQUIRED");
