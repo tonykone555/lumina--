@@ -1,3 +1,5 @@
+import {etsyApiKey,etsyKeystring,exchangeAuthorizationCode,refreshAccessToken} from "@/lib/etsy/auth";
+
 type EtsyStoredConnection={
  id:string;
  etsy_user_id?:string|null;
@@ -11,27 +13,18 @@ type EtsyStoredConnection={
 
 type EtsyTokenResponse={access_token:string;token_type?:string;expires_in:number;refresh_token:string;scope?:string};
 
-function supabaseUrl(){return process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL||""}
-function supabaseServiceKey(){return process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SECRET_KEY||""}
+function supabaseUrl(){return String(process.env.SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE_URL||"").trim().replace(/\/$/,"")}
+function supabaseServiceKey(){return String(process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_SECRET_KEY||"").trim()}
 
-export function etsyKeystring(){
- const explicit=process.env.ETSY_KEYSTRING||process.env.ETSY_API_KEYSTRING||"";
- if(explicit)return explicit;
- const combined=process.env.ETSY_API_KEY||"";
- return combined.includes(":")?combined.split(":",1)[0]:combined;
-}
-
-export function etsyApiHeader(){
- const combined=process.env.ETSY_API_KEY||"";
- if(combined.includes(":"))return combined;
- const key=etsyKeystring();
- const secret=process.env.ETSY_SHARED_SECRET||process.env.ETSY_API_SHARED_SECRET||"";
- return key&&secret?`${key}:${secret}`:combined||key;
-}
+// Single source of truth for (trimmed) Etsy credentials lives in lib/etsy/auth.
+export {etsyKeystring};
+export function etsyApiHeader(){return etsyApiKey()}
 
 function dbHeaders(extra:Record<string,string>={}){
  const key=supabaseServiceKey();
- return {apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json",...extra};
+ // New-style Supabase secret keys (sb_...) are not JWTs and must only be sent as
+ // `apikey`; legacy service-role JWTs are also sent as a Bearer token.
+ return {apikey:key,...(key.startsWith("sb_")?{}:{Authorization:`Bearer ${key}`}),"Content-Type":"application/json",...extra};
 }
 
 // OAuth can work for the current browser session without Supabase persistence.
@@ -86,50 +79,28 @@ export async function deleteEtsyConnection(){
 }
 
 async function refresh(connection:EtsyStoredConnection){
- const clientId=etsyKeystring();
- if(!clientId||!connection.refresh_token)throw new Error("ETSY_REFRESH_UNAVAILABLE");
- const body=new URLSearchParams({grant_type:"refresh_token",client_id:clientId,refresh_token:connection.refresh_token});
- const response=await fetch("https://api.etsy.com/v3/public/oauth/token",{
-  method:"POST",
-  headers:{"Content-Type":"application/x-www-form-urlencoded"},
-  body,
-  cache:"no-store"
- });
- const data=await response.json().catch(()=>({})) as Partial<EtsyTokenResponse>&{error?:string};
- if(!response.ok||!data.access_token||!data.refresh_token)throw new Error(data.error||`ETSY_REFRESH_${response.status}`);
- await saveEtsyConnection(data as EtsyTokenResponse);
+ if(!etsyKeystring()||!connection.refresh_token)throw new Error("ETSY_REFRESH_UNAVAILABLE");
+ const data=await refreshAccessToken(connection.refresh_token);
+ if(!data.refresh_token)throw new Error("ETSY_REFRESH_TOKEN_MISSING");
+ await saveEtsyConnection({access_token:data.access_token,refresh_token:data.refresh_token,expires_in:Number(data.expires_in||3600),token_type:data.token_type,scope:data.scope||connection.scope||undefined});
  return data.access_token;
 }
 
 export async function getEtsyAccessToken(){
  let connection:EtsyStoredConnection|null=null;
- try{connection=await readEtsyConnection()}catch{}
+ try{connection=await readEtsyConnection()}catch(error){console.error("Etsy OAuth storage read failed",error instanceof Error?error.message:error)}
  if(connection){
   const expires=new Date(connection.expires_at).getTime();
   if(Number.isFinite(expires)&&expires-Date.now()>120_000)return connection.access_token;
-  try{return await refresh(connection)}catch{return connection.access_token}
+  try{return await refresh(connection)}catch(error){console.error("Etsy token refresh failed",error instanceof Error?error.message:error);return connection.access_token}
  }
- return process.env.ETSY_ACCESS_TOKEN||"";
+ return String(process.env.ETSY_ACCESS_TOKEN||"").trim();
 }
 
 export async function exchangeEtsyCode(args:{code:string;codeVerifier:string;redirectUri:string}){
- const clientId=etsyKeystring();
- if(!clientId)throw new Error("ETSY_KEYSTRING_MISSING");
- const body=new URLSearchParams({
-  grant_type:"authorization_code",
-  client_id:clientId,
-  redirect_uri:args.redirectUri,
-  code:args.code,
-  code_verifier:args.codeVerifier
- });
- const response=await fetch("https://api.etsy.com/v3/public/oauth/token",{
-  method:"POST",
-  headers:{"Content-Type":"application/x-www-form-urlencoded"},
-  body,
-  cache:"no-store"
- });
- const data=await response.json().catch(()=>({})) as Partial<EtsyTokenResponse>&{error?:string;error_description?:string};
- if(!response.ok||!data.access_token||!data.refresh_token)throw new Error(data.error_description||data.error||`ETSY_OAUTH_${response.status}`);
- await saveEtsyConnection(data as EtsyTokenResponse);
- return data as EtsyTokenResponse;
+ const data=await exchangeAuthorizationCode(args.code,args.codeVerifier,args.redirectUri);
+ if(!data.refresh_token)throw new Error("ETSY_REFRESH_TOKEN_MISSING");
+ const token:EtsyTokenResponse={access_token:data.access_token,refresh_token:data.refresh_token,expires_in:Number(data.expires_in||3600),token_type:data.token_type,scope:data.scope};
+ await saveEtsyConnection(token);
+ return token;
 }

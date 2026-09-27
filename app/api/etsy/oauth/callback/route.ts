@@ -1,14 +1,16 @@
 import {NextRequest,NextResponse} from "next/server";
-import {exchangeAuthorizationCode,setEtsyTokenCookies} from "@/lib/etsy/auth";
+import {etsyRedirectUri,exchangeAuthorizationCode,setEtsyTokenCookies} from "@/lib/etsy/auth";
 import {saveEtsyConnection} from "@/lib/etsy/oauth";
 
 export const runtime="nodejs";
+export const dynamic="force-dynamic";
 
 export async function GET(request:NextRequest){
  const url=new URL(request.url);
  const error=url.searchParams.get("error");
  const errorDescription=url.searchParams.get("error_description");
  if(error){
+  console.error("Etsy OAuth authorize error",JSON.stringify({error,error_description:errorDescription}));
   const target=new URL("/admin/etsy",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error",errorDescription||error);
@@ -19,13 +21,15 @@ export async function GET(request:NextRequest){
  const expectedState=request.cookies.get("etsy_oauth_state")?.value||"";
  const verifier=request.cookies.get("etsy_oauth_verifier")?.value||"";
  if(!code||!state||!expectedState||state!==expectedState||!verifier){
+  console.error("Etsy OAuth callback state check failed",JSON.stringify({hasCode:Boolean(code),hasState:Boolean(state),hasStateCookie:Boolean(expectedState),stateMatches:Boolean(state)&&state===expectedState,hasVerifierCookie:Boolean(verifier)}));
   const target=new URL("/admin/etsy",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error","ETSY_OAUTH_STATE_INVALID");
   return NextResponse.redirect(target);
  }
  try{
-  const token=await exchangeAuthorizationCode(code,verifier);
+  const token=await exchangeAuthorizationCode(code,verifier,etsyRedirectUri());
+  console.info("Etsy OAuth token exchange succeeded",JSON.stringify({etsyUserId:String(token.access_token||"").split(".")[0]||null,scope:token.scope||null}));
   if(!token.refresh_token)throw new Error("ETSY_REFRESH_TOKEN_MISSING");
 
   // The OAuth exchange itself is the source of truth for the current browser
@@ -54,6 +58,7 @@ export async function GET(request:NextRequest){
   response.cookies.set("etsy_oauth_verifier","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   return response;
  }catch(error){
+  console.error("Etsy OAuth callback failed",error instanceof Error?error.message:error);
   const target=new URL("/admin/etsy",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error",error instanceof Error?error.message:"ETSY_OAUTH_FAILED");
