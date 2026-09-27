@@ -9,7 +9,7 @@ export async function GET(request:NextRequest){
  const error=url.searchParams.get("error");
  const errorDescription=url.searchParams.get("error_description");
  if(error){
-  const target=new URL("/",request.url);
+  const target=new URL("/admin/etsy",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error",errorDescription||error);
   return NextResponse.redirect(target);
@@ -19,27 +19,42 @@ export async function GET(request:NextRequest){
  const expectedState=request.cookies.get("etsy_oauth_state")?.value||"";
  const verifier=request.cookies.get("etsy_oauth_verifier")?.value||"";
  if(!code||!state||!expectedState||state!==expectedState||!verifier){
-  return NextResponse.json({error:"ETSY_OAUTH_STATE_INVALID"},{status:400});
+  const target=new URL("/admin/etsy",request.url);
+  target.searchParams.set("etsy_oauth","error");
+  target.searchParams.set("etsy_error","ETSY_OAUTH_STATE_INVALID");
+  return NextResponse.redirect(target);
  }
  try{
   const token=await exchangeAuthorizationCode(code,verifier);
   if(!token.refresh_token)throw new Error("ETSY_REFRESH_TOKEN_MISSING");
-  await saveEtsyConnection({
-   access_token:token.access_token,
-   refresh_token:token.refresh_token,
-   expires_in:Number(token.expires_in||3600),
-   token_type:token.token_type,
-   scope:token.scope
-  });
-  const target=new URL("/",request.url);
+
+  // The OAuth exchange itself is the source of truth for the current browser
+  // session. Persisting to Supabase is desirable for server-side continuity,
+  // but a storage outage/misconfiguration must not discard a valid Etsy login.
+  let persistenceError="";
+  try{
+   await saveEtsyConnection({
+    access_token:token.access_token,
+    refresh_token:token.refresh_token,
+    expires_in:Number(token.expires_in||3600),
+    token_type:token.token_type,
+    scope:token.scope
+   });
+  }catch(storageError){
+   persistenceError=storageError instanceof Error?storageError.message:"ETSY_OAUTH_STORAGE_SAVE_FAILED";
+   console.error("Etsy OAuth persistence failed",persistenceError);
+  }
+
+  const target=new URL("/admin/etsy",request.url);
   target.searchParams.set("etsy_oauth","connected");
+  if(persistenceError)target.searchParams.set("etsy_storage","session_only");
   const response=NextResponse.redirect(target);
   setEtsyTokenCookies(response,token);
   response.cookies.set("etsy_oauth_state","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   response.cookies.set("etsy_oauth_verifier","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   return response;
  }catch(error){
-  const target=new URL("/",request.url);
+  const target=new URL("/admin/etsy",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error",error instanceof Error?error.message:"ETSY_OAUTH_FAILED");
   return NextResponse.redirect(target);
