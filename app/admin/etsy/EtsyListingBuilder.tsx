@@ -1,17 +1,21 @@
 "use client";
 import {useEffect,useState} from "react";
 
-const DESCRIPTION=`Sell Through AI is a practical visual playbook for founders, ecommerce sellers, creators and service businesses that want to be discovered inside AI-assisted buying journeys.
+const DESCRIPTION=`Sell Through AI is a practical visual playbook for founders, ecommerce sellers, creators and service businesses that want to get their products or services discovered in AI-assisted buying journeys.
 
 Inside the guide:
-• How product discovery is changing across ChatGPT, Google AI and other assistants
-• How AI shopping and research experiences surface products
+• AI shopping and ecommerce discovery
+• How ChatGPT, Google AI and other assistants surface products and businesses
 • Shopify and ecommerce setup paths
 • When an MCP integration makes sense
 • Product data, SEO and structured information fundamentals
+• AI search and product discovery strategies
+• Pinterest and other promotion/discovery channels
 • Discovery paths for products and services
 • Real interface examples and visual breakdowns
 • Implementation checklist and 7-day action plan
+
+Useful for ecommerce founders, Shopify sellers, small businesses, marketers, creators and anyone learning how to sell or promote through emerging AI channels.
 
 This is a digital PDF download. No physical item will be shipped.
 
@@ -26,10 +30,10 @@ export default function EtsyListingBuilder(){
  <p className="etsyCopy">Creates a draft only. Nothing is published until you review it in Etsy.</p>
  {!setup?<div className="etsyMuted">Loading connected shop…</div>:!setup.ok?<div className="etsyError">{setup.error||"Could not load Etsy shop."}</div>:<form onSubmit={submit}>
   <div className="etsyFacts"><div><small>Connected shop</small><strong>{setup.shop?.name}</strong></div><div><small>Suggested category</small><strong>{setup.taxonomy?.path||"Review category"}</strong></div><div><small>Format</small><strong>Digital PDF</strong></div></div>
-  <label className="etsyField"><span>Title</span><input name="title" defaultValue="Sell Through AI: AI Marketing & Product Discovery Playbook for ChatGPT, Shopify & Ecommerce" maxLength={140}/></label>
-  <label className="etsyField"><span>Description</span><textarea name="description" defaultValue={DESCRIPTION} rows={13}/></label>
+  <label className="etsyField"><span>Title</span><input name="title" defaultValue="AI Shopping & Ecommerce Playbook for ChatGPT Business and Product Discovery" maxLength={140}/><small>Clear buyer-facing title; broader discovery terms are carried by tags and description.</small></label>
+  <label className="etsyField"><span>Description</span><textarea name="description" defaultValue={DESCRIPTION} rows={16}/></label>
   <div className="etsyTwo"><label className="etsyField"><span>Price</span><input name="price" type="number" min="0.2" step="0.01" defaultValue="19.00"/></label><label className="etsyField"><span>Taxonomy ID</span><input name="taxonomyId" type="number" defaultValue={setup.taxonomy?.id||""}/></label></div>
-  <label className="etsyField"><span>13 discovery tags</span><textarea name="tags" defaultValue={tags} rows={4}/><small>Each tag is kept unique and capped at Etsy's 20-character limit.</small></label>
+  <label className="etsyField"><span>13 discovery tags</span><textarea name="tags" defaultValue={tags} rows={5}/><small>Uses all 13 Etsy slots with varied buyer-intent phrases. Includes AI shopping, ecommerce, business, Shopify, SEO/product discovery and Pinterest marketing.</small></label>
   <label className="etsyUpload"><span>Playbook PDF</span><input name="pdf" type="file" accept="application/pdf" required/></label>
   <label className="etsyUpload"><span>Listing images — cover first</span><input name="images" type="file" accept="image/png,image/jpeg,image/webp" multiple required/><small>Select the real-example cover/gallery images in the order you want them shown.</small></label>
   <button className="etsyPrimary createDraft" disabled={busy}>{busy?"Creating Etsy draft…":"Create draft for review"}</button>
