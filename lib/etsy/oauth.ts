@@ -34,13 +34,20 @@ function dbHeaders(extra:Record<string,string>={}){
  return {apikey:key,Authorization:`Bearer ${key}`,"Content-Type":"application/json",...extra};
 }
 
-export function etsyOauthReady(){return Boolean(etsyKeystring()&&supabaseUrl()&&supabaseServiceKey())}
+// OAuth can work for the current browser session without Supabase persistence.
+// Storage is only required for persistent/server-side continuity, not to enable
+// the Connect Etsy button or to consider the Etsy app configured.
+export function etsyOauthReady(){return Boolean(etsyKeystring())}
+export function etsyOauthStorageReady(){return Boolean(supabaseUrl()&&supabaseServiceKey())}
 
 export async function readEtsyConnection():Promise<EtsyStoredConnection|null>{
  const url=supabaseUrl(),key=supabaseServiceKey();
  if(!url||!key)return null;
  const response=await fetch(`${url}/rest/v1/etsy_oauth_connections?id=eq.primary&select=*`,{headers:dbHeaders(),cache:"no-store"});
- if(!response.ok)return null;
+ if(!response.ok){
+  const detail=await response.text().catch(()=>"");
+  throw new Error(`ETSY_OAUTH_STORAGE_READ_${response.status}${detail?`_${detail.slice(0,180)}`:""}`);
+ }
  const rows=await response.json() as EtsyStoredConnection[];
  return rows[0]||null;
 }
@@ -65,7 +72,10 @@ export async function saveEtsyConnection(token:EtsyTokenResponse){
   body:JSON.stringify(body),
   cache:"no-store"
  });
- if(!response.ok)throw new Error(`ETSY_OAUTH_STORAGE_${response.status}`);
+ if(!response.ok){
+  const detail=await response.text().catch(()=>"");
+  throw new Error(`ETSY_OAUTH_STORAGE_${response.status}${detail?`_${detail.slice(0,180)}`:""}`);
+ }
  return body;
 }
 
@@ -92,7 +102,8 @@ async function refresh(connection:EtsyStoredConnection){
 }
 
 export async function getEtsyAccessToken(){
- const connection=await readEtsyConnection();
+ let connection:EtsyStoredConnection|null=null;
+ try{connection=await readEtsyConnection()}catch{}
  if(connection){
   const expires=new Date(connection.expires_at).getTime();
   if(Number.isFinite(expires)&&expires-Date.now()>120_000)return connection.access_token;
