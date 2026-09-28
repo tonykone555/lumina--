@@ -12,7 +12,7 @@ export default function RoomSearchBar(){
   };
   const observer=new MutationObserver(mount);observer.observe(document.body,{subtree:true,childList:true});mount();return()=>observer.disconnect();
  },[]);
- function submit(e:FormEvent){e.preventDefault();const q=query.trim();if(!q)return;window.location.href=`/?q=${encodeURIComponent(q)}`}
+ function submit(e:FormEvent){e.preventDefault();const q=query.trim();if(!q)return;try{sessionStorage.setItem("ynot-room-skip-intro-on-world","1")}catch{}window.location.assign(`/?q=${encodeURIComponent(q)}&from=room`)}
  return <div className="yr-room-search">
   <form onSubmit={submit} className="yr-room-search-form">
    <Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search YNOT" aria-label="Search YNOT"/><button type="submit">Search</button>
