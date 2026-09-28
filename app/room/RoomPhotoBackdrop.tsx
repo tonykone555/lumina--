@@ -7,7 +7,8 @@ export default function RoomPhotoBackdrop(){
     style.textContent=`
       .yr-camera{position:relative;isolation:isolate;background:transparent!important}
       .yr-photo{position:relative;z-index:2;overflow:hidden}
-      .yr-photo>img{position:relative;z-index:2}
+      .yr-photo>img{position:relative;z-index:0}
+      .yr-photo>button{z-index:4!important}
       .yr-screen-photo-backdrop{position:fixed;inset:0;z-index:-1;background-position:center;background-size:cover;background-repeat:no-repeat;filter:blur(48px) saturate(115%);opacity:.42;transform:scale(1.14);pointer-events:none}
       .yr-screen-photo-backdrop:after{content:"";position:absolute;inset:0;background:rgba(8,9,9,.34)}
     `;
@@ -18,7 +19,7 @@ export default function RoomPhotoBackdrop(){
       if(!photo||!img?.src)return;
       photo.querySelector(".yr-photo-backdrop")?.remove();
       let bg=document.querySelector<HTMLElement>(".yr-screen-photo-backdrop");
-      if(!bg){bg=document.createElement("div");bg.className="yr-screen-photo-backdrop";(document.querySelector<HTMLElement>(".yr-camera")||document.body).prepend(bg)}
+      if(!bg){bg=document.createElement("div");bg.className="yr-screen-photo-backdrop";(document.querySelector<HTMLElement>(".yr")||document.body).prepend(bg)}
       bg.style.backgroundImage=`url("${img.src.replace(/"/g,"%22")}")`;
     };
     const observer=new MutationObserver(sync);
