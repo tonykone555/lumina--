@@ -2,6 +2,7 @@ import Link from "next/link";
 import AppShell from "@/components/lumina/AppShell";
 import YnotDealsAutoOpen from "@/components/lumina/YnotDealsAutoOpen";
 import CatalogSearchAccelerator from "@/components/lumina/CatalogSearchAccelerator";
+import RoomReturnLightMode from "@/components/lumina/RoomReturnLightMode";
 import {SEO_CATEGORIES} from "@/lib/seo-categories";
 
 const BASE="https://ynotworld.app";
@@ -10,50 +11,14 @@ export default function Home(){
   const jsonLd={
     "@context":"https://schema.org",
     "@graph":[
-      {
-        "@type":"WebSite",
-        "@id":`${BASE}/#website`,
-        url:BASE,
-        name:"YNOT World",
-        alternateName:["YNOT","YNOT Shop","YNOT Shopping","ynotworld.app"],
-        description:"YNOT World is an AI shopping, visual product search and spatial product discovery platform for exploring products across stores and categories.",
-        inLanguage:"en",
-        publisher:{"@id":`${BASE}/#organization`}
-      },
-      {
-        "@type":"Organization",
-        "@id":`${BASE}/#organization`,
-        name:"YNOT World",
-        alternateName:["YNOT","YNOT Shop","YNOT Shopping"],
-        url:BASE,
-        logo:`${BASE}/ynot-microphone.jpg`,
-        description:"YNOT World is the shopping platform at ynotworld.app, built for AI-assisted shopping, visual product search, conversational shopping and spatial product discovery.",
-        knowsAbout:["AI shopping","visual shopping","conversational shopping","product discovery","visual product search","fashion shopping","home shopping","beauty shopping","fitness shopping","technology shopping"]
-      },
-      {
-        "@type":"SoftwareApplication",
-        "@id":`${BASE}/#app`,
-        name:"YNOT World",
-        alternateName:["YNOT","YNOT Shop"],
-        applicationCategory:"ShoppingApplication",
-        operatingSystem:"Web",
-        url:BASE,
-        description:"A visual, spatial and AI-powered shopping application for finding and exploring products across categories and stores.",
-        provider:{"@id":`${BASE}/#organization`}
-      },
-      {
-        "@type":"ItemList",
-        name:"Explore shopping categories on YNOT World",
-        itemListElement:SEO_CATEGORIES.map((category,index)=>({
-          "@type":"ListItem",
-          position:index+1,
-          name:category.name,
-          url:`${BASE}/shop/${category.slug}`
-        }))
-      }
+      {"@type":"WebSite","@id":`${BASE}/#website`,url:BASE,name:"YNOT World",alternateName:["YNOT","YNOT Shop","YNOT Shopping","ynotworld.app"],description:"YNOT World is an AI shopping, visual product search and spatial product discovery platform for exploring products across stores and categories.",inLanguage:"en",publisher:{"@id":`${BASE}/#organization`}},
+      {"@type":"Organization","@id":`${BASE}/#organization`,name:"YNOT World",alternateName:["YNOT","YNOT Shop","YNOT Shopping"],url:BASE,logo:`${BASE}/ynot-microphone.jpg`,description:"YNOT World is the shopping platform at ynotworld.app, built for AI-assisted shopping, visual product search, conversational shopping and spatial product discovery.",knowsAbout:["AI shopping","visual shopping","conversational shopping","product discovery","visual product search","fashion shopping","home shopping","beauty shopping","fitness shopping","technology shopping"]},
+      {"@type":"SoftwareApplication","@id":`${BASE}/#app`,name:"YNOT World",alternateName:["YNOT","YNOT Shop"],applicationCategory:"ShoppingApplication",operatingSystem:"Web",url:BASE,description:"A visual, spatial and AI-powered shopping application for finding and exploring products across categories and stores.",provider:{"@id":`${BASE}/#organization`}},
+      {"@type":"ItemList",name:"Explore shopping categories on YNOT World",itemListElement:SEO_CATEGORIES.map((category,index)=>({"@type":"ListItem",position:index+1,name:category.name,url:`${BASE}/shop/${category.slug}`}))}
     ]
   };
   return <>
+    <RoomReturnLightMode/>
     <script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(jsonLd)}}/>
     <h1 style={{position:"absolute",width:1,height:1,padding:0,margin:-1,overflow:"hidden",clip:"rect(0,0,0,0)",whiteSpace:"nowrap",border:0}}>YNOT World — AI shopping, visual product search and product discovery</h1>
     <CatalogSearchAccelerator/>
