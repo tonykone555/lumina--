@@ -10,7 +10,6 @@ import RoomScanHandoff from "./RoomScanHandoff";
 import RoomDrawerScrollFix from "./RoomDrawerScrollFix";
 import RoomPlus from "./RoomPlus";
 import RoomOnboarding from "./RoomOnboarding";
-import RoomWorldLightHandoff from "./RoomWorldLightHandoff";
 import UnifiedBag from "../../components/lumina/UnifiedBag";
 import AuthGate from "../../components/lumina/AuthGate";
 
@@ -20,4 +19,4 @@ export const metadata:Metadata={
   alternates:{canonical:"https://ynotworld.app/room"},
 };
 
-export default function RoomPage(){return <><RoomWorldLightHandoff/><RoomChannel3Bridge/><QuickRoomExperience/><RoomLiveCamera/><RoomScanHandoff/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
+export default function RoomPage(){return <><RoomChannel3Bridge/><QuickRoomExperience/><RoomLiveCamera/><RoomScanHandoff/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
