@@ -1,6 +1,8 @@
 import type {Metadata} from "next";
 import QuickRoomExperience from "./QuickRoomExperience";
 import RoomDesktopInteractionFix from "./RoomDesktopInteractionFix";
+import RoomCommerceBridge from "./RoomCommerceBridge";
+import UnifiedBag from "../../components/lumina/UnifiedBag";
 
 export const metadata:Metadata={
   title:"YNOT Room — Tap your room. Shop anything.",
@@ -8,4 +10,4 @@ export const metadata:Metadata={
   alternates:{canonical:"https://ynotworld.app/room"},
 };
 
-export default function RoomPage(){return <><QuickRoomExperience/><RoomDesktopInteractionFix/></>}
+export default function RoomPage(){return <><QuickRoomExperience/><RoomDesktopInteractionFix/><RoomCommerceBridge/><UnifiedBag/></>}
