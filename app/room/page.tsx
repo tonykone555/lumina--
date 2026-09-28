@@ -5,6 +5,7 @@ import RoomCommerceBridge from "./RoomCommerceBridge";
 import RoomPhotoBackdrop from "./RoomPhotoBackdrop";
 import RoomSearchBar from "./RoomSearchBar";
 import RoomLiveCamera from "./RoomLiveCamera";
+import RoomScanHandoff from "./RoomScanHandoff";
 import UnifiedBag from "../../components/lumina/UnifiedBag";
 import AuthGate from "../../components/lumina/AuthGate";
 
@@ -14,4 +15,4 @@ export const metadata:Metadata={
   alternates:{canonical:"https://ynotworld.app/room"},
 };
 
-export default function RoomPage(){return <><QuickRoomExperience/><RoomLiveCamera/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><UnifiedBag/><AuthGate/></>}
+export default function RoomPage(){return <><QuickRoomExperience/><RoomLiveCamera/><RoomScanHandoff/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><UnifiedBag/><AuthGate/></>}
