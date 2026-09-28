@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
-import {Camera,ImagePlus} from "lucide-react";
+import {Camera,ImagePlus,UserRound} from "lucide-react";
 
 export default function RoomLiveCamera(){
  const video=useRef<HTMLVideoElement>(null);const stream=useRef<MediaStream|null>(null);const mounted=useRef(true);
@@ -9,11 +9,12 @@ export default function RoomLiveCamera(){
  const start=async()=>{if(typeof navigator==="undefined"||!navigator.mediaDevices?.getUserMedia){if(mounted.current)setStatus("denied");return}try{stop();setShot("");setStatus("opening");let s:MediaStream;try{s=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"}}})}catch{s=await navigator.mediaDevices.getUserMedia({audio:false,video:true})}if(!mounted.current){s.getTracks().forEach(t=>t.stop());return}stream.current=s;const v=video.current;if(!v)throw new Error("video unavailable");v.muted=true;v.setAttribute("playsinline","");v.srcObject=s;try{await v.play()}catch{}if(mounted.current)setStatus("live")}catch{stop();if(mounted.current)setStatus("denied")}};
  useEffect(()=>{mounted.current=true;void start();return()=>{mounted.current=false;stop()}},[]);useEffect(()=>()=>{if(shot)URL.revokeObjectURL(shot)},[shot]);
  const inputs=()=>Array.from(document.querySelectorAll<HTMLInputElement>('input[type="file"][accept*="image"]'));const cameraInput=()=>inputs().find(i=>i.hasAttribute("capture"))||inputs()[0];const upload=()=>{const a=inputs();(a.find(i=>!i.hasAttribute("capture"))||a[0])?.click()};
+ const openAccount=()=>window.dispatchEvent(new CustomEvent("ynot:open-auth",{detail:{mode:"signin"}}));
  const snap=async()=>{try{const v=video.current;if(!v||!v.videoWidth||!v.videoHeight)return;const c=document.createElement("canvas");c.width=v.videoWidth;c.height=v.videoHeight;const ctx=c.getContext("2d");if(!ctx)return;ctx.drawImage(v,0,0,c.width,c.height);const blob=await new Promise<Blob|null>(r=>c.toBlob(r,"image/jpeg",.92));if(!blob)return;setShot(URL.createObjectURL(blob));setStatus("captured");stop();const input=cameraInput();if(!input)throw new Error("input unavailable");const file=new File([blob],`ynot-room-${Date.now()}.jpg`,{type:"image/jpeg"});const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;input.dispatchEvent(new Event("change",{bubbles:true}))}catch{setStatus("denied")}};
  return <div className="yr-live-camera" aria-label="YNOT Room live camera">
   <video ref={video} autoPlay muted playsInline className="yr-live-video"/>{shot&&<img className="yr-live-shot" src={shot} alt="Captured room"/>}
   <div className="yr-shade yr-top"/><div className="yr-shade yr-left"/><div className="yr-shade yr-right"/><div className="yr-shade yr-bottom"/>
-  <div className="yr-live-head"><div/><div className="yr-brand"><b>YNOT ROOM</b><span>POINT · TAP · SHOP</span></div><button onClick={upload} aria-label="Upload a photo"><ImagePlus size={20}/></button></div>
+  <div className="yr-live-head"><button className="yr-account" onClick={openAccount} aria-label="Open YNOT account"><UserRound size={20}/></button><div className="yr-brand"><b>YNOT ROOM</b><span>POINT · TAP · SHOP</span></div><button onClick={upload} aria-label="Upload a photo"><ImagePlus size={20}/></button></div>
   <div className="yr-focus"><i/><i/><i/><i/></div>
   {status==="opening"&&<div className="yr-opening"><Camera size={22}/><span>Opening camera…</span></div>}
   {status==="captured"&&<div className="yr-processing"><span className="yr-spinner"/>Scanning your room…</div>}
