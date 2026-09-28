@@ -167,7 +167,7 @@ const SEARCH_ATTRIBUTE_SETS={
   materials:["whey isolate","whey concentrate","pea protein","rice protein","casein","creatine monohydrate","electrolytes","collagen peptides"]
  },
  tech:{
-  nouns:["headphones","speaker","charger","power bank","keyboard","mouse","phone case","stand","camera accessory","smart light"],
+  nouns:["laptop","computer","monitor","tablet","television","smartphone","headphones","speaker","charger","power bank","keyboard","mouse","printer","projector","gaming console","smartwatch","camera","router","storage","phone case","stand","smart light"],
   modifiers:["wireless","compact","premium","portable","minimal","fast charging","noise cancelling","smart","ergonomic","rugged"],
   materials:["aluminum","silicone","leather","magnetic","USB-C","Bluetooth","mechanical"]
  }
@@ -180,7 +180,7 @@ function inferSearchDomain(query:string){
  if(/protein|whey|creatine|pre[- ]?workout|electrolyte|mass gainer|collagen powder|protein bar|supplement/.test(q))return"nutrition";
  if(/fitness|gym|training|workout|legging|sports bra|recovery|lifting/.test(q))return"fitness";
  if(/sofa|chair|furniture|lamp|rug|decor|table|home|bed|desk|mirror/.test(q))return"home";
- if(/headphone|speaker|charger|keyboard|mouse|phone|tech|camera|smart/.test(q))return"tech";
+ if(/headphone|earbud|speaker|charger|power bank|keyboard|mouse|phone|smartphone|iphone|android|tech|technology|electronic|camera|smart|macbook|laptop|notebook|computer|desktop|\bpc\b|monitor|display|screen|imac|ipad|tablet|television|\btv\b|projector|printer|console|playstation|xbox|nintendo|smartwatch|watch|ssd|storage|router|network|\bgpu\b|graphics card|\bcpu\b|processor|motherboard/.test(q))return"tech";
  return"fashion";
 }
 function productDomainText(p:Product){
@@ -195,15 +195,19 @@ function categoryCompatible(domain:string,p:Product){
   home:/\b(sofa|chair|table|lamp|rug|storage|shelf|bed|desk|mirror|decor|furniture|home|boucle|oak|walnut|marble|ceramic|lighting)\b/i,
   skin:/\b(skin|skincare|serum|cleanser|moistur|cream|mask|toner|spf|retinol|niacinamide|ceramide|peptide|hyaluronic|acne|beauty)\b/i,
   hair:/\b(hair|scalp|shampoo|conditioner|leave-in|curl|frizz|styling|keratin|biotin|rosemary|argan|castor)\b/i,
-  tech:/\b(headphone|earbud|speaker|charger|power bank|keyboard|mouse|phone case|usb-c|bluetooth|camera|smart light|tech|wireless|electronic)\b/i
+  tech:/\b(macbook|laptop|notebook|computer|desktop|pc|monitor|display|screen|imac|ipad|tablet|television|tv|smartphone|iphone|android|headphone|earbud|speaker|charger|power bank|keyboard|mouse|phone case|usb-c|bluetooth|camera|printer|projector|console|playstation|xbox|nintendo|smartwatch|watch|ssd|storage|router|network|gpu|graphics card|cpu|processor|motherboard|smart light|tech|technology|wireless|electronic|electronics)\b/i
  };
  return rules[domain]?.test(text)??true;
 }
 function strictCategoryFilter(query:string,products:Product[]){
  const domain=inferSearchDomain(query);
  const filtered=products.filter(p=>categoryCompatible(domain,p));
- // Keep recall if merchant metadata is sparse, but never let unrelated products dominate.
- return filtered.length>=Math.min(8,Math.max(3,Math.floor(products.length*.2)))?filtered:products.filter(p=>categoryCompatible(domain,p));
+ // Shopify already searched the user's exact intent. Category classification is a
+ // ranking aid, not an allow-list: never erase valid catalogue results just because
+ // YNOT has not learned that product family yet. Put compatible items first while
+ // retaining the remaining exact Shopify matches as recall-safe fallbacks.
+ const compatibleIds=new Set(filtered.map(p=>p.id));
+ return [...filtered,...products.filter(p=>!compatibleIds.has(p.id))];
 }
 
 function significantWords(query:string){
