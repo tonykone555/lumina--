@@ -6,6 +6,7 @@ import RoomPhotoBackdrop from "./RoomPhotoBackdrop";
 import RoomSearchBar from "./RoomSearchBar";
 import RoomLiveCamera from "./RoomLiveCamera";
 import UnifiedBag from "../../components/lumina/UnifiedBag";
+import AuthGate from "../../components/lumina/AuthGate";
 
 export const metadata:Metadata={
   title:"YNOT Room — Tap your room. Shop anything.",
@@ -13,4 +14,4 @@ export const metadata:Metadata={
   alternates:{canonical:"https://ynotworld.app/room"},
 };
 
-export default function RoomPage(){return <><QuickRoomExperience/><RoomLiveCamera/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><UnifiedBag/></>}
+export default function RoomPage(){return <><QuickRoomExperience/><RoomLiveCamera/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><UnifiedBag/><AuthGate/></>}
