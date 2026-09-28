@@ -7,6 +7,7 @@ import RoomPhotoBackdrop from "./RoomPhotoBackdrop";
 import RoomSearchBar from "./RoomSearchBar";
 import RoomLiveCamera from "./RoomLiveCamera";
 import RoomScanHandoff from "./RoomScanHandoff";
+import RoomScanLine from "./RoomScanLine";
 import RoomDrawerScrollFix from "./RoomDrawerScrollFix";
 import RoomPlus from "./RoomPlus";
 import RoomOnboarding from "./RoomOnboarding";
@@ -19,4 +20,4 @@ export const metadata:Metadata={
   alternates:{canonical:"https://ynotworld.app/room"},
 };
 
-export default function RoomPage(){return <><RoomChannel3Bridge/><QuickRoomExperience/><RoomLiveCamera/><RoomScanHandoff/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
+export default function RoomPage(){return <><RoomChannel3Bridge/><QuickRoomExperience/><RoomLiveCamera/><RoomScanHandoff/><RoomScanLine/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
