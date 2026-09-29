@@ -8,7 +8,6 @@ import RoomSearchBar from "./RoomSearchBar";
 import RoomLiveCamera from "./RoomLiveCamera";
 import RoomScanHandoff from "./RoomScanHandoff";
 import RoomScanLine from "./RoomScanLine";
-import RoomInsightCard from "./RoomInsightCard";
 import RoomDrawerScrollFix from "./RoomDrawerScrollFix";
 import RoomPlus from "./RoomPlus";
 import RoomOnboarding from "./RoomOnboarding";
@@ -21,4 +20,9 @@ export const metadata:Metadata={
   alternates:{canonical:"https://ynotworld.app/room"},
 };
 
-export default function RoomPage(){return <><RoomChannel3Bridge/><QuickRoomExperience/><RoomLiveCamera/><RoomScanHandoff/><RoomScanLine/><RoomInsightCard/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
+/* Keep the core scan/render path free of components that monkey-patch window.fetch.
+   The previous insight card intercepted the vision response in parallel with the
+   scanner and was introduced immediately before the post-scan client crash.
+   Scene copy can be reintroduced from QuickRoomExperience state rather than by
+   intercepting fetch globally. */
+export default function RoomPage(){return <><RoomChannel3Bridge/><QuickRoomExperience/><RoomLiveCamera/><RoomScanHandoff/><RoomScanLine/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
