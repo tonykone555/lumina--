@@ -12,6 +12,7 @@ import RoomDrawerScrollFix from "./RoomDrawerScrollFix";
 import RoomPlus from "./RoomPlus";
 import RoomOnboarding from "./RoomOnboarding";
 import RoomProductFullscreen from "./RoomProductFullscreen";
+import RoomProductImageDots from "./RoomProductImageDots";
 import UnifiedBag from "../../components/lumina/UnifiedBag";
 import AuthGate from "../../components/lumina/AuthGate";
 
@@ -26,4 +27,4 @@ export const metadata:Metadata={
    scanner and was introduced immediately before the post-scan client crash.
    Scene copy can be reintroduced from QuickRoomExperience state rather than by
    intercepting fetch globally. */
-export default function RoomPage(){return <><RoomChannel3Bridge/><QuickRoomExperience/><RoomProductFullscreen/><RoomLiveCamera/><RoomScanHandoff/><RoomScanLine/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
+export default function RoomPage(){return <><RoomChannel3Bridge/><QuickRoomExperience/><RoomProductFullscreen/><RoomProductImageDots/><RoomLiveCamera/><RoomScanHandoff/><RoomScanLine/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
