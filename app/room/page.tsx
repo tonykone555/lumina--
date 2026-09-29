@@ -16,8 +16,9 @@ import RoomProductImageDots from "./RoomProductImageDots";
 import RoomExitToWorld from "./RoomExitToWorld";
 import RoomInspiration from "./RoomInspiration";
 import RoomInspirationScanBridge from "./RoomInspirationScanBridge";
+import RoomInspirationOnboardingPreview from "./RoomInspirationOnboardingPreview";
 import AdTrafficMount from "../AdTrafficMount";
 import UnifiedBag from "../../components/lumina/UnifiedBag";
 import AuthGate from "../../components/lumina/AuthGate";
 export const metadata:Metadata={title:"YNOT Room — Tap your room. Shop anything.",description:"Take one photo and let YNOT identify objects, suggest what to add, and find matching products automatically.",alternates:{canonical:"https://ynotworld.app/room"}};
-export default function RoomPage(){return <><AdTrafficMount/><RoomExitToWorld/><RoomChannel3Bridge/><QuickRoomExperience/><RoomInspiration/><RoomInspirationScanBridge/><RoomProductFullscreen/><RoomProductImageDots/><RoomLiveCamera/><RoomScanHandoff/><RoomScanLine/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
+export default function RoomPage(){return <><AdTrafficMount/><RoomExitToWorld/><RoomChannel3Bridge/><QuickRoomExperience/><RoomInspiration/><RoomInspirationScanBridge/><RoomInspirationOnboardingPreview/><RoomProductFullscreen/><RoomProductImageDots/><RoomLiveCamera/><RoomScanHandoff/><RoomScanLine/><RoomDrawerScrollFix/><RoomDesktopInteractionFix/><RoomCommerceBridge/><RoomPhotoBackdrop/><RoomSearchBar/><RoomPlus/><UnifiedBag/><AuthGate/><RoomOnboarding/></>}
