@@ -1,16 +1,12 @@
-/* Keep the original clean product-image presentation. Only the lower edge melts into the page. */
+/* YNOT product visual: image owns the top; its lower edge melts into product info with no visible divider. */
 .ynot-object-hero{position:relative!important;isolation:isolate!important;overflow:visible!important;background:transparent!important}
 .ynot-object-hero:before{display:none!important;content:none!important}
-.ynot-object-hero:after{content:"";position:absolute;left:0;right:0;bottom:-34px;height:110px;z-index:3;pointer-events:none;background-image:var(--ynot-object-bg)!important;background-size:cover!important;background-position:center bottom!important;filter:blur(22px) saturate(.9)!important;transform:scale(1.035);opacity:.62;mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 20%,#000 62%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 20%,#000 62%,transparent 100%)}
+.ynot-object-hero:after{content:"";position:absolute;left:-1px;right:-1px;bottom:-42px;height:128px;z-index:3;pointer-events:none;background-image:var(--ynot-object-bg)!important;background-size:cover!important;background-position:center bottom!important;filter:blur(24px) saturate(.88)!important;transform:scale(1.04);opacity:.55;mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.08) 14%,rgba(0,0,0,.72) 48%,rgba(0,0,0,.34) 76%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.08) 14%,rgba(0,0,0,.72) 48%,rgba(0,0,0,.34) 76%,transparent 100%)}
 .ynot-object-hero>img,.ynot-object-hero>.ynot-shared-media,.ynot-object-hero>video{position:relative!important;z-index:2!important;display:block!important;background:transparent!important;object-fit:contain!important}
-
-/* Do not create a second background/frame behind the actual product image. */
-.lv4-detail .ynot-object-hero,.ynot-deal-popup .ynot-object-hero{width:100%!important;max-width:none!important;min-height:0!important;border-radius:0!important}
+.lv4-detail .ynot-object-hero,.ynot-deal-popup .ynot-object-hero{width:100%!important;max-width:none!important;min-height:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 .lv4-detail .ynot-object-hero>img,.lv4-detail .ynot-object-hero>.ynot-shared-media,.ynot-deal-popup .ynot-object-hero>img{width:100%!important;height:auto!important;max-height:none!important;padding:0!important;box-sizing:border-box!important;border-radius:0!important;object-fit:contain!important}
-
-/* Room: restore the former image sizing/spacing rather than forcing a full-screen hero. */
-.yr-modal .yr-card.ynot-object-page{padding-top:max(18px,env(safe-area-inset-top))!important}
-.yr-modal .ynot-object-hero{flex:0 0 auto!important;width:100%!important;max-width:760px!important;margin:12px auto 0!important;min-height:0!important;border-radius:28px!important}
-.yr-modal .ynot-object-hero .yr-card-img{width:100%!important;max-width:760px!important;height:min(56dvh,680px)!important;min-height:320px!important;margin:0!important;padding:0!important;box-sizing:border-box!important;border-radius:28px!important;background:transparent!important;object-fit:contain!important}
-
-@media(max-width:700px){.ynot-object-hero:after{bottom:-28px;height:88px;filter:blur(18px);opacity:.58}.yr-modal .ynot-object-hero{margin-top:12px!important}.yr-modal .ynot-object-hero .yr-card-img{height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:4/5!important}}
+/* Absolutely no favorite control in the top-right product visual. Save remains in the lower action area. */
+.lv4-detail .lv4-detail-heart,.lv4-detail .ynot-detail-heart,.lv4-detail [class*="detail-heart" i],.lv4-detail [class*="product-heart" i],.ynot-deal-popup .lv4-detail-heart,.ynot-deal-popup .ynot-detail-heart,.ynot-deal-popup [class*="detail-heart" i],.ynot-deal-popup [class*="product-heart" i]{display:none!important;visibility:hidden!important;pointer-events:none!important}
+/* Room retains its established card geometry. */
+.yr-modal .yr-card.ynot-object-page{padding-top:max(18px,env(safe-area-inset-top))!important}.yr-modal .ynot-object-hero{flex:0 0 auto!important;width:100%!important;max-width:760px!important;margin:12px auto 0!important;min-height:0!important;border-radius:28px!important}.yr-modal .ynot-object-hero .yr-card-img{width:100%!important;max-width:760px!important;height:min(56dvh,680px)!important;min-height:320px!important;margin:0!important;padding:0!important;box-sizing:border-box!important;border-radius:28px!important;background:transparent!important;object-fit:contain!important}
+@media(max-width:700px){.ynot-object-hero:after{bottom:-34px;height:104px;filter:blur(20px);opacity:.52}.yr-modal .ynot-object-hero{margin-top:12px!important}.yr-modal .ynot-object-hero .yr-card-img{height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:4/5!important}}
