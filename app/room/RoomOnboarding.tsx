@@ -2,7 +2,7 @@
 import {useEffect,useState} from "react";
 import {ArrowRight,ScanLine,Sparkles,ShoppingBag,CreditCard,X} from "lucide-react";
 
-const HERO_VIDEO="https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/_users_7b03795e-f119-48bf-b017-4126fcff6c6d_generated_f320ea53-690d-4ce6-b567-8ce59c72ffcf_generated_video.mp4";
+const HERO_VIDEO="https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/_users_7b03795e-f119-48bf-b017-4126fcff6c6d_generated_6d3444c9-fbfb-40d4-a0dc-68fd88e7d032_generated_video.mp4";
 const steps=[
  {n:"01",icon:ScanLine,title:"Read the room",body:"One scan gives YNOT the context — furniture, objects, clothing, style and the opportunities hiding in plain sight."},
  {n:"02",icon:Sparkles,title:"Spot the opportunities",body:"Keep what works. Discover additions, replacements and alternatives for what could work better."},
