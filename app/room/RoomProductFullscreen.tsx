@@ -4,11 +4,19 @@ import {useEffect} from "react";
 export default function RoomProductFullscreen(){
  useEffect(()=>{
   let startX=0,startY=0,active:HTMLElement|null=null;
-  const down=(e:TouchEvent)=>{const card=(e.target as Element|null)?.closest<HTMLElement>(".yr-modal .yr-card");if(!card)return;active=card;startX=e.touches[0]?.clientX||0;startY=e.touches[0]?.clientY||0};
-  const up=(e:TouchEvent)=>{if(!active)return;const target=e.target as Element|null;const x=e.changedTouches[0]?.clientX||0,y=e.changedTouches[0]?.clientY||0,dx=x-startX,dy=y-startY,card=active;active=null;
-   /* The similar-product rail owns horizontal gestures. Never turn its swipe into a whole-product change. */
-   if(target?.closest(".yr-similar"))return;
-   if(Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.15)return;const choices=[...card.querySelectorAll<HTMLButtonElement>(".yr-similar button")];if(!choices.length)return;card.classList.add(dx<0?"yr-swipe-left":"yr-swipe-right");window.setTimeout(()=>{const next=dx<0?choices[0]:choices[choices.length-1];next?.click();card.classList.remove("yr-swipe-left","yr-swipe-right")},115)};
+  const visited:string[]=[];
+  let cursor=-1;
+  const title=()=>document.querySelector<HTMLElement>(".yr-modal .yr-card-title")?.textContent?.trim()||"";
+  const clickTitle=(wanted:string)=>{const all=[...document.querySelectorAll<HTMLButtonElement>(".yr-bubble")];const hit=all.find(b=>b.querySelector(".yr-bubble-title")?.textContent?.trim()===wanted);hit?.click();return!!hit};
+  const seed=()=>{const t=title();if(t&&visited[cursor]!==t){const existing=visited.indexOf(t);if(existing>=0)cursor=existing;else{visited.splice(cursor+1);visited.push(t);cursor=visited.length-1}}};
+  const down=(e:TouchEvent)=>{const card=(e.target as Element|null)?.closest<HTMLElement>(".yr-modal .yr-card");if(!card)return;active=card;startX=e.touches[0]?.clientX||0;startY=e.touches[0]?.clientY||0;seed()};
+  const up=(e:TouchEvent)=>{if(!active)return;const target=e.target as Element|null;const x=e.changedTouches[0]?.clientX||0,y=e.changedTouches[0]?.clientY||0,dx=x-startX,dy=y-startY,card=active;active=null;if(target?.closest(".yr-similar")||Math.abs(dx)<55||Math.abs(dx)<Math.abs(dy)*1.15)return;const forward=dx<0;card.classList.add(forward?"yr-swipe-left":"yr-swipe-right");window.setTimeout(()=>{
+    seed();
+    if(!forward&&cursor>0){cursor--;clickTitle(visited[cursor])}
+    else if(forward&&cursor<visited.length-1){cursor++;clickTitle(visited[cursor])}
+    else if(forward){const current=title();const bubbles=[...document.querySelectorAll<HTMLButtonElement>(".yr-bubble")];const currentIndex=bubbles.findIndex(b=>b.querySelector(".yr-bubble-title")?.textContent?.trim()===current);const next=bubbles[currentIndex>=0?currentIndex+1:0];if(next){const nextTitle=next.querySelector(".yr-bubble-title")?.textContent?.trim()||"";if(nextTitle){visited.splice(cursor+1);visited.push(nextTitle);cursor++;next.click()}}else{const choices=[...card.querySelectorAll<HTMLButtonElement>(".yr-similar button")];const unseen=choices.find(b=>{const alt=b.querySelector("img")?.getAttribute("alt")||"";return alt&&!visited.includes(alt)})||choices[0];unseen?.click()}}
+    card.classList.remove("yr-swipe-left","yr-swipe-right")
+   },115)};
   document.addEventListener("touchstart",down,{passive:true});document.addEventListener("touchend",up,{passive:true});
   return()=>{document.removeEventListener("touchstart",down);document.removeEventListener("touchend",up)};
  },[]);
