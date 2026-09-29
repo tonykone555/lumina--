@@ -1,0 +1,16 @@
+/* Immersive YNOT object-product hero: sharp contained product over its own blurred artwork. */
+.ynot-object-hero{position:relative!important;isolation:isolate!important;overflow:hidden!important;background:rgba(236,233,228,.22)!important}
+.ynot-object-hero:before{content:"";position:absolute;inset:-34px;z-index:0;background-image:var(--ynot-object-bg)!important;background-size:cover!important;background-position:center!important;filter:blur(30px) saturate(.92)!important;transform:scale(1.14);opacity:.56;pointer-events:none}
+.ynot-object-hero:after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(255,255,255,.04) 0%,rgba(245,243,239,.06) 58%,rgba(242,240,236,.42) 100%);pointer-events:none}
+.ynot-object-hero>img,.ynot-object-hero>.ynot-shared-media,.ynot-object-hero>video{position:relative!important;z-index:2!important;background:transparent!important;object-fit:contain!important}
+
+/* World popup object imagery fills the visual top instead of sitting in an isolated white box. */
+.lv4-detail .ynot-object-hero,.ynot-deal-popup .ynot-object-hero{width:100%!important;max-width:none!important;min-height:clamp(360px,58dvh,720px)!important;border-radius:0 0 28px 28px!important}
+.lv4-detail .ynot-object-hero>img,.lv4-detail .ynot-object-hero>.ynot-shared-media,.ynot-deal-popup .ynot-object-hero>img{width:100%!important;height:clamp(360px,58dvh,720px)!important;padding:clamp(18px,4vw,44px)!important;box-sizing:border-box!important}
+
+/* Room fullscreen uses the same image-led language while preserving its vertical scroll/swipe behavior. */
+.yr-modal .yr-card.ynot-object-page{padding-top:0!important}
+.yr-modal .ynot-object-hero{flex:0 0 auto!important;width:calc(100% + clamp(32px,8vw,68px))!important;margin-left:calc(clamp(16px,4vw,34px) * -1)!important;margin-right:calc(clamp(16px,4vw,34px) * -1)!important;min-height:min(62dvh,720px)!important;border-radius:0 0 30px 30px!important}
+.yr-modal .ynot-object-hero .yr-card-img{width:100%!important;max-width:none!important;height:min(62dvh,720px)!important;min-height:390px!important;margin:0!important;padding:clamp(18px,4vw,42px)!important;box-sizing:border-box!important;border-radius:0!important;background:transparent!important;object-fit:contain!important}
+
+@media(max-width:700px){.lv4-detail .ynot-object-hero,.ynot-deal-popup .ynot-object-hero{min-height:54dvh!important}.lv4-detail .ynot-object-hero>img,.lv4-detail .ynot-object-hero>.ynot-shared-media,.ynot-deal-popup .ynot-object-hero>img{height:54dvh!important;padding:18px!important}.yr-modal .ynot-object-hero{min-height:56dvh!important}.yr-modal .ynot-object-hero .yr-card-img{height:56dvh!important;min-height:350px!important;aspect-ratio:auto!important;padding:16px!important}}
