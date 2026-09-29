@@ -1,16 +1,16 @@
-/* Immersive YNOT object-product hero: sharp contained product over its own blurred artwork. */
-.ynot-object-hero{position:relative!important;isolation:isolate!important;overflow:hidden!important;background:rgba(236,233,228,.22)!important}
-.ynot-object-hero:before{content:"";position:absolute;inset:-34px;z-index:0;background-image:var(--ynot-object-bg)!important;background-size:cover!important;background-position:center!important;filter:blur(30px) saturate(.92)!important;transform:scale(1.14);opacity:.56;pointer-events:none}
-.ynot-object-hero:after{content:"";position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(255,255,255,.04) 0%,rgba(245,243,239,.06) 58%,rgba(242,240,236,.42) 100%);pointer-events:none}
-.ynot-object-hero>img,.ynot-object-hero>.ynot-shared-media,.ynot-object-hero>video{position:relative!important;z-index:2!important;background:transparent!important;object-fit:contain!important}
+/* Keep the original clean product-image presentation. Only the lower edge melts into the page. */
+.ynot-object-hero{position:relative!important;isolation:isolate!important;overflow:visible!important;background:transparent!important}
+.ynot-object-hero:before{display:none!important;content:none!important}
+.ynot-object-hero:after{content:"";position:absolute;left:0;right:0;bottom:-34px;height:110px;z-index:3;pointer-events:none;background-image:var(--ynot-object-bg)!important;background-size:cover!important;background-position:center bottom!important;filter:blur(22px) saturate(.9)!important;transform:scale(1.035);opacity:.62;mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 20%,#000 62%,transparent 100%);-webkit-mask-image:linear-gradient(to bottom,transparent 0%,rgba(0,0,0,.18) 20%,#000 62%,transparent 100%)}
+.ynot-object-hero>img,.ynot-object-hero>.ynot-shared-media,.ynot-object-hero>video{position:relative!important;z-index:2!important;display:block!important;background:transparent!important;object-fit:contain!important}
 
-/* World popup object imagery fills the visual top instead of sitting in an isolated white box. */
-.lv4-detail .ynot-object-hero,.ynot-deal-popup .ynot-object-hero{width:100%!important;max-width:none!important;min-height:clamp(360px,58dvh,720px)!important;border-radius:0 0 28px 28px!important}
-.lv4-detail .ynot-object-hero>img,.lv4-detail .ynot-object-hero>.ynot-shared-media,.ynot-deal-popup .ynot-object-hero>img{width:100%!important;height:clamp(360px,58dvh,720px)!important;padding:clamp(18px,4vw,44px)!important;box-sizing:border-box!important}
+/* Do not create a second background/frame behind the actual product image. */
+.lv4-detail .ynot-object-hero,.ynot-deal-popup .ynot-object-hero{width:100%!important;max-width:none!important;min-height:0!important;border-radius:0!important}
+.lv4-detail .ynot-object-hero>img,.lv4-detail .ynot-object-hero>.ynot-shared-media,.ynot-deal-popup .ynot-object-hero>img{width:100%!important;height:auto!important;max-height:none!important;padding:0!important;box-sizing:border-box!important;border-radius:0!important;object-fit:contain!important}
 
-/* Room fullscreen uses the same image-led language while preserving its vertical scroll/swipe behavior. */
-.yr-modal .yr-card.ynot-object-page{padding-top:0!important}
-.yr-modal .ynot-object-hero{flex:0 0 auto!important;width:calc(100% + clamp(32px,8vw,68px))!important;margin-left:calc(clamp(16px,4vw,34px) * -1)!important;margin-right:calc(clamp(16px,4vw,34px) * -1)!important;min-height:min(62dvh,720px)!important;border-radius:0 0 30px 30px!important}
-.yr-modal .ynot-object-hero .yr-card-img{width:100%!important;max-width:none!important;height:min(62dvh,720px)!important;min-height:390px!important;margin:0!important;padding:clamp(18px,4vw,42px)!important;box-sizing:border-box!important;border-radius:0!important;background:transparent!important;object-fit:contain!important}
+/* Room: restore the former image sizing/spacing rather than forcing a full-screen hero. */
+.yr-modal .yr-card.ynot-object-page{padding-top:max(18px,env(safe-area-inset-top))!important}
+.yr-modal .ynot-object-hero{flex:0 0 auto!important;width:100%!important;max-width:760px!important;margin:12px auto 0!important;min-height:0!important;border-radius:28px!important}
+.yr-modal .ynot-object-hero .yr-card-img{width:100%!important;max-width:760px!important;height:min(56dvh,680px)!important;min-height:320px!important;margin:0!important;padding:0!important;box-sizing:border-box!important;border-radius:28px!important;background:transparent!important;object-fit:contain!important}
 
-@media(max-width:700px){.lv4-detail .ynot-object-hero,.ynot-deal-popup .ynot-object-hero{min-height:54dvh!important}.lv4-detail .ynot-object-hero>img,.lv4-detail .ynot-object-hero>.ynot-shared-media,.ynot-deal-popup .ynot-object-hero>img{height:54dvh!important;padding:18px!important}.yr-modal .ynot-object-hero{min-height:56dvh!important}.yr-modal .ynot-object-hero .yr-card-img{height:56dvh!important;min-height:350px!important;aspect-ratio:auto!important;padding:16px!important}}
+@media(max-width:700px){.ynot-object-hero:after{bottom:-28px;height:88px;filter:blur(18px);opacity:.58}.yr-modal .ynot-object-hero{margin-top:12px!important}.yr-modal .ynot-object-hero .yr-card-img{height:auto!important;min-height:0!important;max-height:none!important;aspect-ratio:4/5!important}}
