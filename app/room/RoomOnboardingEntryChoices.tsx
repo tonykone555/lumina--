@@ -2,18 +2,32 @@
 import {useEffect,useState} from "react";
 import {createPortal} from "react-dom";
 import {Camera,ImagePlus,Upload} from "lucide-react";
-// Onboarding deliberately uses a still photo: NEVER request the device camera here.
+
+// This is only a decorative still image. Camera permission is requested solely by RoomLiveCamera.
 const PREVIEW="https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/IMG_6763.jpeg";
 type Box={top:number;left:number;width:number;height:number};
 export default function RoomOnboardingEntryChoices(){
- const[box,setBox]=useState<Box|null>(null);const[visible,setVisible]=useState(true);
- useEffect(()=>{let alive=true;let raf=0;let previous="";const sync=()=>{if(!alive)return;const el=document.querySelector<HTMLElement>(".ro-video-shell");const r=el?.getBoundingClientRect();const key=r?`${Math.round(r.top)}:${Math.round(r.left)}:${Math.round(r.width)}:${Math.round(r.height)}`:"";if(key!==previous){previous=key;setBox(r&&r.width&&r.height?{top:r.top,left:r.left,width:r.width,height:r.height}:null)}};const schedule=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(sync)};sync();window.addEventListener("scroll",schedule,true);window.addEventListener("resize",schedule);return()=>{alive=false;cancelAnimationFrame(raf);window.removeEventListener("scroll",schedule,true);window.removeEventListener("resize",schedule)}},[]);
+ const[box,setBox]=useState<Box|null>(null);
+ const[visible,setVisible]=useState(true);
+ useEffect(()=>{
+  let alive=true,raf=0,previous="";
+  const sync=()=>{
+   if(!alive)return;
+   const el=document.querySelector<HTMLElement>(".ro-video-shell");
+   const r=el?.getBoundingClientRect();
+   const key=r?`${Math.round(r.top)}:${Math.round(r.left)}:${Math.round(r.width)}:${Math.round(r.height)}`:"";
+   if(key!==previous){previous=key;setBox(r&&r.width&&r.height?{top:r.top,left:r.left,width:r.width,height:r.height}:null)}
+  };
+  const schedule=()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(sync)};
+  sync();window.addEventListener("scroll",schedule,true);window.addEventListener("resize",schedule);
+  return()=>{alive=false;cancelAnimationFrame(raf);window.removeEventListener("scroll",schedule,true);window.removeEventListener("resize",schedule)};
+ },[]);
  const dismiss=()=>{setVisible(false);document.querySelector<HTMLButtonElement>(".ro-skip")?.click()};
- // The real getUserMedia call must start synchronously in the tap handler, not
- // inside a timeout after unmounting the onboarding (iOS Safari gesture requirement).
  const camera=()=>{window.dispatchEvent(new Event("ynot:room-live-camera-open"));dismiss()};
  const upload=()=>{const input=[...document.querySelectorAll<HTMLInputElement>('input[type="file"][accept*="image"]')].find(x=>!x.hasAttribute("capture"));dismiss();input?.click()};
  const explore=()=>{dismiss();window.setTimeout(()=>window.dispatchEvent(new CustomEvent("ynot:room-inspiration",{detail:{source:"onboarding"}})),0)};
  if(!visible||!box||typeof document==="undefined")return null;
- return createPortal(<div className="roe" style={{position:"fixed",left:box.left+7,top:box.top+7,width:Math.max(0,box.width-14),height:Math.max(0,box.height-14),zIndex:10000,pointerEvents:box.top>window.innerHeight||box.top+box.height<0?"none":"auto"}}><style jsx>{`.roe{border-radius:31px;overflow:hidden;background:#292725;color:#fff}.roe-camera{position:absolute;inset:-18px;width:calc(100% + 36px);height:calc(100% + 36px);object-fit:cover;filter:blur(14px) saturate(.65) brightness(.66);transform:scale(1.04)}.roe-frost{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,10,.2),rgba(10,10,10,.05) 40%,rgba(10,10,10,.58))}.roe-corners{position:absolute;left:12%;right:12%;top:12%;bottom:27%;border:1px solid rgba(255,255,255,.17);border-radius:27px}.roe-corners:before,.roe-corners:after{content:"";position:absolute;width:36px;height:36px;border-color:#fff;border-style:solid}.roe-corners:before{left:-1px;top:-1px;border-width:2px 0 0 2px;border-radius:12px 0 0}.roe-copy{position:absolute;z-index:2;top:14%;left:20px;right:20px;text-align:center;text-shadow:0 2px 18px #000}.roe-copy small{font-size:9px;letter-spacing:.22em;text-transform:uppercase;opacity:.68}.roe-copy strong{display:block;margin-top:7px;font-size:clamp(24px,6vw,38px);letter-spacing:-.04em}.roe-actions{position:absolute;z-index:3;left:14px;right:14px;bottom:14px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.roe-action{min-width:0;height:76px;border-radius:19px;border:1px solid rgba(255,255,255,.25);background:rgba(18,18,18,.36);color:#fff;padding:8px 5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:9px;font-weight:750;line-height:1.15}.roe-action:first-child{background:rgba(255,255,255,.88);color:#161412}@media(min-width:700px){.roe-actions{left:24px;right:24px;bottom:22px}.roe-action{height:82px;font-size:10px}}`}</style><img src={PREVIEW} className="roe-camera" alt="Simulated blurred room preview"/><div className="roe-frost"/><div className="roe-corners"/><div className="roe-copy"><small>Three ways to start</small><strong>Point at your space.</strong></div><div className="roe-actions"><button type="button" className="roe-action" onClick={camera}><Camera size={20}/>Point at your space</button><button type="button" className="roe-action" onClick={upload}><Upload size={20}/>Upload inspiration</button><button type="button" className="roe-action" onClick={explore}><ImagePlus size={20}/>Explore interiors</button></div></div>,document.body)
+ // The action card is AFTER the original video in the document's visual flow.
+ // Never portal into React-owned onboarding nodes or cover the video with a camera simulation.
+ return createPortal(<><style>{`.ro-source{padding-top:162px!important}@media(min-width:700px){.ro-source{padding-top:160px!important}}`}</style><div className="roe" style={{position:"fixed",left:box.left,top:box.top+box.height+8,width:box.width,zIndex:10000,pointerEvents:box.top+box.height+8>window.innerHeight||box.top+box.height+158<0?"none":"auto"}}><style jsx>{`.roe{height:142px;position:relative;border-radius:24px;overflow:hidden;background:#292725;color:#fff;box-shadow:0 10px 30px rgba(45,38,31,.12)}.roe-camera{position:absolute;inset:-18px;width:calc(100% + 36px);height:calc(100% + 36px);object-fit:cover;filter:blur(18px) saturate(.6) brightness(.45)}.roe-frost{position:absolute;inset:0;background:linear-gradient(100deg,rgba(10,10,10,.45),rgba(10,10,10,.14))}.roe-copy{position:relative;z-index:1;text-align:center;padding:11px 8px 0}.roe-copy small{font-size:9px;letter-spacing:.22em;text-transform:uppercase;opacity:.75}.roe-actions{position:absolute;z-index:2;left:9px;right:9px;bottom:9px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.roe-action{min-width:0;height:78px;border-radius:16px;border:1px solid rgba(255,255,255,.24);background:rgba(18,18,18,.5);color:#fff;padding:7px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:9px;font-weight:750;line-height:1.1}.roe-action:first-child{background:rgba(255,255,255,.91);color:#161412}`}</style><img src={PREVIEW} className="roe-camera" alt="" aria-hidden="true"/><div className="roe-frost"/><div className="roe-copy"><small>Three ways to start</small></div><div className="roe-actions"><button type="button" className="roe-action" onClick={camera}><Camera size={20}/>Point at your space</button><button type="button" className="roe-action" onClick={upload}><Upload size={20}/>Upload inspiration</button><button type="button" className="roe-action" onClick={explore}><ImagePlus size={20}/>Explore interiors</button></div></div></>,document.body);
 }
