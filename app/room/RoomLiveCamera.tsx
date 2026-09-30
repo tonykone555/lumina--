@@ -1,33 +1,48 @@
-'use client'
-
-import { useEffect, useRef, useState } from 'react'
-
-type SavedScan = { id:string; image:string; createdAt:number }
-const KEY='ynot-room-saved-scans'
-function readSaved():SavedScan[]{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return []}}
-
+'use client';
+import {useCallback,useEffect,useRef,useState} from 'react';
+type SavedScan={id:string;image:string;createdAt:number};
+const KEY='ynot-room-saved-scans';
+function readSaved():SavedScan[]{try{const x=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(x)?x:[]}catch{return []}}
 export default function RoomLiveCamera(){
- const videoRef=useRef<HTMLVideoElement>(null);const canvasRef=useRef<HTMLCanvasElement>(null);const streamRef=useRef<MediaStream|null>(null)
- const[active,setActive]=useState(false),[shot,setShot]=useState(''),[saved,setSaved]=useState<SavedScan[]>([]),[gallery,setGallery]=useState(false),[status,setStatus]=useState('')
- useEffect(()=>{setSaved(readSaved());return()=>{streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null}},[])
- const start=async()=>{setShot('');setGallery(false);setActive(true);try{let s=streamRef.current;if(!s||!s.active){s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false});streamRef.current=s}requestAnimationFrame(()=>{if(videoRef.current&&s){videoRef.current.srcObject=s;videoRef.current.play().catch(()=>{})}})}catch{setActive(false)}}
- const close=()=>{setActive(false);setShot('');streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null}
- const frame=()=>{const v=videoRef.current,c=canvasRef.current;if(!v||!c||!v.videoWidth||!v.videoHeight)return'';c.width=v.videoWidth;c.height=v.videoHeight;const x=c.getContext('2d');if(!x)return'';x.drawImage(v,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.92)}
- const handoff=(image:string)=>{fetch(image).then(r=>r.blob()).then(blob=>{const file=new File([blob],`ynot-room-${Date.now()}.jpg`,{type:'image/jpeg'});const input=document.querySelector<HTMLInputElement>('input[type="file"][accept*="image"][capture]');if(!input)return;const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;input.dispatchEvent(new Event('change',{bubbles:true}));setActive(false);streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null}).catch(()=>{})}
- const capture=()=>{const image=frame();if(!image)return;setShot(image);setStatus('');setTimeout(()=>handoff(image),120)}
- useEffect(()=>{const open=()=>void start();window.addEventListener('ynot:room-live-camera-open',open);return()=>window.removeEventListener('ynot:room-live-camera-open',open)},[])
- useEffect(()=>{const intercept=(event:MouseEvent)=>{if(active)return;const target=event.target as Element|null;if(!target?.closest?.('.yr-shutter'))return;event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void start()};document.addEventListener('click',intercept,true);return()=>document.removeEventListener('click',intercept,true)},[active])
- const save=(image=shot)=>{if(!image)return;const item={id:String(Date.now()),image,createdAt:Date.now()};const next=[item,...readSaved().filter(x=>x.image!==image)].slice(0,24);localStorage.setItem(KEY,JSON.stringify(next));setSaved(next);setStatus('Saved');window.dispatchEvent(new CustomEvent('ynot-room-scan-saved',{detail:item}))}
- const useScan=(s:SavedScan)=>{setShot(s.image);setGallery(false);handoff(s.image);window.dispatchEvent(new CustomEvent('ynot-room-saved-scan-selected',{detail:s}))}
- if(!active)return null
- return <div style={{position:'fixed',inset:0,zIndex:10050,overflow:'hidden',background:'#000',isolation:'isolate'}}>
-  {!shot?<video ref={videoRef} playsInline muted autoPlay style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',background:'#000'}}/>:<img src={shot} alt="Current scan" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',background:'#000'}}/>}<canvas ref={canvasRef} hidden/>
-  <div style={{position:'absolute',inset:0,pointerEvents:'none',background:'linear-gradient(180deg,rgba(0,0,0,.24),transparent 22%,transparent 72%,rgba(0,0,0,.34))'}}/>
-  <button aria-label="Close camera" onClick={close} style={{position:'absolute',left:22,top:'calc(18px + env(safe-area-inset-top))',width:48,height:48,borderRadius:'50%',border:'1px solid #ffffff66',background:'#1118',color:'#fff',fontSize:30,zIndex:13}}>×</button>
-  <div style={{position:'absolute',top:'calc(22px + env(safe-area-inset-top))',left:'50%',transform:'translateX(-50%)',color:'#fff',textAlign:'center',zIndex:12}}><b style={{letterSpacing:2,fontSize:15}}>YNOT ROOM</b><div style={{fontSize:9,letterSpacing:2,opacity:.65}}>FRAME · CAPTURE · SCAN</div></div>
-  {!shot&&<button aria-label="Capture" onClick={capture} style={{position:'absolute',left:'50%',bottom:'calc(30px + env(safe-area-inset-bottom))',transform:'translateX(-50%)',width:84,height:84,borderRadius:'50%',border:'6px solid white',background:'rgba(255,255,255,.16)',boxShadow:'0 8px 28px #0005',zIndex:12}}><span style={{display:'block',width:64,height:64,borderRadius:'50%',background:'#fff',margin:'auto'}}/></button>}
-  <button aria-label="Saved scans" onClick={()=>setGallery(true)} style={{position:'absolute',right:24,bottom:'calc(43px + env(safe-area-inset-bottom))',width:58,height:58,borderRadius:'50%',border:'1px solid rgba(255,255,255,.55)',background:'rgba(20,20,20,.34)',backdropFilter:'blur(16px)',color:'#fff',fontSize:29,zIndex:13}}>♡</button>
-  {shot&&<div style={{position:'absolute',left:18,right:18,bottom:'calc(35px + env(safe-area-inset-bottom))',zIndex:14,display:'flex',justifyContent:'center'}}><button onClick={()=>save()} style={{border:'1px solid rgba(255,255,255,.55)',borderRadius:999,padding:'13px 22px',background:'rgba(20,20,20,.4)',backdropFilter:'blur(18px)',color:'#fff',fontSize:15,fontWeight:650}}>♡ {status||'Save this scan'}</button></div>}
-  {gallery&&<div style={{position:'absolute',inset:0,zIndex:30,background:'rgba(12,12,12,.94)',padding:'max(58px,env(safe-area-inset-top)) 20px 28px',overflowY:'auto'}}><div style={{display:'flex',alignItems:'center',justifyContent:'space-between',color:'#fff',marginBottom:20}}><strong style={{fontSize:24}}>Saved scans</strong><button onClick={()=>setGallery(false)} style={{width:44,height:44,borderRadius:'50%',border:'1px solid #ffffff55',background:'#ffffff16',color:'#fff',fontSize:24}}>×</button></div>{saved.length?<div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:12}}>{saved.map(s=><button key={s.id} onClick={()=>useScan(s)} style={{padding:0,border:0,borderRadius:20,overflow:'hidden',background:'#fff1'}}><img src={s.image} alt="Saved scan" style={{display:'block',width:'100%',aspectRatio:'1/1.2',objectFit:'cover'}}/></button>)}</div>:<div style={{color:'#fffb',textAlign:'center',paddingTop:80}}>Saved scans will appear here.</div>}</div>}
+ const videoRef=useRef<HTMLVideoElement>(null),canvasRef=useRef<HTMLCanvasElement>(null),streamRef=useRef<MediaStream|null>(null),starting=useRef(false),openRef=useRef(false);
+ const[active,setActive]=useState(false),[shot,setShot]=useState(''),[saved,setSaved]=useState<SavedScan[]>([]),[gallery,setGallery]=useState(false),[status,setStatus]=useState(''),[error,setError]=useState('');
+ const stop=useCallback(()=>{streamRef.current?.getTracks().forEach(t=>t.stop());streamRef.current=null;starting.current=false;const v=videoRef.current;if(v)try{v.srcObject=null}catch{}},[]);
+ useEffect(()=>{setSaved(readSaved());return()=>{openRef.current=false;stop()}},[stop]);
+ // Keep the live stream attached even if React renders the video after permission resolves.
+ useEffect(()=>{if(!active)return;const v=videoRef.current,s=streamRef.current;if(v&&s){v.srcObject=s;void v.play().catch(()=>{})}},[active,error,shot]);
+ const start=useCallback(async()=>{
+  if(starting.current||openRef.current)return;
+  if(!navigator.mediaDevices?.getUserMedia){setError('Live camera is unavailable in this browser. Use your phone camera instead.');setActive(true);openRef.current=true;return}
+  starting.current=true;openRef.current=true;setShot('');setGallery(false);setError('');setActive(true);
+  try{
+   // Only invoked by an explicit user click. No camera streams are opened for onboarding.
+   const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+   if(!openRef.current){stream.getTracks().forEach(t=>t.stop());return}
+   streamRef.current=stream;
+   const attach=()=>{if(!openRef.current)return;const v=videoRef.current;if(v){v.srcObject=stream;void v.play().catch(()=>setError('Tap to enable camera preview.'))}else requestAnimationFrame(attach)};
+   requestAnimationFrame(attach);
+  }catch(e){setError(e instanceof Error?`Camera unavailable: ${e.message}`:'Unable to open camera. Try your phone camera instead.')}finally{starting.current=false}
+ },[]);
+ const close=()=>{openRef.current=false;stop();setActive(false);setShot('');setError('')};
+ const fallback=()=>{close();document.querySelector<HTMLInputElement>('input[type="file"][capture][accept*="image"]')?.click()};
+ const frame=()=>{const v=videoRef.current,c=canvasRef.current;if(!v||!c||!v.videoWidth||!v.videoHeight)return'';const scale=Math.min(1,1280/v.videoWidth);c.width=Math.round(v.videoWidth*scale);c.height=Math.round(v.videoHeight*scale);const x=c.getContext('2d');if(!x)return'';x.drawImage(v,0,0,c.width,c.height);return c.toDataURL('image/jpeg',.8)};
+ const handoff=async(image:string)=>{try{const blob=await(await fetch(image)).blob();const input=document.querySelector<HTMLInputElement>('input[type="file"][capture][accept*="image"]');if(!input)return;const file=new File([blob],`ynot-room-${Date.now()}.jpg`,{type:'image/jpeg'});const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;close();input.dispatchEvent(new Event('change',{bubbles:true}))}catch{setError('Could not process the photo. Please try again.')}};
+ const capture=()=>{const image=frame();if(!image){setError('Camera is starting. Please try again.');return}setShot(image);setStatus('');void handoff(image)};
+ useEffect(()=>{const onOpen=()=>void start();window.addEventListener('ynot:room-live-camera-open',onOpen);return()=>window.removeEventListener('ynot:room-live-camera-open',onOpen)},[start]);
+ useEffect(()=>{const onClick=(e:MouseEvent)=>{if(openRef.current)return;const el=e.target as Element|null;if(!el?.closest?.('.yr-shutter'))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();void start()};document.addEventListener('click',onClick,true);return()=>document.removeEventListener('click',onClick,true)},[start]);
+ const save=(image=shot)=>{if(!image)return;const next=[{id:String(Date.now()),image,createdAt:Date.now()},...readSaved().filter(x=>x.image!==image)].slice(0,5);try{localStorage.setItem(KEY,JSON.stringify(next));setSaved(next);setStatus('Saved')}catch{setStatus('Storage full');return}window.dispatchEvent(new CustomEvent('ynot-room-scan-saved',{detail:next[0]}))};
+ const useScan=(s:SavedScan)=>{setGallery(false);void handoff(s.image);window.dispatchEvent(new CustomEvent('ynot-room-saved-scan-selected',{detail:s}))};
+ if(!active)return null;
+ return <div style={{position:'fixed',inset:0,zIndex:10050,overflow:'hidden',background:'#080808',isolation:'isolate',color:'#fff'}}>
+  {!shot&&!error&&<video ref={videoRef} playsInline muted autoPlay style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}/>}
+  {shot&&<img src={shot} alt="Current scan" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}}/>}
+  <canvas ref={canvasRef} hidden/>
+  <button type="button" aria-label="Close camera" onClick={close} style={{position:'absolute',left:22,top:'calc(18px + env(safe-area-inset-top))',width:48,height:48,borderRadius:50,border:'1px solid #ffffff66',background:'#1119',color:'#fff',fontSize:30,zIndex:13}}>×</button>
+  <div style={{position:'absolute',top:'calc(22px + env(safe-area-inset-top))',left:'50%',transform:'translateX(-50%)',textAlign:'center',zIndex:12}}><b style={{letterSpacing:2,fontSize:15}}>YNOT ROOM</b><div style={{fontSize:9,letterSpacing:2,opacity:.65}}>FRAME · CAPTURE · SCAN</div></div>
+  {error&&<div role="alert" style={{position:'absolute',left:24,right:24,top:'35%',textAlign:'center',lineHeight:1.6}}>{error}<br/><button type="button" onClick={fallback} style={{marginTop:20,padding:'14px 22px',border:0,borderRadius:99,background:'#fff',color:'#111',fontWeight:700}}>Open phone camera</button></div>}
+  {!shot&&!error&&<button type="button" aria-label="Capture" onClick={capture} style={{position:'absolute',left:'50%',bottom:'calc(30px + env(safe-area-inset-bottom))',transform:'translateX(-50%)',width:84,height:84,borderRadius:50,border:'6px solid white',background:'rgba(255,255,255,.16)',zIndex:12}}><span style={{display:'block',width:64,height:64,borderRadius:50,background:'#fff',margin:'auto'}}/></button>}
+  <button type="button" aria-label="Saved scans" onClick={()=>setGallery(true)} style={{position:'absolute',right:24,bottom:'calc(43px + env(safe-area-inset-bottom))',width:58,height:58,borderRadius:50,border:'1px solid #ffffff77',background:'#1118',color:'#fff',fontSize:29,zIndex:13}}>♡</button>
+  {shot&&<button type="button" onClick={()=>save()} style={{position:'absolute',bottom:36,left:20,right:20,padding:14,borderRadius:40,color:'#fff',background:'#2229'}}>♡ {status||'Save this scan'}</button>}
+  {gallery&&<div style={{position:'absolute',inset:0,zIndex:30,background:'#101010',padding:'max(58px,env(safe-area-inset-top)) 20px 28px',overflowY:'auto'}}><div style={{display:'flex',justifyContent:'space-between',marginBottom:20}}><strong>Saved scans</strong><button onClick={()=>setGallery(false)} style={{color:'#fff',background:'none',border:0,fontSize:26}}>×</button></div>{saved.length?<div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:12}}>{saved.map(s=><button key={s.id} onClick={()=>useScan(s)} style={{padding:0,border:0,background:'none'}}><img src={s.image} alt="Saved scan" style={{width:'100%',aspectRatio:'1/1.2',objectFit:'cover',borderRadius:20}}/></button>)}</div>:<p>No saved scans yet.</p>}</div>}
  </div>
 }
