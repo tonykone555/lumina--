@@ -1,21 +1,40 @@
 import {NextResponse} from 'next/server';
 
-const FOLDER_URL='https://drive.google.com/drive/folders/1aSv3Nhvo6UgtWl5Rog-CtG6lj1FxdmUP';
-// Verified folder inventory fallback: Google Drive's public-folder HTML is not a stable API.
-// These IDs refer to existing images in the connected interiors folder, never replacement stock photos.
-const KNOWN_IDS=[
- '1gn_y1zjkw3ChJmx8KDt-vtsFFoZs9KKN','1wkOB0s3OavDFmtUe3u8tdyEx2vvlgtJX','18xlc0oRponp2H2BQ6bYiFtkDvqjPullk','1UMe0IqRC0sV0UGepdZKAs4JhSVY7qLWO','1Rjy5bheVaFGYBG-sRFadi9qXJAGWfeWs','1MYkPF4wq2tFz6GJ27XlTYf063JLMsB7H','1FvOWe75-1_SZkUSceKSqr4RtJwgr-rMG','15BX1wS7xGKyWuoheFYOrIo488zgnAPJq','10KP4hR9W8ZKXbAhs2pu9Y4YhcuDn-zPX','1EvAc3qv9cNPbSvJ_yeCmeE2wix1BcOyU','1zHp0gUrDl-Y1L0EM4Doq4H1DHuhU2ryY','19oNA4pzOXqHLfU0whtF87ppqcT8sWO9Q','18zuIxWLpw9T_om4Hv0t7iJp8tJn_tp3d','1I4WQTDDI1ztA3MwrEJFVLI4G2XgJ_HUI','1j2w29bAYbwoA2KR14vulJztupCvJRBD5','1nBMb0y9QohmM-qnMnLfHnwz7-JADTSED','1yEnxdL_uj1zH45YzOvTIS_n46Bw52P0D','1YsyKA1d7V_6LvRfG6AtkMTnaba7ph0zt','159KaHQYp4OnnWOD3MLl-291tQpO12ArG','1CEHdmELtX9Lj4LMX4rDMLNCOWp2eWPFj','1FL0kjqvhH1Uoxu_Yw4X3nEtyVy2vvjQr','1qXFXkIwQiMD9HUjNr_HjEi8XSeFpLA6b','19fz_bhsHxfUGb_gjYCrK7ctWFJffXmOy','1rngDKZxUIrOodXqCrginQZGfPnE4XLuP','160eozLi4ty7FIqozM-0rJeX3ePkIGBmR','1myVz2-I-O5gciO8vbX1eNEYr3HgC87nG','1HviijZwFZbK-JPZHp2hK1lUOtGkbJY1B','18emORv8YKukORpuGPFT0IYhOHKRU7n7z','12wB7J9u7xCaaQgg8CIorGnRjx6-ohXNT','1ioHFKzQ_FGqrzuFhWHrewzRA28kVXN6A','1-9eIIjS35Cvn82__McbZP3_cnuHeSvgk','1IFJ3XdEZUTYatC8h4u-9ubl8NR9SyE5r','1AFnXcc1JBneJVDPRJGCUo-01Cmutvx5V','1lI8QRx1UpD9BWQlnJQbNTCV3Wovlccqg','1U-gtoltTO9WRz1u14_q7UxmEnEKINXHX','1MbrumRHEnZROmtm3u7-AWdWnceYa94Ll','1oAZxwPSdK5JJKiQbkIBvWOlFkDSVO6U4','1y-A-Nb8_cRECQtgIcFrzgWakVOr_H0Ac','1IT536_xtmnunb_Z2027OJoxEphVV2u4g','1VL8o4zLop2goMMjVU2GlE1-ELUIUC_G-','1kogKNwUHgSxuqkLINOJDTlMVrhDiYizA','1g3q3ljLOFmD_J9hJixKa8QU20Gxr9_4b','1jhV06nwnbHHKFEX6UMK9Qh6wn2WViD_e','1TgI8oiNnszfUyUnBiIv1WdlyHaIliKTQ','1wHdC-H_1Q6kx3Gywpglkcnsb6u9fWPCu','1TZ4v5U1Cq4LSjgYNaGvzF4ZnaY0Qiuws','1iBuzYQMPYwvxntGXsmhM9249jGruUjTE','1XBzxbpWS48HdvNIEJBfWrLOI34h6hMVu','1M3rESdMAC6lrDvsiV_qW0FC2DzBuBspn','1gaitM0cx_KMSbtfRGO56WuYExA1ZYFqf','1juL_lg4a_lKg13np-LMZJsaOMKWt2vOE','1cy-1xbCegN83GW53DxX_khGPnYu8zc7R','10p3iHL1IAa_l-znt3Mfy1EayUIehVzQ2','1Wtvf2hjgqCWL3yc4zaORc1O2IO9oSa2t','1RMrp8hU9Vp_VyrGSQTIoxrddMTTg8dbp','1JuYrsAPjdVanD_XQ0rLK3KPEGkbqbDjj','1aAYn3W1MpqNhny6Ymh5U0Z2Ud2zymcov','1cKztzfMy13Mny1mOd3HdtzHB-vtSXhGb','1-mxpbK5u07T1upUp-Eo1BEJCUiOcmPR3','1Jeayd-IlKRl_jqS_4NdGa2E-LP3lihTz','1n8Em5IA_uLzIBlQWhTW7121XfvCIK-7D','12sjknWgVmfZnzRcq9p3Acikykx1bi2qh','1tnqPOluNqj8CP8gy32VajvpIRFy355aY','1TeZNgBJiW0QjmpZHKGFlwluZ8qX1s5Kf','14zv9sLlXbiUNc-Ztc808e4-MuNuqs--C','1TvImrXqBavtZHS6NjWbzzM1AgVPFP8fI','1kdDW6Rd4cHR_LoZzd_UMTrr52PlNj5WD','15WFVQ-Mdno6sgL5iCuBBU4L32eZf9ZYf','1d886mt2uCZS16w3RU7k6eNta9XQqfGG6','1b-BY4ZTZcnRKWqQ8I-VREkCPYpNjGaPE','1ev4i_39ivs-M12REFnReJsmBoQGvGHvO','1wc2Flc50Us1DwstKLzbMeBn3iT2peNAz','1t0u4P0ODEVxrS3KtH2Ge4yXYg4EDOVap','12qGQPrJ7GO1hhwMLmLd6Oa9kxDgcxr5O','1_Fu047l6B5GrymUZaoK5CslIs1pIHA4V'
+// Legacy route name retained so existing Room panels can continue calling it.
+const BASE='https://iycxkwoxbkanfyraohge.supabase.co';
+const BUCKET='YNOT FEED';
+// Verified contents at switchover: keeps feed usable even if Storage listing is temporarily unavailable.
+const KNOWN=[
+ ...Array.from({length:23},(_,i)=>`IMG_${6946+i}.jpeg`),
+ 'Quit9To5Interior10.jpeg','Quit9To5Interior101.jpeg','Quit9To5Interior104.jpeg',
+ 'Quit9To5Interior11.jpeg','Quit9To5Interior111.jpeg','Quit9To5Interior14.jpeg',
+ 'Quit9To5Interior17.jpeg','Quit9To5Interior22.jpeg','Quit9To5Interior24.jpeg',
+ 'Quit9To5Interior31.jpeg','Quit9To5Interior36.jpeg','Quit9To5Interior40.jpeg',
+ 'Quit9To5Interior56.jpeg','Quit9To5Interior60.jpeg','Quit9To5Interior62.jpeg',
+ 'Quit9To5Interior63.jpeg','Quit9To5Interior7.jpeg','Quit9To5Interior71.jpeg',
+ 'Quit9To5Interior73.jpeg','Quit9To5Interior79.jpeg','Quit9To5Interior87.jpeg',
+ 'Quit9To5Interior89.jpeg','Quit9To5Interior9.jpeg','Quit9To5Interior97.jpeg'
 ];
-function item(id:string,i:number,title?:string){return {id:`drive-${id}`,type:'photo' as const,src:`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1600`,thumb:`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w800`,alt:title||`Interior inspiration ${i+1}`,source:'drive'}}
+const isImage=(name:string)=>/\.(jpe?g|png|webp|avif|gif)$/i.test(name);
+function item(name:string){
+ const path=name.split('/').map(encodeURIComponent).join('/');
+ const src=`${BASE}/storage/v1/object/public/${encodeURIComponent(BUCKET)}/${path}`;
+ return {id:`ynot-feed-${name}`,type:'photo',src,thumb:src,alt:'Interior inspiration',source:'ynot-feed'};
+}
 export async function GET(){
- const found=new Map<string,string>();
- // Preserve discovery of newly added public files where Google's folder markup provides them.
- try{
-  const r=await fetch(FOLDER_URL,{headers:{'User-Agent':'Mozilla/5.0'},signal:AbortSignal.timeout(3500),next:{revalidate:1800}});
-  if(r.ok){const html=await r.text();const re=/\[\"([A-Za-z0-9_-]{20,})\"[^\]]{0,500}?\"(Quit9To5Interior[^\"]+?\.jpe?g)\"/gi;let m:RegExpExecArray|null;while((m=re.exec(html))!==null)found.set(m[1],m[2]);}
- }catch{}
- // Never return an empty feed simply because Google's HTML changed or timed out.
- for(const id of KNOWN_IDS)if(!found.has(id))found.set(id,`Interior inspiration`);
- const items=[...found.entries()].map(([id,title],i)=>item(id,i,title));
- return NextResponse.json({items,count:items.length,source:'drive'},{headers:{'Cache-Control':'public, s-maxage=1800, stale-while-revalidate=86400'}});
+ let names:string[]=[];
+ const key=process.env.SUPABASE_SERVICE_ROLE_KEY||process.env.SUPABASE_ANON_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+ if(key){
+  try{
+   const r=await fetch(`${BASE}/storage/v1/object/list/${encodeURIComponent(BUCKET)}`,{
+    method:'POST',headers:{apikey:key,Authorization:`Bearer ${key}`,'Content-Type':'application/json'},
+    body:JSON.stringify({prefix:'',limit:1000,offset:0,sortBy:{column:'name',order:'asc'}}),
+    signal:AbortSignal.timeout(4500),next:{revalidate:120}
+   });
+   if(r.ok){const data=await r.json();if(Array.isArray(data))names=data.filter((x:any)=>typeof x?.name==='string'&&isImage(x.name)).map((x:any)=>x.name)}
+  }catch(e){console.warn('YNOT_FEED_LIST_UNAVAILABLE',e instanceof Error?e.name:'error')}
+ }
+ const verified=[...new Set((names.length?names:KNOWN).filter(isImage))];
+ return NextResponse.json({items:verified.map(item),count:verified.length,source:'ynot-feed'},
+  {headers:{'Cache-Control':'public, s-maxage=120, stale-while-revalidate=900'}});
 }
