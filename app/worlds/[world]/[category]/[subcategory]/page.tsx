@@ -2,7 +2,7 @@
 import {useEffect,useMemo,useState} from "react";
 import {useParams,useRouter} from "next/navigation";
 import {Heart,ShoppingBag,X} from "lucide-react";
-import {YNOT_VISUAL_WORLDS} from "@/lib/visual/world-taxonomy";
+import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 import {tagsForSubcategory} from "@/lib/visual/subcategory-tags";
 import YnotWorldOrb from "@/components/electric/YnotWorldOrb";
 type Product={id:string;title:string;brand?:string;price?:number|null;currency?:string;image?:string;images?:string[];url?:string;description?:string};
