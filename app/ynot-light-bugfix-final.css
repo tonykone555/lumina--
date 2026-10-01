@@ -1,0 +1,15 @@
+/* Final YNOT light-mode safeguard. Loaded last so legacy dark overrides cannot win. */
+html[data-ynot-theme="light"] body{background:#efefec!important;color:#171819!important}
+html[data-ynot-theme="light"] .ynot-app-shell,html[data-ynot-theme="light"] .lv4-shell{background:radial-gradient(circle at 50% 42%,#fafaf8 0,#f1f1ee 42%,#e8e8e4 100%)!important;color:#171819!important}
+html[data-ynot-theme="light"] .lv4-world{background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.94),rgba(239,239,235,.88) 58%,rgba(226,226,221,.94))!important}
+html[data-ynot-theme="light"] .ynot-drawer{background:linear-gradient(180deg,rgba(255,255,253,.97),rgba(241,241,237,.95))!important;color:#171819!important}
+html[data-ynot-theme="light"] .ynot-drawer .ynot-head h2,html[data-ynot-theme="light"] .ynot-drawer .ynot-head p,html[data-ynot-theme="light"] .ynot-drawer .ynot-head small{color:#171819!important;-webkit-text-fill-color:#171819!important;text-shadow:none!important}
+html[data-ynot-theme="light"] .ynot-drawer .ynot-head-actions .ynot-cart-trigger,html[data-ynot-theme="light"] .ynot-drawer .ynot-head-actions .ynot-close{background:rgba(255,255,255,.82)!important;border-color:rgba(35,37,38,.14)!important;color:#303234!important}
+html[data-ynot-theme="light"] .ynot-drawer .ynot-head-actions svg,html[data-ynot-theme="light"] .ynot-drawer .ynot-head-actions svg *{stroke:#303234!important;color:#303234!important}
+html[data-ynot-theme="light"] .ynot-drawer .ynot-card,html[data-ynot-theme="light"] .ynot-drawer [class*="product-card" i],html[data-ynot-theme="light"] .ynot-drawer [class*="deal-card" i],html[data-ynot-theme="light"] .ynot-drawer .ynot-orb{background:rgba(255,255,255,.72)!important;border-color:rgba(35,37,38,.14)!important;color:#171819!important;-webkit-text-fill-color:#171819!important;box-shadow:inset 0 1px rgba(255,255,255,.98),0 8px 24px rgba(35,37,38,.07)!important}
+html[data-ynot-theme="light"] .ynot-drawer .ynot-card *,html[data-ynot-theme="light"] .ynot-drawer [class*="product-card" i] *,html[data-ynot-theme="light"] .ynot-drawer [class*="deal-card" i] *,html[data-ynot-theme="light"] .ynot-drawer .ynot-orb-copy *{color:#171819!important;-webkit-text-fill-color:#171819!important;text-shadow:none!important}
+html[data-ynot-theme="light"] .ynot-bottom-search,html[data-ynot-theme="light"] .ynot-bottom-search.shop{background:rgba(245,245,241,.96)!important;border-color:rgba(80,82,82,.20)!important;color:#171819!important}
+html[data-ynot-theme="light"].ynot-deal-product-open .ynot-drawer.open .ynot-selected{background-color:rgba(248,248,244,.78)!important;color:#171819!important;backdrop-filter:blur(30px) saturate(1.04)!important;-webkit-backdrop-filter:blur(30px) saturate(1.04)!important}
+html[data-ynot-theme="light"].ynot-deal-product-open .ynot-drawer.open .ynot-selected::after{background:linear-gradient(180deg,rgba(255,255,255,.10),rgba(245,245,241,.08) 42%,rgba(235,235,231,.28) 100%)!important}
+/* Requested cleanup: no Options control on product cards/popups. */
+.ynot-options-box,.ynot-options-toggle,.ynot-options-panel{display:none!important}
