@@ -2,23 +2,17 @@ import {NextRequest,NextResponse} from "next/server";
 import {getCatalogProduct} from "@/lib/commerce/catalog-store";
 
 export const runtime="nodejs";
-const uniq=(xs:unknown[])=>[...new Set(xs.filter((x):x is string=>typeof x==="string"&&/^https?:\/\//i.test(x)))];
-function mediaUrls(p:any){const raw=[...(Array.isArray(p.video_urls)?p.video_urls:[]),...(Array.isArray(p.videos)?p.videos:[]),...(Array.isArray(p.media_urls)?p.media_urls:[])];return uniq(raw)}
+const uniq=(xs:unknown[])=>[...new Set(xs.flat(Infinity).filter((x):x is string=>typeof x==="string"&&/^https?:\/\//i.test(x)))];
+function mediaUrl(m:any){if(typeof m==="string")return m;return m?.url||m?.src||m?.image?.url||m?.previewImage?.url||m?.preview_image?.url||m?.originalSource?.url||""}
+function imageUrls(p:any){const media=Array.isArray(p?.media)?p.media:[];const variants=Array.isArray(p?.variants)?p.variants:[];return uniq([p?.image_url,p?.image,p?.images,p?.image_urls,media.filter((m:any)=>!String(m?.type||m?.media_type||"").toLowerCase().includes("video")).map(mediaUrl),variants.map((v:any)=>[v?.image,v?.image_url,v?.images,v?.media?.map?.(mediaUrl)])])}
+function mediaUrls(p:any){const media=Array.isArray(p?.media)?p.media:[];return uniq([p?.video_urls,p?.videos,p?.media_urls,media.filter((m:any)=>String(m?.type||m?.media_type||"").toLowerCase().includes("video")).map(mediaUrl)])}
+function normalizeVariants(p:any){const raw=Array.isArray(p?.variants)?p.variants:[];return raw.map((v:any,i:number)=>({id:String(v?.id||v?.variant_id||i),label:String(v?.label||v?.title||v?.name||(Array.isArray(v?.selected_options)?v.selected_options.map((o:any)=>o?.value||o?.name).filter(Boolean).join(" · "):"")||`Option ${i+1}`),available:v?.available!==false&&v?.availability!=="out_of_stock",price:Number(v?.price?.amount??v?.price??p?.ynot_price)||null,currency:String(v?.price?.currency||p?.currency||"USD"),image:imageUrls(v)[0]||"",images:imageUrls(v),url:v?.url||v?.product_url||""}))}
 function reviews(p:any){const raw=Array.isArray(p.reviews)?p.reviews:Array.isArray(p.customer_reviews)?p.customer_reviews:[];return raw.slice(0,12).map((r:any)=>({rating:Number(r?.rating||r?.stars)||null,title:String(r?.title||""),body:String(r?.body||r?.text||r?.review||""),author:String(r?.author||r?.reviewer||""),image:typeof r?.image==="string"?r.image:null})).filter((r:any)=>r.rating||r.body)}
-async function richShopifyProduct(req:NextRequest,base:any){
- try{
-  const response=await fetch(new URL("/api/commerce/product-link",req.url),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(base),cache:"no-store",signal:AbortSignal.timeout(9000)});
-  const data=await response.json().catch(()=>null);
-  return response.ok&&data?.product?data.product:null;
- }catch{return null}
-}
+async function richShopifyProduct(req:NextRequest,base:any){try{const response=await fetch(new URL("/api/commerce/product-link",req.url),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(base),cache:"no-store",signal:AbortSignal.timeout(9000)});const data=await response.json().catch(()=>null);return response.ok&&data?.product?data.product:null}catch{return null}}
 export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}){
-  const {id}=await params;const product=await getCatalogProduct(id).catch(()=>null);
-  if(!product||product.active===false||product.ad_eligible===false)return NextResponse.json({error:"Product not found"},{status:404});
-  const images=uniq([product.image_url,...(Array.isArray(product.image_urls)?product.image_urls:[])]),videos=mediaUrls(product),tags=[...new Set([...(Array.isArray(product.intent_tags)?product.intent_tags:[]),...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(product.attributes)?product.attributes:[])].map(String).filter(Boolean))],rating=Number(product.rating||product.review_rating||product.average_rating)||null,reviewCount=Number(product.review_count||product.reviews_count||product.rating_count)||0,reviewList=reviews(product);
-  const base={id:product.ynot_id,title:product.title,brand:product.brand||product.source_brand||"YNOT",price:Number(product.ynot_price),currency:String(product.currency||"USD"),image:images[0]||product.image_url,images,videos,tags,rating,reviewCount,reviews:reviewList,url:product.best_source_url||`/p/${encodeURIComponent(product.ynot_id)}`,source:"shopify",category:product.category,description:product.description||`${product.title} available through YNOT.`};
-  const rich=await richShopifyProduct(req,base);
-  const mergedImages=uniq([base.image,...base.images,...(Array.isArray(rich?.images)?rich.images:[]),rich?.image,...(Array.isArray(rich?.variants)?rich.variants.map((v:any)=>v?.image):[])]);
-  const result=rich?{...base,...rich,image:mergedImages[0]||base.image,images:mergedImages,videos:uniq([...base.videos,...(Array.isArray(rich.videos)?rich.videos:[])])}:{...base,images:mergedImages};
-  return NextResponse.json({product:result},{headers:{"Cache-Control":"public, s-maxage=300, stale-while-revalidate=3600"}});
+ const {id}=await params;const product=await getCatalogProduct(id).catch(()=>null);if(!product||product.active===false||product.ad_eligible===false)return NextResponse.json({error:"Product not found"},{status:404});
+ const images=imageUrls(product),videos=mediaUrls(product),localVariants=normalizeVariants(product),tags=[...new Set([...(Array.isArray(product.intent_tags)?product.intent_tags:[]),...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(product.attributes)?product.attributes:[])].map(String).filter(Boolean))],rating=Number(product.rating||product.review_rating||product.average_rating)||null,reviewCount=Number(product.review_count||product.reviews_count||product.rating_count)||0;
+ const base={id:product.ynot_id,title:product.title,brand:product.brand||product.source_brand||"YNOT",price:Number(product.ynot_price),currency:String(product.currency||"USD"),image:images[0]||product.image_url,images,videos,variants:localVariants,tags,rating,reviewCount,reviews:reviews(product),url:product.best_source_url||`/p/${encodeURIComponent(product.ynot_id)}`,source:"shopify",category:product.category,description:product.description||`${product.title} available through YNOT.`};
+ const rich=await richShopifyProduct(req,base);const variants=Array.isArray(rich?.variants)&&rich.variants.length?rich.variants:localVariants;const mergedImages=uniq([base.images,rich?.images,rich?.image,variants.map((v:any)=>[v?.image,v?.images])]);const result=rich?{...base,...rich,variants,image:mergedImages[0]||base.image,images:mergedImages,videos:uniq([base.videos,rich?.videos])}:{...base,variants,images:mergedImages};
+ return NextResponse.json({product:result},{headers:{"Cache-Control":"public, s-maxage=300, stale-while-revalidate=3600"}})
 }
