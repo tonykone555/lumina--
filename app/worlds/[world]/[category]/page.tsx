@@ -1,6 +1,6 @@
 "use client";
 import {useParams,useRouter} from "next/navigation";
-import {YNOT_VISUAL_WORLDS} from "@/lib/visual/world-taxonomy";
+import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 import YnotWorldOrb from "@/components/electric/YnotWorldOrb";
 const imageFor=(q:string,i:number)=>{const pool=["photo-1445205170230-053b83016050","photo-1556228578-8c89e6adf883","photo-1524758631624-e2822e304c36","photo-1524758631624-e2822e304c36","photo-1555041469-a586c61ea9bc","photo-1515562141207-7a88fb7ce338","photo-1518770660439-4636190af475","photo-1534438327276-14e5300c3a48","photo-1515488042361-ee00e0ddd4e4","photo-1556911220-bff31c812dba"];return `https://images.unsplash.com/${pool[i%pool.length]}?auto=format&fit=crop&w=720&q=72`};
 const tagWords=(q:string)=>q.replace(/womens|mens|fashion|products|equipment/gi,"").trim().split(/\s+/).slice(0,3);
