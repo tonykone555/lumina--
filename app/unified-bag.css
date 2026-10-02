@@ -20,3 +20,20 @@ html[data-ynot-theme="light"] .ynot-unified-qty{background:rgba(255,255,255,.28)
 html[data-ynot-theme="light"] .lv4-detail-backdrop,html[data-ynot-theme="light"] .lv4-product-backdrop,html[data-ynot-theme="light"] .ynot-product-backdrop,html[data-ynot-theme="light"] [class*="product"][class*="backdrop"],html[data-ynot-theme="light"] [class*="detail"][class*="backdrop"]{background:rgba(224,222,214,.18)!important;backdrop-filter:blur(18px) saturate(.92)!important;-webkit-backdrop-filter:blur(18px) saturate(.92)!important}
 .lv4-search{padding-right:118px!important}.lv4-search::after{content:"✦ AI SHOPPING";position:absolute;right:46px;top:50%;transform:translateY(-50%);pointer-events:none;white-space:nowrap;font:760 8px/1 Inter,sans-serif;letter-spacing:.08em;padding:6px 8px;border-radius:999px;border:1px solid currentColor;opacity:.58}.lv4-search input{padding-right:8px!important}.lv4-actions>.ynot-unified-add{display:flex!important;align-items:center!important;justify-content:center!important;gap:8px!important;grid-column:1/-1!important;width:100%!important;height:46px!important;border:1px solid rgba(255,255,255,.34)!important;border-radius:15px!important;background:rgba(255,255,255,.12)!important;color:inherit!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important}
 @media(max-width:760px){.ynot-unified-bag-backdrop{padding:10px 8px calc(10px + env(safe-area-inset-bottom))}.ynot-unified-bag{width:100%;max-height:90dvh;border-radius:31px}.ynot-unified-bag header{padding:18px 18px 12px}.ynot-unified-bag-list{padding:2px 18px 6px;gap:10px}.ynot-unified-bag-card{grid-template-columns:82px minmax(0,1fr);gap:14px;padding:14px;border-radius:24px}.ynot-unified-bag-card>img{width:82px;height:82px;border-radius:20px}.ynot-unified-bag-copy{padding-right:28px;gap:5px}.ynot-unified-bag-copy>b{font-size:14px}.ynot-unified-bag-copy>span,.ynot-unified-bag-copy>small{font-size:10px}.ynot-unified-bag-copy>strong{font-size:17px;margin-top:5px}.ynot-unified-qty{grid-column:2;justify-self:start;margin-top:2px}.ynot-unified-bag footer{padding:10px 18px 18px}.ynot-payment-choice{grid-template-columns:1fr}.ynot-unified-checkout{min-height:54px;font-size:14px}.lv4-search{padding-right:96px!important}.lv4-search::after{right:42px;font-size:7px;padding:5px 6px}}
+
+/* Desktop bag: use the viewport professionally; only the product list scrolls. */
+@media(min-width:761px){
+ .ynot-unified-bag-backdrop{align-items:center!important;padding:20px!important}
+ .ynot-unified-bag{width:min(900px,calc(100vw - 48px))!important;height:min(90dvh,900px)!important;max-height:none!important}
+ .ynot-unified-bag-list{flex:1 1 auto!important;min-height:0!important;max-height:none!important;padding:4px 28px 12px!important}
+ .ynot-unified-bag footer{flex:0 0 auto!important;overflow:visible!important;padding:10px 28px 24px!important;background:linear-gradient(180deg,transparent,rgba(0,0,0,.08))!important}
+ .ynot-unified-bag-card{grid-template-columns:104px minmax(0,1fr) 112px!important;min-height:132px!important}
+ .ynot-unified-remove{display:grid!important;opacity:1!important;visibility:visible!important;z-index:4!important;width:36px!important;height:36px!important}
+ .ynot-unified-remove svg{width:18px!important;height:18px!important}
+ html[data-ynot-theme="light"] .ynot-unified-remove{color:#30312e!important;-webkit-text-fill-color:#30312e!important;background:rgba(255,255,255,.42)!important;border-radius:50%!important}
+}
+/* Keep product preview media centered on desktop regardless of image proportions. */
+@media(min-width:761px){
+ .lv4-detail-media,.lv4-detail>img,.lv4-detail [class*="media"] img,.lv4-detail [class*="gallery"] img{object-position:50% 50%!important;margin-left:auto!important;margin-right:auto!important}
+ .lv4-detail [class*="media"],.lv4-detail [class*="gallery"]{justify-content:center!important;align-items:center!important}
+}
