@@ -162,3 +162,7 @@ html.ynot-any-product-open .lv4-detail .lv4-similar-slider img{display:block!imp
 
 /* Compact description preview; full merchant copy expands on demand. */
 .lv4-description-block{margin:14px 0 6px!important}.lv4-product-description{display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;overflow:hidden!important;margin:0!important;white-space:pre-line!important;line-height:1.55!important}.lv4-product-description.expanded{display:block!important;-webkit-line-clamp:unset!important;overflow:visible!important}.lv4-description-block .lv4-description-trigger{display:flex!important;width:100%!important;align-items:center!important;justify-content:space-between!important;margin-top:8px!important}.lv4-description-block .lv4-description-trigger svg{transition:transform .18s ease!important}.lv4-description-block .lv4-description-trigger[aria-expanded="true"] svg{transform:rotate(180deg)!important}
+
+
+/* Desktop product preview: lift hero media into the upper viewport while keeping it centered. */
+@media (min-width:900px){html.ynot-any-product-open .lv4-detail{padding-top:0!important}html.ynot-any-product-open .lv4-detail>.lv4-detail-media,html.ynot-any-product-open .lv4-detail>.lv4-gallery{margin-top:0!important;transform:translateY(-34px)!important;transform-origin:50% 0!important;margin-left:auto!important;margin-right:auto!important}html.ynot-any-product-open .lv4-detail .lv4-detail-media img,html.ynot-any-product-open .lv4-detail .lv4-gallery img{object-position:center center!important}}
