@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 export const runtime="nodejs";
 
 type Variant={id?:string;label?:string;url?:string;available?:boolean;price?:number|null;currency?:string;image?:string;images?:string[];videos?:string[]};
-type Product={id?:string;variantId?:string;title?:string;brand?:string;url?:string;source?:string;variants?:Variant[];images?:string[];image?:string;currency?:string;description?:string;price?:number|null;supplierPrice?:number;retailPrice?:number;pricingMode?:string};
+type Product={id?:string;catalogId?:string;shopifyCatalogId?:string;variantId?:string;title?:string;brand?:string;url?:string;source?:string;variants?:Variant[];images?:string[];image?:string;videos?:string[];tags?:string[];currency?:string;description?:string;price?:number|null;supplierPrice?:number;retailPrice?:number;pricingMode?:string};
 function exactEnough(url?:string){if(!url)return false;try{const u=new URL(url);const p=u.pathname.replace(/\/+$/,'');if(u.protocol!=="https:"||p.length<=1)return false;return /\/products?\//i.test(p)||u.searchParams.has("variant")||/\/product\//i.test(p)}catch{return false}}
 function normalize(url?:string){if(!url)return'';try{const u=new URL(url);u.hash='';return u.toString()}catch{return''}}
 function bestLocal(product:Product){const variants=product.variants||[];const chosen=product.variantId?variants.find(v=>String(v.id||'')===String(product.variantId)):undefined;const candidates=[chosen?.url,...variants.filter(v=>v.available!==false).map(v=>v.url),product.url].map(normalize).filter(Boolean);return candidates.find(exactEnough)||''}
@@ -22,19 +22,20 @@ export async function POST(req:NextRequest){
   const product=await req.json() as Product;
   if(!product.title&&!product.id)return NextResponse.json({error:'PRODUCT_IDENTITY_REQUIRED'},{status:400});
   let detail:any=null;
-  if(product.id){try{const content=await callCatalog('get_product',{id:String(product.variantId||product.id)});detail=content?.product||null}catch{}}
+  const catalogIdentity=String(product.variantId||product.shopifyCatalogId||product.catalogId||'');
+  if(catalogIdentity){try{const content=await callCatalog('get_product',{id:catalogIdentity});detail=content?.product||null}catch{}}
   let products:any[]=[];
-  if(!detail){try{const content=await callCatalog('lookup_catalog',{ids:[String(product.variantId||product.id||product.url||'')]});products=content?.products||[];detail=products[0]||null}catch{}}
+  if(!detail&&catalogIdentity){try{const content=await callCatalog('lookup_catalog',{ids:[catalogIdentity]});products=content?.products||[];detail=products[0]||null}catch{}}
   if(!detail){const content=await callCatalog('search_catalog',{query:product.title||String(product.id||''),filters:{available:true},pagination:{limit:16}});products=content?.products||[]}
   const wantedId=String(product.id||''),wantedTitle=clean(product.title||'');
   const match=detail||products.find(p=>String(p?.id||'')===wantedId)||products.find(p=>clean(p?.title||'')===wantedTitle)||products.find(p=>wantedTitle&&(clean(p?.title||'').includes(wantedTitle)||wantedTitle.includes(clean(p?.title||''))));
   if(!match){const local=bestLocal(product);return local?NextResponse.json({url:local,exact:true,source:'catalog',product:{...product,url:local,description:product.description||''}}):NextResponse.json({error:'EXACT_PRODUCT_NOT_FOUND'},{status:404})}
-  const rawMedia:any[]=[...(match?.media||[]),...(match?.images||[])];
+  const rawMedia:any[]=[...(match?.media||[]),...(match?.images||[]),...(match?.image_urls||[]),match?.image,match?.featured_image,match?.featuredImage].filter(Boolean);
   const media=imageMedia(rawMedia);
   const videos=videoMedia(rawMedia);
   const fallbackPrice=match?.price_range?.min||match?.variants?.[0]?.price;
   const variants=(match?.variants||[]).map((v:any)=>{
-   const vm:any[]=[...(v?.media||[]),...(v?.images||[]),v?.image].filter(Boolean);
+   const vm:any[]=[...(v?.media||[]),...(v?.images||[]),...(v?.image_urls||[]),v?.image,v?.featured_image,v?.featuredImage].filter(Boolean);
    const vi=imageMedia(vm),vv=videoMedia(vm);
    return {id:String(v?.id||v?.variant_id||''),label:String(v?.title||v?.name||(v?.selected_options||[]).map((o:any)=>o?.value).filter(Boolean).join(' · ')||'Option'),price:priceOf(v,fallbackPrice),currency:String(v?.price?.currency||fallbackPrice?.currency||product.currency||'EUR'),image:vi[0]||media[0]||product.image||'',images:vi,videos:vv,url:normalize(v?.url||''),available:v?.available!==false&&v?.availability!=='out_of_stock'}
   }).filter((v:any)=>v.id);
@@ -43,9 +44,10 @@ export async function POST(req:NextRequest){
   const exact=candidates.find(exactEnough)||candidates.find(u=>{try{return new URL(u).pathname.replace(/\/+$/,'').length>1}catch{return false}});
   if(!exact)return NextResponse.json({error:'EXACT_PRODUCT_URL_UNAVAILABLE'},{status:404});
   const gallery=uniqMedia(media,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image);
-  const allVideos=uniqMedia(videos,variants.map((v:any)=>v.videos));
+  const allVideos=uniqMedia(videos,match?.videos,match?.video_urls,match?.media_urls,variants.map((v:any)=>v.videos),product.videos);
+  const tags=[...new Set<string>([...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(match?.tags)?match.tags:[]),...(Array.isArray(match?.product_tags)?match.product_tags:[]),...(Array.isArray(match?.intent_tags)?match.intent_tags:[]),...(Array.isArray(match?.attributes)?match.attributes.map((x:any)=>typeof x==='string'?x:(x?.value||x?.name||'')):[])].map(String).map(x=>x.trim()).filter(Boolean))];
   const title=String(match?.title||product.title||'');
   const description=stripHtml(match?.description)||stripHtml(match?.descriptionHtml)||stripHtml(match?.description_html)||stripHtml(match?.body_html)||stripHtml(product.description)||`${title} from ${product.brand||'the original Shopify merchant'}. Full merchant details are available on the original product page.`;
-  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,variants,description,descriptionHydrated:true,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail'}});
+  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,tags,variants,description,descriptionHydrated:true,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail'}});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'PRODUCT_LINK_FAILED'},{status:400})}
 }
