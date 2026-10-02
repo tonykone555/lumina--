@@ -1,5 +1,6 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
+import {useSearchParams} from "next/navigation";
 import {ChevronLeft,ChevronRight,Heart,Search,ShoppingBag,X} from "lucide-react";
 import YnotWorldOrb from "@/components/electric/YnotWorldOrb";
 
@@ -23,12 +24,14 @@ const galleryFor=(p:Product|null)=>p?[p.image,...(p.images||[])].filter((x,i,a):
 const cursorFrom=(p:Pagination|null)=>String(p?.next_cursor||p?.cursor||p?.end_cursor||"");
 
 export default function ElectricWorld(){
+ const searchParams=useSearchParams();
  const[path,setPath]=useState<Node[]>([]),[focus,setFocus]=useState<Node|null>(null),[focusIndex,setFocusIndex]=useState(-1),[feed,setFeed]=useState<Node[]|null>(null),[worlds,setWorlds]=useState<Node[]>(baseWorlds),[products,setProducts]=useState<Product[]|null>(null),[searchQuery,setSearchQuery]=useState(""),[loading,setLoading]=useState(false),[loadingMore,setLoadingMore]=useState(false),[pagination,setPagination]=useState<Pagination|null>(null),[selected,setSelected]=useState<Product|null>(null),[related,setRelated]=useState<Product[]>([]),[relatedLoading,setRelatedLoading]=useState(false),[galleryOpen,setGalleryOpen]=useState(false),[galleryIndex,setGalleryIndex]=useState(0),[choices,setChoices]=useState<Record<string,string>>({}),touch=useRef(0),loadRef=useRef<HTMLDivElement|null>(null);
  const current=feed||(path.length?path[path.length-1].children||worlds:worlds);
  const refreshCovers=async()=>{try{const r=await fetch("/api/electric/feed?subcategory=__covers__&t="+Date.now(),{cache:"no-store"}),j=await r.json();if(r.ok&&j.covers)setWorlds(applyCovers(baseWorlds,j.covers))}catch{}};
  useEffect(()=>{refreshCovers()},[]);
  useEffect(()=>{document.body.style.overflow=focus||galleryOpen?"hidden":"auto";return()=>{document.body.style.overflow="auto"}},[focus,galleryOpen]);
  const search=async(q:string)=>{setLoading(true);setSearchQuery(q);setSelected(null);setProducts([]);setPagination(null);try{const r=await fetch(`/api/catalog?q=${encodeURIComponent(q)}&source=shopify&category_load=1`,{cache:"no-store"}),j=await r.json();setProducts(Array.isArray(j.products)?j.products:[]);setPagination(j.pagination||null)}catch{setProducts([])}finally{setLoading(false);scrollTo(0,0)}};
+ useEffect(()=>{const q=String(searchParams.get("q")||"").trim();if(q&&q!==searchQuery)void search(q)},[searchParams]);
  const loadMore=async()=>{if(loadingMore||!products?.length||!pagination?.has_next_page)return;const cursor=cursorFrom(pagination);if(!cursor)return;setLoadingMore(true);try{const r=await fetch(`/api/catalog?q=${encodeURIComponent(searchQuery)}&source=shopify&cursor=${encodeURIComponent(cursor)}`,{cache:"no-store"}),j=await r.json();const incoming=Array.isArray(j.products)?j.products:[];setProducts(prev=>uniqueProducts([...(prev||[]),...incoming]));setPagination(j.pagination||{has_next_page:false})}catch{}finally{setLoadingMore(false)}};
  useEffect(()=>{if(products===null||selected)return;const el=loadRef.current;if(!el)return;const observer=new IntersectionObserver(entries=>{if(entries[0]?.isIntersecting)loadMore()},{rootMargin:"900px 0px"});observer.observe(el);return()=>observer.disconnect()},[products?.length,pagination?.has_next_page,loadingMore,selected,searchQuery]);
  const openProduct=async(p:Product)=>{setSelected(p);setChoices({});setGalleryOpen(false);setGalleryIndex(0);setRelatedLoading(true);const immediate=uniqueProducts((products||[]).filter(x=>x.id!==p.id)).slice(0,30);setRelated(immediate);scrollTo(0,0);
