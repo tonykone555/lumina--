@@ -1,0 +1,19 @@
+/* Restore depth to masonry/subcategory product cards without changing layout. */
+.products>button>div{
+  position:relative;
+  box-shadow:0 16px 34px rgba(0,0,0,.34),0 5px 14px rgba(0,0,0,.22)!important;
+  transition:box-shadow .18s ease,transform .18s ease;
+}
+.products>button:hover>div{
+  box-shadow:0 22px 48px rgba(0,0,0,.42),0 8px 20px rgba(0,0,0,.26)!important;
+}
+.related>button{
+  box-shadow:0 16px 36px rgba(0,0,0,.38),0 5px 14px rgba(0,0,0,.22)!important;
+}
+.related>button:hover{
+  box-shadow:0 22px 50px rgba(0,0,0,.46),0 8px 20px rgba(0,0,0,.28)!important;
+}
+@media(max-width:650px){
+  .products>button>div{box-shadow:0 12px 28px rgba(0,0,0,.34),0 4px 11px rgba(0,0,0,.20)!important}
+  .related>button{box-shadow:0 13px 30px rgba(0,0,0,.36),0 4px 11px rgba(0,0,0,.20)!important}
+}
