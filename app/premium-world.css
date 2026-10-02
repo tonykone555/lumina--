@@ -102,3 +102,8 @@
 .lv4-detail{position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;border-radius:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;z-index:10020!important;padding-bottom:max(28px,env(safe-area-inset-bottom))!important}
 .lv4-detail-close{position:fixed!important;top:max(14px,env(safe-area-inset-top))!important;right:16px!important;z-index:10040!important}
 @media(max-width:760px){.lv4-detail{left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100dvh!important;min-height:100dvh!important;border-radius:0!important}.lv4-detailcopy{padding-bottom:calc(28px + env(safe-area-inset-bottom))!important}}
+
+/* Physical swipe feedback for full-screen product navigation. */
+.lv4-detail{will-change:transform;touch-action:pan-y pinch-zoom}
+.lv4-detail.swiping{transition:none!important}
+.lv4-detail:not(.swiping){transition:transform .18s cubic-bezier(.22,.8,.3,1)}
