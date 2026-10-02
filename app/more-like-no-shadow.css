@@ -1,0 +1,15 @@
+/* More Like This cards: keep imagery clean and flat with no dark shadow/gradient overlay. */
+html.ynot-any-product-open .lv4-detail .lv4-similar-slider>button{
+  box-shadow:none!important;
+  filter:none!important;
+}
+html.ynot-any-product-open .lv4-detail .lv4-similar-slider>button::before,
+html.ynot-any-product-open .lv4-detail .lv4-similar-slider>button::after{
+  box-shadow:none!important;
+  background:none!important;
+}
+html.ynot-any-product-open .lv4-detail .lv4-similar-slider>button>span{
+  background:transparent!important;
+  box-shadow:none!important;
+  text-shadow:none!important;
+}
