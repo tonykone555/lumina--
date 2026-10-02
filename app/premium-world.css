@@ -87,5 +87,13 @@
 @media(max-width:760px){.lv4-category-bubble{width:205px!important;height:205px!important;margin:-102.5px 0 0 -102.5px!important}.lv4-category-bubble b{font-size:16px!important}}
 
 /* The only product Save control belongs beside YNOT BAG; suppress legacy floating/top heart. */
-.lv4-detail>.lv4-save-action,.lv4-detail>.lv4-save,.lv4-detail>[class*="heart" i]:not(.lv4-actions *),.lv4-detail>[class*="save" i]:not(.lv4-actions *){display:none!important}
+.lv4-detail>.lv4-save-action,.lv4-detail>.lv4-save,.lv4-detail>[class*="heart" i]:not(.lv4-actions *){display:none!important}
 .lv4-actions .lv4-save-next-to-bag{display:inline-flex!important;position:relative!important;inset:auto!important;transform:none!important}
+
+/* Keep the intended Save heart visibly paired with YNOT BAG. */
+.lv4-actions{display:flex!important;align-items:stretch!important;gap:10px!important}
+.lv4-actions>button:first-child{flex:1 1 auto!important}
+.lv4-actions .lv4-save-next-to-bag{display:inline-flex!important;flex:0 0 auto!important;width:auto!important;min-width:112px!important;padding:0 18px!important;align-items:center!important;justify-content:center!important;gap:8px!important;visibility:visible!important;opacity:1!important;color:#111!important;background:rgba(255,255,255,.9)!important;border:1px solid rgba(20,20,20,.18)!important}
+.lv4-actions .lv4-save-next-to-bag svg{display:block!important;width:23px!important;height:23px!important;stroke:currentColor!important;opacity:1!important}
+.lv4-actions .lv4-save-next-to-bag span{display:inline!important;font-weight:750!important}
+[data-ynot-theme="dark"] .lv4-actions .lv4-save-next-to-bag{color:#fff!important;background:rgba(30,30,30,.88)!important;border-color:rgba(255,255,255,.22)!important}
