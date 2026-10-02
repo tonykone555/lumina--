@@ -127,3 +127,13 @@ html.ynot-any-product-open .lv4-detail:not(.swiping){transform:translate3d(0,0,0
 /* Breathing room above the product hero while keeping the sheet itself edge-to-edge. */
 html.ynot-any-product-open .lv4-detail{padding-top:max(18px,env(safe-area-inset-top))!important}
 html.ynot-any-product-open .lv4-detail>.lv4-detail-media,html.ynot-any-product-open .lv4-detail>.lv4-gallery{margin-top:10px!important}
+
+/* Product actions: icon-only save; swipe never translates the full-screen sheet. */
+html.ynot-any-product-open .lv4-detail.swiping,html.ynot-any-product-open .lv4-detail:not(.swiping){transform:none!important;transition:none!important}
+html.ynot-any-product-open .lv4-actions{grid-template-columns:minmax(0,1fr) 62px!important}
+html.ynot-any-product-open .lv4-actions>.lv4-save-next-to-bag{width:62px!important;min-width:62px!important;max-width:62px!important;padding:0!important;border-radius:999px!important}
+html.ynot-any-product-open .lv4-actions>.lv4-save-next-to-bag span{display:none!important}
+.lv4-description-trigger{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:7px!important;margin:14px 0 8px!important;padding:11px 16px!important;border:1px solid rgba(20,20,20,.12)!important;border-radius:999px!important;background:rgba(255,255,255,.78)!important;color:#171717!important;font-weight:750!important}
+.lv4-description-trigger svg{width:16px!important;height:16px!important;transition:transform .18s ease!important}
+.lv4-description-trigger[aria-expanded="true"] svg{transform:rotate(180deg)!important}
+.lv4-product-description{display:block!important;white-space:pre-wrap!important;overflow:visible!important;max-height:none!important}
