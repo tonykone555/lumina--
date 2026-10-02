@@ -113,3 +113,10 @@ html.ynot-any-product-open .lv4-detail,.lv4-detail{position:fixed!important;inse
 /* No floating heart in the hero. Save exists only in the bottom action row. */
 html.ynot-any-product-open .lv4-detail>button:not(.lv4-close):has(svg.lucide-heart),html.ynot-any-product-open .lv4-detail>.lv4-save-action,html.ynot-any-product-open .lv4-detail>[aria-label*="save" i]:not(.lv4-actions *){display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
 html.ynot-any-product-open .lv4-actions .lv4-save-next-to-bag{display:inline-flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+
+/* Bottom commerce actions: explicit two-column layout so Save cannot be collapsed/covered. */
+html.ynot-any-product-open .lv4-detail .lv4-actions{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(108px,34%)!important;gap:10px!important;width:100%!important;position:relative!important;z-index:10030!important;overflow:visible!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>button{min-height:58px!important;margin:0!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag{display:flex!important;position:relative!important;inset:auto!important;width:100%!important;min-width:0!important;height:auto!important;transform:none!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;z-index:10031!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag svg{display:block!important;width:24px!important;height:24px!important;flex:none!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag span{display:inline!important}
