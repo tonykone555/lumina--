@@ -8,7 +8,15 @@ type RichResponse={url?:string;product?:Product;error?:string};
 const products=new Map<string,Product>();const pending=new Map<string,Promise<Product>>();
 function key(value:string){return String(value||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}
 function isShopify(product?:Product){return Boolean(product?.source?.toLowerCase().includes("shopify"))}
-function mediaUrls(...values:unknown[]){return [...new Set(values.flat(Infinity).filter((x):x is string=>typeof x==="string"&&/^https?:\/\//i.test(x)))]}
+function mediaUrls(...values:unknown[]){
+  const out:string[]=[];
+  const walk=(value:unknown)=>{
+    if(Array.isArray(value)){value.forEach(walk);return}
+    if(typeof value==="string"&&/^https?:\/\//i.test(value)&&!out.includes(value))out.push(value)
+  };
+  values.forEach(walk);
+  return out
+}
 function preload(product:Product){mediaUrls(product.image,product.images,product.variants?.map(v=>[v.image,v.images])).forEach(src=>{const img=new Image();img.decoding="async";img.src=src});mediaUrls(product.videos,product.variants?.map(v=>v.videos)).forEach(src=>{const video=document.createElement("video");video.preload="auto";video.muted=true;video.playsInline=true;video.src=src;video.load()})}
 function ingestPayload(data:unknown){const list=(data as {products?:Product[]})?.products;if(!Array.isArray(list))return;for(const product of list){if(!product?.title)continue;const prior=products.get(key(product.title));const merged={...prior,...product};products.set(key(product.title),merged);preload(merged);if(product.id)void hydrate(merged).catch(()=>{})}}
 async function hydrate(product:Product){const id=key(product.title),cached=products.get(id)||product;preload(cached);const existing=pending.get(id);if(existing)return existing;const job=(async()=>{let rich:Product|undefined;try{const direct=await fetch(`/api/commerce/product/${encodeURIComponent(String(cached.id||""))}`,{cache:"no-store"});const directData=await direct.json() as RichResponse;if(direct.ok&&directData.product)rich={...cached,...directData.product}}catch{}if(!rich&&isShopify(cached)){const response=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(cached)});const data=await response.json() as RichResponse;if(response.ok&&data.product)rich={...cached,...data.product,url:data.url||data.product.url||cached.url}}if(!rich)rich=cached;rich.descriptionHydrated=Boolean(rich.descriptionHydrated||rich.description);products.set(id,rich);preload(rich);return rich})().finally(()=>pending.delete(id));pending.set(id,job);return job}
