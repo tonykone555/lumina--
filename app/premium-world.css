@@ -153,3 +153,9 @@ html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag span{d
 /* Remove the oversized legacy Description pill; keep description content itself available. */
 html.ynot-any-product-open .lv4-detail .ynot-description-toggle{display:none!important}
 html.ynot-any-product-open .lv4-detail .ynot-description-panel{margin-top:8px!important}
+
+/* Keep Similar picks media mounted/visible while the full-screen detail scrolls. */
+html.ynot-any-product-open .lv4-detail .lv4-similar-block{display:block!important;position:relative!important;visibility:visible!important;opacity:1!important;content-visibility:visible!important;contain:none!important;min-height:132px!important;overflow:visible!important}
+html.ynot-any-product-open .lv4-detail .lv4-similar-slider{display:flex!important;position:relative!important;visibility:visible!important;opacity:1!important;content-visibility:visible!important;contain:none!important;min-height:92px!important;height:auto!important;overflow-x:auto!important;overflow-y:visible!important;-webkit-overflow-scrolling:touch!important}
+html.ynot-any-product-open .lv4-detail .lv4-similar-slider>button{display:flex!important;visibility:visible!important;opacity:1!important;flex:0 0 270px!important;min-height:88px!important}
+html.ynot-any-product-open .lv4-detail .lv4-similar-slider img{display:block!important;visibility:visible!important;opacity:1!important;width:72px!important;height:72px!important;object-fit:contain!important;flex:none!important}
