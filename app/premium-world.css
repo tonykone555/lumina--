@@ -140,3 +140,12 @@ html.ynot-any-product-open .lv4-actions>.lv4-save-next-to-bag span{display:none!
 
 /* Product navigation gesture must never translate the full-screen sheet. */
 html.ynot-any-product-open .lv4-detail.swiping,html.ynot-any-product-open .lv4-detail:not(.swiping){transform:none!important;translate:none!important;left:0!important;right:0!important;width:100vw!important}
+
+/* Compact description + stronger bottom commerce controls. */
+html.ynot-any-product-open .lv4-detail .ynot-description-toggle{width:auto!important;min-width:0!important;min-height:32px!important;height:32px!important;padding:0 12px!important;margin:8px 0!important;border-radius:16px!important;font-size:11px!important;font-weight:700!important;line-height:1!important;gap:5px!important}
+html.ynot-any-product-open .lv4-detail .ynot-description-toggle svg{width:13px!important;height:13px!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions{grid-template-columns:minmax(0,1fr) 82px!important;gap:10px!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>button:first-child{min-height:72px!important;height:72px!important;border-radius:22px!important;font-size:16px!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag{width:82px!important;min-width:82px!important;max-width:82px!important;height:72px!important;min-height:72px!important;padding:0!important;border-radius:22px!important;aspect-ratio:auto!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag svg{width:29px!important;height:29px!important}
+html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag span{display:none!important}
