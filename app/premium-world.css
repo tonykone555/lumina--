@@ -123,3 +123,7 @@ html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag span{d
 
 /* Keep full-screen product sheet centered during mount; transforms are reserved for an active swipe only. */
 html.ynot-any-product-open .lv4-detail:not(.swiping){transform:translate3d(0,0,0)!important;left:0!important;right:0!important;margin-left:0!important;margin-right:0!important}
+
+/* Breathing room above the product hero while keeping the sheet itself edge-to-edge. */
+html.ynot-any-product-open .lv4-detail{padding-top:max(18px,env(safe-area-inset-top))!important}
+html.ynot-any-product-open .lv4-detail>.lv4-detail-media,html.ynot-any-product-open .lv4-detail>.lv4-gallery{margin-top:10px!important}
