@@ -248,11 +248,13 @@ export default function LuminaWorld(){
     void fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:rich.url,id:rich.id}),cache:"no-store"})
      .then(r=>r.ok?r.json():null).then(data=>{
       const scraped=String(data?.description||"").trim();
-      if(!scraped)return;
+      const scrapedImages=(Array.isArray(data?.images)?data.images:[]).filter((url:any)=>typeof url==="string"&&/^https?:\/\//i.test(url));
+      if(!scraped&&!scrapedImages.length)return;
       setSelected(current=>{
        if(!current||current.id!==product.id)return current;
        const existing=String(current.description||"").trim();
-       return scraped.length>existing.length+40?{...current,description:scraped}:current;
+       const mergedImages=[...new Set([current.image,...(current.images||[]),...scrapedImages].filter(Boolean))] as string[];
+       return {...current,description:scraped.length>existing.length+40?scraped:current.description,image:mergedImages[0]||current.image,images:mergedImages};
       });
      }).catch(()=>{});
    }
