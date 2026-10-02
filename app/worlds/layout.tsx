@@ -2,6 +2,7 @@
 
 import {useEffect} from "react";
 import UnifiedBag from "@/components/lumina/UnifiedBag";
+import ProductDetailHydrator from "@/components/lumina/ProductDetailHydrator";
 
 const THEME_KEY="ynot-world-theme";
 
@@ -34,5 +35,5 @@ export default function WorldsLayout({children}:{children:React.ReactNode}){
     };
   },[]);
 
-  return <>{children}<UnifiedBag/></>;
+  return <>{children}<ProductDetailHydrator/><UnifiedBag/></>;
 }
