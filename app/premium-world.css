@@ -97,3 +97,8 @@
 .lv4-actions .lv4-save-next-to-bag svg{display:block!important;width:23px!important;height:23px!important;stroke:currentColor!important;opacity:1!important}
 .lv4-actions .lv4-save-next-to-bag span{display:inline!important;font-weight:750!important}
 [data-ynot-theme="dark"] .lv4-actions .lv4-save-next-to-bag{color:#fff!important;background:rgba(30,30,30,.88)!important;border-color:rgba(255,255,255,.22)!important}
+
+/* Full-screen masonry product detail. */
+.lv4-detail{position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;margin:0!important;border-radius:0!important;overflow-y:auto!important;overscroll-behavior:contain!important;z-index:10020!important;padding-bottom:max(28px,env(safe-area-inset-bottom))!important}
+.lv4-detail-close{position:fixed!important;top:max(14px,env(safe-area-inset-top))!important;right:16px!important;z-index:10040!important}
+@media(max-width:760px){.lv4-detail{left:0!important;right:0!important;top:0!important;bottom:0!important;width:100vw!important;height:100dvh!important;min-height:100dvh!important;border-radius:0!important}.lv4-detailcopy{padding-bottom:calc(28px + env(safe-area-inset-bottom))!important}}
