@@ -43,6 +43,7 @@ export async function POST(req:NextRequest){
    }));
    for(const result of settled)if(result.status==='fulfilled'&&result.value)selectedProducts.push(result.value);
   }
+  const options=(match?.options||[]).map((o:any)=>({name:String(o?.name||''),values:(o?.values||[]).filter((v:any)=>v?.exists!==false).map((v:any)=>({label:String(v?.label||v?.value||''),value:String(v?.value||v?.label||''),available:v?.available!==false&&v?.exists!==false})).filter((v:any)=>v.label)})).filter((o:any)=>o.name&&o.values.length);
   const rawMedia:any[]=[...(match?.media||[]),...(match?.images||[]),...(match?.image_urls||[]),match?.image,match?.featured_image,match?.featuredImage,...selectedProducts.flatMap((p:any)=>[...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage])].filter(Boolean);
   const media=imageMedia(rawMedia);
   const videos=videoMedia(rawMedia);
@@ -50,7 +51,7 @@ export async function POST(req:NextRequest){
   const variants=(match?.variants||[]).map((v:any)=>{
    const vm:any[]=[...(v?.media||[]),...(v?.images||[]),...(v?.image_urls||[]),v?.image,v?.featured_image,v?.featuredImage].filter(Boolean);
    const vi=imageMedia(vm),vv=videoMedia(vm);
-   return {id:String(v?.id||v?.variant_id||''),label:String(v?.title||v?.name||(v?.selected_options||[]).map((o:any)=>o?.value).filter(Boolean).join(' · ')||'Option'),price:priceOf(v,fallbackPrice),currency:String(v?.price?.currency||fallbackPrice?.currency||product.currency||'EUR'),image:vi[0]||media[0]||product.image||'',images:vi,videos:vv,url:normalize(v?.url||''),available:v?.available!==false&&v?.availability!=='out_of_stock'}
+   return {id:String(v?.id||v?.variant_id||''),label:String(v?.title||v?.name||(v?.selected_options||[]).map((o:any)=>o?.value).filter(Boolean).join(' · ')||'Option'),price:priceOf(v,fallbackPrice),currency:String(v?.price?.currency||fallbackPrice?.currency||product.currency||'EUR'),image:vi[0]||media[0]||product.image||'',images:vi,videos:vv,url:normalize(v?.url||''),available:v?.available!==false&&v?.availability!=='out_of_stock',selectedOptions:(v?.selected_options||v?.selectedOptions||[]).map((o:any)=>({name:String(o?.name||''),value:String(o?.value||o?.label||'')})).filter((o:any)=>o.name&&o.value)}
   }).filter((v:any)=>v.id);
   const chosen=product.variantId?variants.find((v:any)=>String(v.id)===String(product.variantId)):undefined;
   const candidates=[chosen?.url,...variants.filter((v:any)=>v.available!==false).map((v:any)=>v.url),match?.url,match?.online_store_url,match?.product_url].map(normalize).filter(Boolean);
@@ -62,6 +63,6 @@ export async function POST(req:NextRequest){
   const tags=[...new Set<string>([...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(match?.tags)?match.tags:[]),...(Array.isArray(match?.product_tags)?match.product_tags:[]),...(Array.isArray(match?.intent_tags)?match.intent_tags:[]),...(Array.isArray(match?.attributes)?match.attributes.map((x:any)=>typeof x==='string'?x:(x?.value||x?.name||'')):[])].map(String).map(x=>x.trim()).filter(Boolean))];
   const title=String(match?.title||product.title||'');
   const description=stripHtml(match?.description)||stripHtml(match?.descriptionHtml)||stripHtml(match?.description_html)||stripHtml(match?.body_html)||stripHtml(product.description)||`${title} from ${product.brand||'the original Shopify merchant'}. Full merchant details are available on the original product page.`;
-  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,tags,variants,description,descriptionHydrated:true,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail'}});
+  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,tags,options,variants,description,descriptionHydrated:true,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail'}});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'PRODUCT_LINK_FAILED'},{status:400})}
 }
