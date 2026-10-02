@@ -13,3 +13,39 @@ html.ynot-any-product-open .lv4-detail .lv4-similar-slider>button>span{
   box-shadow:none!important;
   text-shadow:none!important;
 }
+
+/* Masonry product feed only: image ends cleanly, then metadata sits on black below. */
+.products>button{
+  background:#080808!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+.products>button>div{
+  position:relative!important;
+  background:#151515!important;
+  overflow:hidden!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+}
+.products>button>div::before,
+.products>button>div::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+  box-shadow:none!important;
+}
+.products>button>div>img,
+.products>button img{
+  display:block!important;
+  opacity:1!important;
+  filter:none!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+}
+.products>button>b,
+.products>button>span{
+  position:relative!important;
+  z-index:2!important;
+  background:#080808!important;
+  text-shadow:none!important;
+}
