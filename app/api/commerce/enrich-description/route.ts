@@ -16,10 +16,10 @@ export async function POST(req:NextRequest){
   const body=await req.json(),u=safe(String(body?.url||""));if(!u)return NextResponse.json({error:"INVALID_MERCHANT_URL"},{status:400});
   const key=u.origin+u.pathname;const hit=cache.get(key);if(hit&&Date.now()-hit.at<TTL)return NextResponse.json({description:hit.description,images:hit.images,cached:true});
   const response=await fetch(u,{headers:{"User-Agent":"Mozilla/5.0 (compatible; YNOTProductEnricher/1.0)","Accept":"text/html,application/xhtml+xml"},redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(6500)});
-  if(!response.ok)return NextResponse.json({error:"MERCHANT_FETCH_FAILED"},{status:502});
+  if(!response.ok)return NextResponse.json({error:"MERCHANT_FETCH_FAILED",status:response.status,host:u.hostname},{status:502});
   const type=response.headers.get("content-type")||"";if(!type.includes("text/html"))return NextResponse.json({error:"MERCHANT_NOT_HTML"},{status:422});
   const html=(await response.text()).slice(0,2500000),best=candidates(html)[0]||"",images=pageImages(html,u);
   if(!best&&!images.length)return NextResponse.json({description:"",images:[],found:false});
-  cache.set(key,{description:best,images,at:Date.now()});return NextResponse.json({description:best,images,found:true});
+  cache.set(key,{description:best,images,at:Date.now()});return NextResponse.json({description:best,images,found:true,debug:{host:u.hostname,descriptionLength:best.length,imageCount:images.length}});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"ENRICH_FAILED"},{status:500})}
 }
