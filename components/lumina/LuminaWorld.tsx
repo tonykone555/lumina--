@@ -248,8 +248,10 @@ export default function LuminaWorld(){
    const images=media(rich);
    setSelected(current=>current&&current.id===product.id?{...rich,price:ynotPrice,currency:ynotCurrency||rich.currency,image:images[0]||rich.image,images}:current);
    // Merchant-page enrichment runs after the popup is already visible, so it never blocks opening.
-   if(rich.url&&/^https?:\/\//i.test(rich.url)){
-    void fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:rich.url,id:rich.id}),cache:"no-store"})
+   // Enrich from the merchant URL, not a YNOT/internal product route.
+   const merchantUrl=[rich.url,product.url,(rich.variants||[]).find(v=>/^https?:\/\//i.test(String(v.url||"")))?.url].find(url=>/^https?:\/\//i.test(String(url||""))&&!/ynotworld\.app/i.test(String(url)));
+   if(merchantUrl){
+    void fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:merchantUrl,id:rich.id}),cache:"no-store"})
      .then(r=>r.ok?r.json():null).then(data=>{
       const scraped=String(data?.description||"").trim();
       const scrapedImages=(Array.isArray(data?.images)?data.images:[]).filter((url:any)=>typeof url==="string"&&/^https?:\/\//i.test(url));
