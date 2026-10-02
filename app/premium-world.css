@@ -166,3 +166,6 @@ html.ynot-any-product-open .lv4-detail .lv4-similar-slider img{display:block!imp
 
 /* Desktop product preview: lift hero media into the upper viewport while keeping it centered. */
 @media (min-width:900px){html.ynot-any-product-open .lv4-detail{padding-top:0!important}html.ynot-any-product-open .lv4-detail>.lv4-detail-media,html.ynot-any-product-open .lv4-detail>.lv4-gallery{margin-top:0!important;transform:translateY(-34px)!important;transform-origin:50% 0!important;margin-left:auto!important;margin-right:auto!important}html.ynot-any-product-open .lv4-detail .lv4-detail-media img,html.ynot-any-product-open .lv4-detail .lv4-gallery img{object-position:center center!important}}
+
+/* Desktop: anchor product hero at the top instead of vertically drifting low. */
+@media (min-width: 900px){html.ynot-any-product-open .lv4-detail>.lv4-detail-media,html.ynot-any-product-open .lv4-detail>.lv4-gallery{margin-top:0!important;transform:translateY(-92px)!important;align-self:start!important}html.ynot-any-product-open .lv4-detail .lv4-detail-media img,html.ynot-any-product-open .lv4-detail .lv4-gallery img{object-position:50% 18%!important}}
