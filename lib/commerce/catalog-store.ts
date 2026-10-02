@@ -106,9 +106,15 @@ export async function persistCatalogProducts(products:CatalogFeedProduct[]){
   return{products:productRows.length,offers:offerRows.length};
 }
 
-export async function getCatalogProduct(ynotId:string){
-  const rows=await request(`ynot_catalog_products?ynot_id=eq.${encodeURIComponent(ynotId)}&active=eq.true&limit=1`);
+export async function getCatalogProduct(id:string){
+  // Bubble/search results can carry either our stable ynot_id or the upstream Shopify catalogue gid.
+  // Resolve both to the same persisted YNOT record before product-detail enrichment.
+  let rows=await request(`ynot_catalog_products?ynot_id=eq.${encodeURIComponent(id)}&active=eq.true&limit=1`);
+  if(!rows[0]&&/^gid:\/\/shopify\//i.test(id)){
+    rows=await request(`ynot_catalog_products?source_product_id=eq.${encodeURIComponent(id)}&active=eq.true&order=routing_score.desc&limit=1`);
+  }
   if(!rows[0])return null;
+  const ynotId=String(rows[0].ynot_id||id);
   const offers=await request(`ynot_catalog_supplier_offers?ynot_id=eq.${encodeURIComponent(ynotId)}&select=*&order=routing_score.desc&limit=8`);
   return{...rows[0],supplier_offers:offers};
 }
