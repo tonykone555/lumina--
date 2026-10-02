@@ -230,7 +230,7 @@ export default function LuminaWorld(){
  function zoomAround(clientX:number,clientY:number,next:number){const current=Number.isFinite(zoom)&&zoom>0?zoom:START_ZOOM,safe=Number.isFinite(next)?Math.min(2.8,Math.max(MIN_ZOOM,next)):current,stageX=(clientX-pan.x)/current,stageY=(clientY-pan.y)/current,x=clientX-stageX*safe,y=clientY-stageY*safe;if(!Number.isFinite(x)||!Number.isFinite(y))return;setZoom(safe);setPan({x,y})}
  async function openProduct(product:Product){
   gallerySwitchRef.current++;
-  const media=(p:Product)=>[...new Set<string>([p.image,...(p.images||[]),...(p.variants||[]).flatMap(v=>[v.image,...(v.images||[])]).filter(Boolean)].filter(Boolean) as string[])];
+  const media=(p:Product)=>[...new Set<string>([p.image,...(p.images||[]),...(p.variants||[]).flatMap(v=>[v.image,...(v.images||[])]),...(p.variants||[]).flatMap(v=>v.videos||[])].filter(Boolean) as string[])];
   // Normalize identity and YNOT retail pricing once. Everything fetched later is enrichment only.
   const stableId=String(product.id),catalogId=product.shopifyCatalogId||product.catalogId||(/^gid:\/\/shopify\//i.test(stableId)?stableId:undefined);
   const ynotPrice=product.ynotPrice??product.retailPrice??product.price,ynotCurrency=product.ynotCurrency||product.currency;
