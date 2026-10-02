@@ -107,3 +107,9 @@
 .lv4-detail{will-change:transform;touch-action:pan-y pinch-zoom}
 .lv4-detail.swiping{transition:none!important}
 .lv4-detail:not(.swiping){transition:transform .18s cubic-bezier(.22,.8,.3,1)}
+
+/* True edge-to-edge product sheet. Override every legacy floating-card rule. */
+html.ynot-any-product-open .lv4-detail,.lv4-detail{position:fixed!important;inset:0!important;top:0!important;right:0!important;bottom:0!important;left:0!important;width:100vw!important;min-width:100vw!important;max-width:100vw!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;margin:0!important;padding-top:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;clip-path:none!important;overflow-x:hidden!important;overflow-y:auto!important}
+/* No floating heart in the hero. Save exists only in the bottom action row. */
+html.ynot-any-product-open .lv4-detail>button:not(.lv4-close):has(svg.lucide-heart),html.ynot-any-product-open .lv4-detail>.lv4-save-action,html.ynot-any-product-open .lv4-detail>[aria-label*="save" i]:not(.lv4-actions *){display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.ynot-any-product-open .lv4-actions .lv4-save-next-to-bag{display:inline-flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
