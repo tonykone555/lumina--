@@ -22,7 +22,7 @@ export async function POST(req:NextRequest){
   const product=await req.json() as Product;
   if(!product.title&&!product.id)return NextResponse.json({error:'PRODUCT_IDENTITY_REQUIRED'},{status:400});
   let detail:any=null;
-  const catalogIdentity=String(product.variantId||product.shopifyCatalogId||product.catalogId||'');
+  const catalogIdentity=String(product.shopifyCatalogId||product.catalogId||(/^gid:\/\/shopify\/p\//i.test(String(product.id||''))?product.id:'')||product.variantId||'');
   if(catalogIdentity){try{const content=await callCatalog('get_product',{id:catalogIdentity});detail=content?.product||null}catch{}}
   let products:any[]=[];
   if(!detail&&catalogIdentity){try{const content=await callCatalog('lookup_catalog',{ids:[catalogIdentity]});products=content?.products||[];detail=products[0]||null}catch{}}
@@ -44,7 +44,7 @@ export async function POST(req:NextRequest){
    for(const result of settled)if(result.status==='fulfilled'&&result.value)selectedProducts.push(result.value);
   }
   const options=(match?.options||[]).map((o:any)=>({name:String(o?.name||''),values:(o?.values||[]).filter((v:any)=>v?.exists!==false).map((v:any)=>({label:String(v?.label||v?.value||''),value:String(v?.value||v?.label||''),available:v?.available!==false&&v?.exists!==false})).filter((v:any)=>v.label)})).filter((o:any)=>o.name&&o.values.length);
-  const rawMedia:any[]=[...(match?.media||[]),...(match?.images||[]),...(match?.image_urls||[]),match?.image,match?.featured_image,match?.featuredImage,...selectedProducts.flatMap((p:any)=>[...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage])].filter(Boolean);
+  const rawMedia:any[]=[...(match?.media||[]),...(match?.images||[]),...(match?.image_urls||[]),match?.image,match?.featured_image,match?.featuredImage,...(match?.variants||[]).flatMap((v:any)=>[...(v?.media||[]),...(v?.images||[]),...(v?.image_urls||[]),v?.image,v?.featured_image,v?.featuredImage]),...selectedProducts.flatMap((p:any)=>[...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage,...(p?.variants||[]).flatMap((v:any)=>[...(v?.media||[]),...(v?.images||[]),...(v?.image_urls||[]),v?.image,v?.featured_image,v?.featuredImage])])].filter(Boolean);
   const media=imageMedia(rawMedia);
   const videos=videoMedia(rawMedia);
   const fallbackPrice=match?.price_range?.min||match?.variants?.[0]?.price;
@@ -57,7 +57,7 @@ export async function POST(req:NextRequest){
   const candidates=[chosen?.url,...variants.filter((v:any)=>v.available!==false).map((v:any)=>v.url),match?.url,match?.online_store_url,match?.product_url].map(normalize).filter(Boolean);
   const exact=candidates.find(exactEnough)||candidates.find(u=>{try{return new URL(u).pathname.replace(/\/+$/,'').length>1}catch{return false}});
   if(!exact)return NextResponse.json({error:'EXACT_PRODUCT_URL_UNAVAILABLE'},{status:404});
-  const selectedImages=selectedProducts.flatMap((p:any)=>imageMedia([...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage].filter(Boolean)));
+  const selectedImages=selectedProducts.flatMap((p:any)=>imageMedia([...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage,...(p?.variants||[]).flatMap((v:any)=>[...(v?.media||[]),...(v?.images||[]),...(v?.image_urls||[]),v?.image,v?.featured_image,v?.featuredImage])].filter(Boolean)));
   const gallery=uniqMedia(media,selectedImages,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image);
   const allVideos=uniqMedia(videos,match?.videos,match?.video_urls,match?.media_urls,selectedProducts.map((p:any)=>[p?.videos,p?.video_urls,p?.media_urls,videoMedia([...(p?.media||[])])]),variants.map((v:any)=>v.videos),product.videos);
   const tags=[...new Set<string>([...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(match?.tags)?match.tags:[]),...(Array.isArray(match?.product_tags)?match.product_tags:[]),...(Array.isArray(match?.intent_tags)?match.intent_tags:[]),...(Array.isArray(match?.attributes)?match.attributes.map((x:any)=>typeof x==='string'?x:(x?.value||x?.name||'')):[])].map(String).map(x=>x.trim()).filter(Boolean))];
