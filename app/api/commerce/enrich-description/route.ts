@@ -1,8 +1,9 @@
 import {NextRequest,NextResponse} from "next/server";
 export const runtime="nodejs";
-const cache=new Map<string,{description:string;at:number}>();
+const cache=new Map<string,{description:string;images:string[];at:number}>();
 const TTL=1000*60*60*24*7;
 function text(html:string){return html.replace(/<script[\s\S]*?<\/script>/gi," ").replace(/<style[\s\S]*?<\/style>/gi," ").replace(/<br\s*\/?>/gi,"\n").replace(/<\/p>/gi,"\n\n").replace(/<\/li>/gi,"\n").replace(/<[^>]+>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&lt;/gi,"<").replace(/&gt;/gi,">").replace(/[ \t]+/g," ").replace(/\n\s+/g,"\n").replace(/\n{3,}/g,"\n\n").trim()}
+function pageImages(html:string,base:URL){const found:string[]=[];const push=(raw:string)=>{try{const u=new URL(raw,base);if((u.protocol==="https:"||u.protocol==="http:")&&!/logo|icon|avatar|payment|badge/i.test(u.pathname))found.push(u.toString())}catch{}};for(const m of html.matchAll(/<meta[^>]+property="og:image"[^>]+content="([^"]+)"/gi))push(m[1]);for(const m of html.matchAll(/<img[^>]+(?:src|data-src)="([^"]+)"/gi))push(m[1]);return [...new Set(found)].slice(0,20)}
 function candidates(html:string){
  const out:string[]=[];
  for(const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)){try{const raw=JSON.parse(m[1]);const walk=(v:any)=>{if(!v)return;if(Array.isArray(v))return v.forEach(walk);if(typeof v==="object"){if((v["@type"]==="Product"||v["@type"]?.includes?.("Product"))&&v.description)out.push(text(String(v.description)));Object.values(v).forEach(walk)}};walk(raw)}catch{}}
@@ -13,12 +14,12 @@ function safe(url:string){try{const u=new URL(url);if(u.protocol!=="https:"&&u.p
 export async function POST(req:NextRequest){
  try{
   const body=await req.json(),u=safe(String(body?.url||""));if(!u)return NextResponse.json({error:"INVALID_MERCHANT_URL"},{status:400});
-  const key=u.origin+u.pathname;const hit=cache.get(key);if(hit&&Date.now()-hit.at<TTL)return NextResponse.json({description:hit.description,cached:true});
+  const key=u.origin+u.pathname;const hit=cache.get(key);if(hit&&Date.now()-hit.at<TTL)return NextResponse.json({description:hit.description,images:hit.images,cached:true});
   const response=await fetch(u,{headers:{"User-Agent":"Mozilla/5.0 (compatible; YNOTProductEnricher/1.0)","Accept":"text/html,application/xhtml+xml"},redirect:"follow",cache:"no-store",signal:AbortSignal.timeout(6500)});
   if(!response.ok)return NextResponse.json({error:"MERCHANT_FETCH_FAILED"},{status:502});
   const type=response.headers.get("content-type")||"";if(!type.includes("text/html"))return NextResponse.json({error:"MERCHANT_NOT_HTML"},{status:422});
-  const html=(await response.text()).slice(0,2500000),best=candidates(html)[0]||"";
-  if(!best)return NextResponse.json({description:"",found:false});
-  cache.set(key,{description:best,at:Date.now()});return NextResponse.json({description:best,found:true});
+  const html=(await response.text()).slice(0,2500000),best=candidates(html)[0]||"",images=pageImages(html,u);
+  if(!best&&!images.length)return NextResponse.json({description:"",images:[],found:false});
+  cache.set(key,{description:best,images,at:Date.now()});return NextResponse.json({description:best,images,found:true});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:"ENRICH_FAILED"},{status:500})}
 }
