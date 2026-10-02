@@ -30,7 +30,20 @@ export async function POST(req:NextRequest){
   const wantedId=String(product.id||''),wantedTitle=clean(product.title||'');
   const match=detail||products.find(p=>String(p?.id||'')===wantedId)||products.find(p=>clean(p?.title||'')===wantedTitle)||products.find(p=>wantedTitle&&(clean(p?.title||'').includes(wantedTitle)||wantedTitle.includes(clean(p?.title||''))));
   if(!match){const local=bestLocal(product);return local?NextResponse.json({url:local,exact:true,source:'catalog',product:{...product,url:local,description:product.description||''}}):NextResponse.json({error:'EXACT_PRODUCT_NOT_FOUND'},{status:404})}
-  const rawMedia:any[]=[...(match?.media||[]),...(match?.images||[]),...(match?.image_urls||[]),match?.image,match?.featured_image,match?.featuredImage].filter(Boolean);
+  // UCP exposes the visual gallery on product.media. Variant records primarily
+  // describe purchasable option combinations; selecting an option can change
+  // product.media. Query visual option values and merge those returned galleries.
+  const selectedProducts:any[]=[];
+  const visualOption=(match?.options||[]).find((o:any)=>/color|colour|style|finish|pattern|material/i.test(String(o?.name||'')))||(match?.options||[])[0];
+  const optionValues=(visualOption?.values||[]).filter((v:any)=>v?.exists!==false).slice(0,12);
+  if(match?.id&&visualOption?.name&&optionValues.length>1){
+   const settled=await Promise.allSettled(optionValues.map(async(v:any)=>{
+    const content=await callCatalog('get_product',{id:String(match.id),selected:[{name:String(visualOption.name),label:String(v?.label||v?.value||'')}]});
+    return content?.product||null;
+   }));
+   for(const result of settled)if(result.status==='fulfilled'&&result.value)selectedProducts.push(result.value);
+  }
+  const rawMedia:any[]=[...(match?.media||[]),...(match?.images||[]),...(match?.image_urls||[]),match?.image,match?.featured_image,match?.featuredImage,...selectedProducts.flatMap((p:any)=>[...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage])].filter(Boolean);
   const media=imageMedia(rawMedia);
   const videos=videoMedia(rawMedia);
   const fallbackPrice=match?.price_range?.min||match?.variants?.[0]?.price;
@@ -43,8 +56,9 @@ export async function POST(req:NextRequest){
   const candidates=[chosen?.url,...variants.filter((v:any)=>v.available!==false).map((v:any)=>v.url),match?.url,match?.online_store_url,match?.product_url].map(normalize).filter(Boolean);
   const exact=candidates.find(exactEnough)||candidates.find(u=>{try{return new URL(u).pathname.replace(/\/+$/,'').length>1}catch{return false}});
   if(!exact)return NextResponse.json({error:'EXACT_PRODUCT_URL_UNAVAILABLE'},{status:404});
-  const gallery=uniqMedia(media,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image);
-  const allVideos=uniqMedia(videos,match?.videos,match?.video_urls,match?.media_urls,variants.map((v:any)=>v.videos),product.videos);
+  const selectedImages=selectedProducts.flatMap((p:any)=>imageMedia([...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage].filter(Boolean)));
+  const gallery=uniqMedia(media,selectedImages,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image);
+  const allVideos=uniqMedia(videos,match?.videos,match?.video_urls,match?.media_urls,selectedProducts.map((p:any)=>[p?.videos,p?.video_urls,p?.media_urls,videoMedia([...(p?.media||[])])]),variants.map((v:any)=>v.videos),product.videos);
   const tags=[...new Set<string>([...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(match?.tags)?match.tags:[]),...(Array.isArray(match?.product_tags)?match.product_tags:[]),...(Array.isArray(match?.intent_tags)?match.intent_tags:[]),...(Array.isArray(match?.attributes)?match.attributes.map((x:any)=>typeof x==='string'?x:(x?.value||x?.name||'')):[])].map(String).map(x=>x.trim()).filter(Boolean))];
   const title=String(match?.title||product.title||'');
   const description=stripHtml(match?.description)||stripHtml(match?.descriptionHtml)||stripHtml(match?.description_html)||stripHtml(match?.body_html)||stripHtml(product.description)||`${title} from ${product.brand||'the original Shopify merchant'}. Full merchant details are available on the original product page.`;
