@@ -231,18 +231,20 @@ export default function LuminaWorld(){
   gallerySwitchRef.current++;
   const media=(p:Product)=>[...new Set<string>([p.image,...(p.images||[]),...(p.variants||[]).flatMap(v=>[v.image,...(v.images||[])]).filter(Boolean)].filter(Boolean) as string[])];
   const initial=media(product),primary=initial[0]||product.image;
+  // The card price is the YNOT retail price. Hydration may enrich media/options, never overwrite it with merchant pricing.
+  const ynotPrice=product.price,ynotCurrency=product.currency;
   setSelected({...product,image:primary,images:initial});
   setCheckoutError("");
   setVariantsOpen(false);
   setDescriptionOpen(false);
   try{
    const direct=await fetch(`/api/commerce/product/${encodeURIComponent(product.id)}`,{cache:"no-store"}),directData=await direct.json();
-   let rich:Product=direct.ok&&directData.product?{...product,...directData.product}:product;
+   let rich:Product=direct.ok&&directData.product?{...product,...directData.product,price:ynotPrice,currency:ynotCurrency||directData.product.currency}:product;
    if((rich.source||product.source||"").toLowerCase().includes("shopify")){
-    try{const response=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rich),cache:"no-store"}),data=await response.json();if(response.ok&&data.product)rich={...rich,...data.product,url:data.url||data.product.url||rich.url}}catch{}
+    try{const response=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rich),cache:"no-store"}),data=await response.json();if(response.ok&&data.product)rich={...rich,...data.product,price:ynotPrice,currency:ynotCurrency||rich.currency,url:data.url||data.product.url||rich.url}}catch{}
    }
    const images=media(rich);
-   setSelected(current=>current&&current.id===product.id?{...rich,image:images[0]||rich.image,images}:current);
+   setSelected(current=>current&&current.id===product.id?{...rich,price:ynotPrice,currency:ynotCurrency||rich.currency,image:images[0]||rich.image,images}:current);
    // Merchant-page enrichment runs after the popup is already visible, so it never blocks opening.
    if(rich.url&&/^https?:\/\//i.test(rich.url)){
     void fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:rich.url,id:rich.id}),cache:"no-store"})
