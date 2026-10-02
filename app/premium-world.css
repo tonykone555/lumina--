@@ -149,3 +149,7 @@ html.ynot-any-product-open .lv4-detail .lv4-actions>button:first-child{min-heigh
 html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag{width:82px!important;min-width:82px!important;max-width:82px!important;height:72px!important;min-height:72px!important;padding:0!important;border-radius:22px!important;aspect-ratio:auto!important}
 html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag svg{width:29px!important;height:29px!important}
 html.ynot-any-product-open .lv4-detail .lv4-actions>.lv4-save-next-to-bag span{display:none!important}
+
+/* Remove the oversized legacy Description pill; keep description content itself available. */
+html.ynot-any-product-open .lv4-detail .ynot-description-toggle{display:none!important}
+html.ynot-any-product-open .lv4-detail .ynot-description-panel{margin-top:8px!important}
