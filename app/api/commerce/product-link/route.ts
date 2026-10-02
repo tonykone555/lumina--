@@ -53,6 +53,11 @@ export async function POST(req:NextRequest){
    const vi=imageMedia(vm),vv=videoMedia(vm);
    return {id:String(v?.id||v?.variant_id||''),label:String(v?.title||v?.name||(v?.selected_options||[]).map((o:any)=>o?.value).filter(Boolean).join(' · ')||'Option'),price:priceOf(v,fallbackPrice),currency:String(v?.price?.currency||fallbackPrice?.currency||product.currency||'EUR'),image:vi[0]||media[0]||product.image||'',images:vi,videos:vv,url:normalize(v?.url||''),available:v?.available!==false&&v?.availability!=='out_of_stock',selectedOptions:(v?.selected_options||v?.selectedOptions||[]).map((o:any)=>({name:String(o?.name||''),value:String(o?.value||o?.label||'')})).filter((o:any)=>o.name&&o.value)}
   }).filter((v:any)=>v.id);
+  // Variant prices from Shopify are merchant prices. Keep them only as supplier metadata;
+  // every displayed variant inherits the immutable YNOT retail price.
+  const ynotRetail=product.retailPrice??product.price;
+  const ynotCurrency=product.currency||'EUR';
+  for(const v of variants){(v as any).supplierPrice=v.price;(v as any).price=ynotRetail??v.price;(v as any).currency=ynotCurrency;}
   const chosen=product.variantId?variants.find((v:any)=>String(v.id)===String(product.variantId)):undefined;
   const candidates=[chosen?.url,...variants.filter((v:any)=>v.available!==false).map((v:any)=>v.url),match?.url,match?.online_store_url,match?.product_url].map(normalize).filter(Boolean);
   const exact=candidates.find(exactEnough)||candidates.find(u=>{try{return new URL(u).pathname.replace(/\/+$/,'').length>1}catch{return false}});
