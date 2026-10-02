@@ -137,3 +137,6 @@ html.ynot-any-product-open .lv4-actions>.lv4-save-next-to-bag span{display:none!
 .lv4-description-trigger svg{width:16px!important;height:16px!important;transition:transform .18s ease!important}
 .lv4-description-trigger[aria-expanded="true"] svg{transform:rotate(180deg)!important}
 .lv4-product-description{display:block!important;white-space:pre-wrap!important;overflow:visible!important;max-height:none!important}
+
+/* Product navigation gesture must never translate the full-screen sheet. */
+html.ynot-any-product-open .lv4-detail.swiping,html.ynot-any-product-open .lv4-detail:not(.swiping){transform:none!important;translate:none!important;left:0!important;right:0!important;width:100vw!important}
