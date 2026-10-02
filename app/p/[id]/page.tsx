@@ -15,5 +15,5 @@ export default async function ProductDeepLink({params,searchParams}:PageProps){
     if(Array.isArray(value))value.forEach(item=>next.append(key,item));
     else next.set(key,value);
   }
-  redirect(`/room?${next.toString()}`);
+  redirect(`/electric?${next.toString()}`);
 }
