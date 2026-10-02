@@ -7,7 +7,7 @@ import VoiceSearchOrb from "./VoiceSearchOrb";
 import ProductMediaSurface from "./ProductMediaSurface";
 
 type Variant={id:string;label:string;price:number|null;currency?:string;image?:string;images?:string[];videos?:string[];url?:string;available:boolean;selectedOptions?:{name:string;value:string}[]};
-type Product={id:string;variantId?:string;title:string;brand:string;price:number|null;currency?:string;image:string;images?:string[];videos?:string[];url?:string;tags?:string[];options?:{name:string;values:{label:string;value:string;available?:boolean}[]}[];source?:string;variants?:Variant[];description?:string;supplierPrice?:number;retailPrice?:number;pricingMode?:string;checkout?:{mode:"ynot"|"merchant";reason:string};x?:number;y?:number;z?:number;zone?:number;fresh?:boolean;contextual?:boolean};
+type Product={id:string;catalogId?:string;shopifyCatalogId?:string;ynotPrice?:number|null;ynotCurrency?:string;merchantUrl?:string;variantId?:string;title:string;brand:string;price:number|null;currency?:string;image:string;images?:string[];videos?:string[];url?:string;tags?:string[];options?:{name:string;values:{label:string;value:string;available?:boolean}[]}[];source?:string;variants?:Variant[];description?:string;supplierPrice?:number;retailPrice?:number;pricingMode?:string;checkout?:{mode:"ynot"|"merchant";reason:string};x?:number;y?:number;z?:number;zone?:number;fresh?:boolean;contextual?:boolean};
 type CatalogPage={products?:Product[];source?:string;sources?:string[];pagination?:Record<string,unknown>;market?:"lumina"|"ebay";luminaSource?:"all"|"shopify"|"amazon";error?:string};
 type Scene={a:string;b:string;c:string;image:string;query:string;labels:string[]};
 type Category={key:string;label:string;query:string;subtitle:string;image?:string};
@@ -231,38 +231,38 @@ export default function LuminaWorld(){
  async function openProduct(product:Product){
   gallerySwitchRef.current++;
   const media=(p:Product)=>[...new Set<string>([p.image,...(p.images||[]),...(p.variants||[]).flatMap(v=>[v.image,...(v.images||[])]).filter(Boolean)].filter(Boolean) as string[])];
-  const initial=media(product),primary=initial[0]||product.image;
-  // The card price is the YNOT retail price. Hydration may enrich media/options, never overwrite it with merchant pricing.
-  const ynotPrice=product.price,ynotCurrency=product.currency;
-  selectedYnotPriceRef.current={id:product.id,price:ynotPrice,currency:ynotCurrency};
-  setSelected({...product,image:primary,images:initial});
-  setCheckoutError("");
-  setVariantsOpen(false);
-  setDescriptionOpen(false);
+  // Normalize identity and YNOT retail pricing once. Everything fetched later is enrichment only.
+  const stableId=String(product.id),catalogId=product.shopifyCatalogId||product.catalogId||(/^gid:\/\/shopify\//i.test(stableId)?stableId:undefined);
+  const ynotPrice=product.ynotPrice??product.retailPrice??product.price,ynotCurrency=product.ynotCurrency||product.currency;
+  const base:Product={...product,id:stableId,catalogId,shopifyCatalogId:catalogId,ynotPrice,ynotCurrency,price:ynotPrice??product.price,currency:ynotCurrency||product.currency};
+  const initial=media(base),primary=initial[0]||base.image;
+  selectedYnotPriceRef.current={id:stableId,price:ynotPrice??undefined,currency:ynotCurrency};
+  setSelected({...base,image:primary,images:initial});
+  setCheckoutError("");setVariantsOpen(false);setDescriptionOpen(false);
   try{
-   const direct=await fetch(`/api/commerce/product/${encodeURIComponent(product.id)}`,{cache:"no-store"}),directData=await direct.json();
-   let rich:Product=direct.ok&&directData.product?{...product,...directData.product,price:ynotPrice,currency:ynotCurrency||directData.product.currency}:product;
-   if((rich.source||product.source||"").toLowerCase().includes("shopify")){
-    try{const response=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rich),cache:"no-store"}),data=await response.json();if(response.ok&&data.product)rich={...rich,...data.product,price:ynotPrice,currency:ynotCurrency||rich.currency,url:data.url||data.product.url||rich.url}}catch{}
+   const direct=await fetch(`/api/commerce/product/${encodeURIComponent(stableId)}`,{cache:"no-store"}),directData=await direct.json().catch(()=>null);
+   let rich:Product=direct.ok&&directData?.product?{...base,...directData.product,id:stableId,catalogId,shopifyCatalogId:catalogId,ynotPrice,ynotCurrency,price:ynotPrice??base.price,currency:ynotCurrency||base.currency}:base;
+   if((rich.source||base.source||"").toLowerCase().includes("shopify")){
+    try{
+     const response=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...rich,id:stableId,catalogId,shopifyCatalogId:catalogId,price:ynotPrice??base.price,currency:ynotCurrency||base.currency}),cache:"no-store"});
+     const data=await response.json().catch(()=>null);
+     if(response.ok&&data?.product)rich={...rich,...data.product,id:stableId,catalogId,shopifyCatalogId:catalogId,ynotPrice,ynotCurrency,price:ynotPrice??base.price,currency:ynotCurrency||base.currency,merchantUrl:data.url||data.product.merchantUrl||data.product.url||rich.merchantUrl,url:data.url||data.product.url||rich.url};
+    }catch{}
    }
-   const images=media(rich);
-   setSelected(current=>current&&current.id===product.id?{...rich,price:ynotPrice,currency:ynotCurrency||rich.currency,image:images[0]||rich.image,images}:current);
-   // Merchant-page enrichment runs after the popup is already visible, so it never blocks opening.
-   // Enrich from the merchant URL, not a YNOT/internal product route.
-   const merchantUrl=[rich.url,product.url,(rich.variants||[]).find(v=>/^https?:\/\//i.test(String(v.url||"")))?.url].find(url=>/^https?:\/\//i.test(String(url||""))&&!/ynotworld\.app/i.test(String(url)));
+   const images=media(rich),tags=[...new Set([...(base.tags||[]),...(rich.tags||[])])];
+   rich={...rich,id:stableId,price:ynotPrice??base.price,currency:ynotCurrency||base.currency,ynotPrice,ynotCurrency,tags,image:images[0]||rich.image,images};
+   setSelected(current=>current&&current.id===stableId?rich:current);
+   const merchantUrl=[rich.merchantUrl,rich.url,base.merchantUrl,base.url,(rich.variants||[]).find(v=>/^https?:\/\//i.test(String(v.url||"")))?.url].find(url=>/^https?:\/\//i.test(String(url||""))&&!/ynotworld\.app/i.test(String(url)));
    if(merchantUrl){
-    void fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:merchantUrl,id:rich.id}),cache:"no-store"})
-     .then(r=>r.ok?r.json():null).then(data=>{
-      const scraped=String(data?.description||"").trim();
-      const scrapedImages=(Array.isArray(data?.images)?data.images:[]).filter((url:any)=>typeof url==="string"&&/^https?:\/\//i.test(url));
-      if(!scraped&&!scrapedImages.length)return;
-      setSelected(current=>{
-       if(!current||current.id!==product.id)return current;
-       const existing=String(current.description||"").trim();
-       const mergedImages=[...new Set([current.image,...(current.images||[]),...scrapedImages].filter(Boolean))] as string[];
-       return {...current,description:scraped.length>existing.length+40?scraped:current.description,image:mergedImages[0]||current.image,images:mergedImages};
-      });
-     }).catch(()=>{});
+    void fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:merchantUrl,id:stableId}),cache:"no-store"}).then(r=>r.ok?r.json():null).then(data=>{
+     const scraped=String(data?.description||"").trim(),scrapedImages=(Array.isArray(data?.images)?data.images:[]).filter((url:any)=>typeof url==="string"&&/^https?:\/\//i.test(url));
+     if(!scraped&&!scrapedImages.length)return;
+     setSelected(current=>{
+      if(!current||current.id!==stableId)return current;
+      const existing=String(current.description||"").trim(),mergedImages=[...new Set([current.image,...(current.images||[]),...scrapedImages].filter(Boolean))] as string[];
+      return {...current,price:ynotPrice??current.price,currency:ynotCurrency||current.currency,ynotPrice,ynotCurrency,description:scraped.length>existing.length+40?scraped:current.description,image:mergedImages[0]||current.image,images:mergedImages};
+     });
+    }).catch(()=>{});
    }
   }catch{}
  }
