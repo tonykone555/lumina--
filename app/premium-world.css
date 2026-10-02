@@ -85,3 +85,7 @@
 .lv4-product:has(.lv4-orbmeta){z-index:20!important}
 .lv4-product.is-hovered,.lv4-product:focus-within{z-index:1000!important}
 @media(max-width:760px){.lv4-category-bubble{width:205px!important;height:205px!important;margin:-102.5px 0 0 -102.5px!important}.lv4-category-bubble b{font-size:16px!important}}
+
+/* The only product Save control belongs beside YNOT BAG; suppress legacy floating/top heart. */
+.lv4-detail>.lv4-save-action,.lv4-detail>.lv4-save,.lv4-detail>[class*="heart" i]:not(.lv4-actions *),.lv4-detail>[class*="save" i]:not(.lv4-actions *){display:none!important}
+.lv4-actions .lv4-save-next-to-bag{display:inline-flex!important;position:relative!important;inset:auto!important;transform:none!important}
