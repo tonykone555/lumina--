@@ -10,7 +10,20 @@ function normalizeVariants(p:any){const raw=Array.isArray(p?.variants)?p.variant
 function reviews(p:any){const raw=Array.isArray(p.reviews)?p.reviews:Array.isArray(p.customer_reviews)?p.customer_reviews:[];return raw.slice(0,12).map((r:any)=>({rating:Number(r?.rating||r?.stars)||null,title:String(r?.title||""),body:String(r?.body||r?.text||r?.review||""),author:String(r?.author||r?.reviewer||""),image:typeof r?.image==="string"?r.image:null})).filter((r:any)=>r.rating||r.body)}
 async function richShopifyProduct(req:NextRequest,base:any){try{const response=await fetch(new URL("/api/commerce/product-link",req.url),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(base),cache:"no-store",signal:AbortSignal.timeout(9000)});const data=await response.json().catch(()=>null);return response.ok&&data?.product?data.product:null}catch{return null}}
 export async function GET(req:NextRequest,{params}:{params:Promise<{id:string}>}){
- const {id}=await params;const product=await getCatalogProduct(id).catch(()=>null);if(!product||product.active===false||product.ad_eligible===false)return NextResponse.json({error:"Product not found"},{status:404});
+ const {id}=await params;let product=await getCatalogProduct(id).catch(()=>null);
+ // Shopify catalogue bubbles are not always persisted in Supabase. Resolve the
+ // upstream gid directly instead of returning 404 and losing rich product data.
+ if(!product&&/^gid:\/\/shopify\//i.test(id)){
+  try{
+   const response=await fetch(new URL("/api/commerce/product-link",req.url),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,catalogId:id,shopifyCatalogId:id,source:"shopify"}),cache:"no-store",signal:AbortSignal.timeout(10000)});
+   const data=await response.json().catch(()=>null);
+   if(response.ok&&data?.product){
+    const p=data.product;
+    return NextResponse.json({product:{...p,id:String(p.id||id),catalogId:id,shopifyCatalogId:id,merchantUrl:data.url||p.url||"",url:data.url||p.url||"",images:imageUrls(p),videos:mediaUrls(p),tags:Array.isArray(p.tags)?p.tags:[]}}, {headers:{"Cache-Control":"public, s-maxage=300, stale-while-revalidate=3600"}});
+   }
+  }catch{}
+ }
+ if(!product||product.active===false||product.ad_eligible===false)return NextResponse.json({error:"Product not found"},{status:404});
  const images=imageUrls(product),videos=mediaUrls(product),localVariants=normalizeVariants(product),tags=[...new Set([...(Array.isArray(product.intent_tags)?product.intent_tags:[]),...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(product.attributes)?product.attributes:[])].map(String).filter(Boolean))],rating=Number(product.rating||product.review_rating||product.average_rating)||null,reviewCount=Number(product.review_count||product.reviews_count||product.rating_count)||0;
  const base={id:product.ynot_id,title:product.title,brand:product.brand||product.source_brand||"YNOT",price:Number(product.ynot_price),currency:String(product.currency||"USD"),image:images[0]||product.image_url,images,videos,variants:localVariants,tags,rating,reviewCount,reviews:reviews(product),url:product.best_source_url||`/p/${encodeURIComponent(product.ynot_id)}`,source:"shopify",category:product.category,description:product.description||`${product.title} available through YNOT.`};
  const rich=await richShopifyProduct(req,base);const variants=Array.isArray(rich?.variants)&&rich.variants.length?rich.variants:localVariants;const mergedImages=uniq([base.images,rich?.images,rich?.image,variants.map((v:any)=>[v?.image,v?.images])]);const result=rich?{...base,...rich,price:base.price,currency:base.currency,ynotPrice:base.price,ynotCurrency:base.currency,merchantUrl:(/^https?:\/\//i.test(String(rich?.url||""))?rich.url:/^https?:\/\//i.test(String(base.url||""))?base.url:""),variants,image:mergedImages[0]||base.image,images:mergedImages,videos:uniq([base.videos,rich?.videos]),tags:[...new Set([...(base.tags||[]),...(rich?.tags||[])].map(String).filter(Boolean))]}:{...base,price:base.price,currency:base.currency,ynotPrice:base.price,ynotCurrency:base.currency,merchantUrl:/^https?:\/\//i.test(String(base.url||""))?base.url:"",variants,images:mergedImages};
