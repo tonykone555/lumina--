@@ -3,10 +3,22 @@ import {useEffect} from "react";
 
 export default function RoomWorldHandoffGuard(){
  useEffect(()=>{
+  const openRoomFromDesktopDiscover=(event:MouseEvent)=>{
+   if(window.innerWidth<701)return;
+   const target=event.target as Element|null;
+   const button=target?.closest<HTMLButtonElement>(".ynot-top-mode button");
+   if(!button||button.textContent?.trim().toUpperCase()!=="DISCOVER")return;
+   event.preventDefault();
+   event.stopPropagation();
+   event.stopImmediatePropagation();
+   window.location.assign("/room");
+  };
+  document.addEventListener("click",openRoomFromDesktopDiscover,true);
+
   const params=new URLSearchParams(window.location.search);
   let handoff=params.get("from")==="room";
   try{handoff=handoff||sessionStorage.getItem("ynot-room-world-handoff")==="1"}catch{}
-  if(!handoff)return;
+  if(!handoff)return()=>document.removeEventListener("click",openRoomFromDesktopDiscover,true);
   try{sessionStorage.removeItem("ynot-room-world-handoff")}catch{}
   const suppress=()=>{
    document.querySelectorAll<HTMLVideoElement>("video").forEach(video=>{
@@ -27,7 +39,7 @@ export default function RoomWorldHandoffGuard(){
   suppress();
   const observer=new MutationObserver(suppress);observer.observe(document.body,{childList:true,subtree:true});
   const timer=window.setTimeout(()=>observer.disconnect(),5000);
-  return()=>{observer.disconnect();window.clearTimeout(timer)};
+  return()=>{document.removeEventListener("click",openRoomFromDesktopDiscover,true);observer.disconnect();window.clearTimeout(timer)};
  },[]);
  return null;
 }
