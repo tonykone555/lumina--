@@ -2,6 +2,10 @@ import type {Metadata} from "next";
 import LegacyShoppingScripts from "./LegacyShoppingScripts";
 import "./globals.css";
 import "./earn-entry.css";
+import "./styles/world-foundation.css";
+import "./styles/world-ui-patches.css";
+import "./styles/product-commerce-patches.css";
+import "./styles/responsive-theme-patches.css";
 
 const SITE_URL="https://ynotworld.app",SITE_TITLE="YNOT World — AI Shopping, Visual Product Search & Discovery",SITE_DESCRIPTION="YNOT World is an AI shopping and visual product discovery platform for finding products across fashion, home, beauty, fitness, tech and independent stores at ynotworld.app.",SOCIAL_PREVIEW="/social-preview?v=2";
 export const metadata:Metadata={metadataBase:new URL(SITE_URL),title:{default:SITE_TITLE,template:"%s | YNOT World"},description:SITE_DESCRIPTION,applicationName:"YNOT World",category:"shopping",keywords:["YNOT","YNOT World","YNOT shop","YNOT shopping","ynotworld.app","AI shopping","AI shopping app","AI shopping platform","AI product search","AI product discovery","AI shopping search","AI shopping assistant","shopping assistant","conversational shopping","visual shopping","visual product search","visual product discovery","spatial shopping","shopping discovery engine","product discovery engine","generative AI shopping","online shopping","independent stores","YNOT products","fashion shopping","furniture shopping","home decor shopping","beauty products","fitness gear","tech products"],alternates:{canonical:"/"},robots:{index:true,follow:true,googleBot:{index:true,follow:true,"max-image-preview":"large","max-snippet":-1,"max-video-preview":-1}},openGraph:{type:"website",url:SITE_URL,siteName:"YNOT World",title:SITE_TITLE,description:SITE_DESCRIPTION,images:[{url:SOCIAL_PREVIEW,width:1200,height:630,alt:"YNOT World"}]},twitter:{card:"summary_large_image",title:SITE_TITLE,description:SITE_DESCRIPTION,images:[SOCIAL_PREVIEW]},verification:{google:"-GQTuojAnMn-0J1mgsbr0j_zasvkZYoFrakODO8skNA"},other:{"theme-color":"#f1f1ee"}};
