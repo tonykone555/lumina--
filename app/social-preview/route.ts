@@ -1,13 +1,45 @@
-const IMAGE_BASE64 = `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...TRUNCATED...FFFFABRRRQAUUUUAFFFFABRRRQAUh6UtFADO9KtIQaVaTAdRSE4oyKgBaKTIoyKdgA9KZTiRijA9apIqwg60+mYNA602hWH0UmRS5FESkFNbrTqKltjEHSmkHNPyKMiqAZz0pKkqOpYEmRQelR089KydzMZRSjrSk5pANooooAKKKKAP/W/B+iiitDMKKKKACiiigAooooAKKKKACiiigApe1JS9qAEooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigBR1px6U0dacelADM4qSo6koAa1NpzdabQA1qUdKRqUdKAFooooAQdTUp6VEOpqU9KTAgBOaf70wdafTAYetJSnrSUAFObrTac3WgBB1oPWgdaD1oAcvSg9RQvSg9RQA0daSlHWkoAcvWnnrTF6089aAEpu406o6AHNTac3Wm0AO/hptO/hptABRRRQAUUUUAFFFFABTl602nL1pMaHU1utOprdaSKY2njpTKeOlUQLTWp1NagBtFFFAET9aZT360ygAooooAKKKKACiiigApT1pKU9aAEooooAKKKKACiiigAqOpKjoAjckGo6e/WmUAFFFFABRRRQAUUUUAFFFFABRRRQAUUUUAFFFFABRRRQAh6UynnpTKACiiigAooooAKKKKAFHWkpR1pKC0FFFFAwooooAKKKKACiiigAooorBkMKcOhptOHQ0hDaKKKACiiigAooooA/9k=`;
-
-export const runtime = "nodejs";
+export const runtime = "edge";
 
 export async function GET() {
-  const image = Buffer.from(IMAGE_BASE64, "base64");
-  return new Response(image, {
+  const svg = `
+  <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="bg" cx="25%" cy="0%" r="100%">
+        <stop offset="0%" stop-color="#16202c"/>
+        <stop offset="45%" stop-color="#0b0e13"/>
+        <stop offset="100%" stop-color="#020304"/>
+      </radialGradient>
+      <radialGradient id="bubble" cx="36%" cy="28%" r="72%">
+        <stop offset="0%" stop-color="#263648" stop-opacity="0.55"/>
+        <stop offset="55%" stop-color="#0f1720" stop-opacity="0.92"/>
+        <stop offset="100%" stop-color="#05080c"/>
+      </radialGradient>
+      <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#e7f2ff" stop-opacity="0.75"/>
+        <stop offset="34%" stop-color="#8fa7c0" stop-opacity="0.55"/>
+        <stop offset="68%" stop-color="#526272" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#c8d8e8" stop-opacity="0.48"/>
+      </linearGradient>
+      <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="18"/>
+      </filter>
+    </defs>
+
+    <rect width="1200" height="630" fill="url(#bg)"/>
+    <ellipse cx="596" cy="538" rx="246" ry="26" fill="#000" opacity="0.7" filter="url(#shadow)"/>
+
+    <circle cx="600" cy="310" r="192" fill="url(#bubble)"/>
+    <circle cx="600" cy="310" r="192" fill="none" stroke="url(#rim)" stroke-width="9"/>
+    <ellipse cx="533" cy="201" rx="89" ry="41" fill="#d9e8f7" opacity="0.12" transform="rotate(-28 533 201)"/>
+    <ellipse cx="697" cy="417" rx="91" ry="22" fill="#d8e5f2" opacity="0.16" transform="rotate(-38 697 417)"/>
+
+    <text x="600" y="333" fill="#ffffff" font-family="Arial, Helvetica, sans-serif" font-size="50" font-weight="700" text-anchor="middle" letter-spacing="1">YNOTWORLD</text>
+  </svg>`;
+
+  return new Response(svg, {
     headers: {
-      "Content-Type": "image/jpeg",
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Content-Type": "image/svg+xml",
+      "Cache-Control": "public, max-age=86400, s-maxage=86400",
     },
   });
 }
