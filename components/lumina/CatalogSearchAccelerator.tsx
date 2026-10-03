@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect} from "react";
+import ProductImageScanBridge from "./ProductImageScanBridge";
 
 type Product={id?:string;title?:string;brand?:string;image?:string;images?:string[];[key:string]:unknown};
 type CatalogPayload={products?:Product[];pagination?:Record<string,unknown>;[key:string]:unknown};
@@ -31,37 +32,18 @@ export default function CatalogSearchAccelerator(){
    const source=url.searchParams.get("source")||"shopify",page=Number(url.searchParams.get("page")||"0");
    const shouldAccelerate=isCatalog&&method==="GET"&&url.searchParams.get("market")!=="ebay"&&source==="shopify"&&page===0&&!url.searchParams.get("cursor")&&!url.searchParams.get("direction");
    if(!shouldAccelerate)return originalFetch(input as RequestInfo|URL,init);
-
    const cacheKey=`${url.pathname}?${[...url.searchParams.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}=${v}`).join("&")}`;
    const cached=responseCache.get(cacheKey);
    if(cached&&Date.now()-cached.at<CACHE_MS){prefetchImages(cached.payload.products||[]);return jsonResponse({...cached.payload,accelerated:true,cached:true})}
-
-   /* Important: return the real first page immediately. The old accelerator waited
-      for all three expansion calls before the UI could paint even the first bubble. */
    const primary=await originalFetch(input as RequestInfo|URL,init);
    if(!primary.ok)return primary;
    let primaryData:CatalogPayload;try{primaryData=await primary.clone().json() as CatalogPayload}catch{return primary}
    const baseProducts=Array.isArray(primaryData.products)?primaryData.products:[];
-   prefetchImages(baseProducts);
-   responseCache.set(cacheKey,{at:Date.now(),payload:primaryData});
-
-   /* Warm the next bubble rows in parallel for LuminaWorld's follow-up fetches,
-      but never block the first response on them. */
-   void Promise.all(EXPANSION_DIRECTIONS.map(async direction=>{
-    const expansion=new URL(url.toString());expansion.searchParams.set("direction",direction);expansion.searchParams.set("page","0");
-    const payload=await withTimeout(originalFetch(expansion.toString(),{...init,cache:"no-store"}).then(async response=>response.ok?await response.json() as CatalogPayload:null),2200);
-    if(payload?.products?.length)prefetchImages(payload.products);
-    return payload;
-   })).then(extras=>{
-    const merged=mergeProducts([baseProducts,...extras.map(payload=>Array.isArray(payload?.products)?payload!.products!:[])]);
-    if(merged.length>baseProducts.length){const warmed={...primaryData,products:merged,accelerated:true,initial_target:INITIAL_PRODUCT_TARGET};responseCache.set(cacheKey,{at:Date.now(),payload:warmed});window.dispatchEvent(new CustomEvent("ynot:catalog-warmed",{detail:{query:url.searchParams.get("q")||"",count:merged.length}}))}
-   }).catch(()=>{});
-
-   const headers=new Headers(primary.headers);headers.set("X-YNOT-Search-Accelerated","stream-first");
-   return jsonResponse({...primaryData,accelerated:true,stream_first:true},primary.status,headers);
+   prefetchImages(baseProducts);responseCache.set(cacheKey,{at:Date.now(),payload:primaryData});
+   void Promise.all(EXPANSION_DIRECTIONS.map(async direction=>{const expansion=new URL(url.toString());expansion.searchParams.set("direction",direction);expansion.searchParams.set("page","0");const payload=await withTimeout(originalFetch(expansion.toString(),{...init,cache:"no-store"}).then(async response=>response.ok?await response.json() as CatalogPayload:null),2200);if(payload?.products?.length)prefetchImages(payload.products);return payload})).then(extras=>{const merged=mergeProducts([baseProducts,...extras.map(payload=>Array.isArray(payload?.products)?payload!.products!:[])]);if(merged.length>baseProducts.length){const warmed={...primaryData,products:merged,accelerated:true,initial_target:INITIAL_PRODUCT_TARGET};responseCache.set(cacheKey,{at:Date.now(),payload:warmed});window.dispatchEvent(new CustomEvent("ynot:catalog-warmed",{detail:{query:url.searchParams.get("q")||"",count:merged.length}}))}}).catch(()=>{});
+   const headers=new Headers(primary.headers);headers.set("X-YNOT-Search-Accelerated","stream-first");return jsonResponse({...primaryData,accelerated:true,stream_first:true},primary.status,headers);
   };
-  window.fetch=acceleratedFetch;
-  return()=>{if(window.fetch===acceleratedFetch)window.fetch=originalFetch};
+  window.fetch=acceleratedFetch;return()=>{if(window.fetch===acceleratedFetch)window.fetch=originalFetch};
  },[]);
- return null;
+ return <ProductImageScanBridge/>;
 }
