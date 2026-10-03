@@ -10,7 +10,6 @@
     "start": "next start"
   },
   "dependencies": {
-    "@huggingface/transformers": "3.8.1",
     "@modelcontextprotocol/ext-apps": "1.1.2",
     "@modelcontextprotocol/sdk": "1.26.0",
     "@remotion/player": "4.0.506",
