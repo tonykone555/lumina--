@@ -8,7 +8,5 @@ function reconstruct(partsDir, outputPath) {
   fs.writeFileSync(outputPath, content, "utf8");
 }
 
-// Keep the historical global stylesheet materialization, but do not overwrite
-// components/lumina/LuminaWorld.tsx. The live component is now maintained
-// directly so spatial interaction changes survive Vercel's prebuild step.
+// The global stylesheet is the only source still materialized during prebuild.
 reconstruct(".source-parts/globals", "app/globals.css");

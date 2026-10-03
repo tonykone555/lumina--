@@ -10,11 +10,8 @@
     "start": "next start"
   },
   "dependencies": {
-    "@huggingface/transformers": "3.8.1",
     "@modelcontextprotocol/ext-apps": "1.1.2",
     "@modelcontextprotocol/sdk": "1.26.0",
-    "@react-three/drei": "10.7.8",
-    "@react-three/fiber": "9.7.0",
     "@remotion/player": "4.0.506",
     "gsap": "3.13.0",
     "lucide-react": "0.468.0",
@@ -24,7 +21,6 @@
     "react-dom": "19.1.0",
     "remotion": "4.0.506",
     "stripe": "22.4.0",
-    "three": "0.180.0",
     "zod": "^3.25.0",
     "@higgsfield/client": "0.2.6",
     "modal": "0.10.1"
@@ -33,7 +29,6 @@
     "@types/node": "22.0.0",
     "@types/react": "19.1.0",
     "@types/react-dom": "19.1.0",
-    "@types/three": "0.180.0",
     "typescript": "5.8.3"
   }
 }
