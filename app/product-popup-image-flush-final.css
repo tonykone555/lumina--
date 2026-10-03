@@ -1,6 +1,4 @@
 /* Final YNOT product popup geometry requested from mobile reference. */
-/* Options must never render on product cards/popups. */
-.ynot-options-box,.ynot-options-toggle,.ynot-options-panel,.lv4-detailcopy .ynot-options-box,.lv4-detailcopy .ynot-options-toggle,.lv4-detailcopy .ynot-options-panel{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important}
 /* Remove every product-detail heart/save affordance, including the floating top-right heart. */
 .lv4-detail .lv4-save-action,.lv4-detail .lv4-detail-heart,.lv4-detail .ynot-detail-heart,.lv4-detail [class*="detail-heart" i],.lv4-detail [class*="product-heart" i],.ynot-selected>.ynot-selected-heart{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;width:0!important;height:0!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important}
 /* Hero starts flush at the top inside the card border: no empty header strip above it. */
