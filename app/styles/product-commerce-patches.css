@@ -8,11 +8,7 @@
 @import "../popup-overlay-media-final.css";
 @import "../add-to-bag-button-polish.css";
 @import "../ynot-buy-polish.css";
-@import "../product-popup-shadow-bag-final.css";
-@import "../ynot-deal-frameless-restore.css";
-@import "../ynot-deal-gallery-frame-fix.css";
-@import "../ynot-saves-edge.css";
-@import "../ynot-deal-final-media.css";
+@import "./deal-popup-media-consolidated.css";
 @import "../final-desktop-auth-alignment.css";
 @import "../desktop-coordinate-repair.css";
 @import "../desktop-popup-stability-final.css";
