@@ -5,7 +5,6 @@
   let timer=0,lastCount=0,lastGrowth=Date.now();
   const active=()=>{
     if(document.hidden)return false;
-    if(document.querySelector('.lv4-detail,.ynot-selected,.ynot-cart,.ynot-unified-bag'))return false;
     const intent=document.querySelector('.lv4-intent');
     const products=document.querySelectorAll('.lv4-product');
     return Boolean(intent&&products.length);
