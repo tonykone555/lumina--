@@ -34,6 +34,7 @@ const WORLD_UI_SCRIPTS = [
   "/ynot-deals-stability.js",
   "/ebay-load-guard.js",
   "/category-world-remap.js",
+  "/ynot-infinite-search-grid.js?v=1",
 ];
 
 const FULL_WORLD_PREFIXES = ["/shop", "/worlds", "/electric"];
