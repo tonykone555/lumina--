@@ -1,0 +1,34 @@
+/* Restore the product-orb layer in the YNOT spatial world.
+   Keep this late in the cascade so cleanup/theme patches cannot hide the live catalogue bubbles. */
+.lv4-world .lv4-stage .lv4-product{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+  z-index:8;
+}
+
+.lv4-world.level-themes .lv4-product{
+  opacity:.82!important;
+}
+
+.lv4-world.level-products .lv4-product,
+.lv4-world.level-details .lv4-product{
+  opacity:1!important;
+}
+
+/* When the overview still has live catalogue orbs mounted, keep them visible as the soft
+   background product world instead of suppressing them entirely. */
+.lv4-world.level-worlds .lv4-product{
+  display:block!important;
+  visibility:visible!important;
+  opacity:.42!important;
+  filter:saturate(.96) blur(.35px)!important;
+  pointer-events:auto!important;
+}
+
+.lv4-product>img{
+  display:block!important;
+  opacity:1!important;
+  visibility:visible!important;
+}
