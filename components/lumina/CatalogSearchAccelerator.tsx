@@ -3,7 +3,7 @@
 import {useEffect} from "react";
 import ProductImageScanBridge from "./ProductImageScanBridge";
 
-type Product={id?:string;title?:string;brand?:string;image?:string;images?:string[];source?:string;[key:string]:unknown};
+type Product={id?:string;title?:string;brand?:string;image?:string;images?:string[];source?:string;verifiedMerchant?:boolean;[key:string]:unknown};
 type CatalogPayload={products?:Product[];pagination?:Record<string,unknown>;sources?:string[];[key:string]:unknown};
 
 const INITIAL_ROW_TARGET=18;
@@ -13,19 +13,26 @@ const EXPANSION_DIRECTIONS=["more like this","alternative styles","fresh finds"]
 const PREFETCH_IMAGES=48;
 const responseCache=new Map<string,{at:number,payload:CatalogPayload}>();
 const CACHE_MS=90_000;
+const verifiedTitles=new Set<string>();
 
-function normalizedCopy(product:Product){return `${String(product?.title||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}|${String(product?.brand||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()}`}
+function titleKey(v:unknown){return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim()}
+function normalizedCopy(product:Product){return `${titleKey(product?.title)}|${titleKey(product?.brand)}`}
 function productKey(product:Product){const copy=normalizedCopy(product);if(copy!=="|")return `copy:${copy}`;const id=String(product?.id||"").trim();return id?`id:${id}`:""}
 function mergeProducts(groups:Product[][]){const seen=new Set<string>(),merged:Product[]=[];for(const group of groups){for(const product of group){const key=productKey(product);if(!key||seen.has(key))continue;seen.add(key);merged.push(product);if(merged.length>=INITIAL_PRODUCT_TARGET)return merged}}return merged}
-function interleave(primary:Product[],channel3:Product[]){if(!channel3.length)return primary;const out:Product[]=[],seen=new Set<string>();let a=0,b=0;while(out.length<INITIAL_PRODUCT_TARGET&&(a<primary.length||b<channel3.length)){for(let i=0;i<3&&a<primary.length;i++,a++){const p=primary[a],k=productKey(p);if(k&&!seen.has(k)){seen.add(k);out.push(p)}}if(b<channel3.length){const p=channel3[b++],k=productKey(p);if(k&&!seen.has(k)){seen.add(k);out.push({...p,source:"channel3",verifiedMerchant:true})}}}return out}
+function interleave(primary:Product[],channel3:Product[]){if(!channel3.length)return primary;const out:Product[]=[],seen=new Set<string>();let a=0,b=0;while(out.length<INITIAL_PRODUCT_TARGET&&(a<primary.length||b<channel3.length)){for(let i=0;i<2&&a<primary.length;i++,a++){const p=primary[a],k=productKey(p);if(k&&!seen.has(k)){seen.add(k);out.push(p)}}if(b<channel3.length){const p=channel3[b++],k=productKey(p);if(k&&!seen.has(k)){seen.add(k);out.push({...p,source:"channel3",verifiedMerchant:true})}}}return out}
 function withTimeout<T>(promise:Promise<T>,ms:number):Promise<T|null>{return new Promise(resolve=>{const timer=window.setTimeout(()=>resolve(null),ms);promise.then(value=>{window.clearTimeout(timer);resolve(value)}).catch(()=>{window.clearTimeout(timer);resolve(null)})})}
 function imageUrls(products:Product[]){const urls:string[]=[];const seen=new Set<string>();for(const product of products){for(const value of [product.image,...(product.images||[]).slice(0,1)]){const url=String(value||"").trim();if(!url||seen.has(url))continue;seen.add(url);urls.push(url);if(urls.length>=PREFETCH_IMAGES)return urls}}return urls}
 function prefetchImages(products:Product[]){const run=()=>{for(const url of imageUrls(products)){const image=new Image();image.decoding="async";image.fetchPriority="low";image.src=url}};const w=window as Window&{requestIdleCallback?:(cb:()=>void,opts?:{timeout:number})=>number};if(typeof w.requestIdleCallback==="function")w.requestIdleCallback(run,{timeout:650});else window.setTimeout(run,30)}
 function jsonResponse(payload:CatalogPayload,status=200,headers?:HeadersInit){const h=new Headers(headers);h.set("Content-Type","application/json; charset=utf-8");h.set("X-YNOT-Search-Accelerated","1");return new Response(JSON.stringify(payload),{status,headers:h})}
+function rememberVerified(products:Product[]){for(const p of products){const key=titleKey(p.title);if(key)verifiedTitles.add(key)}window.dispatchEvent(new Event("ynot:verified-products-changed"))}
+function decorateVerified(){if(!verifiedTitles.size)return;const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);const hits:HTMLElement[]=[];while(walker.nextNode()){const node=walker.currentNode as Text,parent=node.parentElement;if(!parent||parent.closest(".lv4-detail,.ynot-verified-check"))continue;const value=titleKey(node.nodeValue);if(value.length<4)continue;let matched=false;for(const title of verifiedTitles){if(value===title||title.startsWith(value)||value.startsWith(title)){matched=true;break}}if(matched)hits.push(parent)}for(const label of hits){const card=label.closest<HTMLElement>("button,[role='button'],a")||label.parentElement?.parentElement;if(!card||card.querySelector(":scope > .ynot-verified-check"))continue;const style=getComputedStyle(card);if(style.position==="static")card.style.position="relative";const tick=document.createElement("span");tick.className="ynot-verified-check";tick.textContent="✓";tick.setAttribute("aria-label","Verified product");card.append(tick)}}
 
 export default function CatalogSearchAccelerator(){
  useEffect(()=>{
   const originalFetch=window.fetch.bind(window);
+  let decorateTimer=0;
+  const scheduleDecorate=()=>{window.clearTimeout(decorateTimer);decorateTimer=window.setTimeout(decorateVerified,40)};
+  const observer=new MutationObserver(scheduleDecorate);observer.observe(document.body,{subtree:true,childList:true,characterData:true});window.addEventListener("ynot:verified-products-changed",scheduleDecorate);
   const acceleratedFetch:typeof window.fetch=async(input,init)=>{
    const raw=typeof input==="string"?input:input instanceof URL?input.toString():input.url;
    let url:URL;try{url=new URL(raw,window.location.origin)}catch{return originalFetch(input as RequestInfo|URL,init)}
@@ -36,20 +43,21 @@ export default function CatalogSearchAccelerator(){
    if(!shouldAccelerate)return originalFetch(input as RequestInfo|URL,init);
    const cacheKey=`${url.pathname}?${[...url.searchParams.entries()].sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>`${k}=${v}`).join("&")}`;
    const cached=responseCache.get(cacheKey);
-   if(cached&&Date.now()-cached.at<CACHE_MS){prefetchImages(cached.payload.products||[]);return jsonResponse({...cached.payload,accelerated:true,cached:true})}
+   if(cached&&Date.now()-cached.at<CACHE_MS){const cachedC3=(cached.payload.products||[]).filter(p=>String(p.source||"").toLowerCase()==="channel3");rememberVerified(cachedC3);prefetchImages(cached.payload.products||[]);return jsonResponse({...cached.payload,accelerated:true,cached:true})}
    const primaryPromise=originalFetch(input as RequestInfo|URL,init);
    const c3Url=new URL("/api/channel3",window.location.origin);c3Url.searchParams.set("q",url.searchParams.get("q")||"");c3Url.searchParams.set("country",url.searchParams.get("country")||"FR");c3Url.searchParams.set("limit","100");
-   const channel3Promise=withTimeout(originalFetch(c3Url.toString(),{cache:"no-store"}).then(async r=>r.ok?await r.json() as CatalogPayload:null),2600);
+   const channel3Promise=withTimeout(originalFetch(c3Url.toString(),{cache:"no-store"}).then(async r=>r.ok?await r.json() as CatalogPayload:null),5500);
    const primary=await primaryPromise;if(!primary.ok)return primary;
    let primaryData:CatalogPayload;try{primaryData=await primary.clone().json() as CatalogPayload}catch{return primary}
    const baseProducts=Array.isArray(primaryData.products)?primaryData.products:[];
    const channel3Data=await channel3Promise;const channel3Products=Array.isArray(channel3Data?.products)?channel3Data!.products!.map(p=>({...p,source:"channel3",verifiedMerchant:true})):[];
+   rememberVerified(channel3Products);
    const liveProducts=interleave(baseProducts,channel3Products);const sources=[...new Set([...(primaryData.sources||[]),...(channel3Products.length?["channel3"]:[])])];
-   prefetchImages(liveProducts);const livePayload={...primaryData,products:liveProducts,sources,channel3_count:channel3Products.length,accelerated:true,stream_first:true};responseCache.set(cacheKey,{at:Date.now(),payload:livePayload});
-   void Promise.all(EXPANSION_DIRECTIONS.map(async direction=>{const expansion=new URL(url.toString());expansion.searchParams.set("direction",direction);expansion.searchParams.set("page","0");const payload=await withTimeout(originalFetch(expansion.toString(),{...init,cache:"no-store"}).then(async response=>response.ok?await response.json() as CatalogPayload:null),2200);if(payload?.products?.length)prefetchImages(payload.products);return payload})).then(extras=>{const expanded=mergeProducts([liveProducts,...extras.map(payload=>Array.isArray(payload?.products)?payload!.products!:[])]);const merged=interleave(expanded,channel3Products);if(merged.length>liveProducts.length){const warmed={...livePayload,products:merged,initial_target:INITIAL_PRODUCT_TARGET};responseCache.set(cacheKey,{at:Date.now(),payload:warmed});window.dispatchEvent(new CustomEvent("ynot:catalog-warmed",{detail:{query:url.searchParams.get("q")||"",count:merged.length,channel3:channel3Products.length}}))}}).catch(()=>{});
+   prefetchImages(liveProducts);const livePayload={...primaryData,products:liveProducts,sources,channel3_count:channel3Products.length,accelerated:true,stream_first:true};responseCache.set(cacheKey,{at:Date.now(),payload:livePayload});scheduleDecorate();
+   void Promise.all(EXPANSION_DIRECTIONS.map(async direction=>{const expansion=new URL(url.toString());expansion.searchParams.set("direction",direction);expansion.searchParams.set("page","0");const payload=await withTimeout(originalFetch(expansion.toString(),{...init,cache:"no-store"}).then(async response=>response.ok?await response.json() as CatalogPayload:null),3000);if(payload?.products?.length)prefetchImages(payload.products);return payload})).then(extras=>{const expanded=mergeProducts([liveProducts,...extras.map(payload=>Array.isArray(payload?.products)?payload!.products!:[])]);const merged=interleave(expanded,channel3Products);if(merged.length>liveProducts.length){const warmed={...livePayload,products:merged,initial_target:INITIAL_PRODUCT_TARGET};responseCache.set(cacheKey,{at:Date.now(),payload:warmed});window.dispatchEvent(new CustomEvent("ynot:catalog-warmed",{detail:{query:url.searchParams.get("q")||"",count:merged.length,channel3:channel3Products.length}}))}}).catch(()=>{});
    const headers=new Headers(primary.headers);headers.set("X-YNOT-Search-Accelerated","channel3-blend");headers.set("X-YNOT-Channel3-Count",String(channel3Products.length));return jsonResponse(livePayload,primary.status,headers);
   };
-  window.fetch=acceleratedFetch;return()=>{if(window.fetch===acceleratedFetch)window.fetch=originalFetch};
+  window.fetch=acceleratedFetch;return()=>{observer.disconnect();window.removeEventListener("ynot:verified-products-changed",scheduleDecorate);window.clearTimeout(decorateTimer);if(window.fetch===acceleratedFetch)window.fetch=originalFetch};
  },[]);
- return <ProductImageScanBridge/>;
+ return <><ProductImageScanBridge/><style jsx global>{`.ynot-verified-check{position:absolute!important;right:8px!important;bottom:9px!important;z-index:12!important;width:14px!important;height:14px!important;border-radius:50%!important;display:flex!important;align-items:center!important;justify-content:center!important;background:#fff!important;color:#080808!important;font-size:9px!important;font-weight:900!important;line-height:1!important;box-shadow:0 1px 5px rgba(0,0,0,.28)!important;pointer-events:none!important}`}</style></>;
 }
