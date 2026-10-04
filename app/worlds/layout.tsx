@@ -3,13 +3,12 @@
 import {useEffect} from "react";
 import UnifiedBag from "@/components/lumina/UnifiedBag";
 import ProductDetailHydrator from "@/components/lumina/ProductDetailHydrator";
+import ProductAttributeSatellites from "@/components/lumina/ProductAttributeSatellites";
 
 const THEME_KEY="ynot-world-theme";
 
 export default function WorldsLayout({children}:{children:React.ReactNode}){
   useEffect(()=>{
-    // The normal YNOT world is light by default. Only an explicit saved
-    // YNOT world preference can switch it to dark mode.
     const saved=localStorage.getItem(THEME_KEY);
     const theme=saved==="dark"?"dark":"light";
     const root=document.documentElement;
@@ -35,5 +34,5 @@ export default function WorldsLayout({children}:{children:React.ReactNode}){
     };
   },[]);
 
-  return <>{children}<ProductDetailHydrator/><UnifiedBag/></>;
+  return <>{children}<ProductDetailHydrator/><ProductAttributeSatellites/><UnifiedBag/></>;
 }
