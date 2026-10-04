@@ -1,0 +1,47 @@
+/* Minimal masonry scan affordance: tiny red full-stop at the card's lower-right text corner. */
+.products>button{position:relative!important}
+.products>button>div{position:relative!important;overflow:visible!important}
+.products>button .masonry-card-scan{
+  position:absolute!important;
+  right:7px!important;
+  bottom:-18px!important;
+  z-index:12!important;
+  width:12px!important;
+  height:12px!important;
+  min-width:12px!important;
+  max-width:12px!important;
+  min-height:12px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  opacity:1!important;
+  display:grid!important;
+  place-items:center!important;
+  overflow:visible!important;
+}
+.products>button .masonry-card-scan:hover,
+.products>button .masonry-card-scan:active,
+.products>button .masonry-card-scan:focus{
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.products>button .masonry-card-scan span{
+  display:block!important;
+  position:relative!important;
+  width:4px!important;
+  height:4px!important;
+  min-width:4px!important;
+  min-height:4px!important;
+  border-radius:50%!important;
+  background:#ed3b3b!important;
+  box-shadow:none!important;
+}
+@media(max-width:700px){
+  .products>button .masonry-card-scan{right:6px!important;bottom:-17px!important;width:12px!important;height:12px!important;min-width:12px!important;min-height:12px!important}
+  .products>button .masonry-card-scan span{width:4px!important;height:4px!important}
+}
