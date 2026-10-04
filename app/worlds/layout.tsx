@@ -4,6 +4,7 @@ import {useEffect} from "react";
 import UnifiedBag from "@/components/lumina/UnifiedBag";
 import ProductDetailHydrator from "@/components/lumina/ProductDetailHydrator";
 import ProductAttributeSatellites from "@/components/lumina/ProductAttributeSatellites";
+import "@/app/styles/ynot-attribute-satellites.css";
 
 const THEME_KEY="ynot-world-theme";
 
