@@ -8,3 +8,9 @@
 .ynot-about-heading h3{margin:0;font-size:18px;line-height:1.15;font-weight:650}
 .ynot-about-copy{margin:0;white-space:pre-line;font-size:13px;line-height:1.55;opacity:.78}
 @media(max-width:899px){.ynot-about-product{gap:12px;margin-top:16px}.ynot-about-images{gap:6px}.ynot-about-images img{border-radius:11px}.ynot-about-heading h3{font-size:17px}}
+
+/* Native Masonry detail card: this React-owned section must remain visible regardless of legacy popup patches. */
+.lv4-detail .lv4-detailcopy>.ynot-about-native{display:flex!important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:2!important;float:none!important;clear:both!important;width:100%!important;min-width:100%!important;height:auto!important;min-height:92px!important;max-height:none!important;overflow:visible!important;margin:28px 0 26px!important;padding:20px 0 4px!important;border-top:1px solid rgba(255,255,255,.12)!important;transform:none!important;clip:auto!important;clip-path:none!important;pointer-events:auto!important;order:initial!important}
+.lv4-detail .lv4-detailcopy>.ynot-about-native .ynot-about-heading,.lv4-detail .lv4-detailcopy>.ynot-about-native .ynot-about-copy{display:flex!important;visibility:visible!important;opacity:1!important;color:inherit!important;-webkit-text-fill-color:currentColor!important}
+.lv4-detail .lv4-detailcopy>.ynot-about-native .ynot-about-copy{display:block!important}
+@media(max-width:899px){.lv4-detail .lv4-detailcopy>.ynot-about-native{display:flex!important;min-height:96px!important;margin:26px 0 28px!important;padding-top:20px!important}.lv4-detail .lv4-detailcopy>.ynot-about-native .ynot-about-heading h3{display:block!important;font-size:20px!important;color:#fff!important;-webkit-text-fill-color:#fff!important}.lv4-detail .lv4-detailcopy>.ynot-about-native .ynot-about-copy{display:block!important;color:rgba(255,255,255,.78)!important;-webkit-text-fill-color:rgba(255,255,255,.78)!important}}
