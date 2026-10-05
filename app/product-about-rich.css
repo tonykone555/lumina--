@@ -1,0 +1,10 @@
+/* Rich product detail continuation: supporting imagery first, then factual About copy. */
+.ynot-about-product{display:flex;flex-direction:column;gap:14px;margin-top:18px;width:100%}
+.ynot-about-images{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
+.ynot-about-images:empty{display:none}
+.ynot-about-images img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;background:rgba(255,255,255,.06)}
+.ynot-about-heading{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+.ynot-about-heading small{font-size:10px;letter-spacing:.16em;opacity:.52}
+.ynot-about-heading h3{margin:0;font-size:18px;line-height:1.15;font-weight:650}
+.ynot-about-copy{margin:0;white-space:pre-line;font-size:13px;line-height:1.55;opacity:.78}
+@media(max-width:899px){.ynot-about-product{gap:12px;margin-top:16px}.ynot-about-images{gap:6px}.ynot-about-images img{border-radius:11px}.ynot-about-heading h3{font-size:17px}}
