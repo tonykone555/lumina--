@@ -24,7 +24,7 @@ const PRODUCT_UI_SCRIPTS = [
   "/product-detail-placement-fix.js",
   "/product-gallery-chrome-kill.js",
   "/product-options-glass.js?v=2",
-  "/force-about-section.js?v=1",
+  "/force-about-section.js?v=4",
 ];
 
 const WORLD_UI_SCRIPTS = [
