@@ -1,17 +1,101 @@
 (()=>{
-  if(window.__ynotForceAboutSection)return;
-  window.__ynotForceAboutSection=true;
+  if(window.__ynotForceAboutSectionV2)return;
+  window.__ynotForceAboutSectionV2=true;
 
   const clean=s=>(s||"").replace(/\s+/g," ").trim();
   const isAddToBag=el=>/^add to bag$/i.test(clean(el.textContent));
-  const uniqueImages=host=>[...host.querySelectorAll("img")]
-    .map(img=>img.currentSrc||img.src||"")
-    .filter(Boolean)
-    .filter((src,i,a)=>a.indexOf(src)===i)
-    .slice(1,4);
+  const uniq=xs=>[...new Set(xs.flat(Infinity).filter(x=>typeof x==="string"&&/^https?:\/\//i.test(x)))];
+  const isVideoUrl=url=>/\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(url||"");
 
   function findHost(button){
     return button.closest(".detail,.lv4-detail,.ynot-selected,[role='dialog'],aside") || button.parentElement?.parentElement || button.parentElement;
+  }
+
+  function parseJson(value){try{return value?JSON.parse(value):null}catch{return null}}
+  function productFromHost(host){
+    const own=host.dataset?.ynotProduct||host.getAttribute?.("data-product")||host.getAttribute?.("data-product-json");
+    if(own){const p=parseJson(own);if(p)return p}
+    const nested=host.querySelector?.("[data-ynot-product],[data-product-json]");
+    if(nested){const p=parseJson(nested.getAttribute("data-ynot-product")||nested.getAttribute("data-product-json"));if(p)return p}
+    return null;
+  }
+
+  function productId(host,product){
+    if(product?.id)return String(product.id);
+    const direct=host.getAttribute?.("data-product-id")||host.dataset?.productId||host.dataset?.id;
+    if(direct)return direct;
+    const p=new URLSearchParams(location.search).get("product");
+    if(p)return p;
+    const link=host.querySelector?.('a[href*="/p/"]');
+    const match=link?.getAttribute("href")?.match(/\/p\/([^?#/]+)/);
+    return match?decodeURIComponent(match[1]):"";
+  }
+
+  function domMedia(host){
+    const videos=[];
+    host.querySelectorAll("video").forEach(video=>{
+      if(video.currentSrc)videos.push(video.currentSrc);
+      if(video.src)videos.push(video.src);
+      video.querySelectorAll("source").forEach(source=>{if(source.src)videos.push(source.src)});
+    });
+    const images=[...host.querySelectorAll("img")].map(img=>img.currentSrc||img.src||"").filter(Boolean);
+    return{videos:uniq(videos),images:uniq(images)};
+  }
+
+  function objectMedia(product){
+    if(!product)return{videos:[],images:[]};
+    const variants=Array.isArray(product.variants)?product.variants:[];
+    return{
+      videos:uniq([product.videos,product.video_urls,variants.map(v=>v?.videos)]),
+      images:uniq([product.images,product.image,variants.map(v=>[v?.images,v?.image])])
+    };
+  }
+
+  function mediaNode(url,title,index){
+    if(isVideoUrl(url)){
+      const wrap=document.createElement("figure");
+      wrap.className="ynot-about-video";
+      wrap.style.cssText="display:block!important;margin:0!important;min-width:min(78vw,420px)!important;max-width:min(78vw,420px)!important;";
+      const video=document.createElement("video");
+      video.src=url;
+      video.controls=true;
+      video.muted=true;
+      video.loop=true;
+      video.playsInline=true;
+      video.preload="metadata";
+      video.setAttribute("playsinline","");
+      video.setAttribute("webkit-playsinline","");
+      video.style.cssText="display:block!important;width:100%!important;aspect-ratio:4/5!important;object-fit:cover!important;border-radius:14px!important;background:#111!important;";
+      const caption=document.createElement("figcaption");
+      caption.textContent=`${title} video ${index+1}`;
+      caption.style.cssText="display:block!important;margin-top:7px!important;font-size:9px!important;line-height:1.25!important;color:rgba(255,255,255,.58)!important;";
+      wrap.append(video,caption);
+      return wrap;
+    }
+    const figure=document.createElement("figure");
+    figure.style.cssText="display:block!important;margin:0!important;min-width:0!important;";
+    const img=document.createElement("img");
+    img.src=url;
+    img.alt=`${title} detail ${index+1}`;
+    img.loading="lazy";
+    img.style.cssText="display:block!important;width:100%!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:12px!important;background:#111!important;";
+    const caption=document.createElement("figcaption");
+    caption.textContent=`${title} detail`;
+    caption.style.cssText="display:block!important;margin-top:6px!important;font-size:9px!important;line-height:1.25!important;color:rgba(255,255,255,.58)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;";
+    figure.append(img,caption);
+    return figure;
+  }
+
+  function renderMedia(section,title,videos,images){
+    let videoRow=section.querySelector(".ynot-about-video-row");
+    let imageGrid=section.querySelector(".ynot-about-image-grid");
+    if(!videoRow){videoRow=document.createElement("div");videoRow.className="ynot-about-video-row";videoRow.style.cssText="display:none;gap:9px;width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 0 18px;padding:0 0 4px;";section.prepend(videoRow)}
+    if(!imageGrid){imageGrid=document.createElement("div");imageGrid.className="ynot-about-image-grid";imageGrid.style.cssText="display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%;margin:0 0 20px;";videoRow.insertAdjacentElement("afterend",imageGrid)}
+    const v=uniq(videos).slice(0,6),im=uniq(images).filter(src=>!v.includes(src)&&!isVideoUrl(src)).slice(0,9);
+    videoRow.replaceChildren(...v.map((src,i)=>mediaNode(src,title,i)));
+    videoRow.style.display=v.length?"flex":"none";
+    imageGrid.replaceChildren(...im.map((src,i)=>mediaNode(src,title,i)));
+    imageGrid.style.display=im.length?"grid":"none";
   }
 
   function makeSection(host){
@@ -22,26 +106,8 @@
 
     const title=clean(host.querySelector("h1,h2")?.textContent)||"Product";
     const description=clean(host.querySelector(".description,.lv4-product-description,.ynot-selected-description,.info p,[data-description]")?.textContent)||`More details about ${title}.`;
-    const urls=uniqueImages(host);
-
-    if(urls.length){
-      const images=document.createElement("div");
-      images.style.cssText="display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;width:100%!important;margin:0 0 20px!important;";
-      urls.forEach((src,index)=>{
-        const figure=document.createElement("figure");
-        figure.style.cssText="display:block!important;margin:0!important;min-width:0!important;";
-        const img=document.createElement("img");
-        img.src=src;
-        img.alt=`${title} detail ${index+1}`;
-        img.style.cssText="display:block!important;width:100%!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:12px!important;";
-        const caption=document.createElement("figcaption");
-        caption.textContent=`${title} detail`;
-        caption.style.cssText="display:block!important;margin-top:6px!important;font-size:9px!important;line-height:1.25!important;color:rgba(255,255,255,.58)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;";
-        figure.append(img,caption);
-        images.append(figure);
-      });
-      section.append(images);
-    }
+    const product=productFromHost(host);
+    const direct=domMedia(host),stored=objectMedia(product);
 
     const small=document.createElement("small");
     small.textContent="DETAILS";
@@ -53,15 +119,42 @@
     copy.textContent=description;
     copy.style.cssText="display:block!important;margin:0!important;font-size:13px!important;line-height:1.5!important;color:rgba(255,255,255,.76)!important;-webkit-text-fill-color:rgba(255,255,255,.76)!important;";
     section.append(small,heading,copy);
+    renderMedia(section,title,[stored.videos,direct.videos],[stored.images,direct.images]);
+    section.__ynotMedia={title,host,product,videos:uniq([stored.videos,direct.videos]),images:uniq([stored.images,direct.images])};
     return section;
+  }
+
+  async function enrichFromCatalogue(section){
+    if(section.dataset.catalogueMediaLoaded==="1")return;
+    section.dataset.catalogueMediaLoaded="1";
+    const state=section.__ynotMedia;
+    if(!state)return;
+    const id=productId(state.host,state.product);
+    if(!id)return;
+    try{
+      const r=await fetch(`/api/commerce/product/${encodeURIComponent(id)}`,{cache:"force-cache"});
+      const data=await r.json();
+      if(!r.ok||!data?.product||!section.isConnected)return;
+      const more=objectMedia(data.product);
+      const videos=uniq([state.videos,more.videos]);
+      const images=uniq([state.images,more.images]);
+      state.videos=videos;state.images=images;
+      renderMedia(section,state.title,videos,images);
+    }catch{}
   }
 
   function mount(button){
     const host=findHost(button);
-    if(!host||host.querySelector("[data-ynot-force-about='true']"))return;
+    if(!host)return;
+    let section=host.querySelector("[data-ynot-force-about='true']");
     const actionRow=button.closest(".actions,.lv4-actions,[class*='actions']") || button.parentElement;
     if(!actionRow||!actionRow.parentElement)return;
-    actionRow.insertAdjacentElement("afterend",makeSection(host));
+    if(!section){
+      host.querySelectorAll(".masonry-about-product,.ynot-about-native").forEach(n=>{if(!n.hasAttribute("data-ynot-force-about"))n.remove()});
+      section=makeSection(host);
+      actionRow.insertAdjacentElement("afterend",section);
+    }
+    void enrichFromCatalogue(section);
   }
 
   function sync(){
