@@ -2,7 +2,7 @@
 .ynot-about-product{display:flex;flex-direction:column;gap:14px;margin-top:18px;width:100%}
 .ynot-about-images{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
 .ynot-about-images:empty{display:none}
-.ynot-about-images img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;background:rgba(255,255,255,.06)}
+.ynot-about-image{display:flex;flex-direction:column;gap:6px;margin:0;min-width:0}.ynot-about-images img{display:block;width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:14px;background:rgba(255,255,255,.06)}.ynot-about-image figcaption{font-size:10px;line-height:1.25;opacity:.62;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ynot-about-heading{display:flex;flex-direction:column;gap:3px;margin-top:2px}
 .ynot-about-heading small{font-size:10px;letter-spacing:.16em;opacity:.52}
 .ynot-about-heading h3{margin:0;font-size:18px;line-height:1.15;font-weight:650}
