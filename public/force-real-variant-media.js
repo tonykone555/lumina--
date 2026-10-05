@@ -1,6 +1,6 @@
 (()=>{
-  if(window.__ynotRealVariantMedia)return;
-  window.__ynotRealVariantMedia=true;
+  if(window.__ynotRealVariantMediaV2)return;
+  window.__ynotRealVariantMediaV2=true;
 
   const uniq=xs=>[...new Set(xs.flat(Infinity).filter(x=>typeof x==="string"&&/^https?:\/\//i.test(x)))];
   const bad=url=>/placeholder|mock|dummy|sample|fallback|no[-_ ]?image|default[-_ ]?product|logo|avatar|blank/i.test(url||"");
@@ -31,8 +31,16 @@
     return clean([product?.images,product?.image]);
   }
 
+  function exactlyThree(primary,fallback){
+    const ordered=clean([primary,fallback]);
+    if(!ordered.length)return[];
+    const out=ordered.slice(0,3);
+    while(out.length<3)out.push(out[out.length-1]);
+    return out;
+  }
+
   function render(section,urls,title){
-    const images=clean(urls).slice(0,12);
+    const images=exactlyThree(urls,[]);
     if(!images.length)return;
     let grid=section.querySelector(".ynot-about-image-grid");
     if(!grid){
@@ -77,7 +85,7 @@
       const p=data.product;
       const realVariants=variantImages(p);
       const realGallery=productImages(p);
-      const chosen=realVariants.length?realVariants:realGallery;
+      const chosen=exactlyThree(realVariants,realGallery);
       if(chosen.length)render(section,chosen,p.title||base.title||"Product");
     }catch{}finally{
       delete section.dataset.realVariantMediaLoading;
