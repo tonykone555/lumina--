@@ -1,6 +1,6 @@
 (()=>{
-  if(window.__ynotForceAboutSectionV2)return;
-  window.__ynotForceAboutSectionV2=true;
+  if(window.__ynotForceAboutSectionV3)return;
+  window.__ynotForceAboutSectionV3=true;
 
   const clean=s=>(s||"").replace(/\s+/g," ").trim();
   const isAddToBag=el=>/^add to bag$/i.test(clean(el.textContent));
@@ -8,6 +8,8 @@
   const isVideoUrl=url=>/\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(url||"");
   const isYouTube=url=>/youtu\.be\//i.test(url||"")||/youtube\.com\/(watch|shorts|embed)/i.test(url||"");
   const isVimeo=url=>/vimeo\.com\//i.test(url||"");
+  const isPlaceholder=url=>/placeholder|mock|dummy|sample|fallback|no[-_ ]?image|default[-_ ]?product|logo|avatar/i.test(url||"");
+  const cleanImages=xs=>uniq(xs).filter(src=>!isPlaceholder(src)&&!isVideoUrl(src)&&!isYouTube(src)&&!isVimeo(src));
   const externalEmbed=url=>{
     try{
       const u=new URL(url);
@@ -57,15 +59,19 @@
     });
     host.querySelectorAll("iframe").forEach(frame=>{if(frame.src&&(isYouTube(frame.src)||isVimeo(frame.src)))videos.push(frame.src)});
     const images=[...host.querySelectorAll("img")].map(img=>img.currentSrc||img.src||"").filter(Boolean);
-    return{videos:uniq(videos),images:uniq(images)};
+    return{videos:uniq(videos),images:cleanImages(images)};
   }
 
   function objectMedia(product){
-    if(!product)return{videos:[],images:[]};
+    if(!product)return{videos:[],images:[],variantImages:[],productImages:[]};
     const variants=Array.isArray(product.variants)?product.variants:[];
+    const variantImages=cleanImages(variants.map(v=>[v?.images,v?.image]));
+    const productImages=cleanImages([product.images,product.image]);
     return{
       videos:uniq([product.videos,product.video_urls,product.media_urls,variants.map(v=>[v?.videos,v?.video_urls])]),
-      images:uniq([product.images,product.image,variants.map(v=>[v?.images,v?.image])])
+      variantImages,
+      productImages,
+      images:cleanImages([variantImages,productImages])
     };
   }
 
@@ -106,11 +112,11 @@
     figure.style.cssText="display:block!important;margin:0!important;min-width:0!important;";
     const img=document.createElement("img");
     img.src=url;
-    img.alt=`${title} detail ${index+1}`;
+    img.alt=`${title} variant ${index+1}`;
     img.loading="lazy";
     img.style.cssText="display:block!important;width:100%!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:12px!important;background:#111!important;";
     const caption=document.createElement("figcaption");
-    caption.textContent=`${title} detail`;
+    caption.textContent=`${title} variant`;
     caption.style.cssText="display:block!important;margin-top:6px!important;font-size:9px!important;line-height:1.25!important;color:rgba(255,255,255,.58)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;";
     figure.append(img,caption);
     return figure;
@@ -121,7 +127,7 @@
     let imageGrid=section.querySelector(".ynot-about-image-grid");
     if(!videoRow){videoRow=document.createElement("div");videoRow.className="ynot-about-video-row";videoRow.style.cssText="display:none;gap:9px;width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;margin:0 0 18px;padding:0 0 4px;";section.prepend(videoRow)}
     if(!imageGrid){imageGrid=document.createElement("div");imageGrid.className="ynot-about-image-grid";imageGrid.style.cssText="display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;width:100%;margin:0 0 20px;";videoRow.insertAdjacentElement("afterend",imageGrid)}
-    const v=uniq(videos).slice(0,6),im=uniq(images).filter(src=>!v.includes(src)&&!isVideoUrl(src)&&!isYouTube(src)&&!isVimeo(src)).slice(0,9);
+    const v=uniq(videos).slice(0,6),im=cleanImages(images).slice(0,9);
     videoRow.replaceChildren(...v.map((src,i)=>mediaNode(src,title,i,true)));
     videoRow.style.display=v.length?"flex":"none";
     imageGrid.replaceChildren(...im.map((src,i)=>mediaNode(src,title,i,false)));
@@ -138,6 +144,7 @@
     const description=clean(host.querySelector(".description,.lv4-product-description,.ynot-selected-description,.info p,[data-description]")?.textContent)||`More details about ${title}.`;
     const product=productFromHost(host);
     const direct=domMedia(host),stored=objectMedia(product);
+    const initialImages=stored.variantImages.length?stored.variantImages:(stored.productImages.length?stored.productImages:direct.images);
 
     const small=document.createElement("small");
     small.textContent="DETAILS";
@@ -149,8 +156,8 @@
     copy.textContent=description;
     copy.style.cssText="display:block!important;margin:0!important;font-size:13px!important;line-height:1.5!important;color:rgba(255,255,255,.76)!important;-webkit-text-fill-color:rgba(255,255,255,.76)!important;";
     section.append(small,heading,copy);
-    renderMedia(section,title,[stored.videos,direct.videos],[stored.images,direct.images]);
-    section.__ynotMedia={title,host,product,videos:uniq([stored.videos,direct.videos]),images:uniq([stored.images,direct.images])};
+    renderMedia(section,title,[stored.videos,direct.videos],initialImages);
+    section.__ynotMedia={title,host,product,videos:uniq([stored.videos,direct.videos]),images:initialImages};
     return section;
   }
 
@@ -167,9 +174,9 @@
       if(!r.ok||!data?.product||!section.isConnected)return;
       const more=objectMedia(data.product);
       const videos=uniq([state.videos,more.videos]);
-      const images=uniq([state.images,more.images]);
-      state.videos=videos;state.images=images;
-      renderMedia(section,state.title,videos,images);
+      const preferredImages=more.variantImages.length?more.variantImages:(more.productImages.length?more.productImages:state.images);
+      state.videos=videos;state.images=preferredImages;
+      renderMedia(section,state.title,videos,preferredImages);
     }catch{}
   }
 
