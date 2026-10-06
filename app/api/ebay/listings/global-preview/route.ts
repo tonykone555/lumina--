@@ -1,5 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
-import {getEbayCategoryPreview,getEbayReadiness} from "@/lib/ebay/client";
+import {ensureEbayInventoryLocationForOrigin,getEbayCategoryPreview,getEbayReadiness} from "@/lib/ebay/client";
 import {ebayMarketplaceConfig,parseEbayMarketplaces} from "@/lib/ebay/marketplaces";
 import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
 import {evaluateEbayEligibility} from "@/lib/ebay/eligibility";
@@ -65,7 +65,24 @@ export async function GET(request:NextRequest){
     const detectedOrigin=rawOrigin?{country:rawOrigin,verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(matched.id||""),market.country);
     const sourceOrigin=clean(detectedOrigin.country);
     const originVerified=Boolean(detectedOrigin.verified&&sourceOrigin);
-    const matchingLocation=readiness.locations?.find((x:any)=>String(x?.location?.address?.country||"").toUpperCase()===sourceOrigin.toUpperCase())||null;
+    const originPostalCode=clean((matched as any).shipFromPostalCode);
+    const originCity=clean((matched as any).shipFromCity);
+    const originState=clean((matched as any).shipFromState);
+    let matchingLocation=readiness.locations?.find((x:any)=>{
+     const a=x?.location?.address||{};
+     const sameCountry=String(a?.country||"").toUpperCase()===sourceOrigin.toUpperCase();
+     const samePostal=originPostalCode&&String(a?.postalCode||"").trim()===originPostalCode;
+     const sameCityState=!originPostalCode&&originCity&&originState&&String(a?.city||"").trim().toLowerCase()===originCity.toLowerCase()&&String(a?.stateOrProvince||"").trim().toLowerCase()===originState.toLowerCase();
+     return sameCountry&&(samePostal||sameCityState);
+    })||null;
+    if(originVerified&&!matchingLocation&&(originPostalCode||(originCity&&originState))){
+     try{
+      matchingLocation=await ensureEbayInventoryLocationForOrigin({
+       country:sourceOrigin,postalCode:originPostalCode||null,city:originCity||null,state:originState||null,
+       name:`${clean(matched.brand)||"YNOT"} supplier`
+      });
+     }catch{}
+    }
     const originLocationReady=Boolean(matchingLocation);
     const eligibility=evaluateEbayEligibility({
      shipsTo:true,
@@ -84,6 +101,9 @@ export async function GET(request:NextRequest){
      shipsTo:true,
      sourceOrigin:sourceOrigin||null,
      originVerified,
+     originPostalCode:originPostalCode||null,
+     originCity:originCity||null,
+     originState:originState||null,
      originMethod:detectedOrigin.method,
      originLocationReady,
      sellerReady:readiness.ready,
