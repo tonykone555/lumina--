@@ -91,7 +91,8 @@
       const hostMain=[base?.image,p?.image,...[...host.querySelectorAll("img")].slice(0,1).map(img=>img.currentSrc||img.src||"")];
       const realVariants=withoutFront(variantImages(p),hostMain);
       const realGallery=withoutFront(productImages(p),hostMain);
-      const chosen=exactlyThree(realVariants,realGallery,hostMain);
+      const domAlternates=withoutFront([...host.querySelectorAll("img")].slice(1).map(img=>img.currentSrc||img.src||""),hostMain);
+      const chosen=exactlyThree(realVariants,[realGallery,domAlternates],hostMain);
       if(chosen.length)render(section,chosen,p.title||base.title||"Product");
     }catch{}finally{
       delete section.dataset.realVariantMediaLoading;
