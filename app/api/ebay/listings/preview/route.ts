@@ -57,10 +57,10 @@ export async function GET(request:NextRequest){
   };
   return NextResponse.json({
    dryRun:true,
-   publishable:readiness.ready&&taxonomy.missingRequiredAspects.length===0,
+   publishable:readiness.ready&&taxonomy.categoryDomainOk===true&&taxonomy.missingRequiredAspects.length===0,
    query:q,
    sourceProduct:{id:product.id,title:product.title,brand:product.brand,source:product.source,url:product.url,price:product.price,currency:product.currency,image:product.image},
-   ebay:{categoryTreeId:taxonomy.categoryTreeId,categoryQuery:taxonomy.categoryQuery,categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,alternatives:taxonomy.alternatives,ancestors:taxonomy.ancestors,requiredAspects:taxonomy.requiredAspects,missingRequiredAspects:taxonomy.missingRequiredAspects,aspectCount:taxonomy.aspectCount},
+   ebay:{categoryTreeId:taxonomy.categoryTreeId,categoryQuery:taxonomy.categoryQuery,categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,categoryDomainOk:taxonomy.categoryDomainOk,alternatives:taxonomy.alternatives,ancestors:taxonomy.ancestors,requiredAspects:taxonomy.requiredAspects,missingRequiredAspects:taxonomy.missingRequiredAspects,aspectCount:taxonomy.aspectCount},
    item,
    readiness
   },{headers:{"Cache-Control":"no-store"}});
