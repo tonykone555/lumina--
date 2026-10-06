@@ -215,6 +215,63 @@ function cleanEbayText(v:any){
   return "";
 }
 
+function merchantHost(urlValue:any){
+  try{
+    const u=new URL(String(urlValue||""));
+    if(u.protocol!=="https:")return "";
+    const h=u.hostname.toLowerCase().replace(/^www\./,"");
+    if(!h||h==="localhost"||/^\d{1,3}(?:\.\d{1,3}){3}$/.test(h)||h.endsWith(".local"))return "";
+    return h;
+  }catch{return ""}
+}
+function hostMatches(a:string,b:string){
+  const x=a.toLowerCase().replace(/^www\./,""),y=b.toLowerCase().replace(/^www\./,"");
+  return Boolean(x&&y&&(x===y||x.endsWith("."+y)||y.endsWith("."+x)));
+}
+async function storedEbayOrigin(productId:string){
+  const rows=await dbRows(`ynot_ebay_origin_evidence?product_id=eq.${encodeURIComponent(productId)}&verified=eq.true&select=product_id,merchant_host,source_url,country,postal_code,city,state,evidence_text,verification_method,verified_at&limit=1`);
+  const row=rows[0];
+  return row?{
+    country:String(row.country||"").toUpperCase(),
+    postalCode:cleanEbayText(row.postal_code),
+    city:cleanEbayText(row.city),
+    state:cleanEbayText(row.state),
+    verified:true,
+    method:String(row.verification_method||"merchant-page"),
+    sourceUrl:String(row.source_url||""),
+    evidenceText:String(row.evidence_text||"")
+  }:null;
+}
+async function verifyAndStoreMerchantOrigin(input:{productId:string;merchantUrl:string;sourceUrl:string;country:string;postalCode?:string;city?:string;state?:string;evidenceText?:string}){
+  const merchant=merchantHost(input.merchantUrl),source=merchantHost(input.sourceUrl);
+  if(!merchant||!source||!hostMatches(merchant,source))throw new Error("ORIGIN_EVIDENCE_DOMAIN_MISMATCH");
+  const country=String(input.country||"").trim().toUpperCase();
+  const postalCode=cleanEbayText(input.postalCode);
+  const city=cleanEbayText(input.city);
+  const state=cleanEbayText(input.state);
+  if(!/^[A-Z]{2}$/.test(country))throw new Error("ORIGIN_COUNTRY_INVALID");
+  if(!postalCode&&!(city&&state))throw new Error("ORIGIN_LOCATION_INCOMPLETE");
+  const res=await fetch(input.sourceUrl,{cache:"no-store",redirect:"follow",headers:{"User-Agent":"YNOT-OriginVerifier/1.0"}});
+  if(!res.ok)throw new Error(`ORIGIN_EVIDENCE_FETCH_${res.status}`);
+  const finalHost=merchantHost(res.url);
+  if(!finalHost||!hostMatches(merchant,finalHost))throw new Error("ORIGIN_EVIDENCE_REDIRECT_DOMAIN_MISMATCH");
+  const page=cleanEbayText(await res.text()).toLowerCase();
+  const shippingSignal=/ship|shipping|dispatch|warehouse|fulfil|fulfill|expedi|livraison|entrepot|entrepôt/.test(page);
+  const locationSignal=(postalCode&&page.includes(postalCode.toLowerCase()))||((city&&page.includes(city.toLowerCase()))&&(state&&page.includes(state.toLowerCase())));
+  if(!shippingSignal||!locationSignal)throw new Error("ORIGIN_EVIDENCE_NOT_CONFIRMED_ON_PAGE");
+  const rows=await dbRows("ynot_ebay_origin_evidence?on_conflict=product_id",{
+    method:"POST",
+    headers:{Prefer:"resolution=merge-duplicates,return=representation"},
+    body:JSON.stringify({
+      product_id:input.productId,merchant_host:merchant,source_url:input.sourceUrl,country,
+      postal_code:postalCode||null,city:city||null,state:state||null,
+      evidence_text:cleanEbayText(input.evidenceText).slice(0,2000)||null,
+      verified:true,verification_method:"merchant-page",verified_at:new Date().toISOString(),updated_at:new Date().toISOString()
+    })
+  });
+  return rows[0]||null;
+}
+
 async function ebayPrepareCandidate(query:string,productId?:string){
   const products=await ebayRawCatalog(query,"FR",40);
   const product=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
@@ -227,7 +284,12 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   ]);
 
   const rawOrigin=cleanEbayText(product?.shipFromCountry||product?.originCountry||product?.merchantCountry||product?.countryOfOrigin);
-  const detectedOrigin=rawOrigin?{country:rawOrigin,postalCode:cleanEbayText(product?.shipFromPostalCode),city:cleanEbayText(product?.shipFromCity),state:cleanEbayText(product?.shipFromState),verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(product.id||""),"FR",cleanEbayText(product?.title));
+  const storedOrigin=await storedEbayOrigin(String(product.id||""));
+  const detectedOrigin=storedOrigin||(
+    rawOrigin
+      ?{country:rawOrigin,postalCode:cleanEbayText(product?.shipFromPostalCode),city:cleanEbayText(product?.shipFromCity),state:cleanEbayText(product?.shipFromState),verified:true,method:"catalog-field"}
+      :await detectShopifyOrigin(String(product.id||""),"FR",cleanEbayText(product?.title))
+  );
   const sourceOrigin=cleanEbayText(detectedOrigin.country).toUpperCase();
   const originPostalCode=cleanEbayText(product?.shipFromPostalCode||detectedOrigin.postalCode);
   const originCity=cleanEbayText(product?.shipFromCity||detectedOrigin.city);
@@ -865,6 +927,32 @@ function makeHandler() {
         }
       );
 
+
+      server.tool(
+        "ebay_verify_supplier_origin",
+        "Verify and store a supplier ship-from location using evidence from the merchant's own website. The evidence page must be on the same merchant domain, mention shipping/dispatch/warehouse context, and contain the submitted postal code or city/state. This tool never guesses locations.",
+        {
+          query:z.string().min(2).max(180),
+          product_id:z.string().min(1).max(300),
+          source_url:z.string().url(),
+          country:z.string().length(2),
+          postal_code:z.string().max(40).optional(),
+          city:z.string().max(120).optional(),
+          state:z.string().max(120).optional(),
+          evidence_text:z.string().max(2000).default("")
+        },
+        async({query,product_id,source_url,country,postal_code,city,state,evidence_text})=>{
+          const products=await ebayRawCatalog(query,"FR",40);
+          const product=products.find((p:any)=>String(p?.id||"")===product_id);
+          if(!product)return text({verified:false,error:"YNOT_PRODUCT_NOT_FOUND"});
+          const row=await verifyAndStoreMerchantOrigin({
+            productId:product_id,merchantUrl:String(product?.url||""),sourceUrl:source_url,country,
+            postalCode:postal_code,city,state,evidenceText:evidence_text
+          });
+          const prepared=await ebayPrepareCandidate(query,product_id);
+          return text({verified:true,stored:row,prepared});
+        }
+      );
 
       server.tool(
         "ebay_scan_catalogue",
