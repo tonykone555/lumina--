@@ -66,6 +66,8 @@ export async function POST(req:NextRequest){
   const gallery=uniqMedia(media,selectedImages,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image);
   const allVideos=uniqMedia(videos,match?.videos,match?.video_urls,match?.media_urls,selectedProducts.map((p:any)=>[p?.videos,p?.video_urls,p?.media_urls,videoMedia([...(p?.media||[])])]),variants.map((v:any)=>v.videos),product.videos);
   const tags=[...new Set<string>([...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(match?.tags)?match.tags:[]),...(Array.isArray(match?.product_tags)?match.product_tags:[]),...(Array.isArray(match?.intent_tags)?match.intent_tags:[]),...(Array.isArray(match?.attributes)?match.attributes.map((x:any)=>typeof x==='string'?x:(x?.value||x?.name||'')):[])].map(String).map(x=>x.trim()).filter(Boolean))];
+  const rating=Number(match?.rating??match?.average_rating??match?.review_rating??match?.aggregateRating?.ratingValue??(product as any).rating)||null;
+  const reviewCount=Number(match?.review_count??match?.reviews_count??match?.rating_count??match?.aggregateRating?.reviewCount??match?.aggregateRating?.ratingCount??(product as any).reviewCount)||0;
   const title=String(match?.title||product.title||'');
   const descriptionCandidates=[
    match?.description,match?.descriptionHtml,match?.description_html,match?.body_html,
@@ -76,6 +78,6 @@ export async function POST(req:NextRequest){
   // Shopify can expose a short catalogue blurb alongside a much richer merchant description.
   // Keep the richest useful copy instead of accepting the first non-empty field.
   const description=descriptionCandidates.sort((a,b)=>b.length-a.length)[0]||`${title} from ${product.brand||'the original Shopify merchant'}. Full merchant details are available on the original product page.`;
-  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,tags,options,variants,description,descriptionHydrated:true,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail'}});
+  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,tags,options,variants,description,descriptionHydrated:true,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail',rating,reviewCount}});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'PRODUCT_LINK_FAILED'},{status:400})}
 }
