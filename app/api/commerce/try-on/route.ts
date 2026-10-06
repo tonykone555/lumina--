@@ -17,9 +17,18 @@ async function garmentPart(url:string){
  return{mime_type:ct,data:b.toString("base64")};
 }
 function outputImage(data:any){
- return data?.interaction?.output_image||data?.output_image||data?.outputImage||data?.interaction?.outputImage||
+ const direct=data?.interaction?.output_image||data?.output_image||data?.outputImage||data?.interaction?.outputImage||
    data?.interaction?.outputs?.find?.((x:any)=>x?.type==="image")||
-   data?.outputs?.find?.((x:any)=>x?.type==="image")||null;
+   data?.outputs?.find?.((x:any)=>x?.type==="image");
+ if(direct?.data||direct?.inlineData?.data)return direct;
+ const steps=data?.interaction?.steps||data?.steps||[];
+ for(const step of steps){
+  const content=Array.isArray(step?.content)?step.content:[];
+  for(const block of content){
+   if(block?.type==="image"&&(block?.data||block?.inlineData?.data))return block;
+  }
+ }
+ return null;
 }
 function detail(data:any){
  return String(data?.error?.message||data?.message||data?.detail||"").replace(/\s+/g," ").trim().slice(0,280);
