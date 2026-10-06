@@ -94,3 +94,45 @@
   }
   .lv4-actions>.ynot-unified-add span{font-size:15px!important}
 }
+
+/* Compact rectangular bag CTA — text stays in the DOM for accessibility/product anchors. */
+.lv4-actions>.ynot-unified-add.ynot-bag-icon-only{
+  min-height:50px!important;
+  height:50px!important;
+  padding:0 18px!important;
+  border-radius:16px!important;
+  background:#fff!important;
+  color:#111!important;
+  border:1px solid rgba(255,255,255,.82)!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.9)!important;
+}
+.lv4-actions>.ynot-unified-add.ynot-bag-icon-only::before{display:none!important}
+.lv4-actions>.ynot-unified-add.ynot-bag-icon-only svg{
+  width:22px!important;
+  height:22px!important;
+  stroke-width:2.25!important;
+}
+.lv4-actions>.ynot-unified-add.ynot-bag-icon-only .ynot-bag-label{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
+html[data-ynot-theme="light"] .lv4-actions>.ynot-unified-add.ynot-bag-icon-only{
+  background:#111!important;
+  color:#fff!important;
+  border-color:#111!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.16)!important;
+}
+@media(max-width:760px){
+  .lv4-actions>.ynot-unified-add.ynot-bag-icon-only{
+    min-height:50px!important;
+    height:50px!important;
+    border-radius:16px!important;
+  }
+}
