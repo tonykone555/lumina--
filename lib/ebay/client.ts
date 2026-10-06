@@ -85,11 +85,37 @@ export async function setupEbayFranceDefaults(){
   returnPolicyId=created?.returnPolicyId||null;
  }
 
+ let fulfillmentPolicyId=readiness.fulfillmentPolicies?.[0]?.id||null;
+ if(!fulfillmentPolicyId){
+  const created=await ebay("/sell/account/v1/fulfillment_policy",{
+   method:"POST",
+   body:JSON.stringify({
+    name:"YNOT France Standard",
+    marketplaceId:ebayMarketplaceId(),
+    categoryTypes:[{name:"ALL_EXCLUDING_MOTORS_VEHICLES",default:false}],
+    handlingTime:{value:3,unit:"DAY"},
+    shippingOptions:[{
+     optionType:"DOMESTIC",
+     costType:"FLAT_RATE",
+     shippingServices:[{
+      sortOrder:1,
+      shippingCarrierCode:"Colissimo",
+      shippingServiceCode:"FR_ColiposteColissimo",
+      freeShipping:true,
+      shippingCost:{currency:"EUR",value:"0.00"},
+      additionalShippingCost:{currency:"EUR",value:"0.00"}
+     }]
+    }]
+   })
+  });
+  fulfillmentPolicyId=created?.fulfillmentPolicyId||null;
+ }
+
  return{
   merchantLocationKey,
   paymentPolicyId,
   returnPolicyId,
-  fulfillmentPolicyId:readiness.fulfillmentPolicies?.[0]?.id||null,
+  fulfillmentPolicyId,
   readiness:await getEbayReadiness()
  };
 }
