@@ -1,6 +1,9 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 import { getThreadsProfile, hideThreadReply, listRecentThreads, listThreadMentions, listThreadReplies, publishImageThread, publishTextThread, publishVideoThread, searchPublicThreads } from "@/lib/social/threads";
+import { ensureEbayInventoryLocationForOrigin, getEbayCategoryPreview, getEbayReadiness, publishEbayProduct } from "@/lib/ebay/client";
+import { evaluateEbayEligibility } from "@/lib/ebay/eligibility";
+import { detectShopifyOrigin } from "@/lib/catalog/shopify-origin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -164,6 +167,111 @@ async function catalog(query: string, country: string, source: string, limit: nu
     source: data?.source,
     error: data?.error,
     products: rawProducts.slice(0, Math.min(20, limit)).map((p: Product) => safeProduct(p)),
+  };
+}
+
+async function ebayRawCatalog(query:string,country="FR",limit=20){
+  const base=appUrl(); if(!base)throw new Error("YNOT_APP_URL_NOT_CONFIGURED");
+  const url=new URL("/api/catalog",base);
+  url.searchParams.set("q",query); url.searchParams.set("country",country); url.searchParams.set("source","all");
+  const res=await fetch(url,{cache:"no-store"});
+  if(!res.ok)throw new Error(`CATALOG_${res.status}`);
+  const data:any=await res.json();
+  return (Array.isArray(data?.products)?data.products:[]).slice(0,Math.min(50,limit));
+}
+
+function cleanEbayText(v:any){
+  if(v==null)return "";
+  if(typeof v==="string")return v.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+  if(typeof v==="number"||typeof v==="boolean")return String(v);
+  if(Array.isArray(v))return v.map(cleanEbayText).filter(Boolean).join(" ");
+  if(typeof v==="object"){
+    for(const k of ["text","value","description","plainText","html","body"]){
+      if(v[k]!=null){const x=cleanEbayText(v[k]);if(x&&x!=="[object Object]")return x}
+    }
+  }
+  return "";
+}
+
+async function ebayPrepareCandidate(query:string,productId?:string){
+  const products=await ebayRawCatalog(query,"FR",40);
+  const product=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
+    products.find((p:any)=>p?.id&&p?.title&&p?.image&&Number(p?.price)>0);
+  if(!product)return{ok:false,error:"YNOT_PRODUCT_NOT_FOUND"};
+
+  const [taxonomy,readiness]=await Promise.all([
+    getEbayCategoryPreview(product,query,"EBAY_FR"),
+    getEbayReadiness("EBAY_FR")
+  ]);
+
+  const rawOrigin=cleanEbayText(product?.shipFromCountry||product?.originCountry||product?.merchantCountry||product?.countryOfOrigin);
+  const detectedOrigin=rawOrigin?{country:rawOrigin,verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(product.id||""),"FR");
+  const sourceOrigin=cleanEbayText(detectedOrigin.country).toUpperCase();
+  const originPostalCode=cleanEbayText(product?.shipFromPostalCode);
+  const originCity=cleanEbayText(product?.shipFromCity);
+  const originState=cleanEbayText(product?.shipFromState);
+  const originVerified=Boolean(detectedOrigin.verified&&sourceOrigin);
+
+  let matchingLocation=(readiness.locations||[]).find((x:any)=>{
+    const a=x?.location?.address||{};
+    if(String(a?.country||"").toUpperCase()!==sourceOrigin)return false;
+    if(originPostalCode)return String(a?.postalCode||"").trim()===originPostalCode;
+    return Boolean(originCity&&originState&&String(a?.city||"").trim().toLowerCase()===originCity.toLowerCase()&&String(a?.stateOrProvince||"").trim().toLowerCase()===originState.toLowerCase());
+  })||null;
+
+  if(originVerified&&!matchingLocation&&(originPostalCode||(originCity&&originState))){
+    try{
+      matchingLocation=await ensureEbayInventoryLocationForOrigin({
+        country:sourceOrigin,postalCode:originPostalCode||null,city:originCity||null,state:originState||null,
+        name:`${cleanEbayText(product.brand)||"YNOT"} supplier`
+      });
+    }catch{}
+  }
+
+  const eligibility=evaluateEbayEligibility({
+    shipsTo:true,
+    sellerReady:readiness.ready,
+    categoryDomainOk:taxonomy.categoryDomainOk===true,
+    missingRequiredAspects:taxonomy.missingRequiredAspects,
+    originVerified:Boolean(originVerified&&matchingLocation),
+    deliveryDaysMax:Number.isFinite(Number(product?.deliveryDaysMax))?Number(product.deliveryDaysMax):null,
+    shippingCost:Number.isFinite(Number(product?.shippingCost))?Number(product.shippingCost):null,
+    supplierPrice:Number.isFinite(Number(product?.supplierPrice))?Number(product.supplierPrice):null,
+    retailPrice:Number(product.price),
+    available:product?.available!==false
+  });
+
+  const description=cleanEbayText(product.description);
+  const defaults={
+    merchantLocationKey:matchingLocation?.merchantLocationKey||"",
+    fulfillmentPolicyId:readiness.fulfillmentPolicies?.[0]?.id||"",
+    paymentPolicyId:readiness.paymentPolicies?.[0]?.id||"",
+    returnPolicyId:readiness.returnPolicies?.[0]?.id||""
+  };
+  const item={
+    sku:`YNOT-FR-${String(product.id||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(-30)}`,
+    title:cleanEbayText(product.title).slice(0,80),
+    description:(description&&description!=="[object Object]"?description:`${cleanEbayText(product.title)} — ${cleanEbayText(product.brand)}`).slice(0,4000),
+    imageUrls:(Array.isArray(product.images)&&product.images.length?product.images:[product.image]).filter(Boolean).slice(0,12),
+    quantity:5,
+    price:Number(product.price),
+    currency:String(product.currency||"EUR"),
+    categoryId:taxonomy.categoryId,
+    marketplaceId:"EBAY_FR" as const,
+    condition:"NEW",
+    brand:cleanEbayText(product.brand)||undefined,
+    aspects:taxonomy.aspects,
+    ...defaults
+  };
+  return{
+    ok:true,query,product:{
+      id:product.id,title:product.title,brand:product.brand,source:product.source,url:product.url,
+      price:product.price,currency:product.currency,image:product.image
+    },
+    shipping:{shipsToFrance:true,sourceOrigin:sourceOrigin||null,originPostalCode:originPostalCode||null,originCity:originCity||null,originState:originState||null,originVerified,locationReady:Boolean(matchingLocation),deliveryDaysMax:eligibility.deliveryDaysMax,shippingCost:eligibility.shippingCost},
+    ebay:{marketplaceId:"EBAY_FR",categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,categoryDomainOk:taxonomy.categoryDomainOk,missingRequiredAspects:taxonomy.missingRequiredAspects,sellerReady:readiness.ready},
+    eligibility:{publishable:eligibility.publishable,blockers:eligibility.blockers,warnings:eligibility.warnings,marginPct:eligibility.marginPct},
+    item
   };
 }
 
@@ -732,6 +840,92 @@ function makeHandler() {
             body: JSON.stringify({...input, owner: "STORE", metadata: {...(input.metadata || {}), origin: "ynot-mcp"}, updated_at: new Date().toISOString()}),
           });
           return text({ saved: true, gap: rows[0] || null });
+        }
+      );
+
+
+      server.tool(
+        "ebay_scan_catalogue",
+        "Scan the live YNOT catalogue for products that can be prepared for the main eBay France storefront. Products may originate outside France. Returns candidates and preparation status only; it does not publish.",
+        {
+          queries:z.array(z.string().min(2).max(160)).min(1).max(20).default(["skincare","jewelry","fitness","home decor","fashion"]),
+          max_candidates:z.number().int().min(1).max(50).default(20)
+        },
+        async({queries,max_candidates})=>{
+          const out:any[]=[];
+          for(const query of queries){
+            if(out.length>=max_candidates)break;
+            try{
+              const prepared:any=await ebayPrepareCandidate(query);
+              out.push(prepared);
+            }catch(error){
+              out.push({ok:false,query,error:error instanceof Error?error.message:"EBAY_SCAN_FAILED"});
+            }
+          }
+          return text({marketplace:"EBAY_FR",scanned:out.length,publishable:out.filter(x=>x?.eligibility?.publishable).length,candidates:out});
+        }
+      );
+
+      server.tool(
+        "ebay_prepare_listing",
+        "Prepare and validate one YNOT product for eBay France. This performs live taxonomy, shipping-origin/location, policy, delivery and margin checks but does not publish.",
+        {
+          query:z.string().min(2).max(180),
+          product_id:z.string().max(300).optional()
+        },
+        async({query,product_id})=>text(await ebayPrepareCandidate(query,product_id))
+      );
+
+      server.tool(
+        "ebay_publish_listing",
+        "Publish one prepared YNOT product to the main eBay France storefront only when YNOT's live server-side validation says it is publishable. Never bypass blockers. confirm must be true.",
+        {
+          query:z.string().min(2).max(180),
+          product_id:z.string().max(300).optional(),
+          quantity:z.number().int().min(1).max(20).default(5),
+          confirm:z.boolean()
+        },
+        async({query,product_id,quantity,confirm})=>{
+          if(confirm!==true)return text({published:false,error:"EXPLICIT_CONFIRMATION_REQUIRED"});
+          const prepared:any=await ebayPrepareCandidate(query,product_id);
+          if(!prepared?.ok)return text({published:false,...prepared});
+          if(!prepared?.eligibility?.publishable)return text({published:false,error:"YNOT_ELIGIBILITY_BLOCKED",blockers:prepared?.eligibility?.blockers||[],warnings:prepared?.eligibility?.warnings||[],prepared});
+          const result=await publishEbayProduct({...prepared.item,quantity});
+          return text({published:true,result,product:prepared.product,shipping:prepared.shipping,ebay:prepared.ebay});
+        }
+      );
+
+      server.tool(
+        "ebay_autolist_batch",
+        "Scan several catalogue queries and publish up to a bounded number of products that pass YNOT's live eBay checks. It skips blocked candidates rather than forcing them. confirm must be true.",
+        {
+          queries:z.array(z.string().min(2).max(160)).min(1).max(30).default(["skincare","jewelry","fitness","home decor","fashion","pet accessories","travel bag"]),
+          max_publish:z.number().int().min(1).max(20).default(5),
+          quantity:z.number().int().min(1).max(20).default(5),
+          confirm:z.boolean()
+        },
+        async({queries,max_publish,quantity,confirm})=>{
+          if(confirm!==true)return text({published:0,error:"EXPLICIT_CONFIRMATION_REQUIRED"});
+          const published:any[]=[];const skipped:any[]=[];
+          for(const query of queries){
+            if(published.length>=max_publish)break;
+            try{
+              const prepared:any=await ebayPrepareCandidate(query);
+              if(!prepared?.ok||!prepared?.eligibility?.publishable){
+                skipped.push({query,product:prepared?.product||null,blockers:prepared?.eligibility?.blockers||[prepared?.error||"NOT_PUBLISHABLE"]});
+                continue;
+              }
+              try{
+                const result=await publishEbayProduct({...prepared.item,quantity});
+                published.push({query,product:prepared.product,result});
+              }catch(error){
+                skipped.push({query,product:prepared.product,error:error instanceof Error?error.message:"EBAY_PUBLISH_FAILED"});
+              }
+            }catch(error){
+              skipped.push({query,error:error instanceof Error?error.message:"EBAY_PREPARE_FAILED"});
+            }
+          }
+          return text({requested:max_publish,published_count:published.length,published,skipped});
         }
       );
 
