@@ -62,12 +62,12 @@ export async function GET(request:NextRequest){
     ]);
     const description=clean(matched.description);
     const rawOrigin=clean((matched as any).shipFromCountry||(matched as any).originCountry||(matched as any).merchantCountry||(matched as any).countryOfOrigin);
-    const detectedOrigin=rawOrigin?{country:rawOrigin,verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(matched.id||""),market.country);
+    const detectedOrigin=rawOrigin?{country:rawOrigin,postalCode:clean((matched as any).shipFromPostalCode),city:clean((matched as any).shipFromCity),state:clean((matched as any).shipFromState),verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(matched.id||""),market.country,clean(matched.title));
     const sourceOrigin=clean(detectedOrigin.country);
     const originVerified=Boolean(detectedOrigin.verified&&sourceOrigin);
-    const originPostalCode=clean((matched as any).shipFromPostalCode);
-    const originCity=clean((matched as any).shipFromCity);
-    const originState=clean((matched as any).shipFromState);
+    const originPostalCode=clean((matched as any).shipFromPostalCode||detectedOrigin.postalCode);
+    const originCity=clean((matched as any).shipFromCity||detectedOrigin.city);
+    const originState=clean((matched as any).shipFromState||detectedOrigin.state);
     let matchingLocation=readiness.locations?.find((x:any)=>{
      const a=x?.location?.address||{};
      const sameCountry=String(a?.country||"").toUpperCase()===sourceOrigin.toUpperCase();
