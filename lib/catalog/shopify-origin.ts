@@ -1,18 +1,15 @@
-const ORIGIN_COUNTRIES=["FR","DE","ES","IT","BE","NL","GB","US","CA","AU","AT","CH","PL","PT","CZ","SE","DK","FI","IE"] as const;
+const ORIGIN_COUNTRIES=["FR","DE","ES","IT","BE","NL","GB","US","CA","AU","AT","CH","PL","PT","CZ","SE","DK","FI","IE","CN"] as const;
 
-async function lookup(productId:string,country:string,destinationCountry?:string){
+async function searchOrigin(productId:string,productTitle:string,country:string,destinationCountry="FR"){
  const payload={
   jsonrpc:"2.0",method:"tools/call",id:1,
-  params:{name:"lookup_catalog",arguments:{
+  params:{name:"search_catalog",arguments:{
    meta:{"ucp-agent":{profile:"https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json"}},
    catalog:{
-    ids:[productId],
-    filters:{
-     available:true,
-     ships_from:[{country}],
-     ...(destinationCountry?{ships_to:{country:destinationCountry}}:{})
-    },
-    context:{...(destinationCountry?{address_country:destinationCountry}:{}),intent:"Verify merchant shipping origin for resale listing"}
+    query:String(productTitle||"product").slice(0,300),
+    filters:{available:true,ships_from:[{country}],ships_to:{country:destinationCountry}},
+    context:{address_country:destinationCountry,intent:String(productTitle||"product")},
+    pagination:{limit:20}
    }
   }}
  };
@@ -22,12 +19,12 @@ async function lookup(productId:string,country:string,destinationCountry?:string
  return response.ok&&Array.isArray(products)&&products.some((p:any)=>String(p?.id||"")===productId);
 }
 
-export async function detectShopifyOrigin(productId:string,destinationCountry?:string){
+export async function detectShopifyOrigin(productId:string,destinationCountry="FR",productTitle=""){
  if(!String(productId).startsWith("gid://shopify/"))return{country:null,verified:false,method:"not-shopify"};
  for(const country of ORIGIN_COUNTRIES){
   try{
-   if(await lookup(productId,country,destinationCountry))return{country,verified:true,method:"shopify-ships-from"};
+   if(await searchOrigin(productId,productTitle,country,destinationCountry))return{country,verified:true,method:"shopify-search-ships-from"};
   }catch{}
  }
- return{country:null,verified:false,method:"shopify-ships-from"};
+ return{country:null,verified:false,method:"shopify-search-ships-from"};
 }
