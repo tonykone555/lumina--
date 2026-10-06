@@ -13,6 +13,7 @@ async function ebay(path:string,init:RequestInit={},marketplaceId:string=ebayMar
    Accept:"application/json",
    "Content-Type":"application/json",
    "Content-Language":ebayMarketplaceConfig(marketplaceId).locale||ebayLocale(),
+   "Accept-Language":ebayMarketplaceConfig(marketplaceId).locale||ebayLocale(),
    "X-EBAY-C-MARKETPLACE-ID":marketplaceId,
    ...(init.headers||{})
   },
@@ -180,7 +181,7 @@ export async function getEbayReadiness(marketplaceId:string=ebayMarketplaceId())
 async function ebayTaxonomy(path:string,marketplaceId:string=ebayMarketplaceId()){
  const token=(await getEbayApplicationToken()).access_token;
  const response=await fetch(`${ebayApiBase()}${path}`,{
-  headers:{Authorization:`Bearer ${token}`,Accept:"application/json","X-EBAY-C-MARKETPLACE-ID":marketplaceId},
+  headers:{Authorization:`Bearer ${token}`,Accept:"application/json","Accept-Language":ebayMarketplaceConfig(marketplaceId).locale||ebayLocale(),"X-EBAY-C-MARKETPLACE-ID":marketplaceId},
   cache:"no-store"
  });
  const text=await response.text().catch(()=>"");
