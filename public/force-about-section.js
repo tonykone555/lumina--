@@ -175,7 +175,7 @@
     const state=section.__ynotMedia;
     if(!state)return;
     const id=productId(state.host,state.product);
-    if(!id)return;
+    if(!id){void researchExact(section);return;}
     try{
       const r=await fetch(`/api/commerce/product/${encodeURIComponent(id)}`,{cache:"force-cache"});
       const data=await r.json();
@@ -217,7 +217,7 @@
       section=makeSection(host);
       actionRow.insertAdjacentElement("afterend",section);
     }
-    void enrichFromCatalogue(section);void researchExact(section);
+    void enrichFromCatalogue(section);
   }
 
   function sync(){
