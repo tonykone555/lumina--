@@ -25,8 +25,8 @@ const PRODUCT_UI_SCRIPTS = [
   "/product-gallery-chrome-kill.js",
   "/product-options-glass.js?v=2",
   "/force-about-section.js?v=7",
-  "/force-real-variant-media.js?v=6",
-  "/about-three-images.js?v=4",
+  "/force-real-variant-media.js?v=7",
+  "/about-three-images.js?v=5",
   "/force-product-extras.js?v=7",
 ];
 
