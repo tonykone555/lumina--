@@ -44,7 +44,7 @@ export async function GET(request:NextRequest){
   const item={
    sku:`YNOT-${String(product.id).replace(/[^a-zA-Z0-9_-]/g,"").slice(-36)||Date.now()}`,
    title:clean(product.title).slice(0,80),
-   description:(clean(product.description)||clean(product.title)).slice(0,4000),
+   description:((()=>{const d=clean(product.description);return d&&d!=="[object Object]"?d:`${clean(product.title)} — ${clean(product.brand)}`.replace(/\s+—\s*$/,"")})()).slice(0,4000),
    imageUrls:(Array.isArray(product.images)&&product.images.length?product.images:[product.image]).filter(Boolean).slice(0,12),
    quantity:10,
    price:Number(product.price),
@@ -60,7 +60,7 @@ export async function GET(request:NextRequest){
    publishable:readiness.ready&&taxonomy.missingRequiredAspects.length===0,
    query:q,
    sourceProduct:{id:product.id,title:product.title,brand:product.brand,source:product.source,url:product.url,price:product.price,currency:product.currency,image:product.image},
-   ebay:{categoryTreeId:taxonomy.categoryTreeId,categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,ancestors:taxonomy.ancestors,requiredAspects:taxonomy.requiredAspects,missingRequiredAspects:taxonomy.missingRequiredAspects,aspectCount:taxonomy.aspectCount},
+   ebay:{categoryTreeId:taxonomy.categoryTreeId,categoryQuery:taxonomy.categoryQuery,categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,alternatives:taxonomy.alternatives,ancestors:taxonomy.ancestors,requiredAspects:taxonomy.requiredAspects,missingRequiredAspects:taxonomy.missingRequiredAspects,aspectCount:taxonomy.aspectCount},
    item,
    readiness
   },{headers:{"Cache-Control":"no-store"}});
