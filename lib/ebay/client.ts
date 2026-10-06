@@ -213,6 +213,11 @@ function safeAllowedMatch(values:string[],hay:string){
 function semanticType(values:string[],hay:string){
  const h=norm(hay);
  const groups=[
+  {re:/\b(skincare|serum|cream|cleanser|moisturizer|moisturiser|niacinamide|propolis)\b/,want:/\b(serum|soin|visage|skincare|cream|creme|nettoyant)\b/i},
+  {re:/\b(hoodie|sweatshirt|sweat a capuche)\b/,want:/\b(hoodie|sweat|capuche)\b/i},
+  {re:/\b(baby carrier|porte bebe|porte-bebe)\b/,want:/\b(porte bebe|baby carrier|carrier)\b/i},
+  {re:/\b(necklace|collier|pendentif)\b/,want:/\b(collier|necklace|pendentif)\b/i},
+  {re:/\b(metal sign|wall sign|home decor sign|plaque metal)\b/,want:/\b(plaque|enseigne|decoration|decor|sign)\b/i},
   {re:/\b(sofa|couch|canape|sitzer|settee)\b/,want:/\b(canape|sofa)\b/i},
   {re:/\b(armchair|fauteuil|sessel)\b/,want:/\b(fauteuil|armchair)\b/i},
   {re:/\b(pouf|ottoman|poire)\b/,want:/\b(pouf|poire|ottoman)\b/i},
@@ -229,6 +234,47 @@ function semanticType(values:string[],hay:string){
  }
  return undefined;
 }
+function firstAllowed(values:string[],patterns:RegExp[]){
+ for(const re of patterns){const v=values.find(x=>re.test(norm(x)));if(v)return v}
+}
+function inferColour(values:string[],hay:string){
+ const h=norm(hay);
+ const colours:[RegExp,RegExp[]][]=[
+  [/\bblack\b|\bnoir\b/,[/\bnoir\b/,/\bblack\b/]],
+  [/\bwhite\b|\bblanc\b/,[/\bblanc\b/,/\bwhite\b/]],
+  [/\bblue\b|\bbleu\b/,[/\bbleu\b/,/\bblue\b/]],
+  [/\bred\b|\brouge\b/,[/\brouge\b/,/\bred\b/]],
+  [/\bgreen\b|\bvert\b/,[/\bvert\b/,/\bgreen\b/]],
+  [/\bpink\b|\brose\b/,[/\brose\b/,/\bpink\b/]],
+  [/\bbeige\b|\btan\b/,[/\bbeige\b/,/\btan\b/]],
+  [/\bbrown\b|\bmarron\b/,[/\bmarron\b/,/\bbrown\b/]],
+  [/\bgrey\b|\bgray\b|\bgris\b/,[/\bgris\b/,/\bgrey\b/,/\bgray\b/]]
+ ];
+ for(const [needle,patterns] of colours)if(needle.test(h)){const v=firstAllowed(values,patterns);if(v)return v}
+}
+function inferDepartment(values:string[],hay:string){
+ const h=norm(hay);
+ if(/\b(women|woman|female|femme|ladies)\b/.test(h))return firstAllowed(values,[/\bfemme\b/,/\bwomen/]);
+ if(/\b(men|man|male|homme)\b/.test(h))return firstAllowed(values,[/\bhomme\b/,/\bmen/]);
+ if(/\b(baby|bebe|infant|newborn)\b/.test(h))return firstAllowed(values,[/\bbebe\b/,/\bbaby\b/,/\benfant\b/]);
+ return firstAllowed(values,[/\badulte\b/,/\bunisex/]);
+}
+function inferSize(values:string[],product:any,hay:string){
+ const raw=[hay,...(Array.isArray(product?.variants)?product.variants.map((v:any)=>String(v?.label||v?.title||"")):[])].join(" ");
+ const h=norm(raw);
+ for(const token of ["xxl","xl","large","l","medium","m","small","s","xs","36","38","40","42","44"]){
+  if(new RegExp(`(^| )${token}( |$)`).test(h)){
+   const v=values.find(x=>norm(x)===token||norm(x).includes(token));
+   if(v)return v;
+  }
+ }
+}
+function inferDressLength(values:string[],hay:string){
+ const h=norm(hay);
+ if(/\bmaxi\b|\blong dress\b|\brobe longue\b/.test(h))return firstAllowed(values,[/\bmaxi\b/,/\blongue\b/,/\blong\b/]);
+ if(/\bmidi\b/.test(h))return firstAllowed(values,[/\bmidi\b/]);
+ if(/\bmini\b|\bshort dress\b|\brobe courte\b/.test(h))return firstAllowed(values,[/\bmini\b/,/\bcourte\b/,/\bshort\b/]);
+}
 function aspectValue(product:any,aspect:any,queryHint=""){
  const name=String(aspect?.localizedAspectName||"");
  const lower=norm(name);
@@ -241,6 +287,14 @@ function aspectValue(product:any,aspect:any,queryHint=""){
   const semantic=semanticType(values,hay);
   if(semantic)return [semantic];
  }
+ if(lower.includes("couleur")||lower==="color"||lower==="colour"){const v=inferColour(values,hay);if(v)return[v]}
+ if(lower.includes("departement")||lower==="department"){const v=inferDepartment(values,hay);if(v)return[v]}
+ if(lower==="taille"||lower==="size"){const v=inferSize(values,product,hay);if(v)return[v]}
+ if(lower.includes("longueur")&&lower.includes("robe")){const v=inferDressLength(values,hay);if(v)return[v]}
+ if(lower==="style"){
+  const v=safeAllowedMatch(values,hay)||firstAllowed(values,[/\bcasual\b/,/\bclassique\b/,/\bclassic\b/]);
+  if(v)return[v]
+ }
  const exact=safeAllowedMatch(values,hay);
  return exact?[exact]:undefined;
 }
@@ -251,8 +305,11 @@ function canonicalCategoryQueries(queryHint:string,product:any){
  if(/\b(armchair|fauteuil|sessel)\b/.test(h))return ["fauteuil","armchair",String(product?.title||"")];
  if(/\b(coffee table|table basse|couchtisch)\b/.test(h))return ["table basse","coffee table",String(product?.title||"")];
  if(/\b(dining table|table a manger|esstisch)\b/.test(h))return ["table à manger","dining table",String(product?.title||"")];
- if(/\b(dress|robe|kleid)\b/.test(h))return ["robe","dress",String(product?.title||"")];
- if(/\b(necklace|collier|halskette)\b/.test(h))return ["collier","necklace",String(product?.title||"")];
+ if(/\b(dress|robe|kleid)\b/.test(h))return ["robe femme","robe","women dress",String(product?.title||"")];
+ if(/\b(necklace|collier|halskette|pendentif)\b/.test(h))return ["collier femme","collier","necklace",String(product?.title||"")];
+ if(/\b(hoodie|sweatshirt|sweat a capuche)\b/.test(h))return ["sweat à capuche","hoodie","sweatshirt",String(product?.title||"")];
+ if(/\b(baby carrier|porte bebe|porte-bebe)\b/.test(h))return ["porte-bébé","baby carrier",String(product?.title||"")];
+ if(/\b(skincare|serum|niacinamide|propolis)\b/.test(h))return ["sérum visage","soin visage","skincare serum",String(product?.title||"")];
  return [String(queryHint||product?.title||"").trim().slice(0,350),String(product?.title||"")].filter(Boolean);
 }
 function categoryPath(s:any){
@@ -264,8 +321,8 @@ function categoryDomainOk(s:any,queryHint:string,product:any){
  const path=norm(categoryPath(s).join(" "));
  if(/\b(sofa|couch|canape|sitzer|settee|armchair|fauteuil|sessel|coffee table|table basse|couchtisch|dining table|table a manger|esstisch)\b/.test(h))
   return /\b(meubles|furniture|maison|home)\b/.test(path)&&!/\b(musique|music|cd|vinyle|barbecue)\b/.test(path);
- if(/\b(dress|robe|kleid)\b/.test(h))return /\b(vetement|mode|clothing|fashion|robe|dress)\b/.test(path);
- if(/\b(necklace|collier|halskette)\b/.test(h))return /\b(bijou|jewel|collier|necklace)\b/.test(path);
+ if(/\b(dress|robe|kleid|hoodie|sweatshirt|sweat a capuche)\b/.test(h))return /\b(vetement|mode|clothing|fashion|robe|dress|sweat|pull|haut)\b/.test(path)&&!/\bposter|affiche\b/.test(path);
+ if(/\b(necklace|collier|halskette|pendentif)\b/.test(h))return /\b(bijou|jewel|collier|necklace|pendentif)\b/.test(path);
  return true;
 }
 function scoreCategorySuggestion(s:any,queryHint:string,product:any){
