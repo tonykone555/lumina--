@@ -16,7 +16,7 @@ async function hydrate(product:Product){const id=key(product.title),cached=produ
 const merchantUrl=safeText((rich as Product&{merchantUrl?:unknown}).merchantUrl||rich.url||"");
 if(/^https?:\/\//i.test(merchantUrl)){
  try{
-  const response=await fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:merchantUrl,title:rich.title,brand:String(rich.brand||""),description:rich.description||""})});
+  const response=await fetch("/api/commerce/enrich-description",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:merchantUrl,title:rich.title,brand:safeText((rich as Product&{brand?:unknown}).brand),description:rich.description||""})});
   const enriched=await response.json() as EnrichedResponse;
   if(response.ok){
    const extraImages=mediaUrls(enriched.images);
