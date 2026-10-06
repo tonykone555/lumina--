@@ -205,11 +205,11 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   ]);
 
   const rawOrigin=cleanEbayText(product?.shipFromCountry||product?.originCountry||product?.merchantCountry||product?.countryOfOrigin);
-  const detectedOrigin=rawOrigin?{country:rawOrigin,verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(product.id||""),"FR");
+  const detectedOrigin=rawOrigin?{country:rawOrigin,postalCode:cleanEbayText(product?.shipFromPostalCode),city:cleanEbayText(product?.shipFromCity),state:cleanEbayText(product?.shipFromState),verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(product.id||""),"FR",cleanEbayText(product?.title));
   const sourceOrigin=cleanEbayText(detectedOrigin.country).toUpperCase();
-  const originPostalCode=cleanEbayText(product?.shipFromPostalCode);
-  const originCity=cleanEbayText(product?.shipFromCity);
-  const originState=cleanEbayText(product?.shipFromState);
+  const originPostalCode=cleanEbayText(product?.shipFromPostalCode||detectedOrigin.postalCode);
+  const originCity=cleanEbayText(product?.shipFromCity||detectedOrigin.city);
+  const originState=cleanEbayText(product?.shipFromState||detectedOrigin.state);
   const originVerified=Boolean(detectedOrigin.verified&&sourceOrigin);
 
   let matchingLocation=(readiness.locations||[]).find((x:any)=>{
