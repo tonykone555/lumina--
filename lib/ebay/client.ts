@@ -210,28 +210,46 @@ function aspectValue(product:any,aspect:any,queryHint=""){
  return exact?[exact]:undefined;
 }
 
-function canonicalCategoryQuery(queryHint:string,product:any){
+function canonicalCategoryQueries(queryHint:string,product:any){
  const h=norm([queryHint,product?.title].filter(Boolean).join(" "));
- if(/\b(sofa|couch|canape|sitzer|settee)\b/.test(h))return "canapé";
- if(/\b(armchair|fauteuil|sessel)\b/.test(h))return "fauteuil";
- if(/\b(coffee table|table basse|couchtisch)\b/.test(h))return "table basse";
- if(/\b(dining table|table a manger|esstisch)\b/.test(h))return "table à manger";
- if(/\b(dress|robe|kleid)\b/.test(h))return "robe";
- if(/\b(necklace|collier|halskette)\b/.test(h))return "collier";
- return String(queryHint||product?.title||"").trim().slice(0,350);
+ if(/\b(sofa|couch|canape|sitzer|settee)\b/.test(h))return ["sofa","canape","canapé",String(product?.title||"")];
+ if(/\b(armchair|fauteuil|sessel)\b/.test(h))return ["fauteuil","armchair",String(product?.title||"")];
+ if(/\b(coffee table|table basse|couchtisch)\b/.test(h))return ["table basse","coffee table",String(product?.title||"")];
+ if(/\b(dining table|table a manger|esstisch)\b/.test(h))return ["table à manger","dining table",String(product?.title||"")];
+ if(/\b(dress|robe|kleid)\b/.test(h))return ["robe","dress",String(product?.title||"")];
+ if(/\b(necklace|collier|halskette)\b/.test(h))return ["collier","necklace",String(product?.title||"")];
+ return [String(queryHint||product?.title||"").trim().slice(0,350),String(product?.title||"")].filter(Boolean);
 }
-function scoreCategorySuggestion(s:any,categoryQuery:string,product:any){
+function categoryPath(s:any){
+ const ancestors=(s?.categoryTreeNodeAncestors||[]).map((x:any)=>String(x?.categoryName||""));
+ return [...ancestors,String(s?.category?.categoryName||"")].filter(Boolean);
+}
+function categoryDomainOk(s:any,queryHint:string,product:any){
+ const h=norm([queryHint,product?.title].filter(Boolean).join(" "));
+ const path=norm(categoryPath(s).join(" "));
+ if(/\b(sofa|couch|canape|sitzer|settee|armchair|fauteuil|sessel|coffee table|table basse|couchtisch|dining table|table a manger|esstisch)\b/.test(h))
+  return /\b(meubles|furniture|maison|home)\b/.test(path)&&!/\b(musique|music|cd|vinyle|barbecue)\b/.test(path);
+ if(/\b(dress|robe|kleid)\b/.test(h))return /\b(vetement|mode|clothing|fashion|robe|dress)\b/.test(path);
+ if(/\b(necklace|collier|halskette)\b/.test(h))return /\b(bijou|jewel|collier|necklace)\b/.test(path);
+ return true;
+}
+function scoreCategorySuggestion(s:any,queryHint:string,product:any){
  const name=norm(s?.category?.categoryName||"");
- const h=norm([categoryQuery,product?.title].filter(Boolean).join(" "));
- let score=0;
- for(const w of norm(categoryQuery).split(" ").filter((x:string)=>x.length>2))if(name.includes(w))score+=20;
+ const path=norm(categoryPath(s).join(" "));
+ const h=norm([queryHint,product?.title].filter(Boolean).join(" "));
+ let score=categoryDomainOk(s,queryHint,product)?50:-500;
+ for(const w of norm(queryHint).split(" ").filter((x:string)=>x.length>2)){
+  if(name.includes(w))score+=30;
+  if(path.includes(w))score+=10;
+ }
  if(/\b(sofa|couch|canape|sitzer|settee)\b/.test(h)){
-  if(/canape|sofa/.test(name))score+=100;
-  if(/pouf|poire|gonflable|sacco/.test(name))score-=150;
+  if(/canape|sofa/.test(name))score+=180;
+  if(/canape|sofa/.test(path))score+=80;
+  if(/pouf|poire|gonflable|sacco/.test(name))score-=250;
  }
  if(/\b(armchair|fauteuil|sessel)\b/.test(h)){
-  if(/fauteuil/.test(name))score+=100;
-  if(/pouf|poire|gonflable/.test(name))score-=100;
+  if(/fauteuil|armchair/.test(name))score+=180;
+  if(/pouf|poire|gonflable/.test(name))score-=200;
  }
  return score;
 }
@@ -241,14 +259,22 @@ export async function getEbayCategoryPreview(product:any,queryHint=""){
  const tree=await ebayTaxonomy(`/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`);
  const treeId=String(tree?.categoryTreeId||"");
  if(!treeId)throw new Error("EBAY_CATEGORY_TREE_MISSING");
- const categoryQuery=canonicalCategoryQuery(queryHint,product);
- const query=encodeURIComponent(categoryQuery);
- const suggestions=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_category_suggestions?q=${query}`);
- const suggestionRows=(suggestions?.categorySuggestions||[]) as any[];
- const ranked=[...suggestionRows].sort((a,b)=>scoreCategorySuggestion(b,categoryQuery,product)-scoreCategorySuggestion(a,categoryQuery,product));
+ const queries=[...new Set(canonicalCategoryQueries(queryHint,product).map(q=>String(q||"").trim()).filter(Boolean))].slice(0,4);
+ const responses=await Promise.all(queries.map(async q=>{
+  const payload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_category_suggestions?q=${encodeURIComponent(q.slice(0,350))}`);
+  return (payload?.categorySuggestions||[]).map((s:any)=>({...s,_query:q}));
+ }));
+ const seen=new Set<string>();
+ const allSuggestions=responses.flat().filter((s:any)=>{
+  const id=String(s?.category?.categoryId||"");
+  if(!id||seen.has(id))return false;
+  seen.add(id);return true;
+ });
+ const ranked=[...allSuggestions].sort((a,b)=>scoreCategorySuggestion(b,queryHint,product)-scoreCategorySuggestion(a,queryHint,product));
  const top=ranked[0];
  const categoryId=String(top?.category?.categoryId||"");
  if(!categoryId)throw new Error("EBAY_CATEGORY_SUGGESTION_MISSING");
+ const domainOk=categoryDomainOk(top,queryHint,product);
  const aspectsPayload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`);
  const all=(aspectsPayload?.aspects||[]) as any[];
  const aspects:Record<string,string[]>={};
@@ -261,16 +287,17 @@ export async function getEbayCategoryPreview(product:any,queryHint=""){
   const isBrand=["brand","marque","marke"].includes(norm(name));
   if(isRequired)required.push(name);
   if(!isRequired&&!isBrand)continue;
-  const value=aspectValue(product,a,categoryQuery);
+  const value=aspectValue(product,a,String(top?._query||queryHint));
   if(value?.length)aspects[name]=value;
   else if(isRequired)missingRequired.push(name);
  }
  return{
   categoryTreeId:treeId,
-  categoryQuery,
+  categoryQuery:String(top?._query||queries[0]||""),
   categoryId,
   categoryName:String(top?.category?.categoryName||""),
-  alternatives:ranked.slice(1,5).map((s:any)=>({id:String(s?.category?.categoryId||""),name:String(s?.category?.categoryName||"")})),
+  categoryDomainOk:domainOk,
+  alternatives:ranked.slice(1,6).map((s:any)=>({id:String(s?.category?.categoryId||""),name:String(s?.category?.categoryName||""),query:String(s?._query||""),domainOk:categoryDomainOk(s,queryHint,product),path:categoryPath(s)})),
   ancestors:(top?.categoryTreeNodeAncestors||[]).map((x:any)=>({id:String(x?.categoryId||""),name:String(x?.categoryName||"")})),
   aspects,
   requiredAspects:required,
