@@ -12,4 +12,6 @@ create table if not exists public.ebay_oauth_connections (
 );
 
 alter table public.ebay_oauth_connections enable row level security;
--- Intentionally no RLS policies: browser clients cannot read seller tokens.
+revoke all on table public.ebay_oauth_connections from anon, authenticated;
+grant select, insert, update, delete on table public.ebay_oauth_connections to service_role;
+-- No browser policies: only privileged server-side code can access seller tokens.
