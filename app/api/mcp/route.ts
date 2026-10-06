@@ -170,14 +170,36 @@ async function catalog(query: string, country: string, source: string, limit: nu
   };
 }
 
+const EBAY_QUERY_FALLBACKS:Record<string,string[]>={
+ jewellery:["necklace","pendant necklace","women jewelry","bracelet","earrings"],
+ jewelry:["necklace","pendant necklace","women jewelry","bracelet","earrings"],
+ fitness:["gym shorts","activewear","fitness accessories","resistance bands","gym bag"],
+ home:["home decor","table lamp","wall decor","sofa","storage cabinet"],
+ kitchen:["kitchen accessories","cookware","air fryer accessories","chef knife","food storage"],
+ pets:["pet accessories","dog bed","cat bed","pet feeder","dog harness"],
+ activewear:["gym leggings","sports bra","gym shorts","workout top"],
+ cookware:["cookware set","frying pan","ceramic cookware","cast iron cookware"],
+ "pet accessories":["dog bed","pet feeder","dog harness","cat tree"],
+ "baby products":["baby carrier","baby stroller","baby monitor","diaper bag"],
+ "travel bag":["weekender bag","travel backpack","carry on luggage","duffel bag"]
+};
+
 async function ebayRawCatalog(query:string,country="FR",limit=20){
   const base=appUrl(); if(!base)throw new Error("YNOT_APP_URL_NOT_CONFIGURED");
-  const url=new URL("/api/catalog",base);
-  url.searchParams.set("q",query); url.searchParams.set("country",country); url.searchParams.set("source","all");
-  const res=await fetch(url,{cache:"no-store"});
-  if(!res.ok)throw new Error(`CATALOG_${res.status}`);
-  const data:any=await res.json();
-  return (Array.isArray(data?.products)?data.products:[]).slice(0,Math.min(50,limit));
+  const queries=[query,...(EBAY_QUERY_FALLBACKS[query.toLowerCase()]||[])];
+  const seen=new Set<string>(); const out:any[]=[];
+  for(const q of queries){
+    const url=new URL("/api/catalog",base);
+    url.searchParams.set("q",q); url.searchParams.set("country",country); url.searchParams.set("source","all");
+    const res=await fetch(url,{cache:"no-store"});
+    if(!res.ok)continue;
+    const data:any=await res.json();
+    for(const p of (Array.isArray(data?.products)?data.products:[])){
+      const id=String(p?.id||""); if(!id||seen.has(id))continue; seen.add(id); out.push(p);
+      if(out.length>=Math.min(50,limit))return out;
+    }
+  }
+  return out;
 }
 
 function cleanEbayText(v:any){
