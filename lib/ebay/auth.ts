@@ -51,6 +51,10 @@ async function tokenRequest(params:Record<string,string>,label:string):Promise<E
  return data as EbayTokenPayload;
 }
 
+export async function getEbayApplicationToken(){
+ return tokenRequest({grant_type:"client_credentials",scope:"https://api.ebay.com/oauth/api_scope"},"application_token");
+}
+
 export async function exchangeEbayAuthorizationCode(code:string){
  const runame=ebayRuName();
  if(!runame)throw new Error("EBAY_RUNAME_MISSING");
