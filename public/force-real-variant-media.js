@@ -47,32 +47,32 @@
   function render(section,urls,title){
     const images=exactlyThree(urls,[],[]);
     if(!images.length)return;
-    let grid=section.querySelector(".ynot-about-image-grid");
+    const native=section.matches("[data-native-about=\"true\"]");
+    let grid=section.querySelector(native?".ynot-about-images":".ynot-about-image-grid");
     if(!grid){
       grid=document.createElement("div");
-      grid.className="ynot-about-image-grid";
-      grid.style.cssText="display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;width:100%!important;margin:0 0 20px!important;";
+      grid.className=native?"ynot-about-images":"ynot-about-image-grid";
       const videoRow=section.querySelector(".ynot-about-video-row");
       if(videoRow)videoRow.insertAdjacentElement("afterend",grid);else section.prepend(grid);
     }
     grid.replaceChildren(...images.map((src,index)=>{
       const figure=document.createElement("figure");
-      figure.style.cssText="display:block!important;margin:0!important;min-width:0!important;";
+      if(native)figure.className="ynot-about-image";
+      figure.style.cssText="display:flex!important;flex-direction:column!important;margin:0!important;min-width:0!important;";
       const img=document.createElement("img");
       img.src=src;
-      img.alt=`${title||"Product"} variant ${index+1}`;
-      img.loading="lazy";
-      img.style.cssText="display:block!important;width:100%!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:12px!important;background:#111!important;";
+      img.alt=(title||"Product")+" variant "+(index+1);
+      img.loading="eager";
+      img.style.cssText="display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;aspect-ratio:1/1!important;object-fit:cover!important;border-radius:12px!important;background:#111!important;";
       const caption=document.createElement("figcaption");
-      caption.textContent=`${title||"Product"} variant`;
+      caption.textContent=(title||"Product")+" variant";
       caption.style.cssText="display:block!important;margin-top:6px!important;font-size:9px!important;line-height:1.25!important;color:rgba(255,255,255,.58)!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;";
       figure.append(img,caption);
       return figure;
     }));
-    grid.style.display="grid";
+    grid.style.cssText="display:grid!important;visibility:visible!important;opacity:1!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;width:100%!important;margin:0 0 20px!important;overflow:visible!important;";
     section.dataset.realVariantMedia="1";
   }
-
   async function hydrate(section){
     if(section.dataset.realVariantMediaLoading==="1")return;
     const host=hostFor(section),base=productFrom(host);
@@ -107,7 +107,7 @@
   }
 
   function sync(){
-    document.querySelectorAll("[data-ynot-force-about='true']").forEach(section=>{void hydrate(section)});
+    document.querySelectorAll("[data-ynot-force-about='true'],[data-native-about='true']").forEach(section=>{void hydrate(section)});
   }
 
   let frame=0;
