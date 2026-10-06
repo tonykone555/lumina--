@@ -6,6 +6,9 @@
   const bad=url=>/placeholder|mock|dummy|sample|fallback|no[-_ ]?image|default[-_ ]?product|logo|avatar|blank/i.test(url||"");
   const clean=xs=>uniq(xs).filter(x=>!bad(x)&&!/^data:/i.test(x)&&!\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(x));
   const parse=value=>{try{return value?JSON.parse(value):null}catch{return null}};
+  const mediaKey=url=>{try{const u=new URL(url);return (u.origin+u.pathname).replace(/_\d+x\d*(?=\.[a-z]+$)/i,"")}catch{return String(url||"").split("?")[0]}};
+  const withoutFront=(urls,fronts)=>{const blocked=new Set(clean(fronts).map(mediaKey));return clean(urls).filter(url=>!blocked.has(mediaKey(url)))};
+
 
   function hostFor(section){
     return section.closest(".detail,.lv4-detail,.ynot-selected,[role='dialog'],aside")||section.parentElement;
@@ -31,16 +34,18 @@
     return clean([product?.images,product?.image]);
   }
 
-  function exactlyThree(primary,fallback){
-    const ordered=clean([primary,fallback]);
-    if(!ordered.length)return[];
-    const out=ordered.slice(0,3);
+  function exactlyThree(primary,fallback,fronts=[]){
+    const ordered=withoutFront([primary,fallback],fronts);
+    const distinct=[];const seen=new Set();
+    for(const url of ordered){const k=mediaKey(url);if(seen.has(k))continue;seen.add(k);distinct.push(url)}
+    if(!distinct.length)return[];
+    const out=distinct.slice(0,3);
     while(out.length<3)out.push(out[out.length-1]);
     return out;
   }
 
   function render(section,urls,title){
-    const images=exactlyThree(urls,[]);
+    const images=exactlyThree(urls,[],[]);
     if(!images.length)return;
     let grid=section.querySelector(".ynot-about-image-grid");
     if(!grid){
@@ -83,9 +88,11 @@
       const data=await r.json().catch(()=>null);
       if(!r.ok||!data?.product||!section.isConnected)return;
       const p=data.product;
-      const realVariants=variantImages(p);
-      const realGallery=productImages(p);
-      const chosen=exactlyThree(realVariants,realGallery);
+      const hostMain=[base?.image,p?.image,...[...host.querySelectorAll("img")].slice(0,1).map(img=>img.currentSrc||img.src||"")];
+      const realVariants=withoutFront(variantImages(p),hostMain);
+      const realGallery=withoutFront(productImages(p),hostMain);
+      const domAlternates=withoutFront([...host.querySelectorAll("img")].slice(1).map(img=>img.currentSrc||img.src||""),hostMain);
+      const chosen=exactlyThree(realVariants,[realGallery,domAlternates],hostMain);
       if(chosen.length)render(section,chosen,p.title||base.title||"Product");
     }catch{}finally{
       delete section.dataset.realVariantMediaLoading;

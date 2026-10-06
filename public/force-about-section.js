@@ -156,13 +156,13 @@
 
     const small=document.createElement("small");
     small.textContent="DETAILS";
-    small.style.cssText="display:block!important;font-size:9px!important;letter-spacing:.16em!important;color:rgba(255,255,255,.5)!important;";
+    small.style.cssText="display:none!important;font-size:9px!important;letter-spacing:.16em!important;color:rgba(255,255,255,.5)!important;";
     const heading=document.createElement("h2");
     heading.textContent="About this product";
-    heading.style.cssText="display:block!important;margin:5px 0 10px!important;font-size:21px!important;line-height:1.1!important;color:#fff!important;-webkit-text-fill-color:#fff!important;";
+    heading.style.cssText="display:none!important;margin:5px 0 10px!important;font-size:21px!important;line-height:1.1!important;color:#fff!important;-webkit-text-fill-color:#fff!important;";
     const copy=document.createElement("p");
-    copy.textContent=description;copy.style.display=description?"block":"none";
-    copy.style.cssText="display:block!important;margin:0!important;font-size:13px!important;line-height:1.5!important;color:rgba(255,255,255,.76)!important;-webkit-text-fill-color:rgba(255,255,255,.76)!important;";
+    copy.textContent="";
+    copy.style.cssText="display:none!important;margin:0!important;font-size:13px!important;line-height:1.5!important;color:rgba(255,255,255,.76)!important;-webkit-text-fill-color:rgba(255,255,255,.76)!important;";
     section.append(small,heading,copy);
     renderMedia(section,title,[stored.videos,direct.videos],initialImages);
     section.__ynotMedia={title,host,product,videos:uniq([stored.videos,direct.videos]),images:initialImages};
@@ -185,16 +185,8 @@
       const preferredImages=more.variantImages.length?more.variantImages:(more.productImages.length?more.productImages:state.images);
       state.product={...(state.product||{}),...data.product};state.videos=videos;state.images=preferredImages;
       renderMedia(section,state.title,videos,preferredImages);
-      if(preferredImages.length){
-        section.dataset.realVariantMedia="1";
-        const grid=section.querySelector(".ynot-about-image-grid");
-        if(grid){
-          [...grid.children].slice(3).forEach(node=>node.remove());
-          while(grid.children.length&&grid.children.length<3)grid.appendChild(grid.lastElementChild.cloneNode(true));
-          grid.style.setProperty("display","grid","important");
-          grid.style.setProperty("grid-template-columns","repeat(3,minmax(0,1fr))","important");
-        }
-      }
+      /* Do not mark the image row ready here. The dedicated variant-media pass
+         must first remove the main/front image and dedupe the real gallery. */
       void researchExact(section);
     }catch{void researchExact(section)}
   }
@@ -211,7 +203,11 @@
       const description=clean(data?.description);
       if(r.ok&&data?.found&&description){
         const copy=section.querySelector(".ynot-about-copy")||section.querySelector("p");
-        if(copy){copy.textContent=description;copy.style.display="block";}
+        const heading=section.querySelector("h2");
+        const label=section.querySelector("small");
+        if(copy){copy.textContent=description;copy.style.setProperty("display","block","important");}
+        if(heading)heading.style.setProperty("display","block","important");
+        if(label)label.style.setProperty("display","block","important");
         section.dataset.geminiResearchDone="1";
       }
     }catch{}finally{delete section.dataset.geminiResearchLoading}
