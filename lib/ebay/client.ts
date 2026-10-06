@@ -416,6 +416,30 @@ async function marketplacePrice(amount:number,fromCurrency:string,toCurrency:str
  return{price:Math.round(value*rate*100)/100,currency:to,rate,converted:true};
 }
 
+function aspectByNames(aspects:Record<string,string[]>|undefined,names:RegExp[]){
+ if(!aspects)return undefined;
+ for(const [key,values] of Object.entries(aspects)){
+  const nk=norm(key);
+  if(names.some(re=>re.test(nk))){
+   const v=Array.isArray(values)?String(values[0]||"").trim():"";
+   if(v)return v;
+  }
+ }
+}
+function unavailableProductIdText(marketplaceId:string){
+ const id=String(marketplaceId||"").toUpperCase();
+ if(["EBAY_FR","EBAY_BE","EBAY_CA"].includes(id))return "Non applicable";
+ if(id==="EBAY_DE")return "Nicht zutreffend";
+ if(id==="EBAY_ES")return "No aplicable";
+ if(id==="EBAY_IT")return "Non applicabile";
+ if(id==="EBAY_NL")return "Niet van toepassing";
+ return "Does not apply";
+}
+async function getOffersForSku(sku:string,marketplaceId:string){
+ const data=await ebay(`/sell/inventory/v1/offer?sku=${encodeURIComponent(sku)}&marketplace_id=${encodeURIComponent(marketplaceId)}`,{},marketplaceId);
+ return Array.isArray(data?.offers)?data.offers:[];
+}
+
 export type PublishEbayProduct={
  sku:string;title:string;description:string;imageUrls:string[];quantity:number;price:number;currency?:string;
  categoryId:string;merchantLocationKey:string;fulfillmentPolicyId:string;paymentPolicyId:string;returnPolicyId:string;marketplaceId?:EbayMarketplaceId;
@@ -429,28 +453,96 @@ export async function publishEbayProduct(input:PublishEbayProduct){
  if(!sku)throw new Error("EBAY_SKU_REQUIRED");
  if(!input.categoryId)throw new Error("EBAY_CATEGORY_REQUIRED");
  if(!input.merchantLocationKey||!input.fulfillmentPolicyId||!input.paymentPolicyId||!input.returnPolicyId)throw new Error("EBAY_POLICIES_REQUIRED");
+
  const normalizedPrice=await marketplacePrice(Number(input.price),input.currency||market.currency,market.currency);
- const product:any={title:input.title.trim().slice(0,80),description:input.description.trim().slice(0,4000),imageUrls:input.imageUrls.filter(Boolean).slice(0,12),aspects:input.aspects||{}};
- if(input.brand)product.brand=input.brand;
- if(input.mpn)product.mpn=input.mpn;
+ const product:any={
+  title:input.title.trim().slice(0,80),
+  description:input.description.trim().slice(0,4000),
+  imageUrls:input.imageUrls.filter(Boolean).slice(0,12),
+  aspects:{...(input.aspects||{})}
+ };
+
+ const aspectBrand=aspectByNames(input.aspects,[/^brand$/,/^marque$/,/^marke$/]);
+ const aspectMpn=aspectByNames(input.aspects,[/^mpn$/,/manufacturer part/,/reference fabricant/,/numero de piece fabricant/,/piece fabricant/]);
+ const brand=String(input.brand||aspectBrand||"").trim();
+ const mpn=String(input.mpn||aspectMpn||(brand?unavailableProductIdText(marketplaceId):"")).trim();
+
+ if(brand){
+  product.brand=brand;
+  const brandKey=Object.keys(product.aspects).find(k=>["brand","marque","marke"].includes(norm(k)))||"Marque";
+  product.aspects[brandKey]=[brand];
+ }
+ if(mpn){
+  product.mpn=mpn;
+  const mpnKey=Object.keys(product.aspects).find(k=>/^(mpn|numero de piece fabricant|reference fabricant|manufacturer part)/.test(norm(k)))||"Numéro de pièce fabricant";
+  product.aspects[mpnKey]=[mpn];
+ }
  if(input.upc?.length)product.upc=input.upc;
+
  try{
-  await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`,{method:"PUT",body:JSON.stringify({availability:{shipToLocationAvailability:{quantity:Math.max(0,Math.floor(input.quantity||0))}},condition:input.condition||"NEW",product})},marketplaceId);
+  await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`,{
+   method:"PUT",
+   body:JSON.stringify({
+    availability:{shipToLocationAvailability:{quantity:Math.max(0,Math.floor(input.quantity||0))}},
+    condition:input.condition||"NEW",
+    product
+   })
+  },marketplaceId);
  }catch(error){throw new Error(`EBAY_STAGE_INVENTORY_ITEM | ${error instanceof Error?error.message:String(error)}`)}
- let offer:any;
+
+ const offerBody={
+  sku,
+  marketplaceId,
+  format:"FIXED_PRICE",
+  listingDuration:"GTC",
+  availableQuantity:Math.max(0,Math.floor(input.quantity||0)),
+  categoryId:String(input.categoryId),
+  merchantLocationKey:input.merchantLocationKey,
+  listingDescription:input.description.trim().slice(0,4000),
+  listingPolicies:{
+   fulfillmentPolicyId:input.fulfillmentPolicyId,
+   paymentPolicyId:input.paymentPolicyId,
+   returnPolicyId:input.returnPolicyId
+  },
+  pricingSummary:{price:{currency:market.currency,value:normalizedPrice.price.toFixed(2)}}
+ };
+
+ let offerId="";
  try{
-  offer=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify({
-   sku,marketplaceId,format:"FIXED_PRICE",availableQuantity:Math.max(0,Math.floor(input.quantity||0)),
-   categoryId:String(input.categoryId),merchantLocationKey:input.merchantLocationKey,listingDescription:input.description.trim().slice(0,4000),
-   listingPolicies:{fulfillmentPolicyId:input.fulfillmentPolicyId,paymentPolicyId:input.paymentPolicyId,returnPolicyId:input.returnPolicyId},
-   pricingSummary:{price:{currency:normalizedPrice.currency,value:normalizedPrice.price.toFixed(2)}}
-  })},marketplaceId);
- }catch(error){throw new Error(`EBAY_STAGE_CREATE_OFFER | ${error instanceof Error?error.message:String(error)}`)}
- const offerId=offer?.offerId;
- if(!offerId)throw new Error("EBAY_STAGE_CREATE_OFFER | EBAY_OFFER_ID_MISSING");
+  let offers=await getOffersForSku(sku,marketplaceId);
+  const existing=offers.find((x:any)=>String(x?.marketplaceId||"")===marketplaceId)||offers[0]||null;
+  if(existing?.status==="PUBLISHED"&&existing?.listing?.listingId){
+   return{
+    sku,offerId:existing.offerId,listingId:existing.listing.listingId,status:"already_published",
+    price:{sourceValue:Number(input.price),sourceCurrency:input.currency||market.currency,listedValue:normalizedPrice.price,listedCurrency:market.currency,fxRate:normalizedPrice.rate,converted:normalizedPrice.converted}
+   };
+  }
+  offerId=String(existing?.offerId||"");
+  if(offerId){
+   await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify(offerBody)},marketplaceId);
+  }else{
+   try{
+    const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify(offerBody)},marketplaceId);
+    offerId=String(created?.offerId||"");
+   }catch(createError){
+    offers=await getOffersForSku(sku,marketplaceId);
+    const recovered=offers.find((x:any)=>String(x?.marketplaceId||"")===marketplaceId)||offers[0]||null;
+    offerId=String(recovered?.offerId||"");
+    if(!offerId)throw createError;
+    await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify(offerBody)},marketplaceId);
+   }
+  }
+ }catch(error){throw new Error(`EBAY_STAGE_CREATE_OR_UPDATE_OFFER | ${error instanceof Error?error.message:String(error)}`)}
+
+ if(!offerId)throw new Error("EBAY_STAGE_CREATE_OR_UPDATE_OFFER | EBAY_OFFER_ID_MISSING");
+
  let published:any;
  try{
   published=await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}/publish`,{method:"POST"},marketplaceId);
  }catch(error){throw new Error(`EBAY_STAGE_PUBLISH_OFFER | ${error instanceof Error?error.message:String(error)}`)}
- return{sku,offerId,listingId:published?.listingId||null,status:"published",price:{sourceValue:Number(input.price),sourceCurrency:input.currency||market.currency,listedValue:normalizedPrice.price,listedCurrency:normalizedPrice.currency,fxRate:normalizedPrice.rate,converted:normalizedPrice.converted}};
+
+ return{
+  sku,offerId,listingId:published?.listingId||null,status:"published",
+  price:{sourceValue:Number(input.price),sourceCurrency:input.currency||market.currency,listedValue:normalizedPrice.price,listedCurrency:market.currency,fxRate:normalizedPrice.rate,converted:normalizedPrice.converted}
+ };
 }
