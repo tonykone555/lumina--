@@ -928,26 +928,36 @@ function makeHandler() {
         },
         async({queries,max_publish,quantity,confirm})=>{
           if(confirm!==true)return text({published:0,error:"EXPLICIT_CONFIRMATION_REQUIRED"});
-          const published:any[]=[];const skipped:any[]=[];
+          const published:any[]=[];const skipped:any[]=[];const seen=new Set<string>();
           for(const query of queries){
             if(published.length>=max_publish)break;
-            try{
-              const prepared:any=await ebayPrepareCandidate(query);
-              if(!prepared?.ok||!prepared?.eligibility?.publishable){
-                skipped.push({query,product:prepared?.product||null,blockers:prepared?.eligibility?.blockers||[prepared?.error||"NOT_PUBLISHABLE"]});
-                continue;
-              }
+            let candidates:any[]=[];
+            try{candidates=await ebayRawCatalog(query,"FR",12)}
+            catch(error){skipped.push({query,error:error instanceof Error?error.message:"CATALOG_SCAN_FAILED"});continue}
+            if(!candidates.length){skipped.push({query,error:"YNOT_PRODUCT_NOT_FOUND"});continue}
+            for(const candidate of candidates){
+              if(published.length>=max_publish)break;
+              const productId=String(candidate?.id||"");
+              if(!productId||seen.has(productId))continue;
+              seen.add(productId);
               try{
-                const result=await publishEbayProduct({...prepared.item,quantity});
-                published.push({query,product:prepared.product,result});
+                const prepared:any=await ebayPrepareCandidate(query,productId);
+                if(!prepared?.ok||!prepared?.eligibility?.publishable){
+                  skipped.push({query,product:prepared?.product||{id:productId,title:candidate?.title||null},blockers:prepared?.eligibility?.blockers||[prepared?.error||"NOT_PUBLISHABLE"]});
+                  continue;
+                }
+                try{
+                  const result=await publishEbayProduct({...prepared.item,quantity});
+                  published.push({query,product:prepared.product,result});
+                }catch(error){
+                  skipped.push({query,product:prepared.product,error:error instanceof Error?error.message:"EBAY_PUBLISH_FAILED"});
+                }
               }catch(error){
-                skipped.push({query,product:prepared.product,error:error instanceof Error?error.message:"EBAY_PUBLISH_FAILED"});
+                skipped.push({query,product:{id:productId,title:candidate?.title||null},error:error instanceof Error?error.message:"EBAY_PREPARE_FAILED"});
               }
-            }catch(error){
-              skipped.push({query,error:error instanceof Error?error.message:"EBAY_PREPARE_FAILED"});
             }
           }
-          return text({requested:max_publish,published_count:published.length,published,skipped});
+          return text({requested:max_publish,published_count:published.length,published,scanned_products:seen.size,skipped});
         }
       );
 
