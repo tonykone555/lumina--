@@ -3,6 +3,7 @@ import {getEbayCategoryPreview,getEbayReadiness} from "@/lib/ebay/client";
 import {ebayMarketplaceConfig,parseEbayMarketplaces} from "@/lib/ebay/marketplaces";
 import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
 import {evaluateEbayEligibility} from "@/lib/ebay/eligibility";
+import {detectShopifyOrigin} from "@/lib/catalog/shopify-origin";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -60,14 +61,18 @@ export async function GET(request:NextRequest){
      getEbayReadiness(id)
     ]);
     const description=clean(matched.description);
-    const sourceOrigin=clean((matched as any).shipFromCountry||(matched as any).originCountry||(matched as any).merchantCountry||(matched as any).countryOfOrigin);
-    const originVerified=Boolean(sourceOrigin);
+    const rawOrigin=clean((matched as any).shipFromCountry||(matched as any).originCountry||(matched as any).merchantCountry||(matched as any).countryOfOrigin);
+    const detectedOrigin=rawOrigin?{country:rawOrigin,verified:true,method:"catalog-field"}:await detectShopifyOrigin(String(matched.id||""),market.country);
+    const sourceOrigin=clean(detectedOrigin.country);
+    const originVerified=Boolean(detectedOrigin.verified&&sourceOrigin);
+    const matchingLocation=readiness.locations?.find((x:any)=>String(x?.location?.address?.country||"").toUpperCase()===sourceOrigin.toUpperCase())||null;
+    const originLocationReady=Boolean(matchingLocation);
     const eligibility=evaluateEbayEligibility({
      shipsTo:true,
      sellerReady:readiness.ready,
      categoryDomainOk:taxonomy.categoryDomainOk===true,
      missingRequiredAspects:taxonomy.missingRequiredAspects,
-     originVerified,
+     originVerified:originVerified&&originLocationReady,
      deliveryDaysMax:Number.isFinite(Number((matched as any).deliveryDaysMax))?Number((matched as any).deliveryDaysMax):null,
      shippingCost:Number.isFinite(Number((matched as any).shippingCost))?Number((matched as any).shippingCost):null,
      supplierPrice:Number.isFinite(Number((matched as any).supplierPrice))?Number((matched as any).supplierPrice):null,
@@ -79,6 +84,8 @@ export async function GET(request:NextRequest){
      shipsTo:true,
      sourceOrigin:sourceOrigin||null,
      originVerified,
+     originMethod:detectedOrigin.method,
+     originLocationReady,
      sellerReady:readiness.ready,
      categoryDomainOk:taxonomy.categoryDomainOk,
      categoryId:taxonomy.categoryId,
@@ -92,7 +99,7 @@ export async function GET(request:NextRequest){
      deliveryDaysMax:eligibility.deliveryDaysMax,
      shippingCost:eligibility.shippingCost,
      sellerDefaults:{
-      merchantLocationKey:readiness.locations?.[0]?.merchantLocationKey||"",
+      merchantLocationKey:matchingLocation?.merchantLocationKey||"",
       fulfillmentPolicyId:readiness.fulfillmentPolicies?.[0]?.id||"",
       paymentPolicyId:readiness.paymentPolicies?.[0]?.id||"",
       returnPolicyId:readiness.returnPolicies?.[0]?.id||""
