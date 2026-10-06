@@ -2,7 +2,15 @@
   if(window.__ynotForceAboutSectionV3)return;
   window.__ynotForceAboutSectionV3=true;
 
-  const clean=s=>(s||"").replace(/\s+/g," ").trim();
+  const clean=value=>{
+    if(value==null)return"";
+    if(typeof value==="object"){
+      if(Array.isArray(value))return value.map(clean).filter(Boolean).join(" ");
+      return clean(value.description??value.text??value.plain??value.value??value.html??"");
+    }
+    const s=String(value).replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+    return /^\[object Object\]$/i.test(s)||/^object object$/i.test(s)?"":s;
+  };
   const isAddToBag=el=>/^add to bag$/i.test(clean(el.textContent));
   const uniq=xs=>[...new Set(xs.flat(Infinity).filter(x=>typeof x==="string"&&/^https?:\/\//i.test(x)))];
   const isVideoUrl=url=>/\.(mp4|webm|mov|m4v)(?:\?|$)/i.test(url||"");
@@ -141,7 +149,7 @@
     section.style.cssText="display:block!important;visibility:visible!important;opacity:1!important;position:relative!important;width:100%!important;height:auto!important;min-height:120px!important;margin:26px 0 28px!important;padding:22px 0 6px!important;border-top:1px solid rgba(255,255,255,.14)!important;color:#fff!important;overflow:visible!important;clear:both!important;transform:none!important;clip:auto!important;clip-path:none!important;";
 
     const title=clean(host.querySelector("h1,h2")?.textContent)||"Product";
-    const description=clean(host.querySelector(".description,.lv4-product-description,.ynot-selected-description,.info p,[data-description]")?.textContent)||`More details about ${title}.`;
+    const description=clean(host.querySelector(".description,.lv4-product-description,.ynot-selected-description,.info p,[data-description]")?.textContent)||clean(productFromHost(host)?.description)||"";
     const product=productFromHost(host);
     const direct=domMedia(host),stored=objectMedia(product);
     const initialImages=stored.variantImages.length?stored.variantImages:(stored.productImages.length?stored.productImages:direct.images);
@@ -153,7 +161,7 @@
     heading.textContent="About this product";
     heading.style.cssText="display:block!important;margin:5px 0 10px!important;font-size:21px!important;line-height:1.1!important;color:#fff!important;-webkit-text-fill-color:#fff!important;";
     const copy=document.createElement("p");
-    copy.textContent=description;
+    copy.textContent=description;copy.style.display=description?"block":"none";
     copy.style.cssText="display:block!important;margin:0!important;font-size:13px!important;line-height:1.5!important;color:rgba(255,255,255,.76)!important;-webkit-text-fill-color:rgba(255,255,255,.76)!important;";
     section.append(small,heading,copy);
     renderMedia(section,title,[stored.videos,direct.videos],initialImages);
@@ -167,17 +175,46 @@
     const state=section.__ynotMedia;
     if(!state)return;
     const id=productId(state.host,state.product);
-    if(!id)return;
+    if(!id){void researchExact(section);return;}
     try{
       const r=await fetch(`/api/commerce/product/${encodeURIComponent(id)}`,{cache:"force-cache"});
       const data=await r.json();
-      if(!r.ok||!data?.product||!section.isConnected)return;
+      if(!r.ok||!data?.product||!section.isConnected){void researchExact(section);return;}
       const more=objectMedia(data.product);
       const videos=uniq([state.videos,more.videos]);
       const preferredImages=more.variantImages.length?more.variantImages:(more.productImages.length?more.productImages:state.images);
-      state.videos=videos;state.images=preferredImages;
+      state.product={...(state.product||{}),...data.product};state.videos=videos;state.images=preferredImages;
       renderMedia(section,state.title,videos,preferredImages);
-    }catch{}
+      if(preferredImages.length){
+        section.dataset.realVariantMedia="1";
+        const grid=section.querySelector(".ynot-about-image-grid");
+        if(grid){
+          [...grid.children].slice(3).forEach(node=>node.remove());
+          while(grid.children.length&&grid.children.length<3)grid.appendChild(grid.lastElementChild.cloneNode(true));
+          grid.style.setProperty("display","grid","important");
+          grid.style.setProperty("grid-template-columns","repeat(3,minmax(0,1fr))","important");
+        }
+      }
+      void researchExact(section);
+    }catch{void researchExact(section)}
+  }
+
+  async function researchExact(section){
+    if(section.dataset.geminiResearchLoading==="1"||section.dataset.geminiResearchDone==="1")return;
+    const state=section.__ynotMedia;if(!state)return;
+    section.dataset.geminiResearchLoading="1";
+    try{
+      const p=state.product||{};
+      const r=await fetch("/api/commerce/research-product",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({title:state.title,brand:clean(p.brand),url:clean(p.url||p.merchantUrl),description:clean(p.description)}),cache:"no-store"});
+      const data=await r.json().catch(()=>null);
+      if(!section.isConnected)return;
+      const description=clean(data?.description);
+      if(r.ok&&data?.found&&description){
+        const copy=section.querySelector(".ynot-about-copy")||section.querySelector("p");
+        if(copy){copy.textContent=description;copy.style.display="block";}
+        section.dataset.geminiResearchDone="1";
+      }
+    }catch{}finally{delete section.dataset.geminiResearchLoading}
   }
 
   function mount(button){
