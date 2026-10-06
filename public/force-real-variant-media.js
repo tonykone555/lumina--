@@ -37,16 +37,24 @@
   function exactlyThree(primary,fallback,fronts=[]){
     const ordered=withoutFront([primary,fallback],fronts);
     const distinct=[];const seen=new Set();
-    for(const url of ordered){const k=mediaKey(url);if(seen.has(k))continue;seen.add(k);distinct.push(url)}
-    if(!distinct.length)return[];
-    const out=distinct.slice(0,3);
-    while(out.length<3)out.push(out[out.length-1]);
-    return out;
+    for(const url of ordered){
+      const k=mediaKey(url);
+      if(!k||seen.has(k))continue;
+      seen.add(k);
+      distinct.push(url);
+      if(distinct.length===3)break;
+    }
+    return distinct;
   }
 
   function render(section,urls,title){
     const images=exactlyThree(urls,[],[]);
-    if(!images.length)return;
+    if(images.length<3){
+      section.dataset.realVariantMedia="0";
+      const stale=section.querySelector(".ynot-about-image-grid,.ynot-about-images");
+      if(stale)stale.style.setProperty("display","none","important");
+      return;
+    }
     let grid=section.querySelector(".ynot-about-image-grid");
     if(!grid){
       grid=document.createElement("div");
