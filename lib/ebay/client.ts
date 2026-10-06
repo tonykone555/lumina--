@@ -157,29 +157,69 @@ async function ebayTaxonomy(path:string){
  return data;
 }
 
-function textHaystack(product:any){
- return [product?.title,product?.brand,product?.description,...(Array.isArray(product?.tags)?product.tags:[])].filter(Boolean).join(" ").toLowerCase();
+function norm(value:any){
+ return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
 }
-function aspectValue(product:any,aspect:any){
+function textHaystack(product:any,queryHint=""){
+ return [queryHint,product?.title,product?.brand,typeof product?.description==="string"?product.description:"",...(Array.isArray(product?.tags)?product.tags:[])].filter(Boolean).join(" ").toLowerCase();
+}
+function allowedValues(aspect:any){
+ return (aspect?.aspectValues||[]).map((v:any)=>String(v?.localizedValue||"").trim()).filter(Boolean);
+}
+function safeAllowedMatch(values:string[],hay:string){
+ const nh=norm(hay);
+ const candidates=values.filter(v=>{
+  const nv=norm(v);
+  if(!nv||nv.length<3||/^\d+$/.test(nv))return false;
+  return nh.split(" ").includes(nv)||nh.includes(` ${nv} `)||nh.startsWith(`${nv} `)||nh.endsWith(` ${nv}`);
+ });
+ return candidates.sort((a,b)=>b.length-a.length)[0];
+}
+function semanticType(values:string[],hay:string){
+ const h=norm(hay);
+ const groups=[
+  {re:/\b(sofa|couch|canape|sitzer|settee)\b/,want:/\b(canape|sofa)\b/i},
+  {re:/\b(armchair|fauteuil|sessel)\b/,want:/\b(fauteuil|armchair)\b/i},
+  {re:/\b(pouf|ottoman|poire)\b/,want:/\b(pouf|poire|ottoman)\b/i},
+  {re:/\b(coffee table|table basse|couchtisch)\b/,want:/\b(table basse|coffee table)\b/i},
+  {re:/\b(dining table|table a manger|esstisch)\b/,want:/\b(table a manger|dining table)\b/i},
+  {re:/\b(dress|robe|kleid)\b/,want:/\b(robe|dress)\b/i},
+  {re:/\b(necklace|collier|halskette)\b/,want:/\b(collier|necklace)\b/i}
+ ];
+ for(const g of groups){
+  if(g.re.test(h)){
+   const m=values.find(v=>g.want.test(norm(v)));
+   if(m)return m;
+  }
+ }
+ return undefined;
+}
+function aspectValue(product:any,aspect:any,queryHint=""){
  const name=String(aspect?.localizedAspectName||"");
- const lower=name.toLowerCase();
- if(lower==="brand"&&product?.brand)return [String(product.brand)];
- if((lower==="mpn"||lower.includes("manufacturer part"))&&product?.mpn)return [String(product.mpn)];
+ const lower=norm(name);
+ const values=allowedValues(aspect);
+ const hay=textHaystack(product,queryHint);
+ if(["brand","marque","marke"].includes(lower)&&product?.brand)return [String(product.brand)];
+ if((lower==="mpn"||lower.includes("manufacturer part")||lower.includes("reference fabricant"))&&product?.mpn)return [String(product.mpn)];
  if((lower==="ean"||lower==="upc"||lower==="isbn")&&product?.[lower])return [String(product[lower])];
- const values=(aspect?.aspectValues||[]).map((v:any)=>String(v?.localizedValue||"")).filter(Boolean);
- const hay=textHaystack(product);
- const match=values.find((v:string)=>hay.includes(v.toLowerCase()));
- return match?[match]:undefined;
+ if(["type","type de produit","type de meuble"].includes(lower)){
+  const semantic=semanticType(values,hay);
+  if(semantic)return [semantic];
+ }
+ const exact=safeAllowedMatch(values,hay);
+ return exact?[exact]:undefined;
 }
 
-export async function getEbayCategoryPreview(product:any){
+export async function getEbayCategoryPreview(product:any,queryHint=""){
  const marketplace=encodeURIComponent(ebayMarketplaceId());
  const tree=await ebayTaxonomy(`/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`);
  const treeId=String(tree?.categoryTreeId||"");
  if(!treeId)throw new Error("EBAY_CATEGORY_TREE_MISSING");
- const query=encodeURIComponent(String(product?.title||"").slice(0,350));
+ const categoryQuery=String(queryHint||product?.title||"").trim().slice(0,350);
+ const query=encodeURIComponent(categoryQuery);
  const suggestions=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_category_suggestions?q=${query}`);
- const top=suggestions?.categorySuggestions?.[0];
+ const suggestionRows=(suggestions?.categorySuggestions||[]) as any[];
+ const top=suggestionRows[0];
  const categoryId=String(top?.category?.categoryId||"");
  if(!categoryId)throw new Error("EBAY_CATEGORY_SUGGESTION_MISSING");
  const aspectsPayload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`);
@@ -191,15 +231,19 @@ export async function getEbayCategoryPreview(product:any){
   const name=String(a?.localizedAspectName||"").trim();
   if(!name)continue;
   const isRequired=a?.aspectConstraint?.aspectRequired===true;
+  const isBrand=["brand","marque","marke"].includes(norm(name));
   if(isRequired)required.push(name);
-  const value=aspectValue(product,a);
+  if(!isRequired&&!isBrand)continue;
+  const value=aspectValue(product,a,categoryQuery);
   if(value?.length)aspects[name]=value;
   else if(isRequired)missingRequired.push(name);
  }
  return{
   categoryTreeId:treeId,
+  categoryQuery,
   categoryId,
   categoryName:String(top?.category?.categoryName||""),
+  alternatives:suggestionRows.slice(1,5).map((s:any)=>({id:String(s?.category?.categoryId||""),name:String(s?.category?.categoryName||"")})),
   ancestors:(top?.categoryTreeNodeAncestors||[]).map((x:any)=>({id:String(x?.categoryId||""),name:String(x?.categoryName||"")})),
   aspects,
   requiredAspects:required,
