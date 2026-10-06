@@ -3,7 +3,7 @@
   window.__ynotAboutThreeImagesV2=true;
 
   function enforce(section){
-    const grid=section.querySelector('.ynot-about-image-grid');
+    const grid=section.querySelector('.ynot-about-image-grid,.ynot-about-images');
     if(!grid)return;
     if(section.dataset.realVariantMedia!=="1"){
       grid.style.setProperty('display','none','important');
@@ -24,7 +24,7 @@
   }
 
   function sync(){
-    document.querySelectorAll("[data-ynot-force-about='true']").forEach(enforce);
+    document.querySelectorAll("[data-ynot-force-about='true'],[data-native-about='true']").forEach(enforce);
   }
 
   let frame=0;
