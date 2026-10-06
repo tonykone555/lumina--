@@ -235,7 +235,7 @@ function aspectValue(product:any,aspect:any,queryHint=""){
  const values=allowedValues(aspect);
  const hay=textHaystack(product,queryHint);
  if(["brand","marque","marke"].includes(lower)&&product?.brand)return [String(product.brand)];
- if((lower==="mpn"||lower.includes("manufacturer part")||lower.includes("reference fabricant"))&&product?.mpn)return [String(product.mpn)];
+ if(lower==="mpn"||lower.includes("manufacturer part")||lower.includes("reference fabricant"))return [product?.mpn?String(product.mpn):"Non applicable"];
  if((lower==="ean"||lower==="upc"||lower==="isbn")&&product?.[lower])return [String(product[lower])];
  if(["type","type de produit","type de meuble"].includes(lower)){
   const semantic=semanticType(values,hay);
