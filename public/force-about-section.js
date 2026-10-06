@@ -179,13 +179,24 @@
     try{
       const r=await fetch(`/api/commerce/product/${encodeURIComponent(id)}`,{cache:"force-cache"});
       const data=await r.json();
-      if(!r.ok||!data?.product||!section.isConnected)return;
+      if(!r.ok||!data?.product||!section.isConnected){void researchExact(section);return;}
       const more=objectMedia(data.product);
       const videos=uniq([state.videos,more.videos]);
       const preferredImages=more.variantImages.length?more.variantImages:(more.productImages.length?more.productImages:state.images);
-      state.videos=videos;state.images=preferredImages;
+      state.product={...(state.product||{}),...data.product};state.videos=videos;state.images=preferredImages;
       renderMedia(section,state.title,videos,preferredImages);
-    }catch{}
+      if(preferredImages.length){
+        section.dataset.realVariantMedia="1";
+        const grid=section.querySelector(".ynot-about-image-grid");
+        if(grid){
+          [...grid.children].slice(3).forEach(node=>node.remove());
+          while(grid.children.length&&grid.children.length<3)grid.appendChild(grid.lastElementChild.cloneNode(true));
+          grid.style.setProperty("display","grid","important");
+          grid.style.setProperty("grid-template-columns","repeat(3,minmax(0,1fr))","important");
+        }
+      }
+      void researchExact(section);
+    }catch{void researchExact(section)}
   }
 
   async function researchExact(section){
