@@ -121,6 +121,40 @@ export async function setupEbayFranceDefaults(){
  };
 }
 
+export async function ensureEbayInventoryLocationForOrigin(input:{country:string;postalCode?:string|null;city?:string|null;state?:string|null;name?:string|null}){
+ const country=String(input.country||"").trim().toUpperCase();
+ const postalCode=String(input.postalCode||"").trim();
+ const city=String(input.city||"").trim();
+ const state=String(input.state||"").trim();
+ if(!country)throw new Error("EBAY_ORIGIN_COUNTRY_REQUIRED");
+ if(!postalCode&&!(city&&state))throw new Error("EBAY_ORIGIN_LOCATION_INCOMPLETE");
+
+ const readiness=await getEbayReadiness();
+ const existing=(readiness.locations||[]).find((x:any)=>{
+  const a=x?.location?.address||{};
+  const sameCountry=String(a?.country||"").toUpperCase()===country;
+  const samePostal=postalCode&&String(a?.postalCode||"").trim()===postalCode;
+  const sameCityState=!postalCode&&city&&state&&String(a?.city||"").trim().toLowerCase()===city.toLowerCase()&&String(a?.stateOrProvince||"").trim().toLowerCase()===state.toLowerCase();
+  return sameCountry&&(samePostal||sameCityState);
+ });
+ if(existing)return existing;
+
+ const keyBase=`ynot-${country.toLowerCase()}-${(postalCode||city+"-"+state).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,30)}`;
+ const merchantLocationKey=keyBase.slice(0,50);
+ const address=postalCode?{postalCode,country}:{city,stateOrProvince:state,country};
+ await ebay(`/sell/inventory/v1/location/${encodeURIComponent(merchantLocationKey)}`,{
+  method:"POST",
+  body:JSON.stringify({
+   name:String(input.name||`YNOT ${country} supplier`).slice(0,100),
+   merchantLocationStatus:"ENABLED",
+   locationTypes:["WAREHOUSE"],
+   location:{address}
+  })
+ });
+ const refreshed=await getEbayReadiness();
+ return (refreshed.locations||[]).find((x:any)=>x.merchantLocationKey===merchantLocationKey)||null;
+}
+
 export async function getEbayReadiness(marketplaceId:string=ebayMarketplaceId()){
  const marketplace=encodeURIComponent(marketplaceId);
  const [locations,fulfillment,payment,returns]=await Promise.all([
