@@ -185,16 +185,8 @@
       const preferredImages=more.variantImages.length?more.variantImages:(more.productImages.length?more.productImages:state.images);
       state.product={...(state.product||{}),...data.product};state.videos=videos;state.images=preferredImages;
       renderMedia(section,state.title,videos,preferredImages);
-      if(preferredImages.length){
-        section.dataset.realVariantMedia="1";
-        const grid=section.querySelector(".ynot-about-image-grid");
-        if(grid){
-          [...grid.children].slice(3).forEach(node=>node.remove());
-          while(grid.children.length&&grid.children.length<3)grid.appendChild(grid.lastElementChild.cloneNode(true));
-          grid.style.setProperty("display","grid","important");
-          grid.style.setProperty("grid-template-columns","repeat(3,minmax(0,1fr))","important");
-        }
-      }
+      /* Do not mark the image row ready here. The dedicated variant-media pass
+         must first remove the main/front image and dedupe the real gallery. */
       void researchExact(section);
     }catch{void researchExact(section)}
   }
