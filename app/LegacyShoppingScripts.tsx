@@ -27,7 +27,7 @@ const PRODUCT_UI_SCRIPTS = [
   "/force-about-section.js?v=7",
   "/force-real-variant-media.js?v=4",
   "/about-three-images.js?v=3",
-  "/force-product-extras.js?v=1",
+  "/force-product-extras.js?v=2",
 ];
 
 const WORLD_UI_SCRIPTS = [
