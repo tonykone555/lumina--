@@ -107,7 +107,7 @@
   }
 
   function sync(){
-    document.querySelectorAll("[data-ynot-force-about='true']").forEach(section=>{void hydrate(section)});
+    document.querySelectorAll("[data-ynot-force-about='true'],.ynot-about-native,.ynot-about-product").forEach(section=>{void hydrate(section)});
   }
 
   let frame=0;

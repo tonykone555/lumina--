@@ -5,7 +5,7 @@
   function enforce(section){
     const grid=section.querySelector('.ynot-about-image-grid');
     if(!grid)return;
-    if(section.dataset.realVariantMedia!=="1"){
+    if(section.dataset.realVariantMedia!=="1"&&!grid.children.length){
       grid.style.setProperty('display','none','important');
       return;
     }
@@ -24,7 +24,7 @@
   }
 
   function sync(){
-    document.querySelectorAll("[data-ynot-force-about='true']").forEach(enforce);
+    document.querySelectorAll("[data-ynot-force-about='true'],.ynot-about-native,.ynot-about-product").forEach(enforce);
   }
 
   let frame=0;
