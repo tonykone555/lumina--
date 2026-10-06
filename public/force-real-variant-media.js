@@ -49,12 +49,7 @@
 
   function render(section,urls,title){
     const images=exactlyThree(urls,[],[]);
-    if(images.length<3){
-      section.dataset.realVariantMedia="0";
-      const stale=section.querySelector(".ynot-about-image-grid,.ynot-about-images");
-      if(stale)stale.style.setProperty("display","none","important");
-      return;
-    }
+    if(!images.length)return;
     let grid=section.querySelector(".ynot-about-image-grid");
     if(!grid){
       grid=document.createElement("div");
@@ -77,8 +72,10 @@
       figure.append(img,caption);
       return figure;
     }));
-    grid.style.display="grid";
-    section.dataset.realVariantMedia="1";
+    grid.style.setProperty("display","grid","important");
+    grid.style.setProperty("grid-template-columns",`repeat(${images.length},minmax(0,1fr))`,"important");
+    section.dataset.realVariantMedia=images.length>=3?"1":"partial";
+    section.dataset.realVariantCount=String(images.length);
   }
 
   async function hydrate(section){
