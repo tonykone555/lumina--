@@ -281,7 +281,7 @@ function aspectValue(product:any,aspect:any,queryHint=""){
  const values=allowedValues(aspect);
  const hay=textHaystack(product,queryHint);
  if(["brand","marque","marke"].includes(lower)&&product?.brand)return [String(product.brand)];
- if(lower==="mpn"||lower.includes("manufacturer part")||lower.includes("reference fabricant"))return [product?.mpn?String(product.mpn):"Non applicable"];
+ if(lower==="mpn"||lower.includes("manufacturer part")||lower.includes("reference fabricant")||lower.includes("numero de piece fabricant")||lower.includes("piece fabricant"))return [product?.mpn?String(product.mpn):"Non applicable"];
  if((lower==="ean"||lower==="upc"||lower==="isbn")&&product?.[lower])return [String(product[lower])];
  if(["type","type de produit","type de meuble"].includes(lower)){
   const semantic=semanticType(values,hay);
@@ -305,8 +305,8 @@ function canonicalCategoryQueries(queryHint:string,product:any){
  if(/\b(armchair|fauteuil|sessel)\b/.test(h))return ["fauteuil","armchair",String(product?.title||"")];
  if(/\b(coffee table|table basse|couchtisch)\b/.test(h))return ["table basse","coffee table",String(product?.title||"")];
  if(/\b(dining table|table a manger|esstisch)\b/.test(h))return ["table à manger","dining table",String(product?.title||"")];
- if(/\b(dress|robe|kleid)\b/.test(h))return ["robe femme","robe","women dress",String(product?.title||"")];
- if(/\b(necklace|collier|halskette|pendentif)\b/.test(h))return ["collier femme","collier","necklace",String(product?.title||"")];
+ if(/\b(dress|robe|kleid|maxi dress|midi dress)\b/.test(h))return ["robe femme","robe longue femme","robe","women dress",String(product?.title||"")];
+ if(/\b(necklace|collier|halskette|pendentif|choker)\b/.test(h))return ["collier pendentif femme","collier femme","pendentif","necklace jewelry",String(product?.title||"")];
  if(/\b(hoodie|sweatshirt|sweat a capuche)\b/.test(h))return ["sweat à capuche","hoodie","sweatshirt",String(product?.title||"")];
  if(/\b(baby carrier|porte bebe|porte-bebe)\b/.test(h))return ["porte-bébé","baby carrier",String(product?.title||"")];
  if(/\b(skincare|serum|niacinamide|propolis)\b/.test(h))return ["sérum visage","soin visage","skincare serum",String(product?.title||"")];
@@ -322,7 +322,8 @@ function categoryDomainOk(s:any,queryHint:string,product:any){
  if(/\b(sofa|couch|canape|sitzer|settee|armchair|fauteuil|sessel|coffee table|table basse|couchtisch|dining table|table a manger|esstisch)\b/.test(h))
   return /\b(meubles|furniture|maison|home)\b/.test(path)&&!/\b(musique|music|cd|vinyle|barbecue)\b/.test(path);
  if(/\b(dress|robe|kleid|hoodie|sweatshirt|sweat a capuche)\b/.test(h))return /\b(vetement|mode|clothing|fashion|robe|dress|sweat|pull|haut)\b/.test(path)&&!/\bposter|affiche\b/.test(path);
- if(/\b(necklace|collier|halskette|pendentif)\b/.test(h))return /\b(bijou|jewel|collier|necklace|pendentif)\b/.test(path);
+ if(/\b(necklace|collier|halskette|pendentif|choker)\b/.test(h))return /\b(bijou|jewel|collier|necklace|pendentif|joaillerie)\b/.test(path)&&!/\belectronique|electronics|informatique\b/.test(path);
+ if(/\b(metal sign|wall sign|home decor sign|plaque metal|plaque murale)\b/.test(h))return /\b(maison|home|decor|decoration|murale|plaque)\b/.test(path)&&!/\belectronique|electronics|informatique|connectivite\b/.test(path);
  return true;
 }
 function scoreCategorySuggestion(s:any,queryHint:string,product:any){
