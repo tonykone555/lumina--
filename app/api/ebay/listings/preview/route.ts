@@ -5,7 +5,19 @@ import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
-function clean(s:any){return String(s||"").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim()}
+function clean(s:any){
+ if(s==null)return "";
+ if(typeof s==="string")return s.replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
+ if(typeof s==="number"||typeof s==="boolean")return String(s);
+ if(Array.isArray(s))return s.map(clean).filter(Boolean).join(" ");
+ if(typeof s==="object"){
+  for(const key of ["text","value","description","plainText","html","body"]){
+   if(s[key]!=null){const v=clean(s[key]);if(v)return v}
+  }
+  return Object.values(s).map(clean).filter(Boolean).join(" ");
+ }
+ return "";
+}
 
 export async function GET(request:NextRequest){
  try{
@@ -20,7 +32,7 @@ export async function GET(request:NextRequest){
   if(!product)throw new Error("YNOT_PRODUCT_NOT_FOUND");
 
   const [taxonomy,readiness]=await Promise.all([
-   getEbayCategoryPreview(product),
+   getEbayCategoryPreview(product,q),
    getEbayReadiness()
   ]);
   const defaults={
@@ -32,7 +44,7 @@ export async function GET(request:NextRequest){
   const item={
    sku:`YNOT-${String(product.id).replace(/[^a-zA-Z0-9_-]/g,"").slice(-36)||Date.now()}`,
    title:clean(product.title).slice(0,80),
-   description:clean(product.description||product.title).slice(0,4000),
+   description:(clean(product.description)||clean(product.title)).slice(0,4000),
    imageUrls:(Array.isArray(product.images)&&product.images.length?product.images:[product.image]).filter(Boolean).slice(0,12),
    quantity:10,
    price:Number(product.price),
