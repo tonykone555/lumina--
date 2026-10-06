@@ -2,6 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import {getEbayCategoryPreview,getEbayReadiness} from "@/lib/ebay/client";
 import {ebayMarketplaceConfig,parseEbayMarketplaces} from "@/lib/ebay/marketplaces";
 import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
+import {evaluateEbayEligibility} from "@/lib/ebay/eligibility";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -61,6 +62,18 @@ export async function GET(request:NextRequest){
     const description=clean(matched.description);
     const sourceOrigin=clean((matched as any).shipFromCountry||(matched as any).originCountry||(matched as any).merchantCountry||(matched as any).countryOfOrigin);
     const originVerified=Boolean(sourceOrigin);
+    const eligibility=evaluateEbayEligibility({
+     shipsTo:true,
+     sellerReady:readiness.ready,
+     categoryDomainOk:taxonomy.categoryDomainOk===true,
+     missingRequiredAspects:taxonomy.missingRequiredAspects,
+     originVerified,
+     deliveryDaysMax:Number.isFinite(Number((matched as any).deliveryDaysMax))?Number((matched as any).deliveryDaysMax):null,
+     shippingCost:Number.isFinite(Number((matched as any).shippingCost))?Number((matched as any).shippingCost):null,
+     supplierPrice:Number.isFinite(Number((matched as any).supplierPrice))?Number((matched as any).supplierPrice):null,
+     retailPrice:Number(matched.price),
+     available:(matched as any).available!==false
+    });
     return{
      marketplaceId:id,label:market.label,country:market.country,currency:market.currency,
      shipsTo:true,
@@ -72,13 +85,12 @@ export async function GET(request:NextRequest){
      categoryName:taxonomy.categoryName,
      missingRequiredAspects:taxonomy.missingRequiredAspects,
      eligible:taxonomy.categoryDomainOk===true&&taxonomy.missingRequiredAspects.length===0,
-     publishable:originVerified&&readiness.ready&&taxonomy.categoryDomainOk===true&&taxonomy.missingRequiredAspects.length===0,
-     blockers:[
-      ...(!originVerified?["UNVERIFIED_SHIP_FROM_ORIGIN"]:[]),
-      ...(!readiness.ready?["MARKETPLACE_POLICIES_NOT_READY"]:[]),
-      ...(taxonomy.categoryDomainOk!==true?["CATEGORY_DOMAIN_MISMATCH"]:[]),
-      ...(taxonomy.missingRequiredAspects.length?["MISSING_REQUIRED_ASPECTS"]:[])
-     ],
+     publishable:eligibility.publishable,
+     blockers:eligibility.blockers,
+     warnings:eligibility.warnings,
+     marginPct:eligibility.marginPct,
+     deliveryDaysMax:eligibility.deliveryDaysMax,
+     shippingCost:eligibility.shippingCost,
      preview:{
       title:clean(matched.title).slice(0,80),
       description:(description&&description!=="[object Object]"?description:`${clean(matched.title)} — ${clean(matched.brand)}`).slice(0,4000),
