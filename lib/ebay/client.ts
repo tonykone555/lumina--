@@ -62,7 +62,7 @@ export async function setupEbayFranceDefaults(){
    method:"POST",
    body:JSON.stringify({
     name:"YNOT Managed Payments",
-    marketplaceId,
+    marketplaceId:ebayMarketplaceId(),
     categoryTypes:[{name:"ALL_EXCLUDING_MOTORS_VEHICLES",default:true}],
     paymentMethods:[]
    })
@@ -134,7 +134,7 @@ export async function getEbayReadiness(marketplaceId:string=ebayMarketplaceId())
  const paymentRows=payment?.paymentPolicies||[];
  const returnRows=returns?.returnPolicies||[];
  return{
-  marketplaceId:ebayMarketplaceId(),
+  marketplaceId,
   ready:locationRows.length>0&&fulfillmentRows.length>0&&paymentRows.length>0&&returnRows.length>0,
   locations:locationRows.map((x:any)=>({merchantLocationKey:x.merchantLocationKey,name:x.name,status:x.merchantLocationStatus,location:x.location})),
   fulfillmentPolicies:fulfillmentRows.map((x:any)=>({id:x.fulfillmentPolicyId,name:x.name})),
