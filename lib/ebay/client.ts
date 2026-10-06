@@ -1,9 +1,10 @@
 import {ebayApiBase,ebayLocale,ebayMarketplaceId,getEbayApplicationToken} from "@/lib/ebay/auth";
+import {ebayMarketplaceConfig,type EbayMarketplaceId} from "@/lib/ebay/marketplaces";
 import {getEbayAccessToken} from "@/lib/ebay/oauth";
 
 type EbayError={errorId?:number;domain?:string;category?:string;message?:string;longMessage?:string};
 
-async function ebay(path:string,init:RequestInit={}){
+async function ebay(path:string,init:RequestInit={},marketplaceId:string=ebayMarketplaceId()){
  const token=await getEbayAccessToken();
  const response=await fetch(`${ebayApiBase()}${path}`,{
   ...init,
@@ -11,8 +12,8 @@ async function ebay(path:string,init:RequestInit={}){
    Authorization:`Bearer ${token}`,
    Accept:"application/json",
    "Content-Type":"application/json",
-   "Content-Language":ebayLocale(),
-   "X-EBAY-C-MARKETPLACE-ID":ebayMarketplaceId(),
+   "Content-Language":ebayMarketplaceConfig(marketplaceId).locale||ebayLocale(),
+   "X-EBAY-C-MARKETPLACE-ID":marketplaceId,
    ...(init.headers||{})
   },
   cache:"no-store"
@@ -61,7 +62,7 @@ export async function setupEbayFranceDefaults(){
    method:"POST",
    body:JSON.stringify({
     name:"YNOT Managed Payments",
-    marketplaceId:ebayMarketplaceId(),
+    marketplaceId,
     categoryTypes:[{name:"ALL_EXCLUDING_MOTORS_VEHICLES",default:true}],
     paymentMethods:[]
    })
@@ -120,13 +121,13 @@ export async function setupEbayFranceDefaults(){
  };
 }
 
-export async function getEbayReadiness(){
- const marketplace=encodeURIComponent(ebayMarketplaceId());
+export async function getEbayReadiness(marketplaceId:string=ebayMarketplaceId()){
+ const marketplace=encodeURIComponent(marketplaceId);
  const [locations,fulfillment,payment,returns]=await Promise.all([
   ebay("/sell/inventory/v1/location?limit=200"),
-  ebay(`/sell/account/v1/fulfillment_policy?marketplace_id=${marketplace}`),
-  ebay(`/sell/account/v1/payment_policy?marketplace_id=${marketplace}`),
-  ebay(`/sell/account/v1/return_policy?marketplace_id=${marketplace}`)
+  ebay(`/sell/account/v1/fulfillment_policy?marketplace_id=${marketplace}`,{},marketplaceId),
+  ebay(`/sell/account/v1/payment_policy?marketplace_id=${marketplace}`,{},marketplaceId),
+  ebay(`/sell/account/v1/return_policy?marketplace_id=${marketplace}`,{},marketplaceId)
  ]);
  const locationRows=locations?.locations||[];
  const fulfillmentRows=fulfillment?.fulfillmentPolicies||[];
@@ -142,10 +143,10 @@ export async function getEbayReadiness(){
  };
 }
 
-async function ebayTaxonomy(path:string){
+async function ebayTaxonomy(path:string,marketplaceId:string=ebayMarketplaceId()){
  const token=(await getEbayApplicationToken()).access_token;
  const response=await fetch(`${ebayApiBase()}${path}`,{
-  headers:{Authorization:`Bearer ${token}`,Accept:"application/json","X-EBAY-C-MARKETPLACE-ID":ebayMarketplaceId()},
+  headers:{Authorization:`Bearer ${token}`,Accept:"application/json","X-EBAY-C-MARKETPLACE-ID":marketplaceId},
   cache:"no-store"
  });
  const text=await response.text().catch(()=>"");
@@ -254,14 +255,14 @@ function scoreCategorySuggestion(s:any,queryHint:string,product:any){
  return score;
 }
 
-export async function getEbayCategoryPreview(product:any,queryHint=""){
- const marketplace=encodeURIComponent(ebayMarketplaceId());
- const tree=await ebayTaxonomy(`/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`);
+export async function getEbayCategoryPreview(product:any,queryHint="",marketplaceId:string=ebayMarketplaceId()){
+ const marketplace=encodeURIComponent(marketplaceId);
+ const tree=await ebayTaxonomy(`/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`,marketplaceId);
  const treeId=String(tree?.categoryTreeId||"");
  if(!treeId)throw new Error("EBAY_CATEGORY_TREE_MISSING");
  const queries=[...new Set(canonicalCategoryQueries(queryHint,product).map(q=>String(q||"").trim()).filter(Boolean))].slice(0,4);
  const responses=await Promise.all(queries.map(async q=>{
-  const payload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_category_suggestions?q=${encodeURIComponent(q.slice(0,350))}`);
+  const payload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_category_suggestions?q=${encodeURIComponent(q.slice(0,350))}`,marketplaceId);
   return (payload?.categorySuggestions||[]).map((s:any)=>({...s,_query:q}));
  }));
  const seen=new Set<string>();
@@ -275,7 +276,7 @@ export async function getEbayCategoryPreview(product:any,queryHint=""){
  const categoryId=String(top?.category?.categoryId||"");
  if(!categoryId)throw new Error("EBAY_CATEGORY_SUGGESTION_MISSING");
  const domainOk=categoryDomainOk(top,queryHint,product);
- const aspectsPayload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`);
+ const aspectsPayload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`,marketplaceId);
  const all=(aspectsPayload?.aspects||[]) as any[];
  const aspects:Record<string,string[]>={};
  const required:string[]=[];
@@ -308,11 +309,13 @@ export async function getEbayCategoryPreview(product:any,queryHint=""){
 
 export type PublishEbayProduct={
  sku:string;title:string;description:string;imageUrls:string[];quantity:number;price:number;currency?:string;
- categoryId:string;merchantLocationKey:string;fulfillmentPolicyId:string;paymentPolicyId:string;returnPolicyId:string;
+ categoryId:string;merchantLocationKey:string;fulfillmentPolicyId:string;paymentPolicyId:string;returnPolicyId:string;marketplaceId?:EbayMarketplaceId;
  condition?:string;brand?:string;aspects?:Record<string,string[]>;mpn?:string;upc?:string[];
 };
 
 export async function publishEbayProduct(input:PublishEbayProduct){
+ const marketplaceId=input.marketplaceId||ebayMarketplaceId();
+ const market=ebayMarketplaceConfig(marketplaceId);
  const sku=input.sku.trim().slice(0,50);
  if(!sku)throw new Error("EBAY_SKU_REQUIRED");
  if(!input.categoryId)throw new Error("EBAY_CATEGORY_REQUIRED");
@@ -321,15 +324,15 @@ export async function publishEbayProduct(input:PublishEbayProduct){
  if(input.brand)product.brand=input.brand;
  if(input.mpn)product.mpn=input.mpn;
  if(input.upc?.length)product.upc=input.upc;
- await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`,{method:"PUT",body:JSON.stringify({availability:{shipToLocationAvailability:{quantity:Math.max(0,Math.floor(input.quantity||0))}},condition:input.condition||"NEW",product})});
+ await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`,{method:"PUT",body:JSON.stringify({availability:{shipToLocationAvailability:{quantity:Math.max(0,Math.floor(input.quantity||0))}},condition:input.condition||"NEW",product})},marketplaceId);
  const offer=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify({
-  sku,marketplaceId:ebayMarketplaceId(),format:"FIXED_PRICE",availableQuantity:Math.max(0,Math.floor(input.quantity||0)),
+  sku,marketplaceId,format:"FIXED_PRICE",availableQuantity:Math.max(0,Math.floor(input.quantity||0)),
   categoryId:String(input.categoryId),merchantLocationKey:input.merchantLocationKey,listingDescription:input.description.trim().slice(0,4000),
   listingPolicies:{fulfillmentPolicyId:input.fulfillmentPolicyId,paymentPolicyId:input.paymentPolicyId,returnPolicyId:input.returnPolicyId},
-  pricingSummary:{price:{currency:input.currency||"EUR",value:Number(input.price).toFixed(2)}}
- })});
+  pricingSummary:{price:{currency:input.currency||market.currency,value:Number(input.price).toFixed(2)}}
+ })},marketplaceId);
  const offerId=offer?.offerId;
  if(!offerId)throw new Error("EBAY_OFFER_ID_MISSING");
- const published=await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}/publish`,{method:"POST"});
+ const published=await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}/publish`,{method:"POST"},marketplaceId);
  return{sku,offerId,listingId:published?.listingId||null,status:"published"};
 }
