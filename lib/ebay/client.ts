@@ -310,6 +310,7 @@ function canonicalCategoryQueries(queryHint:string,product:any){
  if(/\b(hoodie|sweatshirt|sweat a capuche)\b/.test(h))return ["sweat à capuche","hoodie","sweatshirt",String(product?.title||"")];
  if(/\b(baby carrier|porte bebe|porte-bebe)\b/.test(h))return ["porte-bébé","baby carrier",String(product?.title||"")];
  if(/\b(skincare|serum|niacinamide|propolis)\b/.test(h))return ["sérum visage","soin visage","skincare serum",String(product?.title||"")];
+ if(/\b(metal sign|wall sign|home decor sign|plaque metal|plaque murale)\b/.test(h))return ["plaque décorative murale","plaque métal décoration","décoration murale",String(product?.title||"")];
  return [String(queryHint||product?.title||"").trim().slice(0,350),String(product?.title||"")].filter(Boolean);
 }
 function categoryPath(s:any){
