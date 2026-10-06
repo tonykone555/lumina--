@@ -74,9 +74,16 @@
   }
 
   async function hydrate(section){
-    if(section.dataset.realVariantMediaLoading==="1"||section.dataset.realVariantMedia==="1")return;
+    if(section.dataset.realVariantMediaLoading==="1")return;
     const host=hostFor(section),base=productFrom(host);
     if(!base)return;
+    const hostMain=[base?.image,...[...host.querySelectorAll("img")].slice(0,1).map(img=>img.currentSrc||img.src||"")];
+    const immediateVariants=withoutFront(variantImages(base),hostMain);
+    const immediateGallery=withoutFront(productImages(base),hostMain);
+    const immediateDom=withoutFront([...host.querySelectorAll("img")].slice(1).map(img=>img.currentSrc||img.src||""),hostMain);
+    const immediate=exactlyThree(immediateVariants,[immediateGallery,immediateDom],hostMain);
+    if(immediate.length)render(section,immediate,base.title||"Product");
+    if(section.dataset.realVariantMedia==="1"&&immediateVariants.length>=3)return;
     section.dataset.realVariantMediaLoading="1";
     try{
       const r=await fetch("/api/commerce/product-link",{
@@ -88,11 +95,11 @@
       const data=await r.json().catch(()=>null);
       if(!r.ok||!data?.product||!section.isConnected)return;
       const p=data.product;
-      const hostMain=[base?.image,p?.image,...[...host.querySelectorAll("img")].slice(0,1).map(img=>img.currentSrc||img.src||"")];
-      const realVariants=withoutFront(variantImages(p),hostMain);
-      const realGallery=withoutFront(productImages(p),hostMain);
-      const domAlternates=withoutFront([...host.querySelectorAll("img")].slice(1).map(img=>img.currentSrc||img.src||""),hostMain);
-      const chosen=exactlyThree(realVariants,[realGallery,domAlternates],hostMain);
+      const hydratedFront=[base?.image,p?.image,...[...host.querySelectorAll("img")].slice(0,1).map(img=>img.currentSrc||img.src||"")];
+      const realVariants=withoutFront(variantImages(p),hydratedFront);
+      const realGallery=withoutFront(productImages(p),hydratedFront);
+      const domAlternates=withoutFront([...host.querySelectorAll("img")].slice(1).map(img=>img.currentSrc||img.src||""),hydratedFront);
+      const chosen=exactlyThree(realVariants,[realGallery,domAlternates],hydratedFront);
       if(chosen.length)render(section,chosen,p.title||base.title||"Product");
     }catch{}finally{
       delete section.dataset.realVariantMediaLoading;
