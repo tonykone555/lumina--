@@ -5,9 +5,8 @@
   function enforce(section){
     const grid=section.querySelector('.ynot-about-image-grid,.ynot-about-images');
     if(!grid)return;
-    const items=[...grid.children];
     const seen=new Set();
-    for(const node of items){
+    for(const node of [...grid.children]){
       const img=node.querySelector?.('img');
       const src=img?.currentSrc||img?.src||'';
       let key=src;
@@ -15,14 +14,19 @@
       if(!src||seen.has(key))node.remove();else seen.add(key);
     }
     [...grid.children].slice(3).forEach(node=>node.remove());
-    if(grid.children.length<3){
+    const count=grid.children.length;
+    if(!count){
       grid.style.setProperty('display','none','important');
       section.dataset.realVariantMedia='0';
+      section.dataset.realVariantCount='0';
       return;
     }
     grid.style.setProperty('display','grid','important');
-    grid.style.setProperty('grid-template-columns','repeat(3,minmax(0,1fr))','important');
-    section.dataset.realVariantMedia='1';
+    grid.style.setProperty('visibility','visible','important');
+    grid.style.setProperty('opacity','1','important');
+    grid.style.setProperty('grid-template-columns',`repeat(${count},minmax(0,1fr))`,'important');
+    section.dataset.realVariantMedia=count>=3?'1':'partial';
+    section.dataset.realVariantCount=String(count);
   }
   function sync(){
     document.querySelectorAll("[data-ynot-force-about='true'],.ynot-about-native,.ynot-about-product").forEach(enforce);
