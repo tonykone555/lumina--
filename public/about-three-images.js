@@ -3,26 +3,27 @@
   window.__ynotAboutThreeImagesV2=true;
 
   function enforce(section){
-    const grid=section.querySelector('.ynot-about-image-grid');
+    const grid=section.querySelector('.ynot-about-image-grid,.ynot-about-images');
     if(!grid)return;
-    if(section.dataset.realVariantMedia!=="1"&&!grid.children.length){
-      grid.style.setProperty('display','none','important');
-      return;
+    const items=[...grid.children];
+    const seen=new Set();
+    for(const node of items){
+      const img=node.querySelector?.('img');
+      const src=img?.currentSrc||img?.src||'';
+      let key=src;
+      try{const u=new URL(src);key=u.origin+u.pathname}catch{}
+      if(!src||seen.has(key))node.remove();else seen.add(key);
     }
-    const children=[...grid.children];
-    children.slice(3).forEach(node=>node.remove());
-    const kept=[...grid.children];
-    if(!kept.length){
+    [...grid.children].slice(3).forEach(node=>node.remove());
+    if(grid.children.length<3){
       grid.style.setProperty('display','none','important');
+      section.dataset.realVariantMedia='0';
       return;
-    }
-    while(grid.children.length<3){
-      grid.appendChild(grid.lastElementChild.cloneNode(true));
     }
     grid.style.setProperty('display','grid','important');
     grid.style.setProperty('grid-template-columns','repeat(3,minmax(0,1fr))','important');
+    section.dataset.realVariantMedia='1';
   }
-
   function sync(){
     document.querySelectorAll("[data-ynot-force-about='true'],.ynot-about-native,.ynot-about-product").forEach(enforce);
   }
