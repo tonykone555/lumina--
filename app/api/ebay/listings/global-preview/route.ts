@@ -91,7 +91,14 @@ export async function GET(request:NextRequest){
      marginPct:eligibility.marginPct,
      deliveryDaysMax:eligibility.deliveryDaysMax,
      shippingCost:eligibility.shippingCost,
+     sellerDefaults:{
+      merchantLocationKey:readiness.locations?.[0]?.merchantLocationKey||"",
+      fulfillmentPolicyId:readiness.fulfillmentPolicies?.[0]?.id||"",
+      paymentPolicyId:readiness.paymentPolicies?.[0]?.id||"",
+      returnPolicyId:readiness.returnPolicies?.[0]?.id||""
+     },
      preview:{
+      sku:`YNOT-${id.replace(/^EBAY_/,"")}-${String(matched.id||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(-30)||Date.now()}`,
       title:clean(matched.title).slice(0,80),
       description:(description&&description!=="[object Object]"?description:`${clean(matched.title)} — ${clean(matched.brand)}`).slice(0,4000),
       imageUrls:(Array.isArray(matched.images)&&matched.images.length?matched.images:[matched.image]).filter(Boolean).slice(0,12),
