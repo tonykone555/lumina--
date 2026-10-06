@@ -210,16 +210,43 @@ function aspectValue(product:any,aspect:any,queryHint=""){
  return exact?[exact]:undefined;
 }
 
+function canonicalCategoryQuery(queryHint:string,product:any){
+ const h=norm([queryHint,product?.title].filter(Boolean).join(" "));
+ if(/\b(sofa|couch|canape|sitzer|settee)\b/.test(h))return "canapé";
+ if(/\b(armchair|fauteuil|sessel)\b/.test(h))return "fauteuil";
+ if(/\b(coffee table|table basse|couchtisch)\b/.test(h))return "table basse";
+ if(/\b(dining table|table a manger|esstisch)\b/.test(h))return "table à manger";
+ if(/\b(dress|robe|kleid)\b/.test(h))return "robe";
+ if(/\b(necklace|collier|halskette)\b/.test(h))return "collier";
+ return String(queryHint||product?.title||"").trim().slice(0,350);
+}
+function scoreCategorySuggestion(s:any,categoryQuery:string,product:any){
+ const name=norm(s?.category?.categoryName||"");
+ const h=norm([categoryQuery,product?.title].filter(Boolean).join(" "));
+ let score=0;
+ for(const w of norm(categoryQuery).split(" ").filter((x:string)=>x.length>2))if(name.includes(w))score+=20;
+ if(/\b(sofa|couch|canape|sitzer|settee)\b/.test(h)){
+  if(/canape|sofa/.test(name))score+=100;
+  if(/pouf|poire|gonflable|sacco/.test(name))score-=150;
+ }
+ if(/\b(armchair|fauteuil|sessel)\b/.test(h)){
+  if(/fauteuil/.test(name))score+=100;
+  if(/pouf|poire|gonflable/.test(name))score-=100;
+ }
+ return score;
+}
+
 export async function getEbayCategoryPreview(product:any,queryHint=""){
  const marketplace=encodeURIComponent(ebayMarketplaceId());
  const tree=await ebayTaxonomy(`/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`);
  const treeId=String(tree?.categoryTreeId||"");
  if(!treeId)throw new Error("EBAY_CATEGORY_TREE_MISSING");
- const categoryQuery=String(queryHint||product?.title||"").trim().slice(0,350);
+ const categoryQuery=canonicalCategoryQuery(queryHint,product);
  const query=encodeURIComponent(categoryQuery);
  const suggestions=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_category_suggestions?q=${query}`);
  const suggestionRows=(suggestions?.categorySuggestions||[]) as any[];
- const top=suggestionRows[0];
+ const ranked=[...suggestionRows].sort((a,b)=>scoreCategorySuggestion(b,categoryQuery,product)-scoreCategorySuggestion(a,categoryQuery,product));
+ const top=ranked[0];
  const categoryId=String(top?.category?.categoryId||"");
  if(!categoryId)throw new Error("EBAY_CATEGORY_SUGGESTION_MISSING");
  const aspectsPayload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`);
@@ -243,7 +270,7 @@ export async function getEbayCategoryPreview(product:any,queryHint=""){
   categoryQuery,
   categoryId,
   categoryName:String(top?.category?.categoryName||""),
-  alternatives:suggestionRows.slice(1,5).map((s:any)=>({id:String(s?.category?.categoryId||""),name:String(s?.category?.categoryName||"")})),
+  alternatives:ranked.slice(1,5).map((s:any)=>({id:String(s?.category?.categoryId||""),name:String(s?.category?.categoryName||"")})),
   ancestors:(top?.categoryTreeNodeAncestors||[]).map((x:any)=>({id:String(x?.categoryId||""),name:String(x?.categoryName||"")})),
   aspects,
   requiredAspects:required,
