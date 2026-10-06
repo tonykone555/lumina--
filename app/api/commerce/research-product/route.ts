@@ -1,7 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 export const runtime="nodejs";
 
-const cache=new Map<string,{description:string;sources:string[];at:number}>();
+const cache=new Map<string,{description:string;sources:string[];rating:number|null;reviewCount:number;at:number}>();
 const TTL=1000*60*60*24*7;
 
 function apiKey(){return String(process.env.GEMINI_API_KEY||process.env.GOOGLE_API_KEY||"").trim()}
@@ -30,7 +30,7 @@ export async function POST(req:NextRequest){
   if(!title)return NextResponse.json({found:false,description:"",sources:[],reason:"TITLE_REQUIRED"},{status:400});
   const key=[title.toLowerCase(),brand.toLowerCase(),url].join("|");
   const hit=cache.get(key);
-  if(hit&&Date.now()-hit.at<TTL)return NextResponse.json({found:true,description:hit.description,sources:hit.sources,cached:true,enrichedBy:"gemini-search"});
+  if(hit&&Date.now()-hit.at<TTL)return NextResponse.json({found:Boolean(hit.description||hit.rating||hit.reviewCount),description:hit.description,sources:hit.sources,rating:hit.rating,reviewCount:hit.reviewCount,cached:true,enrichedBy:"gemini-search"});
   const keyValue=apiKey();
   if(!keyValue)return NextResponse.json({found:false,description:"",sources:[],reason:"GEMINI_NOT_CONFIGURED"});
 
@@ -43,9 +43,7 @@ CATALOGUE DESCRIPTION: ${catalogue||"None"}
 
 Use Google Search grounding to verify the exact item. Do not substitute a similar product, another model, another size, or another brand. If exact identity cannot be verified, return found=false. Never mention or infer price, availability, shipping, reviews, warranty, medical claims, or specifications unless clearly verified for this exact item. Do not invent materials or features.
 
-Return ONLY JSON:
-{"found":true|false,"description":"2-4 concise factual sentences suitable for an About this product section","reason":""}
-The description must add useful verified information beyond the supplied catalogue text where possible. If there is nothing useful and exact to add, return found=false.`;
+Return ONLY JSON:\n{"found":true|false,"description":"2-4 concise factual sentences suitable for an About this product section","rating":4.7,"reviewCount":286,"reason":""}\nThe description must add useful verified information beyond the supplied catalogue text where possible. For rating and reviewCount, use ONLY an exact-product rating/count you can verify from a merchant, retailer, manufacturer, or trusted review source for this exact item. Never estimate, average across similar products, or invent values. Use null and 0 when no exact rating/count is verifiable. If neither useful exact description nor exact review data is found, return found=false.`;
 
   const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(keyValue)}`,{
    method:"POST",

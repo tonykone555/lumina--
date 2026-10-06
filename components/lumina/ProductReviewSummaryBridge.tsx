@@ -48,7 +48,20 @@ export default function ProductReviewSummaryBridge():null{
   css();const loaded=new Set<string>();let frame=0;
   const hydrate=async(host:HTMLElement,p:Product|null)=>{
    const id=productId(host,p);if(!id||loaded.has(id))return;loaded.add(id);
-   try{const r=await fetch(`/api/commerce/product/${encodeURIComponent(id)}`,{cache:"force-cache"});const d=await r.json().catch(()=>null);if(r.ok&&d?.product&&host.isConnected)render(host,{...(p||{}),...d.product})}catch{}
+   try{
+    const r=await fetch(`/api/commerce/product/${encodeURIComponent(id)}`,{cache:"force-cache"}),d=await r.json().catch(()=>null);
+    const rich=r.ok&&d?.product?{...(p||{}),...d.product}:(p||{});
+    if(host.isConnected)render(host,rich);
+    const found=stats(rich);
+    if((!found.rating||!found.count)&&host.isConnected){
+      const title=text((rich as any)?.title||host.querySelector("h1,h2")?.textContent);
+      const brand=text((rich as any)?.brand||"");
+      const url=text((rich as any)?.merchantUrl||(rich as any)?.url||"");
+      const research=await fetch("/api/commerce/research-product",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({title,brand,url,description:text((rich as any)?.description||"")}),cache:"no-store"});
+      const rd=await research.json().catch(()=>null);
+      if(research.ok&&rd&&host.isConnected)render(host,{...rich,rating:rd.rating,reviewCount:rd.reviewCount});
+    }
+   }catch{}
   };
   const scan=()=>{frame=0;document.querySelectorAll<HTMLElement>(".lv4-detail,.detail,.ynot-selected,[role='dialog'],aside").forEach(host=>{const add=[...host.querySelectorAll("button")].find(b=>/^add to bag$/i.test(text(b.textContent)));if(!add)return;const p=productFrom(host);render(host,p);const s=stats(p);if(!s.rating||!s.count)void hydrate(host,p)})};
   const queue=()=>{if(!frame)frame=requestAnimationFrame(scan)};scan();const observer=new MutationObserver(queue);observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["data-ynot-product"]});
