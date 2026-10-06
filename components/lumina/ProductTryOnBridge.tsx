@@ -26,7 +26,7 @@ function hostProduct(host:HTMLElement):Product|null{
 function clothing(product:Product|null,host:HTMLElement){
  const hay=[product?.title,product?.description,product?.tags,host.querySelector("h1,h2")?.textContent].map(text).join(" ").toLowerCase();
  if(/\b(shoe|sneaker|trainer|boot|sandal|heel|loafer|bag|handbag|backpack|wallet|jewelry|jewellery|necklace|ring|earring|bracelet|watch|hat|cap|sunglass)\b/.test(hay))return false;
- return /\b(dress|shirt|t[- ]?shirt|tee|top|blouse|hoodie|sweater|jumper|cardigan|jacket|coat|blazer|trouser|pants|jeans|denim|skirt|shorts|legging|jogger|sweatpant|activewear|sportswear|swimwear|bikini|bodysuit|jumpsuit|romper|vest|polo|jersey|clothing|apparel)\b/.test(hay);
+ return /\b(dress|shirt|t[- ]?shirt|tee|top|blouse|hoodie|sweater|jumper|cardigan|jacket|coat|blazer|trouser|pants|jeans|denim|skirt|shorts|legging|jogger|sweatpant|activewear|sportswear|swimwear|bikini|bodysuit|jumpsuit|romper|vest|polo|jersey|clothing|apparel|shoulder\s*pads?|football\s*pads?|protective\s*(?:vest|gear|pads?)|chest\s*protector|compression\s*(?:shirt|top|wear)|uniform|rash\s*guard|wetsuit|base\s*layer)\b/.test(hay);
 }
 function currentVariant(host:HTMLElement,product:Product|null){
  const id=String(host.dataset.ynotVariantId||product?.variantId||"");
