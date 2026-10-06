@@ -29,6 +29,15 @@ async function ebay(path:string,init:RequestInit={}){
  return data;
 }
 
+export async function ensureEbaySellingPolicyManagement(){
+ const current=await ebay("/sell/account/v1/program/get_opted_in_programs");
+ const rows=Array.isArray(current)?current:(current?.programs||current?.optedInPrograms||current?.programTypes||[]);
+ const opted=rows.some((x:any)=>String(typeof x==="string"?x:(x?.programType||x?.program||x?.name||"")).toUpperCase()==="SELLING_POLICY_MANAGEMENT");
+ if(opted)return{alreadyOptedIn:true,programType:"SELLING_POLICY_MANAGEMENT"};
+ await ebay("/sell/account/v1/program/opt_in",{method:"POST",body:JSON.stringify({programType:"SELLING_POLICY_MANAGEMENT"})});
+ return{alreadyOptedIn:false,programType:"SELLING_POLICY_MANAGEMENT"};
+}
+
 export async function getEbayReadiness(){
  const marketplace=encodeURIComponent(ebayMarketplaceId());
  const [locations,fulfillment,payment,returns]=await Promise.all([
