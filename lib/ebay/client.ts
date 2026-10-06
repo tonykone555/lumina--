@@ -1,4 +1,4 @@
-import {ebayApiBase,ebayLocale,ebayMarketplaceId} from "@/lib/ebay/auth";
+import {ebayApiBase,ebayLocale,ebayMarketplaceId,getEbayApplicationToken} from "@/lib/ebay/auth";
 import {getEbayAccessToken} from "@/lib/ebay/oauth";
 
 type EbayError={errorId?:number;domain?:string;category?:string;message?:string;longMessage?:string};
@@ -139,6 +139,72 @@ export async function getEbayReadiness(){
   fulfillmentPolicies:fulfillmentRows.map((x:any)=>({id:x.fulfillmentPolicyId,name:x.name})),
   paymentPolicies:paymentRows.map((x:any)=>({id:x.paymentPolicyId,name:x.name})),
   returnPolicies:returnRows.map((x:any)=>({id:x.returnPolicyId,name:x.name}))
+ };
+}
+
+async function ebayTaxonomy(path:string){
+ const token=(await getEbayApplicationToken()).access_token;
+ const response=await fetch(`${ebayApiBase()}${path}`,{
+  headers:{Authorization:`Bearer ${token}`,Accept:"application/json","X-EBAY-C-MARKETPLACE-ID":ebayMarketplaceId()},
+  cache:"no-store"
+ });
+ const text=await response.text().catch(()=>"");
+ let data:any=null;try{data=text?JSON.parse(text):null}catch{data=text}
+ if(!response.ok){
+  const first=data?.errors?.[0];
+  throw new Error(first?.longMessage||first?.message||`EBAY_TAXONOMY_${response.status}`);
+ }
+ return data;
+}
+
+function textHaystack(product:any){
+ return [product?.title,product?.brand,product?.description,...(Array.isArray(product?.tags)?product.tags:[])].filter(Boolean).join(" ").toLowerCase();
+}
+function aspectValue(product:any,aspect:any){
+ const name=String(aspect?.localizedAspectName||"");
+ const lower=name.toLowerCase();
+ if(lower==="brand"&&product?.brand)return [String(product.brand)];
+ if((lower==="mpn"||lower.includes("manufacturer part"))&&product?.mpn)return [String(product.mpn)];
+ if((lower==="ean"||lower==="upc"||lower==="isbn")&&product?.[lower])return [String(product[lower])];
+ const values=(aspect?.aspectValues||[]).map((v:any)=>String(v?.localizedValue||"")).filter(Boolean);
+ const hay=textHaystack(product);
+ const match=values.find((v:string)=>hay.includes(v.toLowerCase()));
+ return match?[match]:undefined;
+}
+
+export async function getEbayCategoryPreview(product:any){
+ const marketplace=encodeURIComponent(ebayMarketplaceId());
+ const tree=await ebayTaxonomy(`/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`);
+ const treeId=String(tree?.categoryTreeId||"");
+ if(!treeId)throw new Error("EBAY_CATEGORY_TREE_MISSING");
+ const query=encodeURIComponent(String(product?.title||"").slice(0,350));
+ const suggestions=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_category_suggestions?q=${query}`);
+ const top=suggestions?.categorySuggestions?.[0];
+ const categoryId=String(top?.category?.categoryId||"");
+ if(!categoryId)throw new Error("EBAY_CATEGORY_SUGGESTION_MISSING");
+ const aspectsPayload=await ebayTaxonomy(`/commerce/taxonomy/v1/category_tree/${encodeURIComponent(treeId)}/get_item_aspects_for_category?category_id=${encodeURIComponent(categoryId)}`);
+ const all=(aspectsPayload?.aspects||[]) as any[];
+ const aspects:Record<string,string[]>={};
+ const required:string[]=[];
+ const missingRequired:string[]=[];
+ for(const a of all){
+  const name=String(a?.localizedAspectName||"").trim();
+  if(!name)continue;
+  const isRequired=a?.aspectConstraint?.aspectRequired===true;
+  if(isRequired)required.push(name);
+  const value=aspectValue(product,a);
+  if(value?.length)aspects[name]=value;
+  else if(isRequired)missingRequired.push(name);
+ }
+ return{
+  categoryTreeId:treeId,
+  categoryId,
+  categoryName:String(top?.category?.categoryName||""),
+  ancestors:(top?.categoryTreeNodeAncestors||[]).map((x:any)=>({id:String(x?.categoryId||""),name:String(x?.categoryName||"")})),
+  aspects,
+  requiredAspects:required,
+  missingRequiredAspects:missingRequired,
+  aspectCount:all.length
  };
 }
 
