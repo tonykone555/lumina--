@@ -38,6 +38,62 @@ export async function ensureEbaySellingPolicyManagement(){
  return{alreadyOptedIn:false,programType:"SELLING_POLICY_MANAGEMENT"};
 }
 
+export async function setupEbayFranceDefaults(){
+ await ensureEbaySellingPolicyManagement();
+
+ const readiness=await getEbayReadiness();
+ let merchantLocationKey=readiness.locations?.[0]?.merchantLocationKey||"ynot-fr-59910";
+ if(!readiness.locations?.length){
+  await ebay(`/sell/inventory/v1/location/${encodeURIComponent(merchantLocationKey)}`,{
+   method:"POST",
+   body:JSON.stringify({
+    name:"YNOT France",
+    merchantLocationStatus:"ENABLED",
+    locationTypes:["WAREHOUSE"],
+    location:{address:{postalCode:"59910",country:"FR"}}
+   })
+  });
+ }
+
+ let paymentPolicyId=readiness.paymentPolicies?.[0]?.id||null;
+ if(!paymentPolicyId){
+  const created=await ebay("/sell/account/v1/payment_policy",{
+   method:"POST",
+   body:JSON.stringify({
+    name:"YNOT Managed Payments",
+    marketplaceId:ebayMarketplaceId(),
+    categoryTypes:[{name:"ALL_EXCLUDING_MOTORS_VEHICLES",default:true}],
+    paymentMethods:[]
+   })
+  });
+  paymentPolicyId=created?.paymentPolicyId||null;
+ }
+
+ let returnPolicyId=readiness.returnPolicies?.[0]?.id||null;
+ if(!returnPolicyId){
+  const created=await ebay("/sell/account/v1/return_policy",{
+   method:"POST",
+   body:JSON.stringify({
+    name:"YNOT 30 Day Returns",
+    marketplaceId:ebayMarketplaceId(),
+    categoryTypes:[{name:"ALL_EXCLUDING_MOTORS_VEHICLES",default:true}],
+    returnsAccepted:true,
+    returnPeriod:{value:30,unit:"DAY"},
+    returnShippingCostPayer:"BUYER"
+   })
+  });
+  returnPolicyId=created?.returnPolicyId||null;
+ }
+
+ return{
+  merchantLocationKey,
+  paymentPolicyId,
+  returnPolicyId,
+  fulfillmentPolicyId:readiness.fulfillmentPolicies?.[0]?.id||null,
+  readiness:await getEbayReadiness()
+ };
+}
+
 export async function getEbayReadiness(){
  const marketplace=encodeURIComponent(ebayMarketplaceId());
  const [locations,fulfillment,payment,returns]=await Promise.all([
