@@ -21,6 +21,23 @@
     const nextZoom=zoom*FIT,cx=tx+WORLD_CENTER*zoom,cy=ty+WORLD_CENTER*zoom,nextTx=cx-WORLD_CENTER*nextZoom,nextTy=cy-WORLD_CENTER*nextZoom;
     stage.style.transform=`translate(${nextTx}px, ${nextTy}px) scale(${nextZoom})`;stage.dataset.ynotCategoryFit='1';
   };
+  const alignMobileRing=()=>{
+    if(!window.matchMedia('(max-width: 767px)').matches)return;
+    const stage=document.querySelector('.lv4-world.level-worlds .lv4-stage');
+    const voice=stage?.querySelector('.ynot-voice-orb');
+    if(!(stage instanceof HTMLElement)||!(voice instanceof HTMLElement))return;
+    const bubbles=[...stage.querySelectorAll('.lv4-category-bubble')].filter(node=>ORDER.includes(keyOf(node)));
+    if(bubbles.length!==ORDER.length)return;
+    const voiceRect=voice.getBoundingClientRect(),voiceX=voiceRect.left+voiceRect.width/2,voiceY=voiceRect.top+voiceRect.height/2;
+    const centers=bubbles.map(node=>{const r=node.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2}});
+    const ringX=centers.reduce((sum,p)=>sum+p.x,0)/centers.length,ringY=centers.reduce((sum,p)=>sum+p.y,0)/centers.length;
+    const raw=stage.style.transform||'',match=raw.match(/scale\(([\d.]+)\)/),scale=Number(match?.[1]||1);
+    if(!Number.isFinite(scale)||scale<=0)return;
+    const dx=(voiceX-ringX)/scale,dy=(voiceY-ringY)/scale;
+    if(Math.abs(dx)<.25&&Math.abs(dy)<.25)return;
+    bubbles.forEach(node=>{if(!(node instanceof HTMLElement))return;const left=parseFloat(node.style.left||'0'),top=parseFloat(node.style.top||'0');if(Number.isFinite(left))node.style.left=`${left+dx}px`;if(Number.isFinite(top))node.style.top=`${top+dy}px`});
+    stage.dataset.ynotCategoryAligned='1';
+  };
   const arrange=()=>{
     const world=document.querySelector(".lv4-stage");if(!world)return;
     const mobile=window.matchMedia('(max-width: 767px)').matches;
@@ -28,9 +45,9 @@
     const byKey=new Map(bubbles.map(node=>[keyOf(node),node]));
     ORDER.forEach((key,i)=>{const node=byKey.get(key);if(!(node instanceof HTMLElement))return;node.dataset.ynotCategoryKey=key;const radius=mobile?MOBILE_RADIUS:800,a=i/ORDER.length*Math.PI*2-Math.PI/2,x=WORLD_CENTER+Math.cos(a)*radius,y=WORLD_CENTER+Math.sin(a)*radius;node.style.left=`${x}px`;node.style.top=`${y}px`;const cfg=MAP[key],b=node.querySelector("b"),s=node.querySelector("span");if(b){b.textContent=cfg.label;b.style.fontSize=mobile?"40px":"30px";b.style.lineHeight=mobile?"0.98":"1.02"}if(s){s.textContent=cfg.subtitle;s.style.fontSize="17px";s.style.lineHeight="1.18"}});
   };
-  const apply=()=>{arrange();fitTribe();const intent=(document.querySelector(".lv4-intent span")?.textContent||"").toLowerCase();for(const [key,cfg] of Object.entries(MAP))if(intent.includes(cfg.label.toLowerCase()))activeKey=key;const cfg=MAP[activeKey];if(!cfg)return;document.querySelectorAll(".lv4-textbubble").forEach((node,i)=>{if(node instanceof HTMLElement)node.textContent=cfg.tags[i%cfg.tags.length]})};
+  const apply=()=>{arrange();fitTribe();requestAnimationFrame(()=>requestAnimationFrame(alignMobileRing));const intent=(document.querySelector(".lv4-intent span")?.textContent||"").toLowerCase();for(const [key,cfg] of Object.entries(MAP))if(intent.includes(cfg.label.toLowerCase()))activeKey=key;const cfg=MAP[activeKey];if(!cfg)return;document.querySelectorAll(".lv4-textbubble").forEach((node,i)=>{if(node instanceof HTMLElement)node.textContent=cfg.tags[i%cfg.tags.length]})};
   document.addEventListener("click",event=>{const target=event.target instanceof Element?event.target:null;if(!target)return;const category=target.closest(".lv4-category-bubble");if(category){activeKey=keyOf(category);setTimeout(apply,50)}},false);
-  addEventListener('resize',()=>requestAnimationFrame(arrange),{passive:true});
+  addEventListener('resize',()=>requestAnimationFrame(apply),{passive:true});
   const observer=new MutationObserver(()=>{const stage=document.querySelector('.lv4-world.level-worlds .lv4-stage');if(stage instanceof HTMLElement&&stage.dataset.ynotCategoryFit!=='1')requestAnimationFrame(apply)});observer.observe(document.documentElement,{childList:true,subtree:true});
-  apply();setTimeout(apply,120);setTimeout(apply,500);
+  apply();setTimeout(apply,120);setTimeout(apply,500);setTimeout(()=>requestAnimationFrame(alignMobileRing),900);
 })();
