@@ -272,11 +272,64 @@ async function verifyAndStoreMerchantOrigin(input:{productId:string;merchantUrl:
   return rows[0]||null;
 }
 
+function isSpecialistEbayPart(product:any,query:string){
+  const text=`${query||""} ${product?.title||""} ${product?.description||""}`.toLowerCase();
+  const hasPartNumber=/\b(?:[a-z]{1,6}[- ]?\d{3,}[a-z0-9-]*|\d{5,}[a-z0-9-]*)\b/i.test(text);
+  const specialist=/\b(oem|replacement|spare|part|parts|module|relay|sensor|valve|regulator|motor|gear|piston|cylinder|armature|brush holder|bobbin case|printhead|print head|power supply|psu|hba|server|industrial|plc|drive|inverter|tonearm|viewfinder|lens|adapter|probe|control board|switch|carburettor|carburetor|cassette|anvil|guide tube|rebuild kit|chassis fan|cooling fan)\b/i.test(text);
+  return specialist||hasPartNumber;
+}
+
+const EBAY_PART_MARGIN_POINTS=[
+  [50,.30],[75,.27],[100,.25],[150,.23],[200,.22],[300,.20],
+  [500,.18],[750,.17],[1000,.16],[1500,.15]
+] as const;
+
+function ebayPartsTargetMargin(cost:number){
+  if(!Number.isFinite(cost)||cost<=0)return null;
+  if(cost<=EBAY_PART_MARGIN_POINTS[0][0])return EBAY_PART_MARGIN_POINTS[0][1];
+  for(let i=1;i<EBAY_PART_MARGIN_POINTS.length;i++){
+    const [x2,y2]=EBAY_PART_MARGIN_POINTS[i];
+    const [x1,y1]=EBAY_PART_MARGIN_POINTS[i-1];
+    if(cost<=x2){
+      const t=(cost-x1)/(x2-x1);
+      return y1+(y2-y1)*t;
+    }
+  }
+  return .15;
+}
+
+function ebaySpecialistRetail(product:any,query:string){
+  const supplier=Number(product?.supplierPrice);
+  const shipping=Number.isFinite(Number(product?.shippingCost))?Math.max(0,Number(product.shippingCost)):0;
+  if(!isSpecialistEbayPart(product,query)||!Number.isFinite(supplier)||supplier<=0){
+    const retail=Number(product?.price);
+    return {applied:false,retail,marginPct:null,grossProfit:null,supplierPrice:Number.isFinite(supplier)?supplier:null};
+  }
+  const base=supplier+shipping;
+  const margin=ebayPartsTargetMargin(base);
+  if(margin==null)return {applied:false,retail:Number(product?.price),marginPct:null,grossProfit:null,supplierPrice:supplier};
+  const retail=Math.round((base/(1-margin))*100)/100;
+  return {
+    applied:true,
+    retail,
+    marginPct:Math.round(margin*1000)/10,
+    grossProfit:Math.round((retail-base)*100)/100,
+    supplierPrice:supplier,
+    shippingCost:shipping,
+    pricingMode:"ebay-specialist-taper"
+  };
+}
+
 async function ebayPrepareCandidate(query:string,productId?:string){
   const products=await ebayRawCatalog(query,"FR",40);
   const product=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
     products.find((p:any)=>p?.id&&p?.title&&p?.image&&Number(p?.price)>0);
   if(!product)return{ok:false,error:"YNOT_PRODUCT_NOT_FOUND"};
+
+  const specialistPricing=ebaySpecialistRetail(product,query);
+  const ebayRetailPrice=Number.isFinite(Number(specialistPricing.retail))&&Number(specialistPricing.retail)>0
+    ?Number(specialistPricing.retail)
+    :Number(product.price);
 
   const [taxonomy,readiness]=await Promise.all([
     getEbayCategoryPreview(product,query,"EBAY_FR"),
@@ -321,7 +374,7 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     deliveryDaysMax:Number.isFinite(Number(product?.deliveryDaysMax))?Number(product.deliveryDaysMax):null,
     shippingCost:Number.isFinite(Number(product?.shippingCost))?Number(product.shippingCost):null,
     supplierPrice:Number.isFinite(Number(product?.supplierPrice))?Number(product.supplierPrice):null,
-    retailPrice:Number(product.price),
+    retailPrice:ebayRetailPrice,
     available:product?.available!==false
   });
 
@@ -338,7 +391,7 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     description:(description&&description!=="[object Object]"?description:`${cleanEbayText(product.title)} — ${cleanEbayText(product.brand)}`).slice(0,4000),
     imageUrls:(Array.isArray(product.images)&&product.images.length?product.images:[product.image]).filter(Boolean).slice(0,12),
     quantity:5,
-    price:Number(product.price),
+    price:ebayRetailPrice,
     currency:String(product.currency||"EUR"),
     categoryId:taxonomy.categoryId,
     marketplaceId:"EBAY_FR" as const,
@@ -350,7 +403,10 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   return{
     ok:true,query,product:{
       id:product.id,title:product.title,brand:product.brand,source:product.source,url:product.url,
-      price:product.price,currency:product.currency,image:product.image
+      price:ebayRetailPrice,currency:product.currency,image:product.image,
+      catalogueRetailPrice:Number(product.price),
+      supplierPrice:specialistPricing.supplierPrice,
+      ebaySpecialistPricing:specialistPricing
     },
     shipping:{shipsToFrance:true,sourceOrigin:sourceOrigin||null,originPostalCode:originPostalCode||null,originCity:originCity||null,originState:originState||null,originVerified,locationReady:Boolean(matchingLocation),deliveryDaysMax:eligibility.deliveryDaysMax,shippingCost:eligibility.shippingCost},
     ebay:{marketplaceId:"EBAY_FR",categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,categoryDomainOk:taxonomy.categoryDomainOk,missingRequiredAspects:taxonomy.missingRequiredAspects,sellerReady:readiness.ready},
