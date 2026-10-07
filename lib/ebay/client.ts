@@ -486,6 +486,35 @@ async function createFreshRecoverySku(baseSku:string,marketplaceId:string,invent
  return{sku:freshSku,offerId:String(created?.offerId||"")};
 }
 
+async function offerDebugContext(marketplaceId:string,input:{
+ sku:string;categoryId:string;merchantLocationKey:string;fulfillmentPolicyId:string;paymentPolicyId:string;returnPolicyId:string;currency:string;quantity:number
+}){
+ try{
+  const readiness=await getEbayReadiness(marketplaceId);
+  const location=(readiness.locations||[]).find((x:any)=>String(x?.merchantLocationKey||"")===input.merchantLocationKey)||null;
+  return{
+   sku:input.sku,
+   marketplaceId,
+   categoryId:input.categoryId,
+   currency:input.currency,
+   quantity:input.quantity,
+   merchantLocationKey:input.merchantLocationKey,
+   merchantLocationStatus:location?.status||null,
+   merchantLocationAddress:location?.location?.address||null,
+   fulfillmentPolicyId:input.fulfillmentPolicyId,
+   paymentPolicyId:input.paymentPolicyId,
+   returnPolicyId:input.returnPolicyId,
+   sellerRegistrationCompleted:readiness.sellerRegistrationCompleted===true
+  };
+ }catch{
+  return{
+   sku:input.sku,marketplaceId,categoryId:input.categoryId,currency:input.currency,quantity:input.quantity,
+   merchantLocationKey:input.merchantLocationKey,fulfillmentPolicyId:input.fulfillmentPolicyId,
+   paymentPolicyId:input.paymentPolicyId,returnPolicyId:input.returnPolicyId
+  };
+ }
+}
+
 export type PublishEbayProduct={
  sku:string;title:string;description:string;imageUrls:string[];quantity:number;price:number;currency?:string;
  categoryId:string;merchantLocationKey:string;fulfillmentPolicyId:string;paymentPolicyId:string;returnPolicyId:string;marketplaceId?:EbayMarketplaceId;
@@ -607,7 +636,20 @@ export async function publishEbayProduct(input:PublishEbayProduct){
     }
    }
   }
- }catch(error){throw new Error(`EBAY_STAGE_CREATE_OR_UPDATE_OFFER | ${error instanceof Error?error.message:String(error)}`)}
+ }catch(error){
+  const message=error instanceof Error?error.message:String(error);
+  const debug=await offerDebugContext(marketplaceId,{
+   sku:activeSku,
+   categoryId:String(input.categoryId),
+   merchantLocationKey:input.merchantLocationKey,
+   fulfillmentPolicyId:input.fulfillmentPolicyId,
+   paymentPolicyId:input.paymentPolicyId,
+   returnPolicyId:input.returnPolicyId,
+   currency:market.currency,
+   quantity:Math.max(1,Math.floor(input.quantity||1))
+  });
+  throw new Error(`EBAY_STAGE_CREATE_OR_UPDATE_OFFER | ${message} | context=${JSON.stringify(debug)}`);
+ }
 
  if(!offerId)throw new Error("EBAY_STAGE_CREATE_OR_UPDATE_OFFER | EBAY_OFFER_ID_MISSING");
 
