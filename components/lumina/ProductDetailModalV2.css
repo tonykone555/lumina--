@@ -81,12 +81,12 @@
  box-shadow:0 10px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.08)
 }
 .ynot-pv2-bag svg{width:18px}
-.ynot-pv2-bag-secondary{
- display:grid;place-items:center;border:1px solid rgba(255,255,255,.9);
- background:linear-gradient(180deg,rgba(248,249,246,.98),rgba(218,221,216,.92));
- color:#2d302d;box-shadow:0 9px 20px rgba(30,34,30,.14),inset 0 1px 0 #fff
+.ynot-pv2-klarna{
+ display:grid;place-items:center;border:1px solid rgba(20,20,20,.10);
+ background:#ffb3c7;color:#111;font-weight:850;font-size:13px;letter-spacing:-.02em;
+ box-shadow:none
 }
-.ynot-pv2-bag-secondary svg{width:20px;height:20px}
+.ynot-pv2-klarna span{display:block;line-height:1}
 .ynot-pv2-directions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:12px}
 .ynot-pv2-directions button{min-height:40px;padding:0 6px;border:1px solid rgba(24,26,24,.14);border-radius:18px;background:rgba(255,255,255,.54);color:#303330;font-weight:780;font-size:10px}
 .ynot-pv2-directions small{display:inline-grid;place-items:center;width:15px;height:15px;margin-left:3px;border-radius:50%;background:rgba(20,22,20,.08);font-size:9px}
@@ -276,4 +276,26 @@ html.ynot-pv2-open .ynot-reviews-gallery{
  min-height:0!important;
  margin:0!important;
  padding:0!important;
+}
+
+.ynot-pv2 .ynot-force-about-section,
+.ynot-pv2 [data-ynot-force-about="true"]{
+ display:none!important;
+ visibility:hidden!important;
+ opacity:0!important;
+ height:0!important;
+ min-height:0!important;
+ max-height:0!important;
+ margin:0!important;
+ padding:0!important;
+ border:0!important;
+ overflow:hidden!important;
+}
+
+.ynot-pv2-shop>span{font-size:0!important}
+.ynot-pv2-shop>span::after{
+ content:"SHOP";
+ font-size:10px;
+ font-weight:850;
+ letter-spacing:.14em;
 }
