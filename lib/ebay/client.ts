@@ -452,7 +452,7 @@ async function getOffersForSku(sku:string,marketplaceId:string){
  return Array.isArray(data?.offers)?data.offers:[];
 }
 async function recreateOfferAfterInternalError(sku:string,marketplaceId:string,offerBody:any){
- const offers=await getOffersForSku(sku,marketplaceId);
+ const offers=await getOffersForSku(activeSku,marketplaceId);
  for(const offer of offers){
   const id=String(offer?.offerId||"");
   if(!id)continue;
@@ -460,8 +460,30 @@ async function recreateOfferAfterInternalError(sku:string,marketplaceId:string,o
   try{await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(id)}`,{method:"DELETE"},marketplaceId)}catch{}
  }
  await sleep(700);
- const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify(offerBody)},marketplaceId);
+ const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify({...offerBody,sku:activeSku})},marketplaceId);
  return String(created?.offerId||"");
+}
+async function ensureInventoryAvailability(sku:string,marketplaceId:string,inventoryBody:any){
+ const expected=Math.max(0,Math.floor(Number(inventoryBody?.availability?.shipToLocationAvailability?.quantity||0)));
+ for(let attempt=0;attempt<3;attempt++){
+  try{
+   const item=await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`,{},marketplaceId);
+   const actual=Number(item?.availability?.shipToLocationAvailability?.quantity);
+   if(Number.isFinite(actual)&&actual>=expected)return item;
+  }catch{}
+  await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`,{method:"PUT",body:JSON.stringify(inventoryBody)},marketplaceId);
+  await sleep(800*(attempt+1));
+ }
+ throw new Error("EBAY_INVENTORY_AVAILABILITY_NOT_PERSISTED");
+}
+async function createFreshRecoverySku(baseSku:string,marketplaceId:string,inventoryBody:any,offerBody:any){
+ const suffix=`R${Date.now().toString(36).slice(-6)}`;
+ const freshSku=`${baseSku.slice(0,Math.max(1,49-suffix.length))}-${suffix}`.slice(0,50);
+ await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(freshSku)}`,{method:"PUT",body:JSON.stringify(inventoryBody)},marketplaceId);
+ await ensureInventoryAvailability(freshSku,marketplaceId,inventoryBody);
+ const freshOffer={...offerBody,sku:freshSku};
+ const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify(freshOffer)},marketplaceId);
+ return{sku:freshSku,offerId:String(created?.offerId||"")};
 }
 
 export type PublishEbayProduct={
@@ -503,23 +525,26 @@ export async function publishEbayProduct(input:PublishEbayProduct){
  }
  if(input.upc?.length)product.upc=input.upc;
 
+ const inventoryBody={
+  availability:{shipToLocationAvailability:{quantity:Math.max(1,Math.floor(input.quantity||1))}},
+  condition:input.condition||"NEW",
+  product
+ };
  try{
   await ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`,{
    method:"PUT",
-   body:JSON.stringify({
-    availability:{shipToLocationAvailability:{quantity:Math.max(0,Math.floor(input.quantity||0))}},
-    condition:input.condition||"NEW",
-    product
-   })
+   body:JSON.stringify(inventoryBody)
   },marketplaceId);
+  await ensureInventoryAvailability(sku,marketplaceId,inventoryBody);
  }catch(error){throw new Error(`EBAY_STAGE_INVENTORY_ITEM | ${error instanceof Error?error.message:String(error)}`)}
 
+ let activeSku=sku;
  const offerBody={
-  sku,
+  sku:activeSku,
   marketplaceId,
   format:"FIXED_PRICE",
   listingDuration:"GTC",
-  availableQuantity:Math.max(0,Math.floor(input.quantity||0)),
+  availableQuantity:Math.max(1,Math.floor(input.quantity||1)),
   categoryId:String(input.categoryId),
   merchantLocationKey:input.merchantLocationKey,
   listingDescription:input.description.trim().slice(0,4000),
@@ -533,7 +558,7 @@ export async function publishEbayProduct(input:PublishEbayProduct){
 
  let offerId="";
  try{
-  let offers=await getOffersForSku(sku,marketplaceId);
+  let offers=await getOffersForSku(activeSku,marketplaceId);
   const existing=offers.find((x:any)=>String(x?.marketplaceId||"")===marketplaceId)||offers[0]||null;
   if(existing?.status==="PUBLISHED"&&existing?.listing?.listingId){
    return{
@@ -544,31 +569,41 @@ export async function publishEbayProduct(input:PublishEbayProduct){
   offerId=String(existing?.offerId||"");
   if(offerId){
    try{
-    await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify(offerBody)},marketplaceId);
+    await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify({...offerBody,sku:activeSku})},marketplaceId);
    }catch(updateError){
     const message=updateError instanceof Error?updateError.message:String(updateError);
-    if(/25001|25713|erreur interne du serveur|internal server error|offre n'est pas disponible|offer is not available/i.test(message)){
-     offerId=await recreateOfferAfterInternalError(sku,marketplaceId,offerBody);
+    if(/25713|offre n'est pas disponible|offer is not available/i.test(message)){
+     const recovered=await createFreshRecoverySku(activeSku,marketplaceId,inventoryBody,{...offerBody,sku:activeSku});
+     activeSku=recovered.sku; offerId=recovered.offerId;
+     if(!offerId)throw updateError;
+    }else if(/25001|erreur interne du serveur|internal server error/i.test(message)){
+     offerId=await recreateOfferAfterInternalError(activeSku,marketplaceId,{...offerBody,sku:activeSku});
      if(!offerId)throw updateError;
     }else throw updateError;
    }
   }else{
    try{
-    const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify(offerBody)},marketplaceId);
+    const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify({...offerBody,sku:activeSku})},marketplaceId);
     offerId=String(created?.offerId||"");
    }catch(createError){
     const message=createError instanceof Error?createError.message:String(createError);
-    if(/25001|erreur interne du serveur|internal server error/i.test(message)){
+    if(/25713|offre n'est pas disponible|offer is not available/i.test(message)){
      try{
-      offerId=await recreateOfferAfterInternalError(sku,marketplaceId,offerBody);
+      const recovered=await createFreshRecoverySku(activeSku,marketplaceId,inventoryBody,{...offerBody,sku:activeSku});
+      activeSku=recovered.sku; offerId=recovered.offerId;
+      if(!offerId)throw createError;
+     }catch{throw createError}
+    }else if(/25001|erreur interne du serveur|internal server error/i.test(message)){
+     try{
+      offerId=await recreateOfferAfterInternalError(activeSku,marketplaceId,{...offerBody,sku:activeSku});
       if(!offerId)throw createError;
      }catch{throw createError}
     }else{
-     offers=await getOffersForSku(sku,marketplaceId);
+     offers=await getOffersForSku(activeSku,marketplaceId);
      const recovered=offers.find((x:any)=>String(x?.marketplaceId||"")===marketplaceId)||offers[0]||null;
      offerId=String(recovered?.offerId||"");
      if(!offerId)throw createError;
-     await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify(offerBody)},marketplaceId);
+     await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify({...offerBody,sku:activeSku})},marketplaceId);
     }
    }
   }
@@ -582,7 +617,7 @@ export async function publishEbayProduct(input:PublishEbayProduct){
  }catch(error){throw new Error(`EBAY_STAGE_PUBLISH_OFFER | ${error instanceof Error?error.message:String(error)}`)}
 
  return{
-  sku,offerId,listingId:published?.listingId||null,status:"published",
+  sku:activeSku,offerId,listingId:published?.listingId||null,status:"published",
   price:{sourceValue:Number(input.price),sourceCurrency:input.currency||market.currency,listedValue:normalizedPrice.price,listedCurrency:market.currency,fxRate:normalizedPrice.rate,converted:normalizedPrice.converted}
  };
 }
