@@ -1,5 +1,5 @@
 .ynot-pv2-backdrop{
- position:fixed;inset:0;z-index:950;display:grid;place-items:center;padding:18px;
+ position:fixed;inset:0;z-index:5000;display:grid;place-items:center;padding:18px;
  background:rgba(8,9,8,.48);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
 }
 .ynot-pv2{
@@ -97,7 +97,7 @@
 .ynot-pv2-description a svg{width:15px}
 .ynot-pv2-error{margin:14px 0 0;padding:11px 13px;border-radius:14px;background:#fff2f0;color:#8d3831;font-size:12px}
 .ynot-pv2-options-backdrop{
- position:fixed;inset:0;z-index:1200;display:grid;place-items:end center;padding:12px;
+ position:fixed;inset:0;z-index:6000;display:grid;place-items:end center;padding:12px;
  background:rgba(10,11,10,.38);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
 }
 .ynot-pv2-options{
@@ -141,3 +141,54 @@
  .ynot-pv2-option{max-width:230px;min-height:36px;font-size:9px}
  .ynot-pv2-flexpay{font-size:10px;margin-bottom:14px}
 }
+
+
+/* Product popup is modal: remove all world chrome while it is open. */
+html.ynot-pv2-open .ynot-reference-header,
+html.ynot-pv2-open .ynot-reference-right,
+html.ynot-pv2-open .ynot-reference-brand,
+html.ynot-pv2-open .ynot-reference-world-tabs,
+html.ynot-pv2-open .ynot-world-row,
+html.ynot-pv2-open .ynot-world-save,
+html.ynot-pv2-open .ynot-map-zoom,
+html.ynot-pv2-open .ynot-glass-side-control,
+html.ynot-pv2-open .ynot-compass-tools,
+html.ynot-pv2-open .ynot-dock,
+html.ynot-pv2-open .ynot-search,
+html.ynot-pv2-open .ynot-peek,
+html.ynot-pv2-open .lv4-search,
+html.ynot-pv2-open .lv4-market-toggle,
+html.ynot-pv2-open .lv4-source-picker,
+html.ynot-pv2-open .lv4-refine,
+html.ynot-pv2-open .lv4-refine-panel,
+html.ynot-pv2-open .lv4-rail,
+html.ynot-pv2-open .lv4-zoom,
+html.ynot-pv2-open .lv4-zoom-controls,
+body.ynot-pv2-open .ynot-reference-header,
+body.ynot-pv2-open .ynot-world-row,
+body.ynot-pv2-open .ynot-map-zoom,
+body.ynot-pv2-open .ynot-glass-side-control,
+body.ynot-pv2-open .ynot-search,
+body.ynot-pv2-open .ynot-dock{
+  visibility:hidden!important;
+  opacity:0!important;
+  pointer-events:none!important;
+}
+
+/* Do not allow legacy injected option/review/detail UI to leak around v2. */
+html.ynot-pv2-open .lv4-variant-drawer-backdrop,
+html.ynot-pv2-open .lv4-variant-drawer,
+html.ynot-pv2-open .ynot-force-extras,
+html.ynot-pv2-open .ynot-about-product:not(.ynot-pv2-description),
+html.ynot-pv2-open .ynot-description-toggle:not(.ynot-pv2-description-toggle){
+  display:none!important;
+}
+
+/* Compact thumbnail-only gallery at the top of the popup. */
+.ynot-pv2-gallery{padding-top:2px}
+.ynot-pv2-gallery .ynot-pv2-thumbs{
+  margin-top:0;
+  padding-top:2px;
+}
+
+.ynot-pv2-hero{display:none!important}
