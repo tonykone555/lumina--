@@ -24,7 +24,14 @@ function stripHtml(value:any):string{return structuredText(value).replace(/<scri
 
 function mediaUrl(m:any){return normalize(typeof m==='string'?m:(m?.url||m?.image?.url||m?.previewImage?.url||m?.preview_image?.url||m?.src||m?.originalSource?.url||m?.sources?.[0]?.url||''))}
 function mediaKind(m:any){return String(m?.media_type||m?.type||m?.content_type||m?.mime_type||m?.kind||'').toLowerCase()}
-const uniqMedia=(...values:any[])=>[...new Set<string>(values.flat(Infinity).map(mediaUrl).filter(Boolean))];
+function mediaIdentity(url:string){try{const u=new URL(url);return (u.hostname+u.pathname).toLowerCase().replace(/\/(?:width|height|w|h)[_-]?\d+/g,"")}catch{return url.toLowerCase()}}
+const uniqMedia=(...values:any[])=>{
+ const out:string[]=[];const seen=new Set<string>();
+ for(const url of values.flat(Infinity).map(mediaUrl).filter(Boolean)){
+  const key=mediaIdentity(url);if(seen.has(key))continue;seen.add(key);out.push(url);
+ }
+ return out;
+};
 function videoMedia(values:any[]){return uniqMedia(values.filter((m:any)=>/video|external_video/.test(mediaKind(m))||/\\.(mp4|webm|mov)(?:\\?|$)/i.test(mediaUrl(m))))}
 function imageMedia(values:any[]){return uniqMedia(values.filter((m:any)=>!/video|external_video/.test(mediaKind(m))&&!/\\.(mp4|webm|mov)(?:\\?|$)/i.test(mediaUrl(m))))}
 function absoluteUrl(value:string,base:string){try{return new URL(value,base).toString()}catch{return''}}
@@ -57,8 +64,10 @@ async function merchantPageProductData(url:string,title:string){
   const reversed=[...html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image(?::secure_url)?|twitter:image)["'][^>]*>/gi)].map(m=>absoluteUrl(m[1],url));
   const images=uniqMedia(jsonImages,metaImages,reversed).slice(0,20);
   const description=stripHtml(chosen?.description)||stripHtml([...html.matchAll(/<meta[^>]+(?:property|name)=["'](?:description|og:description)["'][^>]+content=["']([^"']+)["'][^>]*>/gi)][0]?.[1]);
-  return{images,description};
- }catch{return{images:[] as string[],description:''}}
+  const brand=stripHtml(typeof chosen?.brand==="string"?chosen.brand:(chosen?.brand?.name||chosen?.manufacturer?.name||chosen?.manufacturer||""));
+  const mpn=stripHtml(chosen?.mpn||chosen?.sku||chosen?.model||chosen?.productID||"");
+  return{images,description,brand,mpn};
+ }catch{return{images:[] as string[],description:'',brand:'',mpn:''}}
 }
 const profile='https://shopify.dev/ucp/agent-profiles/2026-08-25/valid-with-capabilities.json';
 async function callCatalog(name:string,catalog:Record<string,unknown>){const payload={jsonrpc:'2.0',method:'tools/call',id:1,params:{name,arguments:{meta:{'ucp-agent':{profile}},catalog}}};const response=await fetch('https://catalog.shopify.com/api/ucp/mcp',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),cache:'no-store',signal:AbortSignal.timeout(8000)});const raw:any=await response.json();if(!response.ok||raw?.error)throw new Error(raw?.error?.message||`SHOPIFY_${name.toUpperCase()}_FAILED`);return raw?.result?.structuredContent||{}}
@@ -110,7 +119,10 @@ export async function POST(req:NextRequest){
   if(!exact)return NextResponse.json({error:'EXACT_PRODUCT_URL_UNAVAILABLE'},{status:404});
   const merchantPage=await merchantPageProductData(exact,String(match?.title||product.title||''));
   const selectedImages=selectedProducts.flatMap((p:any)=>imageMedia([...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage,...(p?.variants||[]).flatMap((v:any)=>[...(v?.media||[]),...(v?.images||[]),...(v?.image_urls||[]),v?.image,v?.featured_image,v?.featuredImage])].filter(Boolean)));
-  const gallery=uniqMedia(media,selectedImages,merchantPage.images,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image).slice(0,20);
+  const gallery=(merchantPage.images?.length
+    ?uniqMedia(merchantPage.images)
+    :uniqMedia(media,selectedImages,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image)
+  ).slice(0,20);
   const allVideos=uniqMedia(videos,match?.videos,match?.video_urls,match?.media_urls,selectedProducts.map((p:any)=>[p?.videos,p?.video_urls,p?.media_urls,videoMedia([...(p?.media||[])])]),variants.map((v:any)=>v.videos),product.videos);
   const tags=[...new Set<string>([...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(match?.tags)?match.tags:[]),...(Array.isArray(match?.product_tags)?match.product_tags:[]),...(Array.isArray(match?.intent_tags)?match.intent_tags:[]),...(Array.isArray(match?.attributes)?match.attributes.map((x:any)=>typeof x==='string'?x:(x?.value||x?.name||'')):[])].map(String).map(x=>x.trim()).filter(Boolean))];
   const rating=Number(match?.rating??match?.average_rating??match?.review_rating??match?.aggregateRating?.ratingValue??(product as any).rating)||null;
@@ -126,6 +138,6 @@ export async function POST(req:NextRequest){
   // Shopify can expose a short catalogue blurb alongside a much richer merchant description.
   // Keep the richest useful copy instead of accepting the first non-empty field.
   const description=descriptionCandidates.sort((a,b)=>b.length-a.length)[0]||`${title} from ${product.brand||'the original Shopify merchant'}. Full merchant details are available on the original product page.`;
-  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,tags,options,variants,description,descriptionHydrated:true,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail',rating,reviewCount}});
+  return NextResponse.json({url:exact,exact:true,source:'shopify-catalog',productId:String(match?.id||product.id||''),variantId:String(chosen?.id||product.variantId||''),product:{...product,id:String(match?.id||product.id||''),title,url:exact,image:gallery[0]||product.image,images:gallery,videos:allVideos,tags,options,variants,description,descriptionHydrated:true,brand:merchantPage.brand||product.brand,mpn:merchantPage.mpn||(product as any).mpn,supplierPrice:product.supplierPrice??product.price,retailPrice:product.retailPrice,pricingMode:product.pricingMode||'ynot-retail',rating,reviewCount}});
  }catch(e){return NextResponse.json({error:e instanceof Error?e.message:'PRODUCT_LINK_FAILED'},{status:400})}
 }
