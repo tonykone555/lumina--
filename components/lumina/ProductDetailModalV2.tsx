@@ -64,7 +64,14 @@ export default function ProductDetailModalV2({
   useEffect(()=>{
     document.documentElement.classList.add("ynot-pv2-open");
     document.body.classList.add("ynot-pv2-open");
+    const purge=()=>{
+      document.querySelectorAll(".ynot-pv2 .ynot-force-about-section,.ynot-pv2 [data-ynot-force-about='true'],.ynot-pv2 .ynot-force-extras").forEach(node=>node.remove());
+    };
+    purge();
+    const observer=new MutationObserver(purge);
+    observer.observe(document.body,{subtree:true,childList:true});
     return()=>{
+      observer.disconnect();
       document.documentElement.classList.remove("ynot-pv2-open");
       document.body.classList.remove("ynot-pv2-open");
     };
@@ -132,8 +139,8 @@ export default function ProductDetailModalV2({
           <button className="ynot-pv2-bag ynot-unified-add ynot-pv2-shop" type="button" disabled={checkoutBusy} data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"} data-ynot-cta-label="SHOP">
             <ShoppingBag/><span>SHOP</span>
           </button>
-          <button className="ynot-pv2-klarna ynot-unified-add" type="button" disabled={checkoutBusy} aria-label="Pay with Klarna" data-payment-method="klarna" data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"}>
-            <span>Klarna</span>
+          <button className="ynot-pv2-klarna" type="button" disabled={checkoutBusy} aria-label="Klarna" data-payment-method="klarna" data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"}>
+            <span className="ynot-pv2-klarna-mark">Klarna.</span>
           </button>
         </div>
 
