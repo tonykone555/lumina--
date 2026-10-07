@@ -19,8 +19,24 @@ const MIN_ZOOM=.015;
 const INITIAL_ROWS=18;
 const PRODUCTS_PER_VISIBLE_ROW=10;
 const INITIAL_PRODUCT_TARGET=INITIAL_ROWS*PRODUCTS_PER_VISIBLE_ROW;
-const SHOPIFY_WARM_TARGET=420;
-const DISCOVERY_WAVES=["","","","","","","","","","","",""];
+const SHOPIFY_WARM_TARGET=600;
+const DISCOVERY_WAVES=[
+ "new arrivals",
+ "popular",
+ "best sellers",
+ "top rated",
+ "premium",
+ "essentials",
+ "trending",
+ "accessories",
+ "new season",
+ "recommended",
+ "best value",
+ "editor picks",
+ "more options",
+ "similar styles",
+ "recent"
+];
 const SOURCE_OPTIONS:{key:LuminaSource;label:string;note:string}[]=[
  {key:"shopify",label:"Shopify",note:"Independent stores"},
  {key:"amazon",label:"Amazon",note:"Broad marketplace catalog"},
@@ -179,7 +195,16 @@ export default function LuminaWorld(){
    const r=await fetch(`/api/catalog?${params}`);const data:CatalogPage=await r.json();const incoming=dedupe((data.products||[]).map(p=>({...p,title:cleanTitle(p.title)})));
    if(!append&&requestId!==replaceRequestRef.current)return;
    if(data.error&&!incoming.length)setMarketError(data.error);
-   const nextCursor=data.pagination?.next_cursor;
+   const pagination=data.pagination||{};
+   const nextCursor=[
+    pagination.next_cursor,
+    pagination.nextCursor,
+    pagination.end_cursor,
+    pagination.endCursor,
+    pagination.cursor,
+    (pagination as any)?.page_info?.end_cursor,
+    (pagination as any)?.pageInfo?.endCursor
+   ].find(value=>typeof value==="string"&&value.length>0);
    if(marketOverride==="lumina"&&sourceOverride!=="amazon"){
     shopifyCursorRef.current=typeof nextCursor==="string"?nextCursor:"";
     shopifyPageDirectionRef.current=shopifyCursorRef.current?direction:"";
@@ -221,7 +246,7 @@ export default function LuminaWorld(){
  function submit(){const q=query.trim();if(!q)return;window.dispatchEvent(new Event("ynot:world-active"));setSubmitted(q);setFocus("");setSelected(null);setSuggestionsOpen(false);setHovered(null);setSortMode("discovery");setColourFilter("");setShapeFilter("");setCategoryKey("retail");setProducts([]);setMarketError("");resetPaging();centerWorld(PRODUCT_ENTRY_ZOOM);void fetchProducts(q,"",false,market,0,luminaSource)}
  function branch(direction:string){if(!submitted&&!scene.query)return;setFocus(direction);setSelected(null);setZoom(z=>Math.max(1.08,z));resetPaging();void fetchProducts(submitted||scene.query,direction,true,market,0,luminaSource,true)}
  function resetWorld(){window.dispatchEvent(new Event("ynot:world-reset"));replaceRequestRef.current++;setSubmitted("");setQuery("");setFocus("");setSelected(null);setSuggestionsOpen(false);setHovered(null);setProducts([]);setMarketError("");resetPaging();loadingRef.current=false;centerWorld(START_ZOOM)}
- function expandWorld(){if(!submitted||loadingRef.current)return;const now=Date.now();if(now-lastExpandRef.current<110)return;lastExpandRef.current=now;const page=waveRef.current+1;waveRef.current=page;const hasShopifyCursor=market==="lumina"&&luminaSource!=="amazon"&&Boolean(shopifyCursorRef.current);const hasNativePaging=market==="ebay"||luminaSource==="amazon"||hasShopifyCursor;const cue=hasShopifyCursor?shopifyPageDirectionRef.current:"";void fetchProducts(submitted,cue,true,market,page,luminaSource)}
+ function expandWorld(){if(!submitted||loadingRef.current)return;const now=Date.now();if(now-lastExpandRef.current<110)return;lastExpandRef.current=now;const page=waveRef.current+1;waveRef.current=page;const hasShopifyCursor=market==="lumina"&&luminaSource!=="amazon"&&Boolean(shopifyCursorRef.current);const cue=hasShopifyCursor?shopifyPageDirectionRef.current:(market==="lumina"?DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length]:"");void fetchProducts(submitted,cue,true,market,page,luminaSource)}
  function exploreProduct(p:Product){if(!submitted||loadingRef.current||deepProductRef.current===p.id)return;deepProductRef.current=p.id;const attrs=semanticAttributes(p);const cues=[...attrs.types,...attrs.materials,...attrs.colours,...attrs.shapes].slice(0,5);const cue=[cleanTitle(p.title),...cues,"similar products"].filter(Boolean).join(", ");const sourceOverride:LuminaSource=market==="lumina"&&productSource(p)==="shopify"?"shopify":luminaSource;setFocus(cues[0]||"Similar");shopifyCursorRef.current="";shopifyPageDirectionRef.current="";const page=waveRef.current+1;waveRef.current=page;void fetchProducts(submitted,cue,true,market,page,sourceOverride,true)}
  function changeMarket(next:MarketMode){if(next===market)return;setMarket(next);setSourceOpen(false);setSelected(null);setSuggestionsOpen(false);setHovered(null);setSortMode("discovery");setColourFilter("");setShapeFilter("");setProducts([]);setMarketError("");resetPaging();if(submitted)void fetchProducts(submitted,focus,false,next,0,luminaSource)}
  function changeLuminaSource(next:LuminaSource){setSourceOpen(false);if(next===luminaSource)return;setLuminaSource(next);setSelected(null);setSuggestionsOpen(false);setHovered(null);setSortMode("discovery");setColourFilter("");setShapeFilter("");setProducts([]);setMarketError("");resetPaging();if(submitted)void fetchProducts(submitted,focus,false,"lumina",0,next)}
@@ -362,7 +387,7 @@ export default function LuminaWorld(){
   return()=>{cancelled=true;window.removeEventListener("ynot:region-changed",onRegion)};
  },[]);
 
- useEffect(()=>{if(!submitted||deepProductRef.current||market!=="lumina"||luminaSource!=="shopify"||products.length>=SHOPIFY_WARM_TARGET||loadingRef.current)return;const needInitialRows=products.length<INITIAL_PRODUCT_TARGET;const canPage=Boolean(shopifyCursorRef.current);const t=window.setTimeout(()=>{if(loadingRef.current)return;const page=waveRef.current+1;waveRef.current=page;const cue=canPage?shopifyPageDirectionRef.current:DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length];void fetchProducts(submitted,cue,true,"lumina",page,"shopify")},needInitialRows?70:180);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length,shopifyFetchSerial,loading,fetchProducts]); // eslint-disable-line react-hooks/exhaustive-deps
+ useEffect(()=>{if(!submitted||deepProductRef.current||market!=="lumina"||luminaSource!=="shopify"||products.length>=SHOPIFY_WARM_TARGET||loadingRef.current)return;const needInitialRows=products.length<INITIAL_PRODUCT_TARGET;const canPage=Boolean(shopifyCursorRef.current);const t=window.setTimeout(()=>{if(loadingRef.current)return;const page=waveRef.current+1;waveRef.current=page;const cue=canPage?shopifyPageDirectionRef.current:DISCOVERY_WAVES[(page-1)%DISCOVERY_WAVES.length];void fetchProducts(submitted,cue,true,"lumina",page,"shopify")},needInitialRows?55:140);return()=>window.clearTimeout(t)},[submitted,market,luminaSource,products.length,shopifyFetchSerial,loading,fetchProducts]); // eslint-disable-line react-hooks/exhaustive-deps
 
  function pointerDown(e:React.PointerEvent<HTMLElement>){pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2){const p=[...pointersRef.current.values()],midX=(p[0].x+p[1].x)/2,midY=(p[0].y+p[1].y)/2;pinchRef.current={distance:Math.max(1,Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)),zoom,stageX:(midX-pan.x)/zoom,stageY:(midY-pan.y)/zoom};dragRef.current.drag=false;return}if((e.target as HTMLElement).closest("button,input,a,.lv4-detail,.lv4-source-picker"))return;dragRef.current={drag:true,px:e.clientX-pan.x,py:e.clientY-pan.y,lastX:e.clientX,lastY:e.clientY,startX:e.clientX,startY:e.clientY};(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)}
  function pointerMove(e:React.PointerEvent<HTMLElement>){if(pointersRef.current.has(e.pointerId))pointersRef.current.set(e.pointerId,{x:e.clientX,y:e.clientY});if(pointersRef.current.size===2&&pinchRef.current){const p=[...pointersRef.current.values()],d=Math.max(1,Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)),midX=(p[0].x+p[1].x)/2,midY=(p[0].y+p[1].y)/2,next=Math.min(2.8,Math.max(MIN_ZOOM,pinchRef.current.zoom*(d/pinchRef.current.distance)));setZoom(next);setPan({x:midX-pinchRef.current.stageX*next,y:midY-pinchRef.current.stageY*next});return}if(dragRef.current.drag){const dx=(e.clientX-dragRef.current.lastX)*1.42,dy=(e.clientY-dragRef.current.lastY)*1.42;dragRef.current.lastX=e.clientX;dragRef.current.lastY=e.clientY;setPan(previous=>{const next={x:previous.x+dx,y:previous.y+dy};if(!submitted){const home={x:-WORLD_CX*zoom,y:-WORLD_CY*zoom};next.x=Math.max(home.x-1100,Math.min(home.x+1100,next.x));next.y=Math.max(home.y-900,Math.min(home.y+900,next.y))}return next});const travel=Math.hypot(e.clientX-dragRef.current.startX,e.clientY-dragRef.current.startY),verticalTravel=Math.abs(e.clientY-dragRef.current.startY),horizontalTravel=Math.abs(e.clientX-dragRef.current.startX);if(!overviewRef.current&&submitted&&(travel>52||verticalTravel>42||horizontalTravel>42))expandWorld()}}
