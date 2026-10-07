@@ -9,7 +9,7 @@
     retail:{label:"Jewelry & Watches",subtitle:"Necklaces · rings · bracelets · watches",query:"jewelry watches necklaces rings bracelets earrings gold silver mens jewelry womens jewelry luxury affordable watches",tags:["Necklaces","Rings","Bracelets","Earrings","Watches","Men's Jewelry","Women's Jewelry","Gold","Silver","Luxury","Everyday","Gifts"]}
   };
   const ORDER=["fashion","tech","fitness","skin","hair","home","retail"];
-  const WORLD_CENTER=100000,FIT=0.78;
+  const WORLD_CENTER=100000,FIT=0.78,MOBILE_RADIUS=620;
   let activeKey="";
   const keyOf=bubble=>bubble?.dataset?.ynotCategoryKey||[...(bubble?.classList||[])].find(x=>x.startsWith("cat-"))?.slice(4)||"";
   const fitTribe=()=>{
@@ -17,6 +17,7 @@
     const raw=stage.style.transform||"",match=raw.match(/translate\((-?[\d.]+)px,\s*(-?[\d.]+)px\)\s*scale\(([\d.]+)\)/);if(!match)return;
     const tx=Number(match[1]),ty=Number(match[2]),zoom=Number(match[3]);if(!Number.isFinite(tx)||!Number.isFinite(ty)||!Number.isFinite(zoom))return;
     if(stage.dataset.ynotCategoryFit==='1')return;
+    if(window.matchMedia('(max-width: 767px)').matches){stage.dataset.ynotCategoryFit='1';return;}
     const nextZoom=zoom*FIT,cx=tx+WORLD_CENTER*zoom,cy=ty+WORLD_CENTER*zoom,nextTx=cx-WORLD_CENTER*nextZoom,nextTy=cy-WORLD_CENTER*nextZoom;
     stage.style.transform=`translate(${nextTx}px, ${nextTy}px) scale(${nextZoom})`;stage.dataset.ynotCategoryFit='1';
   };
@@ -25,7 +26,7 @@
     const mobile=window.matchMedia('(max-width: 767px)').matches;
     const bubbles=[...world.querySelectorAll(".lv4-category-bubble")].filter(node=>ORDER.includes(keyOf(node)));
     const byKey=new Map(bubbles.map(node=>[keyOf(node),node]));
-    ORDER.forEach((key,i)=>{const node=byKey.get(key);if(!(node instanceof HTMLElement))return;node.dataset.ynotCategoryKey=key;const a=i/ORDER.length*Math.PI*2-Math.PI/2,x=WORLD_CENTER+Math.cos(a)*800,y=WORLD_CENTER+Math.sin(a)*800;node.style.left=`${x}px`;node.style.top=`${y}px`;const cfg=MAP[key],b=node.querySelector("b"),s=node.querySelector("span");if(b){b.textContent=cfg.label;b.style.fontSize=mobile?"40px":"30px";b.style.lineHeight=mobile?"0.98":"1.02"}if(s){s.textContent=cfg.subtitle;s.style.fontSize="17px";s.style.lineHeight="1.18"}});
+    ORDER.forEach((key,i)=>{const node=byKey.get(key);if(!(node instanceof HTMLElement))return;node.dataset.ynotCategoryKey=key;const radius=mobile?MOBILE_RADIUS:800,a=i/ORDER.length*Math.PI*2-Math.PI/2,x=WORLD_CENTER+Math.cos(a)*radius,y=WORLD_CENTER+Math.sin(a)*radius;node.style.left=`${x}px`;node.style.top=`${y}px`;const cfg=MAP[key],b=node.querySelector("b"),s=node.querySelector("span");if(b){b.textContent=cfg.label;b.style.fontSize=mobile?"40px":"30px";b.style.lineHeight=mobile?"0.98":"1.02"}if(s){s.textContent=cfg.subtitle;s.style.fontSize="17px";s.style.lineHeight="1.18"}});
   };
   const apply=()=>{arrange();fitTribe();const intent=(document.querySelector(".lv4-intent span")?.textContent||"").toLowerCase();for(const [key,cfg] of Object.entries(MAP))if(intent.includes(cfg.label.toLowerCase()))activeKey=key;const cfg=MAP[activeKey];if(!cfg)return;document.querySelectorAll(".lv4-textbubble").forEach((node,i)=>{if(node instanceof HTMLElement)node.textContent=cfg.tags[i%cfg.tags.length]})};
   document.addEventListener("click",event=>{const target=event.target instanceof Element?event.target:null;if(!target)return;const category=target.closest(".lv4-category-bubble");if(category){activeKey=keyOf(category);setTimeout(apply,50)}},false);
