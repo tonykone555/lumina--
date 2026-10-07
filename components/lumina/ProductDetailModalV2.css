@@ -191,4 +191,17 @@ html.ynot-pv2-open .ynot-description-toggle:not(.ynot-pv2-description-toggle){
   padding-top:2px;
 }
 
-.ynot-pv2-hero{display:none!important}
+
+
+/* Keep the main v2 hero, but remove legacy review/about image blocks injected around it. */
+html.ynot-pv2-open .ynot-about-images,
+html.ynot-pv2-open .ynot-about-image,
+html.ynot-pv2-open .ynot-rich-about-images,
+html.ynot-pv2-open .ynot-review-images,
+html.ynot-pv2-open .ynot-reviews-gallery,
+html.ynot-pv2-open .ynot-force-reviews + img,
+html.ynot-pv2-open .ynot-force-reviews ~ img,
+html.ynot-pv2-open .ynot-force-reviews + figure,
+html.ynot-pv2-open .ynot-force-reviews ~ figure{
+  display:none!important;
+}
