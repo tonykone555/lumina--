@@ -369,11 +369,23 @@ function buildEbayDescription(product:any,taxonomy:any,sourceOrigin:string){
   return sections.filter(Boolean).join("\n\n").slice(0,4000);
 }
 
+async function hydrateEbayCatalogueProduct(product:any){
+ try{
+  const base=(process.env.NEXT_PUBLIC_SITE_URL||process.env.NEXT_PUBLIC_APP_URL||process.env.VERCEL_PROJECT_PRODUCTION_URL||"https://ynotworld.app").replace(/\/$/,"");
+  const url=base.startsWith("http")?`${base}/api/commerce/product-link`:`https://${base}/api/commerce/product-link`;
+  const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(product),cache:"no-store",signal:AbortSignal.timeout(12000)});
+  const data=await response.json().catch(()=>null);
+  if(response.ok&&data?.product)return{...product,...data.product};
+ }catch{}
+ return product;
+}
+
 async function ebayPrepareCandidate(query:string,productId?:string){
   const products=await ebayRawCatalog(query,"FR",40);
-  const product=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
+  const shallowProduct=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
     products.find((p:any)=>p?.id&&p?.title&&p?.image&&Number(p?.price)>0);
-  if(!product)return{ok:false,error:"YNOT_PRODUCT_NOT_FOUND"};
+  if(!shallowProduct)return{ok:false,error:"YNOT_PRODUCT_NOT_FOUND"};
+  const product=await hydrateEbayCatalogueProduct(shallowProduct);
 
   const specialistPricing=ebaySpecialistRetail(product,query);
   const ebayRetailPrice=Number.isFinite(Number(specialistPricing.retail))&&Number(specialistPricing.retail)>0
