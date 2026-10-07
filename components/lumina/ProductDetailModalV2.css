@@ -185,7 +185,7 @@ html.ynot-pv2-open .ynot-description-toggle:not(.ynot-pv2-description-toggle){
 }
 
 /* Compact thumbnail-only gallery at the top of the popup. */
-.ynot-pv2-gallery{padding-top:2px}
+.ynot-pv2-gallery{padding-top:2px;margin-bottom:10px}
 .ynot-pv2-gallery .ynot-pv2-thumbs{
   margin-top:0;
   padding-top:2px;
@@ -203,16 +203,9 @@ html.ynot-pv2-open .ynot-reviews-gallery{
 }
 
 
-.ynot-pv2-reviews{margin:2px 0 18px}
+.ynot-pv2-reviews{margin:8px 0 18px}
 .ynot-pv2-reviews h3{
  margin:0 0 10px;font-size:12px;font-weight:850;letter-spacing:.01em;color:#202320
-}
-.ynot-pv2-review-image{
- width:100%;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;
- border-radius:22px;background:transparent
-}
-.ynot-pv2-review-image img{
- width:100%;height:100%;object-fit:contain;background:transparent;border:0
 }
 .ynot-pv2-bundle{
  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px
