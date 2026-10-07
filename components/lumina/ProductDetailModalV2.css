@@ -21,19 +21,27 @@
 .ynot-pv2-gallery{clear:both}
 .ynot-pv2-hero{
  width:100%;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;
- border:1px solid rgba(20,22,20,.10);border-radius:23px;background:#fff;
+ border:0;border-radius:23px;background:transparent;
 }
 .ynot-pv2-hero img{width:100%;height:100%;object-fit:contain;padding:16px}
 .ynot-pv2-thumbs{display:flex;gap:10px;overflow-x:auto;padding:12px 4px 3px;scroll-snap-type:x proximity}
 .ynot-pv2-thumbs button{
- flex:0 0 56px;width:56px;height:56px;padding:5px;border-radius:14px;overflow:hidden;scroll-snap-align:start;
- border:1px solid rgba(24,26,24,.14);background:rgba(255,255,255,.78);opacity:.58
+ flex:0 0 56px;width:56px;height:56px;padding:0;border-radius:14px;overflow:hidden;scroll-snap-align:start;
+ border:0;background:transparent;opacity:.58
 }
-.ynot-pv2-thumbs button.active{opacity:1;border-color:#242624}
-.ynot-pv2-thumbs img{width:100%;height:100%;object-fit:contain;border-radius:12px;background:#fff}
+.ynot-pv2-thumbs button.active{opacity:1;box-shadow:0 0 0 1.5px rgba(30,32,30,.42)}
+.ynot-pv2-thumbs img{width:100%;height:100%;object-fit:contain;border-radius:12px;background:transparent}
 .ynot-pv2-dots{width:max-content;margin:8px auto 13px;padding:5px 8px;display:flex;gap:5px;border-radius:999px;background:rgba(34,36,34,.13)}
 .ynot-pv2-dots i{width:5px;height:5px;border-radius:50%;background:rgba(26,28,26,.28)}
 .ynot-pv2-dots i.active{background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.10)}
+.ynot-pv2-flexpay{
+ display:flex;align-items:center;gap:8px;margin:2px 0 18px;padding:0 2px;color:#222522;
+ font-size:11px;font-weight:820;letter-spacing:.01em;
+}
+.ynot-pv2-flexpay-badge{
+ display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;
+ background:#202320;color:#fff;font-size:10px;line-height:1;
+}
 .ynot-pv2-similar{margin:2px 0 17px}
 .ynot-pv2-section-label{
  width:max-content;display:flex;align-items:center;gap:9px;padding:8px 12px;border:1px solid rgba(24,26,24,.15);
@@ -44,31 +52,41 @@
 .ynot-pv2-similar-card{
  flex:0 0 min(245px,70vw);height:88px;display:grid;grid-template-columns:64px minmax(0,1fr);gap:9px;align-items:center;
  padding:8px;text-align:left;scroll-snap-align:start;border:1px solid rgba(24,26,24,.13);border-radius:22px;
- background:rgba(255,255,255,.52);color:#1c1e1c
+ background:rgba(255,255,255,.34);color:#1c1e1c
 }
-.ynot-pv2-similar-card>img{width:64px;height:64px;object-fit:contain;border-radius:12px;background:#fff}
+.ynot-pv2-similar-card>img{width:64px;height:64px;object-fit:contain;border-radius:12px;background:transparent}
 .ynot-pv2-similar-card span{min-width:0}
 .ynot-pv2-similar-card b,.ynot-pv2-similar-card small,.ynot-pv2-similar-card em{display:block}
 .ynot-pv2-similar-card b{font-size:10px;text-transform:uppercase;letter-spacing:.05em}
 .ynot-pv2-similar-card small{margin-top:3px;font-size:10px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#646864}
 .ynot-pv2-similar-card em{margin-top:4px;font-size:11px;font-style:normal;font-weight:850}
 .ynot-pv2-info{padding:2px 2px 6px}
-.ynot-pv2-brand{display:block;font-size:7px;font-weight:850;letter-spacing:.12em;font-size:11px;text-transform:uppercase;color:#555a55}
+.ynot-pv2-brand{display:block;font-size:9px;font-weight:850;letter-spacing:.12em;text-transform:uppercase;color:#555a55}
 .ynot-pv2-source{display:block;margin-top:4px;font-size:7px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#858985}
-.ynot-pv2-info h2{margin:12px 0 12px;font:820 clamp(22px,3.6vw,32px)/1.02 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:-.045em;color:#121412}
-.ynot-pv2-info>strong{display:block;font:850 clamp(22px,3.3vw,30px)/1 Inter,ui-sans-serif,system-ui,sans-serif;color:#121412}
+.ynot-pv2-info h2{margin:10px 0 10px;font:820 clamp(20px,3.2vw,27px)/1.02 Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:-.04em;color:#121412}
+.ynot-pv2-info>strong{display:block;font:850 clamp(22px,3.1vw,28px)/1 Inter,ui-sans-serif,system-ui,sans-serif;color:#121412}
 .ynot-pv2-option{
- margin-top:14px;min-height:44px;max-width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;
- padding:0 13px;border:1px solid rgba(24,26,24,.16);border-radius:19px;background:rgba(255,255,255,.68);color:#242624;font-weight:800
+ margin-top:14px;min-height:38px;max-width:min(280px,100%);display:flex;align-items:center;justify-content:space-between;gap:8px;
+ padding:0 12px;border:1px solid rgba(255,255,255,.9);border-radius:16px;
+ background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(238,239,236,.86));
+ color:#292c29;font-weight:800;font-size:10px;letter-spacing:.005em;
+ box-shadow:0 8px 18px rgba(30,34,30,.14),inset 0 1px 0 #fff,inset 0 -1px 0 rgba(20,22,20,.05)
 }
-.ynot-pv2-option svg{width:18px}
-.ynot-pv2-actions{display:grid;grid-template-columns:minmax(0,1fr) 54px;gap:8px;margin-top:13px}
-.ynot-pv2-actions button{height:50px;border-radius:16px}
-.ynot-pv2-bag{display:flex;align-items:center;justify-content:center;gap:9px;border:1px solid #101110;background:#101110;color:#fff;font-weight:850;letter-spacing:.14em}
+.ynot-pv2-option svg{width:14px}
+.ynot-pv2-actions{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+.ynot-pv2-actions button{width:100%;height:52px;border-radius:18px}
+.ynot-pv2-bag{
+ display:flex;align-items:center;justify-content:center;gap:10px;border:1px solid #101110;
+ background:#101110;color:#fff;font-weight:850;font-size:10px;letter-spacing:.14em;
+ box-shadow:0 10px 24px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.08)
+}
 .ynot-pv2-bag svg{width:18px}
-.ynot-pv2-heart{display:grid;place-items:center;border:1px solid rgba(24,26,24,.17);background:rgba(255,255,255,.60);color:#292c29}
-.ynot-pv2-heart svg{width:21px;height:21px}
-.ynot-pv2-heart.active svg{fill:currentColor}
+.ynot-pv2-bag-secondary{
+ display:grid;place-items:center;border:1px solid rgba(255,255,255,.9);
+ background:linear-gradient(180deg,rgba(248,249,246,.98),rgba(218,221,216,.92));
+ color:#2d302d;box-shadow:0 9px 20px rgba(30,34,30,.14),inset 0 1px 0 #fff
+}
+.ynot-pv2-bag-secondary svg{width:20px;height:20px}
 .ynot-pv2-directions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:12px}
 .ynot-pv2-directions button{min-height:40px;padding:0 6px;border:1px solid rgba(24,26,24,.14);border-radius:18px;background:rgba(255,255,255,.54);color:#303330;font-weight:780;font-size:10px}
 .ynot-pv2-directions small{display:inline-grid;place-items:center;width:15px;height:15px;margin-left:3px;border-radius:50%;background:rgba(20,22,20,.08);font-size:9px}
@@ -78,15 +96,26 @@
 .ynot-pv2-description a{display:flex;align-items:center;gap:6px;width:max-content;margin-top:10px;color:#161816;font-weight:800;font-size:10px;text-decoration:none}
 .ynot-pv2-description a svg{width:15px}
 .ynot-pv2-error{margin:14px 0 0;padding:11px 13px;border-radius:14px;background:#fff2f0;color:#8d3831;font-size:12px}
-.ynot-pv2-options-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:end center;padding:14px;background:rgba(10,11,10,.32);backdrop-filter:blur(8px)}
-.ynot-pv2-options{width:min(560px,100%);max-height:76dvh;overflow:auto;padding:16px;border-radius:22px;background:#f4f5f2;color:#151715;box-shadow:0 24px 80px rgba(0,0,0,.26)}
+.ynot-pv2-options-backdrop{
+ position:fixed;inset:0;z-index:1200;display:grid;place-items:end center;padding:12px;
+ background:rgba(10,11,10,.38);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
+}
+.ynot-pv2-options{
+ width:min(520px,100%);max-height:min(78dvh,620px);overflow:auto;overscroll-behavior:contain;
+ padding:16px 14px calc(18px + env(safe-area-inset-bottom));border-radius:24px 24px 18px 18px;
+ background:#f4f5f2;color:#151715;box-shadow:0 24px 80px rgba(0,0,0,.28);
+ -webkit-overflow-scrolling:touch
+}
 .ynot-pv2-options header{display:flex;justify-content:space-between;align-items:flex-start}
 .ynot-pv2-options header small{font-size:9px;letter-spacing:.13em}.ynot-pv2-options header h3{margin:5px 0 0;font-size:20px}
 .ynot-pv2-options header button{width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:#1d1f1d;color:#fff}
 .ynot-pv2-options-list{display:grid;gap:8px;margin-top:16px}
-.ynot-pv2-options-list>button{display:grid;grid-template-columns:64px 1fr;gap:12px;align-items:center;text-align:left;padding:8px;border:1px solid rgba(20,22,20,.12);border-radius:18px;background:#fff;color:#1a1c1a}
+.ynot-pv2-options-list>button{
+ display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center;text-align:left;padding:7px;
+ border:1px solid rgba(20,22,20,.10);border-radius:16px;background:rgba(255,255,255,.72);color:#1a1c1a
+}
 .ynot-pv2-options-list>button.active{border-color:#111;box-shadow:0 0 0 1px #111}
-.ynot-pv2-options-list img{width:64px;height:64px;object-fit:contain;border-radius:12px}.ynot-pv2-options-list b,.ynot-pv2-options-list small{display:block}.ynot-pv2-options-list small{margin-top:5px;color:#696d69}
+.ynot-pv2-options-list img{width:56px;height:56px;object-fit:contain;border-radius:10px;background:transparent}.ynot-pv2-options-list b,.ynot-pv2-options-list small{display:block}.ynot-pv2-options-list small{margin-top:5px;color:#696d69}
 
 @media(max-width:760px){
  .ynot-pv2-backdrop{padding:14px;align-items:center}
@@ -98,8 +127,17 @@
  .ynot-pv2-similar{margin-bottom:15px}.ynot-pv2-section-label{font-size:10px;padding:7px 11px}
  .ynot-pv2-similar-card{flex-basis:72%;height:84px;grid-template-columns:60px minmax(0,1fr);border-radius:16px}
  .ynot-pv2-similar-card>img{width:60px;height:60px}
- .ynot-pv2-info h2{font-size:24px}.ynot-pv2-info>strong{font-size:24px}
- .ynot-pv2-actions{grid-template-columns:minmax(0,1fr) 52px}.ynot-pv2-actions button{height:48px;border-radius:15px}
+ .ynot-pv2-info h2{font-size:21px}.ynot-pv2-info>strong{font-size:24px}
+ .ynot-pv2-actions{grid-template-columns:1fr;gap:9px}.ynot-pv2-actions button{height:50px;border-radius:16px}
  .ynot-pv2-directions{gap:5px}.ynot-pv2-directions button{min-height:38px;padding:0 4px;font-size:9px}
  .ynot-pv2-description-toggle{min-height:46px;font-size:11px}
+}
+
+@media(max-width:760px){
+ .ynot-pv2-options-backdrop{padding:8px;place-items:end center}
+ .ynot-pv2-options{width:100%;max-height:72dvh;border-radius:22px 22px 14px 14px;padding:14px 12px calc(16px + env(safe-area-inset-bottom))}
+ .ynot-pv2-options header{position:sticky;top:-14px;z-index:2;padding:10px 0 8px;background:#f4f5f2}
+ .ynot-pv2-options-list{padding-bottom:6px}
+ .ynot-pv2-option{max-width:230px;min-height:36px;font-size:9px}
+ .ynot-pv2-flexpay{font-size:10px;margin-bottom:14px}
 }
