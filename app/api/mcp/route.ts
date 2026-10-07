@@ -320,6 +320,55 @@ function ebaySpecialistRetail(product:any,query:string){
   };
 }
 
+function uniqueEbayImages(product:any){
+  const values:any[]=[
+    ...(Array.isArray(product?.images)?product.images:[]),
+    product?.image,
+    ...(Array.isArray(product?.variants)?product.variants.flatMap((v:any)=>[
+      ...(Array.isArray(v?.images)?v.images:[]),
+      v?.image
+    ]):[])
+  ];
+  const seen=new Set<string>(); const out:string[]=[];
+  for(const value of values){
+    const url=String(value||"").trim();
+    if(!/^https?:\/\//i.test(url)||seen.has(url))continue;
+    seen.add(url); out.push(url);
+    if(out.length>=12)break;
+  }
+  return out;
+}
+
+function ebayFactLines(product:any,taxonomy:any,sourceOrigin:string){
+  const lines:string[]=[];
+  const aspects=taxonomy?.aspects&&typeof taxonomy.aspects==="object"?taxonomy.aspects:{};
+  for(const [name,values] of Object.entries(aspects)){
+    const cleanValues=(Array.isArray(values)?values:[values]).map(cleanEbayText).filter(Boolean);
+    if(cleanValues.length)lines.push(`${cleanEbayText(name)}: ${cleanValues.join(", ")}`);
+  }
+  const variants=(Array.isArray(product?.variants)?product.variants:[])
+    .map((v:any)=>cleanEbayText(v?.label||v?.title||v?.name))
+    .filter((x:string)=>x&&x.toLowerCase()!=="default title");
+  const uniqueVariants=[...new Set(variants)].slice(0,12);
+  if(uniqueVariants.length)lines.push(`Available options: ${uniqueVariants.join(", ")}`);
+  if(sourceOrigin)lines.push(`Ships from: ${sourceOrigin}`);
+  return lines;
+}
+
+function buildEbayDescription(product:any,taxonomy:any,sourceOrigin:string){
+  const title=cleanEbayText(product?.title);
+  const merchant=cleanEbayText(product?.brand);
+  const sourceDescription=cleanEbayText(product?.description);
+  const facts=ebayFactLines(product,taxonomy,sourceOrigin);
+  const sections:string[]=[];
+  sections.push(title);
+  if(sourceDescription&&sourceDescription.toLowerCase()!==title.toLowerCase())sections.push(sourceDescription);
+  if(facts.length)sections.push("Item details\n"+facts.map(x=>`• ${x}`).join("\n"));
+  if(merchant)sections.push(`Source merchant: ${merchant}`);
+  sections.push("Please verify the model, part number, dimensions and compatibility shown in the listing before ordering.");
+  return sections.filter(Boolean).join("\n\n").slice(0,4000);
+}
+
 async function ebayPrepareCandidate(query:string,productId?:string){
   const products=await ebayRawCatalog(query,"FR",40);
   const product=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
@@ -378,7 +427,8 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     available:product?.available!==false
   });
 
-  const description=cleanEbayText(product.description);
+  const description=buildEbayDescription(product,taxonomy,sourceOrigin);
+  const imageUrls=uniqueEbayImages(product);
   const defaults={
     merchantLocationKey:matchingLocation?.merchantLocationKey||"",
     fulfillmentPolicyId:readiness.fulfillmentPolicies?.[0]?.id||"",
@@ -388,8 +438,8 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   const item={
     sku:`YNOT-FR-${String(product.id||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(-30)}`,
     title:cleanEbayText(product.title).slice(0,80),
-    description:(description&&description!=="[object Object]"?description:`${cleanEbayText(product.title)} — ${cleanEbayText(product.brand)}`).slice(0,4000),
-    imageUrls:(Array.isArray(product.images)&&product.images.length?product.images:[product.image]).filter(Boolean).slice(0,12),
+    description,
+    imageUrls,
     quantity:5,
     price:ebayRetailPrice,
     currency:String(product.currency||"EUR"),
