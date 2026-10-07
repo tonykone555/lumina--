@@ -380,12 +380,39 @@ async function hydrateEbayCatalogueProduct(product:any){
  return product;
 }
 
+function specialistIdentity(product:any){
+ const title=cleanEbayText(product?.title);
+ const hay=cleanEbayText([product?.title,product?.description].filter(Boolean).join(" "));
+ const brands=["Hilti","Singer","Technics","BMW","Dell","HPE","HP","Thetford","Leica","Nikon","Siemens","Schneider","Stihl","Makita","Bernina","Epson","Allen-Bradley","Lelit","Tektronix","Rayqual"];
+ const brand=cleanEbayText(product?.brand);
+ const shopish=/shop|store|parts|supply|sewingmachine|caratech|xdrilled|omegacarparts/i.test(brand);
+ const inferredBrand=brands.find(b=>new RegExp(`\\b${b.replace("-","[- ]?")}\\b`,"i").test(hay))||"";
+ const mpnExisting=cleanEbayText(product?.mpn);
+ const partPatterns=[
+  /\b(?:part(?:\s*(?:no\.?|number|#))?|mpn|oem|sku|model)\s*[:#-]?\s*([A-Z0-9][A-Z0-9._\/-]{3,})\b/i,
+  /\b([0-9]{6,}[A-Z0-9._\/-]*)\b/,
+  /\b([A-Z]{1,6}[- ]?[0-9]{3,}[A-Z0-9._\/-]*)\b/
+ ];
+ let inferredMpn="";
+ if(!mpnExisting)for(const re of partPatterns){const m=hay.match(re);if(m?.[1]){inferredMpn=m[1].replace(/\s+/g,"").trim();break}}
+ return{
+  brand:shopish?(inferredBrand||""):(brand||inferredBrand),
+  mpn:mpnExisting||inferredMpn
+ };
+}
+function knownNumber(value:any){
+ if(value==null||value==="")return null;
+ const n=Number(value);return Number.isFinite(n)?n:null;
+}
+
 async function ebayPrepareCandidate(query:string,productId?:string){
   const products=await ebayRawCatalog(query,"FR",40);
   const shallowProduct=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
     products.find((p:any)=>p?.id&&p?.title&&p?.image&&Number(p?.price)>0);
   if(!shallowProduct)return{ok:false,error:"YNOT_PRODUCT_NOT_FOUND"};
-  const product=await hydrateEbayCatalogueProduct(shallowProduct);
+  const hydrated=await hydrateEbayCatalogueProduct(shallowProduct);
+  const identity=specialistIdentity(hydrated);
+  const product={...hydrated,brand:identity.brand||hydrated.brand,mpn:identity.mpn||hydrated.mpn};
 
   const specialistPricing=ebaySpecialistRetail(product,query);
   const ebayRetailPrice=Number.isFinite(Number(specialistPricing.retail))&&Number(specialistPricing.retail)>0
@@ -432,8 +459,8 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     categoryDomainOk:taxonomy.categoryDomainOk===true,
     missingRequiredAspects:taxonomy.missingRequiredAspects,
     originVerified:Boolean(originVerified&&matchingLocation),
-    deliveryDaysMax:Number.isFinite(Number(product?.deliveryDaysMax))?Number(product.deliveryDaysMax):null,
-    shippingCost:Number.isFinite(Number(product?.shippingCost))?Number(product.shippingCost):null,
+    deliveryDaysMax:knownNumber(product?.deliveryDaysMax),
+    shippingCost:knownNumber(product?.shippingCost),
     supplierPrice:Number.isFinite(Number(product?.supplierPrice))?Number(product.supplierPrice):null,
     retailPrice:ebayRetailPrice,
     available:product?.available!==false
@@ -452,13 +479,14 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     title:cleanEbayText(product.title).slice(0,80),
     description,
     imageUrls,
-    quantity:5,
+    quantity:1,
     price:ebayRetailPrice,
     currency:String(product.currency||"EUR"),
     categoryId:taxonomy.categoryId,
     marketplaceId:"EBAY_FR" as const,
     condition:"NEW",
     brand:cleanEbayText(product.brand)||undefined,
+    mpn:cleanEbayText(product.mpn)||undefined,
     aspects:taxonomy.aspects,
     ...defaults
   };
