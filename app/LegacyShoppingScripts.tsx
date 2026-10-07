@@ -68,6 +68,6 @@ export default function LegacyShoppingScripts(){
 
   return <>
     {scripts.map(src => <Script key={src} src={src} strategy="afterInteractive" />)}
-    {pathname === "/" ? <Script src="/ynot-desktop-home-video.js?v=11" strategy="afterInteractive" /> : null}
+    {null}
   </>;
 }
