@@ -1,6 +1,7 @@
 "use client";
 
 import {useEffect,useMemo,useState} from "react";
+import {createPortal} from "react-dom";
 import {ChevronDown,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
 import "./ProductDetailModalV2.css";
 
@@ -153,16 +154,19 @@ export default function ProductDetailModalV2({
         </div>}
       </section>
 
-      {optionsOpen&&<div className="ynot-pv2-options-backdrop" onClick={()=>setOptionsOpen(false)}>
-        <section className="ynot-pv2-options" onClick={e=>e.stopPropagation()}>
-          <header><div><small>PRODUCT OPTIONS</small><h3>Choose a variant</h3></div><button onClick={()=>setOptionsOpen(false)} aria-label="Close options"><X/></button></header>
-          <div className="ynot-pv2-options-list">
-            {variants.map(v=><button key={v.id} disabled={!v.available} className={v.id===product.variantId?"active":""} onClick={()=>{onSelectVariant(v);setOptionsOpen(false)}}>
-              {v.image&&<img src={v.image} alt=""/>}<span><b>{v.label}</b>{v.price!=null&&<small>{money({...product,price:v.price,currency:v.currency||product.currency})}</small>}</span>
-            </button>)}
-          </div>
-        </section>
-      </div>}
+      {optionsOpen&&typeof document!=="undefined"&&createPortal(
+        <div className="ynot-pv2-options-backdrop" onClick={()=>setOptionsOpen(false)}>
+          <section className="ynot-pv2-options" role="dialog" aria-modal="true" aria-label="Choose a variant" onClick={e=>e.stopPropagation()}>
+            <header><div><small>PRODUCT OPTIONS</small><h3>Choose a variant</h3></div><button onClick={()=>setOptionsOpen(false)} aria-label="Close options"><X/></button></header>
+            <div className="ynot-pv2-options-list">
+              {variants.map(v=><button key={v.id} disabled={!v.available} className={v.id===product.variantId?"active":""} onClick={()=>{onSelectVariant(v);setOptionsOpen(false)}}>
+                {v.image&&<img src={v.image} alt=""/>}<span><b>{v.label}</b>{v.price!=null&&<small>{money({...product,price:v.price,currency:v.currency||product.currency})}</small>}</span>
+              </button>)}
+            </div>
+          </section>
+        </div>,
+        document.body
+      )}
     </aside>
   </div>
 }
