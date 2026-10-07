@@ -77,7 +77,10 @@ export default function ProductDetailModalV2({
       <button className="ynot-pv2-close" onClick={onClose} aria-label="Close product"><X/></button>
 
       <section className="ynot-pv2-gallery">
-        {images.length>0&&<div className="ynot-pv2-thumbs" aria-label="Product images">
+        <div className="ynot-pv2-hero">
+          <img src={product.image} alt={clean(product.title)} draggable={false}/>
+        </div>
+        {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
           {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onClick={()=>onImage(src)} aria-label={`View image ${index+1}`}>
             <img src={src} alt="" draggable={false}/>
           </button>)}
