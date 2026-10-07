@@ -1,7 +1,7 @@
 "use client";
 
 import {useMemo,useState} from "react";
-import {ChevronDown,Heart,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
+import {ChevronDown,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
 import "./ProductDetailModalV2.css";
 
 type Variant={
@@ -82,6 +82,8 @@ export default function ProductDetailModalV2({
         </div>}
       </section>
 
+      {Number(product.price||0)>=200&&<div className="ynot-pv2-flexpay"><span className="ynot-pv2-flexpay-badge" aria-hidden="true">✹</span><b>Flexible payment</b></div>}
+
       <section className="ynot-pv2-similar">
         <div className="ynot-pv2-section-label"><Sparkles/><span>{visualSimilarLoading?"Finding similar picks…":"Similar picks"}</span></div>
         <div className="ynot-pv2-similar-track">
@@ -106,7 +108,9 @@ export default function ProductDetailModalV2({
           <button className="ynot-pv2-bag ynot-unified-add" type="button" disabled={checkoutBusy}>
             <ShoppingBag/><span>YNOT BAG</span>
           </button>
-          <button className={`ynot-pv2-heart ${liked?"active":""}`} onClick={onSave} aria-label={liked?"Remove from saves":"Save product"}><Heart/></button>
+          <button className="ynot-pv2-bag-secondary ynot-unified-add" type="button" disabled={checkoutBusy} aria-label="Add to YNOT bag">
+            <ShoppingBag/>
+          </button>
         </div>
 
         <div className="ynot-pv2-directions">
