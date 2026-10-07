@@ -158,13 +158,22 @@ export async function ensureEbayInventoryLocationForOrigin(input:{country:string
  return (refreshed.locations||[]).find((x:any)=>x.merchantLocationKey===merchantLocationKey)||null;
 }
 
+export async function getEbayPrivileges(){
+ const data=await ebay("/sell/account/v1/privilege");
+ return{
+  sellerRegistrationCompleted:data?.sellerRegistrationCompleted===true,
+  sellingLimit:data?.sellingLimit||null
+ };
+}
+
 export async function getEbayReadiness(marketplaceId:string=ebayMarketplaceId()){
  const marketplace=encodeURIComponent(marketplaceId);
- const [locations,fulfillment,payment,returns]=await Promise.all([
+ const [locations,fulfillment,payment,returns,privileges]=await Promise.all([
   ebay("/sell/inventory/v1/location?limit=200"),
   ebay(`/sell/account/v1/fulfillment_policy?marketplace_id=${marketplace}`,{},marketplaceId),
   ebay(`/sell/account/v1/payment_policy?marketplace_id=${marketplace}`,{},marketplaceId),
-  ebay(`/sell/account/v1/return_policy?marketplace_id=${marketplace}`,{},marketplaceId)
+  ebay(`/sell/account/v1/return_policy?marketplace_id=${marketplace}`,{},marketplaceId),
+  getEbayPrivileges()
  ]);
  const locationRows=locations?.locations||[];
  const fulfillmentRows=fulfillment?.fulfillmentPolicies||[];
@@ -172,7 +181,9 @@ export async function getEbayReadiness(marketplaceId:string=ebayMarketplaceId())
  const returnRows=returns?.returnPolicies||[];
  return{
   marketplaceId,
-  ready:locationRows.length>0&&fulfillmentRows.length>0&&paymentRows.length>0&&returnRows.length>0,
+  ready:privileges.sellerRegistrationCompleted&&locationRows.length>0&&fulfillmentRows.length>0&&paymentRows.length>0&&returnRows.length>0,
+  sellerRegistrationCompleted:privileges.sellerRegistrationCompleted,
+  sellingLimit:privileges.sellingLimit,
   locations:locationRows.map((x:any)=>({merchantLocationKey:x.merchantLocationKey,name:x.name,status:x.merchantLocationStatus,location:x.location})),
   fulfillmentPolicies:fulfillmentRows.map((x:any)=>({id:x.fulfillmentPolicyId,name:x.name})),
   paymentPolicies:paymentRows.map((x:any)=>({id:x.paymentPolicyId,name:x.name})),
@@ -519,7 +530,16 @@ export async function publishEbayProduct(input:PublishEbayProduct){
   }
   offerId=String(existing?.offerId||"");
   if(offerId){
-   await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify(offerBody)},marketplaceId);
+   try{
+    await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"PUT",body:JSON.stringify(offerBody)},marketplaceId);
+   }catch(updateError){
+    const message=updateError instanceof Error?updateError.message:String(updateError);
+    if(/25713|offre n'est pas disponible|offer is not available/i.test(message)){
+     await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}`,{method:"DELETE"},marketplaceId);
+     const recreated=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify(offerBody)},marketplaceId);
+     offerId=String(recreated?.offerId||"");
+    }else throw updateError;
+   }
   }else{
    try{
     const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify(offerBody)},marketplaceId);
