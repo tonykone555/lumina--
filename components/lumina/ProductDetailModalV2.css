@@ -97,19 +97,24 @@
 .ynot-pv2-description a svg{width:15px}
 .ynot-pv2-error{margin:14px 0 0;padding:11px 13px;border-radius:14px;background:#fff2f0;color:#8d3831;font-size:12px}
 .ynot-pv2-options-backdrop{
- position:fixed;inset:0;z-index:6000;display:grid;place-items:end center;padding:12px;
- background:rgba(10,11,10,.38);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
+ position:fixed;inset:0;z-index:99999;display:grid;place-items:end center;padding:12px;
+ background:rgba(10,11,10,.18);backdrop-filter:none;-webkit-backdrop-filter:none;
 }
 .ynot-pv2-options{
- width:min(520px,100%);max-height:min(78dvh,620px);overflow:auto;overscroll-behavior:contain;
- padding:16px 14px calc(18px + env(safe-area-inset-bottom));border-radius:24px 24px 18px 18px;
- background:#f4f5f2;color:#151715;box-shadow:0 24px 80px rgba(0,0,0,.28);
- -webkit-overflow-scrolling:touch
+ width:min(520px,calc(100vw - 16px));max-height:calc(100dvh - 28px);overflow:hidden;
+ padding:0;border-radius:24px 24px 18px 18px;background:#f4f5f2;color:#151715;
+ box-shadow:0 18px 50px rgba(0,0,0,.20);display:flex;flex-direction:column;
 }
-.ynot-pv2-options header{display:flex;justify-content:space-between;align-items:flex-start}
+.ynot-pv2-options header{
+ display:flex;justify-content:space-between;align-items:flex-start;flex:0 0 auto;
+ padding:16px 14px 12px;background:#f4f5f2;position:sticky;top:0;z-index:3;
+}
 .ynot-pv2-options header small{font-size:9px;letter-spacing:.13em}.ynot-pv2-options header h3{margin:5px 0 0;font-size:20px}
 .ynot-pv2-options header button{width:42px;height:42px;display:grid;place-items:center;border:0;border-radius:50%;background:#1d1f1d;color:#fff}
-.ynot-pv2-options-list{display:grid;gap:8px;margin-top:16px}
+.ynot-pv2-options-list{
+ display:grid;gap:8px;margin:0;padding:4px 12px calc(18px + env(safe-area-inset-bottom));
+ overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;
+}
 .ynot-pv2-options-list>button{
  display:grid;grid-template-columns:56px 1fr;gap:10px;align-items:center;text-align:left;padding:7px;
  border:1px solid rgba(20,22,20,.10);border-radius:16px;background:rgba(255,255,255,.72);color:#1a1c1a
@@ -134,10 +139,20 @@
 }
 
 @media(max-width:760px){
- .ynot-pv2-options-backdrop{padding:8px;place-items:end center}
- .ynot-pv2-options{width:100%;max-height:72dvh;border-radius:22px 22px 14px 14px;padding:14px 12px calc(16px + env(safe-area-inset-bottom))}
- .ynot-pv2-options header{position:sticky;top:-14px;z-index:2;padding:10px 0 8px;background:#f4f5f2}
- .ynot-pv2-options-list{padding-bottom:6px}
+ .ynot-pv2-options-backdrop{padding:0;place-items:end stretch}
+ .ynot-pv2-options{
+  width:100%;max-height:calc(100dvh - 18px);border-radius:24px 24px 0 0;
+  padding:0;margin:0;
+ }
+ .ynot-pv2-options header{
+  top:0;padding:16px 16px 12px;background:#f4f5f2;
+  border-bottom:1px solid rgba(20,22,20,.08)
+ }
+ .ynot-pv2-options-list{
+  padding:8px 12px calc(16px + env(safe-area-inset-bottom));
+  overflow-y:auto;max-height:none;min-height:0
+ }
+ .ynot-pv2-options-list>button{min-height:72px}
  .ynot-pv2-option{max-width:230px;min-height:36px;font-size:9px}
  .ynot-pv2-flexpay{font-size:10px;margin-bottom:14px}
 }
