@@ -484,6 +484,29 @@ async function shopifySearch(query:string,country:FeedCountry){
   return content.products;
 }
 
+function feedMediaUrl(m:any){
+ if(typeof m==="string")return m;
+ return String(m?.url||m?.src||m?.image?.url||m?.previewImage?.url||m?.preview_image?.url||m?.originalSource?.url||m?.sources?.[0]?.url||"");
+}
+function feedMediaValues(value:any,depth=0):any[]{
+ if(value==null||depth>5)return[];
+ if(Array.isArray(value))return value.flatMap(v=>feedMediaValues(v,depth+1));
+ if(typeof value==="string")return[value];
+ if(typeof value!=="object")return[];
+ const direct=feedMediaUrl(value)?[value]:[];
+ return[
+  ...direct,
+  ...feedMediaValues(value.nodes,depth+1),
+  ...feedMediaValues(value.edges?.map?.((e:any)=>e?.node),depth+1),
+  ...feedMediaValues(value.items,depth+1),
+  ...feedMediaValues(value.media,depth+1),
+  ...feedMediaValues(value.images,depth+1)
+ ];
+}
+function feedImages(value:any){
+ return [...new Set(feedMediaValues(value).map(feedMediaUrl).filter((x:string)=>/^https?:\/\//i.test(x)))];
+}
+
 function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:string):CatalogFeedProduct|null{
   const variant=Array.isArray(raw?.variants)?raw.variants.find((v:any)=>v?.available!==false)||raw.variants[0]:null;
   const price=raw?.price_range?.min||variant?.price;
@@ -495,7 +518,8 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
   const resolvedCategory=titleCategory==="general"?category:titleCategory;
   const sourceUrl=String(raw?.url||variant?.url||variant?.seller?.url||"");
   const merchantDomain=domainOf(sourceUrl);
-  const image=String(raw?.media?.[0]?.url||variant?.image?.url||variant?.media?.[0]?.url||"");
+  const rawImages=feedImages([raw?.media,raw?.images,raw?.image_urls,raw?.image,raw?.featured_image,raw?.featuredImage,variant?.media,variant?.images,variant?.image_urls,variant?.image]);
+  const image=rawImages[0]||"";
   if(!originalTitle||!sourceUrl.startsWith("https://")||!image)return null;
 
   const merchantName=cleanText(variant?.seller?.name||raw?.seller?.name||merchantDomain||"Shopify merchant");
@@ -518,11 +542,7 @@ function mapProduct(raw:any,category:FeedCategory,country:FeedCountry,query?:str
 
   const fp=productFingerprint({title:originalTitle,brand:sourceBrand,category:resolvedCategory,sourcePrice:amount,merchantDomain,image});
   const ynotId=stableYnotId(country,fp);
-  const images=[...new Set(
-    (Array.isArray(raw?.media)?raw.media:[])
-      .map((m:any)=>String(m?.url||m?.image?.url||""))
-      .filter(Boolean)
-  )].slice(0,8);
+  const images=rawImages.slice(0,12);
 
   const adEligible=
     quote.state==="buy-with-lumina" &&
