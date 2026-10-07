@@ -1,6 +1,6 @@
 "use client";
 
-import {useMemo,useState} from "react";
+import {useEffect,useMemo,useState} from "react";
 import {ChevronDown,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
 import "./ProductDetailModalV2.css";
 
@@ -59,6 +59,14 @@ export default function ProductDetailModalV2({
 }:Props){
   const [descriptionOpen,setDescriptionOpen]=useState(false);
   const [optionsOpen,setOptionsOpen]=useState(false);
+  useEffect(()=>{
+    document.documentElement.classList.add("ynot-pv2-open");
+    document.body.classList.add("ynot-pv2-open");
+    return()=>{
+      document.documentElement.classList.remove("ynot-pv2-open");
+      document.body.classList.remove("ynot-pv2-open");
+    };
+  },[]);
   const images=useMemo(()=>media(product),[product]);
   const variants=useMemo(()=>usableVariants(product),[product]);
   const activeIndex=Math.max(0,images.findIndex(src=>src===product.image));
@@ -69,10 +77,7 @@ export default function ProductDetailModalV2({
       <button className="ynot-pv2-close" onClick={onClose} aria-label="Close product"><X/></button>
 
       <section className="ynot-pv2-gallery">
-        <div className="ynot-pv2-hero">
-          <img src={product.image} alt={clean(product.title)} draggable={false}/>
-        </div>
-        {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
+        {images.length>0&&<div className="ynot-pv2-thumbs" aria-label="Product images">
           {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onClick={()=>onImage(src)} aria-label={`View image ${index+1}`}>
             <img src={src} alt="" draggable={false}/>
           </button>)}
@@ -106,7 +111,7 @@ export default function ProductDetailModalV2({
 
         <div className="ynot-pv2-actions">
           <button className="ynot-pv2-bag ynot-unified-add" type="button" disabled={checkoutBusy}>
-            <ShoppingBag/><span>YNOT BAG</span>
+            <ShoppingBag/><span>SHOP</span>
           </button>
           <button className="ynot-pv2-bag-secondary ynot-unified-add" type="button" disabled={checkoutBusy} aria-label="Add to YNOT bag">
             <ShoppingBag/>
