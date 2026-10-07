@@ -419,3 +419,24 @@
   border-color:rgba(255,255,255,.48)!important;
   color:#fff!important;
 }
+
+
+/* New v2 product popup: remove the mobile header gradient / dark wash completely. */
+html.ynot-pv2-open .ynot-app-shell::before,
+html.ynot-pv2-open .ynot-app-shell::after,
+html.ynot-any-product-open .ynot-app-shell::before,
+html.ynot-any-product-open .ynot-app-shell::after,
+.ynot-app-shell:has(.ynot-pv2)::before,
+.ynot-app-shell:has(.ynot-pv2)::after{
+  content:none!important;
+  display:none!important;
+  opacity:0!important;
+  height:0!important;
+  background:none!important;
+  background-color:transparent!important;
+  box-shadow:none!important;
+  filter:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+  pointer-events:none!important;
+}
