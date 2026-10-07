@@ -78,6 +78,9 @@ export default function ProductDetailModalV2({
       <button className="ynot-pv2-close" onClick={onClose} aria-label="Close product"><X/></button>
 
       <section className="ynot-pv2-gallery">
+        <div className="ynot-pv2-hero">
+          <img src={product.image} alt={clean(product.title)} draggable={false}/>
+        </div>
         {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
           {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onClick={()=>onImage(src)} aria-label={`View image ${index+1}`}>
             <img src={src} alt="" draggable={false}/>
@@ -90,9 +93,6 @@ export default function ProductDetailModalV2({
 
       <section className="ynot-pv2-reviews">
         <h3>Reviews</h3>
-        <div className="ynot-pv2-review-image">
-          <img src={product.image} alt={clean(product.title)} draggable={false}/>
-        </div>
         <div className="ynot-pv2-bundle">
           <button className={bundleQty===1?"active":""} onClick={()=>setBundleQty(1)}>
             <span><b>1 item</b><small>Standard price</small></span>
