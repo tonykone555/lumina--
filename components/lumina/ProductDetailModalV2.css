@@ -98,12 +98,12 @@
 .ynot-pv2-error{margin:14px 0 0;padding:11px 13px;border-radius:14px;background:#fff2f0;color:#8d3831;font-size:12px}
 .ynot-pv2-options-backdrop{
  position:fixed;inset:0;z-index:99999;display:grid;place-items:end center;padding:12px;
- background:rgba(10,11,10,.18);backdrop-filter:none;-webkit-backdrop-filter:none;
+ background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none;
 }
 .ynot-pv2-options{
  width:min(520px,calc(100vw - 16px));max-height:calc(100dvh - 28px);overflow:hidden;
  padding:0;border-radius:24px 24px 18px 18px;background:#f4f5f2;color:#151715;
- box-shadow:0 18px 50px rgba(0,0,0,.20);display:flex;flex-direction:column;
+ box-shadow:none;display:flex;flex-direction:column;
 }
 .ynot-pv2-options header{
  display:flex;justify-content:space-between;align-items:flex-start;flex:0 0 auto;
@@ -257,4 +257,23 @@ html.ynot-pv2-open .ynot-reviews-gallery{
 .ynot-pv2 .ynot-force-upload-note,
 .ynot-pv2 .ynot-force-error{
  display:none!important;
+}
+
+
+/* Nothing below checkout in the v2 info section is allowed to inject product imagery. */
+.ynot-pv2-info img,
+.ynot-pv2-info figure,
+.ynot-pv2-info picture,
+.ynot-pv2-info [class*="about" i],
+.ynot-pv2-info [class*="review-image" i],
+.ynot-pv2-info [class*="product-image" i],
+.ynot-pv2-info [class*="try" i] img{
+ display:none!important;
+ visibility:hidden!important;
+ opacity:0!important;
+ pointer-events:none!important;
+ height:0!important;
+ min-height:0!important;
+ margin:0!important;
+ padding:0!important;
 }
