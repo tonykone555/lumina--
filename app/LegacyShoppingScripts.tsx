@@ -30,6 +30,12 @@ const PRODUCT_UI_SCRIPTS = [
   "/force-product-extras.js?v=7",
 ];
 
+const WORLD_PRODUCT_UI_SCRIPTS = PRODUCT_UI_SCRIPTS.filter(src=>
+  !src.startsWith("/force-about-section.js") &&
+  !src.startsWith("/about-three-images.js") &&
+  !src.startsWith("/force-product-extras.js")
+);
+
 const WORLD_UI_SCRIPTS = [
   "/profile-avatar-open.js",
   "/final-mobile-control-lock.js",
@@ -50,7 +56,7 @@ function matches(pathname:string,prefixes:string[]){
 
 function scriptsForPath(pathname:string){
   if(pathname === "/" || matches(pathname,FULL_WORLD_PREFIXES)){
-    return [...CORE_COMMERCE_SCRIPTS,...PRODUCT_UI_SCRIPTS,...WORLD_UI_SCRIPTS];
+    return [...CORE_COMMERCE_SCRIPTS,...WORLD_PRODUCT_UI_SCRIPTS,...WORLD_UI_SCRIPTS];
   }
   if(matches(pathname,PRODUCT_PREFIXES)){
     return [...CORE_COMMERCE_SCRIPTS,...PRODUCT_UI_SCRIPTS];
