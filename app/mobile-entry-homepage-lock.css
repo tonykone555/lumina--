@@ -165,3 +165,7 @@
   }
   .level-worlds .lv4-category-bubble span{display:none!important}
 }
+
+/* Entry screen is intentionally static: never surface the legacy home background video. */
+#ynot-desktop-home-video{display:none!important;visibility:hidden!important;opacity:0!important}
+body.ynot-desktop-home-video-active #ynot-desktop-home-video{display:none!important}
