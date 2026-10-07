@@ -1,0 +1,329 @@
+/* Bubble-world product popup reference restore.
+   Imported last so the compact light reference card wins over legacy dark/final passes. */
+
+html[data-ynot-theme="light"] .lv4-detail,
+html.ynot-world-light .lv4-detail{
+  position:fixed!important;
+  z-index:520!important;
+  left:50%!important;
+  right:auto!important;
+  top:50%!important;
+  bottom:auto!important;
+  transform:translate(-50%,-50%)!important;
+  width:min(790px,calc(100vw - 28px))!important;
+  max-height:calc(100dvh - 28px)!important;
+  padding:18px!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  border-radius:34px!important;
+  border:1px solid rgba(255,255,255,.82)!important;
+  background:linear-gradient(160deg,rgba(247,247,244,.88),rgba(224,225,220,.72))!important;
+  color:#171817!important;
+  box-shadow:0 30px 100px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.88)!important;
+  backdrop-filter:blur(28px) saturate(1.05)!important;
+  -webkit-backdrop-filter:blur(28px) saturate(1.05)!important;
+}
+
+html[data-ynot-theme="light"] .lv4-detail:before,
+html.ynot-world-light .lv4-detail:before{display:none!important}
+
+/* Hero media */
+html[data-ynot-theme="light"] .lv4-detail>img,
+html[data-ynot-theme="light"] .lv4-detail>.ynot-main-product-image,
+html.ynot-world-light .lv4-detail>img,
+html.ynot-world-light .lv4-detail>.ynot-main-product-image{
+  order:1!important;
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  aspect-ratio:1/1!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  margin:0!important;
+  padding:20px!important;
+  border-radius:30px!important;
+  border:1px solid rgba(18,20,18,.12)!important;
+  background:#fff!important;
+  box-shadow:none!important;
+  filter:none!important;
+}
+
+/* Thumbnail strip: keep the old horizontal mini-slider under the hero. */
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery,
+html[data-ynot-theme="light"] .lv4-detail .lv4-gallery,
+html.ynot-world-light .lv4-detail .ynot-loaded-gallery,
+html.ynot-world-light .lv4-detail .lv4-gallery{
+  order:2!important;
+  position:relative!important;
+  inset:auto!important;
+  transform:none!important;
+  display:flex!important;
+  visibility:visible!important;
+  opacity:1!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  width:100%!important;
+  max-width:100%!important;
+  height:auto!important;
+  max-height:none!important;
+  margin:12px 0 0!important;
+  padding:0 4px 2px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x proximity!important;
+  scrollbar-width:none!important;
+  touch-action:pan-x!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery::-webkit-scrollbar,
+html[data-ynot-theme="light"] .lv4-detail .lv4-gallery::-webkit-scrollbar{display:none!important}
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery button,
+html[data-ynot-theme="light"] .lv4-detail .lv4-gallery button,
+html.ynot-world-light .lv4-detail .ynot-loaded-gallery button,
+html.ynot-world-light .lv4-detail .lv4-gallery button{
+  flex:0 0 70px!important;
+  width:70px!important;
+  min-width:70px!important;
+  height:70px!important;
+  padding:5px!important;
+  scroll-snap-align:start!important;
+  overflow:hidden!important;
+  border-radius:18px!important;
+  border:1px solid rgba(18,20,18,.14)!important;
+  background:rgba(255,255,255,.88)!important;
+  box-shadow:none!important;
+  opacity:.72!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery button.active,
+html[data-ynot-theme="light"] .lv4-detail .lv4-gallery button.active{opacity:1!important;border-color:#1e211f!important}
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery img,
+html[data-ynot-theme="light"] .lv4-detail .lv4-gallery img{
+  width:100%!important;height:100%!important;object-fit:contain!important;border-radius:13px!important;background:#fff!important
+}
+
+/* Gallery dots match the reference. */
+html[data-ynot-theme="light"] .lv4-detail .ynot-mobile-swipe-dots,
+html.ynot-world-light .lv4-detail .ynot-mobile-swipe-dots{
+  order:3!important;
+  position:relative!important;
+  inset:auto!important;
+  width:max-content!important;
+  margin:10px auto 18px!important;
+  padding:7px 10px!important;
+  display:flex!important;
+  gap:7px!important;
+  background:rgba(30,32,30,.14)!important;
+  border-radius:999px!important;
+  backdrop-filter:blur(8px)!important;
+  -webkit-backdrop-filter:blur(8px)!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .ynot-mobile-swipe-dots i{background:rgba(25,27,25,.34)!important;width:7px!important;height:7px!important;flex-basis:7px!important}
+html[data-ynot-theme="light"] .lv4-detail .ynot-mobile-swipe-dots i.active{background:#fff!important;box-shadow:0 0 0 1px rgba(0,0,0,.06)!important}
+
+/* Similar picks is a true horizontal carousel, not a fixed grid. */
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix,
+html.ynot-world-light .lv4-detail .ynot-similar-light-fix{
+  order:4!important;
+  display:block!important;
+  width:100%!important;
+  margin:4px 0 20px!important;
+  padding:0!important;
+  overflow:visible!important;
+  color:#171817!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix>*:not(:first-child),
+html.ynot-world-light .lv4-detail .ynot-similar-light-fix>*:not(:first-child){
+  max-width:100%!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix>div,
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix>section,
+html.ynot-world-light .lv4-detail .ynot-similar-light-fix>div,
+html.ynot-world-light .lv4-detail .ynot-similar-light-fix>section{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:12px!important;
+  width:100%!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x mandatory!important;
+  -webkit-overflow-scrolling:touch!important;
+  scrollbar-width:none!important;
+  padding:2px 0 5px!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix>div::-webkit-scrollbar,
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix>section::-webkit-scrollbar{display:none!important}
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix article,
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix button,
+html[data-ynot-theme="light"] .lv4-detail .ynot-similar-light-fix a{
+  scroll-snap-align:start!important;
+}
+
+/* Copy block */
+html[data-ynot-theme="light"] .lv4-detail .lv4-detailcopy,
+html.ynot-world-light .lv4-detail .lv4-detailcopy{
+  order:5!important;
+  padding:2px 4px 8px!important;
+  color:#151615!important;
+  text-align:left!important;
+}
+html[data-ynot-theme="light"] .lv4-product-brand{color:#4f524f!important;font-size:12px!important;letter-spacing:.13em!important}
+html[data-ynot-theme="light"] .lv4-product-source{color:#777b77!important}
+html[data-ynot-theme="light"] .lv4-detailcopy h2{
+  margin:11px 0 12px!important;
+  color:#111211!important;
+  font:800 clamp(30px,5vw,52px)/.98 Inter,ui-sans-serif,system-ui,sans-serif!important;
+  letter-spacing:-.045em!important;
+  -webkit-line-clamp:4!important;
+}
+html[data-ynot-theme="light"] .lv4-detailcopy strong{
+  color:#111211!important;
+  font:850 clamp(30px,4.5vw,48px)/1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+}
+
+/* Variant pills */
+html[data-ynot-theme="light"] .lv4-detail .lv4-variants,
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-variants{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:9px!important;
+  overflow-x:auto!important;
+  scrollbar-width:none!important;
+  margin:18px 0 6px!important;
+  padding:0!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .lv4-variants button,
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-variants button{
+  flex:0 0 auto!important;
+  min-height:48px!important;
+  padding:0 20px!important;
+  border-radius:18px!important;
+  border:1px solid rgba(20,22,20,.18)!important;
+  background:rgba(255,255,255,.72)!important;
+  color:#1a1c1a!important;
+  font:700 12px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .lv4-variants button.active,
+html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-variants button.active{background:#111!important;color:#fff!important;border-color:#111!important}
+
+/* Primary bag + heart layout */
+html[data-ynot-theme="light"] .lv4-detail .lv4-actions{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 74px!important;
+  gap:12px!important;
+  margin:16px 0 0!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .lv4-actions a,
+html[data-ynot-theme="light"] .lv4-detail .lv4-actions button{
+  height:70px!important;
+  border-radius:24px!important;
+  font:800 15px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+  letter-spacing:.10em!important;
+  text-transform:uppercase!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .lv4-actions a,
+html[data-ynot-theme="light"] .lv4-detail .lv4-actions .try{
+  background:#111!important;
+  color:#fff!important;
+  border:1px solid #111!important;
+  justify-content:center!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .lv4-actions>button:not(.try){
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,255,255,.65)!important;
+  color:#262826!important;
+  border:1px solid rgba(20,22,20,.18)!important;
+}
+
+/* Direction pills */
+html[data-ynot-theme="light"] .lv4-detail .lv4-direction-row{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;
+  margin:18px 0!important;
+}
+html[data-ynot-theme="light"] .lv4-detail .lv4-direction-row button{
+  min-height:54px!important;
+  padding:0 10px!important;
+  border-radius:18px!important;
+  background:rgba(255,255,255,.58)!important;
+  color:#222422!important;
+  border:1px solid rgba(20,22,20,.16)!important;
+  font:720 12px/1.1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+}
+
+/* Description + */
+html[data-ynot-theme="light"] .lv4-detail .ynot-description-toggle,
+html[data-ynot-theme="light"] .lv4-detail .ynot-reference-description{
+  width:100%!important;
+  max-width:none!important;
+  min-height:68px!important;
+  margin:20px 0 8px!important;
+  border-radius:22px!important;
+  border:1px solid rgba(20,22,20,.16)!important;
+  background:rgba(255,255,255,.58)!important;
+  color:#171817!important;
+  font:800 16px/1 Inter,ui-sans-serif,system-ui,sans-serif!important;
+  text-align:center!important;
+}
+
+/* Close + side controls */
+html[data-ynot-theme="light"] .lv4-detail .lv4-close,
+html.ynot-world-light .lv4-detail .lv4-close{
+  display:grid!important;
+  position:fixed!important;
+  right:max(16px,calc((100vw - min(790px,calc(100vw - 28px)))/2 - 8px))!important;
+  top:max(16px,calc((100dvh - min(calc(100dvh - 28px),900px))/2 - 8px))!important;
+  width:58px!important;height:58px!important;border-radius:50%!important;
+  background:#222!important;color:#fff!important;border:1px solid rgba(255,255,255,.55)!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.18)!important;
+}
+html[data-ynot-theme="light"] .ynot-glass-side-control,
+html.ynot-world-light .ynot-glass-side-control{
+  background:rgba(246,246,243,.92)!important;
+  color:#222!important;
+  border:1px solid rgba(20,22,20,.16)!important;
+  box-shadow:0 8px 24px rgba(0,0,0,.12)!important;
+}
+
+/* Light theme must stay legible even over a dark world. */
+html[data-ynot-theme="light"] .lv4-detail,
+html[data-ynot-theme="light"] .lv4-detail *{text-shadow:none!important}
+
+@media(max-width:899px){
+  html[data-ynot-theme="light"] .lv4-detail,
+  html.ynot-world-light .lv4-detail{
+    left:10px!important;right:10px!important;top:10px!important;bottom:10px!important;
+    transform:none!important;width:auto!important;max-height:none!important;
+    padding:12px!important;border-radius:30px!important;
+  }
+  html[data-ynot-theme="light"] .lv4-detail>img,
+  html.ynot-world-light .lv4-detail>img{
+    aspect-ratio:1/1!important;
+    padding:12px!important;
+    border-radius:26px!important;
+  }
+  /* Re-enable the thumbnail rail on mobile: the reference had it. */
+  html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery,
+  html[data-ynot-theme="light"] .lv4-detail .lv4-gallery{
+    display:flex!important;visibility:visible!important;pointer-events:auto!important;
+  }
+  html[data-ynot-theme="light"] .lv4-detail .ynot-loaded-gallery button,
+  html[data-ynot-theme="light"] .lv4-detail .lv4-gallery button{
+    flex-basis:62px!important;width:62px!important;min-width:62px!important;height:62px!important;
+  }
+  html[data-ynot-theme="light"] .lv4-detailcopy h2{font-size:34px!important}
+  html[data-ynot-theme="light"] .lv4-detailcopy strong{font-size:32px!important}
+  html[data-ynot-theme="light"] .lv4-detail .lv4-actions{grid-template-columns:minmax(0,1fr) 62px!important}
+  html[data-ynot-theme="light"] .lv4-detail .lv4-actions a,
+  html[data-ynot-theme="light"] .lv4-detail .lv4-actions button{height:62px!important;border-radius:20px!important}
+  html[data-ynot-theme="light"] .lv4-detail .lv4-direction-row{gap:7px!important}
+  html[data-ynot-theme="light"] .lv4-detail .lv4-direction-row button{min-height:50px!important;font-size:11px!important}
+  html[data-ynot-theme="light"] .lv4-detail>.lv4-close{display:none!important}
+}
