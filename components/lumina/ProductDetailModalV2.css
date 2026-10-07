@@ -198,10 +198,45 @@ html.ynot-pv2-open .ynot-about-images,
 html.ynot-pv2-open .ynot-about-image,
 html.ynot-pv2-open .ynot-rich-about-images,
 html.ynot-pv2-open .ynot-review-images,
-html.ynot-pv2-open .ynot-reviews-gallery,
-html.ynot-pv2-open .ynot-force-reviews + img,
-html.ynot-pv2-open .ynot-force-reviews ~ img,
-html.ynot-pv2-open .ynot-force-reviews + figure,
-html.ynot-pv2-open .ynot-force-reviews ~ figure{
+html.ynot-pv2-open .ynot-reviews-gallery{
   display:none!important;
+}
+
+
+.ynot-pv2-reviews{margin:2px 0 18px}
+.ynot-pv2-reviews h3{
+ margin:0 0 10px;font-size:12px;font-weight:850;letter-spacing:.01em;color:#202320
+}
+.ynot-pv2-review-image{
+ width:100%;aspect-ratio:1/1;display:grid;place-items:center;overflow:hidden;
+ border-radius:22px;background:transparent
+}
+.ynot-pv2-review-image img{
+ width:100%;height:100%;object-fit:contain;background:transparent;border:0
+}
+.ynot-pv2-bundle{
+ display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px
+}
+.ynot-pv2-bundle button{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ min-height:58px;padding:10px 12px;border:1px solid rgba(24,26,24,.12);
+ border-radius:17px;background:rgba(255,255,255,.48);color:#1c1f1c;text-align:left;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.72)
+}
+.ynot-pv2-bundle button.active{
+ border-color:#111;background:#111;color:#fff;
+ box-shadow:0 8px 20px rgba(0,0,0,.12),inset 0 1px 0 rgba(255,255,255,.08)
+}
+.ynot-pv2-bundle span,.ynot-pv2-bundle b,.ynot-pv2-bundle small{display:block}
+.ynot-pv2-bundle b{font-size:11px}
+.ynot-pv2-bundle small{margin-top:3px;font-size:8px;opacity:.7}
+.ynot-pv2-bundle strong{font-size:12px;white-space:nowrap}
+@media(max-width:760px){
+ .ynot-pv2-reviews h3{font-size:11px}
+ .ynot-pv2-review-image{border-radius:18px}
+ .ynot-pv2-bundle{grid-template-columns:1fr 1fr;gap:6px}
+ .ynot-pv2-bundle button{min-height:54px;padding:8px 9px;border-radius:15px}
+ .ynot-pv2-bundle b{font-size:10px}
+ .ynot-pv2-bundle small{font-size:7px}
+ .ynot-pv2-bundle strong{font-size:10px}
 }
