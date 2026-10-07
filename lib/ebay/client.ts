@@ -452,7 +452,7 @@ async function getOffersForSku(sku:string,marketplaceId:string){
  return Array.isArray(data?.offers)?data.offers:[];
 }
 async function recreateOfferAfterInternalError(sku:string,marketplaceId:string,offerBody:any){
- const offers=await getOffersForSku(activeSku,marketplaceId);
+ const offers=await getOffersForSku(sku,marketplaceId);
  for(const offer of offers){
   const id=String(offer?.offerId||"");
   if(!id)continue;
@@ -460,7 +460,7 @@ async function recreateOfferAfterInternalError(sku:string,marketplaceId:string,o
   try{await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(id)}`,{method:"DELETE"},marketplaceId)}catch{}
  }
  await sleep(700);
- const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify({...offerBody,sku:activeSku})},marketplaceId);
+ const created=await ebay("/sell/inventory/v1/offer",{method:"POST",body:JSON.stringify({...offerBody,sku})},marketplaceId);
  return String(created?.offerId||"");
 }
 async function ensureInventoryAvailability(sku:string,marketplaceId:string,inventoryBody:any){
