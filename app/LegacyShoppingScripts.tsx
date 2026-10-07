@@ -37,7 +37,7 @@ const WORLD_UI_SCRIPTS = [
   "/etsy-card-enhancer.js",
   "/ynot-deals-stability.js",
   "/ebay-load-guard.js",
-  "/category-world-remap.js?v=2",
+  "/category-world-remap.js?v=3",
 ];
 
 const FULL_WORLD_PREFIXES = ["/shop", "/worlds", "/electric"];
