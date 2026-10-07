@@ -119,9 +119,17 @@ export async function POST(req:NextRequest){
   if(!exact)return NextResponse.json({error:'EXACT_PRODUCT_URL_UNAVAILABLE'},{status:404});
   const merchantPage=await merchantPageProductData(exact,String(match?.title||product.title||''));
   const selectedImages=selectedProducts.flatMap((p:any)=>imageMedia([...(p?.media||[]),...(p?.images||[]),...(p?.image_urls||[]),p?.image,p?.featured_image,p?.featuredImage,...(p?.variants||[]).flatMap((v:any)=>[...(v?.media||[]),...(v?.images||[]),...(v?.image_urls||[]),v?.image,v?.featured_image,v?.featuredImage])].filter(Boolean)));
-  const gallery=(merchantPage.images?.length
-    ?uniqMedia(merchantPage.images)
-    :uniqMedia(media,selectedImages,variants.map((v:any)=>v.images),variants.map((v:any)=>v.image),product.images,product.image)
+  // Keep the seller's own merchant-page gallery first, then merge every
+  // image exposed by the exact matched product and its variants. Do not merge
+  // the incoming broad-search product.images here because those may have come
+  // from another seller/result.
+  const gallery=uniqMedia(
+    merchantPage.images,
+    media,
+    selectedImages,
+    variants.map((v:any)=>v.images),
+    variants.map((v:any)=>v.image),
+    product.image
   ).slice(0,20);
   const allVideos=uniqMedia(videos,match?.videos,match?.video_urls,match?.media_urls,selectedProducts.map((p:any)=>[p?.videos,p?.video_urls,p?.media_urls,videoMedia([...(p?.media||[])])]),variants.map((v:any)=>v.videos),product.videos);
   const tags=[...new Set<string>([...(Array.isArray(product.tags)?product.tags:[]),...(Array.isArray(match?.tags)?match.tags:[]),...(Array.isArray(match?.product_tags)?match.product_tags:[]),...(Array.isArray(match?.intent_tags)?match.intent_tags:[]),...(Array.isArray(match?.attributes)?match.attributes.map((x:any)=>typeof x==='string'?x:(x?.value||x?.name||'')):[])].map(String).map(x=>x.trim()).filter(Boolean))];
