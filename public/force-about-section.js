@@ -215,7 +215,7 @@
 
   function mount(button){
     const host=findHost(button);
-    if(!host)return;
+    if(!host||host.matches?.(".ynot-pv2")||host.closest?.(".ynot-pv2"))return;
     let section=host.querySelector("[data-ynot-force-about='true']");
     const actionRow=button.closest(".actions,.lv4-actions,[class*='actions']") || button.parentElement;
     if(!actionRow||!actionRow.parentElement)return;
@@ -228,6 +228,7 @@
   }
 
   function sync(){
+    document.querySelectorAll(".ynot-pv2 [data-ynot-force-about='true'],.ynot-pv2 .ynot-force-about-section").forEach(node=>node.remove());
     document.querySelectorAll("button").forEach(button=>{if(isAddToBag(button))mount(button)});
   }
 
