@@ -129,11 +129,11 @@ export default function ProductDetailModalV2({
         </button>}
 
         <div className="ynot-pv2-actions">
-          <button className="ynot-pv2-bag ynot-unified-add" type="button" disabled={checkoutBusy} data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"}>
+          <button className="ynot-pv2-bag ynot-unified-add ynot-pv2-shop" type="button" disabled={checkoutBusy} data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"} data-ynot-cta-label="SHOP">
             <ShoppingBag/><span>SHOP</span>
           </button>
-          <button className="ynot-pv2-bag-secondary ynot-unified-add" type="button" disabled={checkoutBusy} aria-label="Add to YNOT bag">
-            <ShoppingBag/>
+          <button className="ynot-pv2-klarna ynot-unified-add" type="button" disabled={checkoutBusy} aria-label="Pay with Klarna" data-payment-method="klarna" data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"}>
+            <span>Klarna</span>
           </button>
         </div>
 
