@@ -59,6 +59,7 @@ export default function ProductDetailModalV2({
 }:Props){
   const [descriptionOpen,setDescriptionOpen]=useState(false);
   const [optionsOpen,setOptionsOpen]=useState(false);
+  const [bundleQty,setBundleQty]=useState<1|2>(1);
   useEffect(()=>{
     document.documentElement.classList.add("ynot-pv2-open");
     document.body.classList.add("ynot-pv2-open");
@@ -77,9 +78,6 @@ export default function ProductDetailModalV2({
       <button className="ynot-pv2-close" onClick={onClose} aria-label="Close product"><X/></button>
 
       <section className="ynot-pv2-gallery">
-        <div className="ynot-pv2-hero">
-          <img src={product.image} alt={clean(product.title)} draggable={false}/>
-        </div>
         {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
           {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onClick={()=>onImage(src)} aria-label={`View image ${index+1}`}>
             <img src={src} alt="" draggable={false}/>
@@ -88,6 +86,23 @@ export default function ProductDetailModalV2({
         {images.length>1&&<div className="ynot-pv2-dots" aria-hidden="true">
           {images.slice(0,8).map((_,index)=><i key={index} className={index===activeIndex?"active":""}/>)}
         </div>}
+      </section>
+
+      <section className="ynot-pv2-reviews">
+        <h3>Reviews</h3>
+        <div className="ynot-pv2-review-image">
+          <img src={product.image} alt={clean(product.title)} draggable={false}/>
+        </div>
+        <div className="ynot-pv2-bundle">
+          <button className={bundleQty===1?"active":""} onClick={()=>setBundleQty(1)}>
+            <span><b>1 item</b><small>Standard price</small></span>
+            <strong>{money(product)}</strong>
+          </button>
+          <button className={bundleQty===2?"active":""} onClick={()=>setBundleQty(2)}>
+            <span><b>2 items</b><small>Bundle · 15% off</small></span>
+            <strong>{product.price!=null?money({...product,price:Math.round(product.price*2*.85*100)/100}):""}</strong>
+          </button>
+        </div>
       </section>
 
       {Number(product.price||0)>=200&&<div className="ynot-pv2-flexpay"><span className="ynot-pv2-flexpay-badge" aria-hidden="true">✹</span><b>Flexible payment</b></div>}
@@ -113,7 +128,7 @@ export default function ProductDetailModalV2({
         </button>}
 
         <div className="ynot-pv2-actions">
-          <button className="ynot-pv2-bag ynot-unified-add" type="button" disabled={checkoutBusy}>
+          <button className="ynot-pv2-bag ynot-unified-add" type="button" disabled={checkoutBusy} data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"}>
             <ShoppingBag/><span>SHOP</span>
           </button>
           <button className="ynot-pv2-bag-secondary ynot-unified-add" type="button" disabled={checkoutBusy} aria-label="Add to YNOT bag">
