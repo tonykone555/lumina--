@@ -4,8 +4,10 @@ export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
 function authorized(request:NextRequest){
- const secret=process.env.YNOT_MCP_TOKEN;
- return Boolean(secret&&(request.headers.get("authorization")||"")===`Bearer ${secret}`);
+ const bearer=(request.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
+ const mcp=process.env.YNOT_MCP_TOKEN||"";
+ const dashboardPin=process.env.YNOT_EBAY_DASHBOARD_PIN||"";
+ return Boolean(bearer&&((mcp&&bearer===mcp)||(dashboardPin&&bearer===dashboardPin)));
 }
 function supabase(){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.SUPABASE_URL||"";
