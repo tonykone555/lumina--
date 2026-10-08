@@ -431,6 +431,7 @@ export default function LuminaWorld(){
    onImage={switchGalleryImage}
    onSave={()=>toggleSaved(selected)}
    onOpenProduct={product=>{void openProduct(product as Product);setSuggestionsOpen(true)}}
+   onSwipeProduct={direction=>swipeProduct(direction)}
    onMore={direction=>branch(direction)}
    onSelectVariant={v=>setSelected(p=>p?{
     ...p,
