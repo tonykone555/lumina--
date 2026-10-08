@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect,useMemo,useState} from "react";
+import {useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
 import {ChevronDown,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
 import "./ProductDetailModalV2.css";
@@ -23,6 +23,7 @@ type Props={
   onImage:(src:string)=>void;
   onSave:()=>void;
   onOpenProduct:(product:ProductDetailV2Product)=>void;
+  onSwipeProduct:(direction:-1|1)=>void;
   onMore:(direction:"More like this"|"Cheaper"|"More premium")=>void;
   onSelectVariant:(variant:Variant)=>void;
 };
@@ -56,11 +57,12 @@ function usableVariants(product:ProductDetailV2Product){
 }
 
 export default function ProductDetailModalV2({
-  product,similar,liked,checkoutBusy,checkoutError,visualSimilarLoading,onClose,onImage,onSave,onOpenProduct,onMore,onSelectVariant
+  product,similar,liked,checkoutBusy,checkoutError,visualSimilarLoading,onClose,onImage,onSave,onOpenProduct,onSwipeProduct,onMore,onSelectVariant
 }:Props){
   const [descriptionOpen,setDescriptionOpen]=useState(false);
   const [optionsOpen,setOptionsOpen]=useState(false);
   const [bundleQty,setBundleQty]=useState<1|2>(1);
+  const swipeRef=useRef<{x:number;y:number;blocked:boolean}|null>(null);
   useEffect(()=>{
     document.documentElement.classList.add("ynot-pv2-open");
     document.body.classList.add("ynot-pv2-open");
@@ -80,15 +82,32 @@ export default function ProductDetailModalV2({
   const variants=useMemo(()=>usableVariants(product),[product]);
   const activeIndex=Math.max(0,images.findIndex(src=>src===product.image));
   const activeVariant=variants.find(v=>v.id===product.variantId);
+  const cycleImage=()=>{
+    if(images.length<2)return;
+    onImage(images[(activeIndex+1)%images.length]);
+  };
+  const touchStart=(e:React.TouchEvent<HTMLElement>)=>{
+    const target=e.target as HTMLElement;
+    const blocked=Boolean(target.closest("button,a,input,.ynot-pv2-thumbs,.ynot-pv2-similar-track,.ynot-pv2-options"));
+    const touch=e.touches[0];
+    swipeRef.current=touch?{x:touch.clientX,y:touch.clientY,blocked}:null;
+  };
+  const touchEnd=(e:React.TouchEvent<HTMLElement>)=>{
+    const start=swipeRef.current;swipeRef.current=null;
+    if(!start||start.blocked)return;
+    const touch=e.changedTouches[0];if(!touch)return;
+    const dx=touch.clientX-start.x,dy=touch.clientY-start.y;
+    if(Math.abs(dx)>=64&&Math.abs(dx)>Math.abs(dy)*1.25)onSwipeProduct(dx<0?1:-1);
+  };
 
   return <div className="ynot-pv2-backdrop" role="presentation" onClick={onClose}>
-    <aside className="ynot-pv2" data-ynot-product={JSON.stringify(product)} role="dialog" aria-modal="true" aria-label={clean(product.title)} onClick={e=>e.stopPropagation()}>
+    <aside className="ynot-pv2" data-ynot-product={JSON.stringify(product)} role="dialog" aria-modal="true" aria-label={clean(product.title)} onClick={e=>e.stopPropagation()} onTouchStart={touchStart} onTouchEnd={touchEnd}>
       <button className="ynot-pv2-close" onClick={onClose} aria-label="Close product"><X/></button>
 
       <section className="ynot-pv2-gallery">
-        <div className="ynot-pv2-hero">
+        <button className="ynot-pv2-hero" type="button" onClick={cycleImage} aria-label={images.length>1?"Show next product image":"Product image"}>
           <img src={product.image} alt={clean(product.title)} draggable={false}/>
-        </div>
+        </button>
         {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
           {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onClick={()=>onImage(src)} aria-label={`View image ${index+1}`}>
             <img src={src} alt="" draggable={false}/>
