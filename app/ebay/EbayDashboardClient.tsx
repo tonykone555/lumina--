@@ -12,6 +12,9 @@ export default function EbayDashboardClient(){
  const [data,setData]=useState<{candidates:Candidate[];attempts:Attempt[]}>({candidates:[],attempts:[]});
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
+ const [searchQuery,setSearchQuery]=useState("");
+ const [searching,setSearching]=useState(false);
+ const [searchResults,setSearchResults]=useState<any[]>([]);
  useEffect(()=>{
   const t=sessionStorage.getItem("ynot-ebay-token")||"";
   if(t){setToken(t);setSavedToken(t)}
@@ -33,6 +36,24 @@ export default function EbayDashboardClient(){
    html.style.height=prev.htmlHeight;
   };
  },[]);
+ async function searchProducts(){
+  const q=searchQuery.trim();
+  if(!q){setError("Enter something to search for.");return}
+  const nextToken=savedToken||token;
+  if(!nextToken){setError("Enter your access code first.");return}
+  setSearching(true);setError("");
+  try{
+   const r=await fetch("/api/ebay/search",{
+    method:"POST",
+    headers:{Authorization:`Bearer ${nextToken}`,"Content-Type":"application/json"},
+    body:JSON.stringify({query:q,limit:24})
+   });
+   const j=await r.json();
+   if(!r.ok)throw new Error(j?.error||`HTTP ${r.status}`);
+   setSearchResults(Array.isArray(j?.products)?j.products:[]);
+  }catch(e){setError(e instanceof Error?e.message:"Search failed")}
+  finally{setSearching(false)}
+ }
  async function load(nextToken=savedToken||token){
   if(!nextToken){setError("Enter your YNOT access token.");return}
   setLoading(true);setError("");
@@ -57,6 +78,14 @@ export default function EbayDashboardClient(){
   <>
    <section className="ebayHero"><div><small>YNOT · EBAY FRANCE</small><h1>Find. Check. Publish.</h1><p>Products found from ChatGPT/web research and YNOT catalogue discovery, with publishing results and exact eBay blockers in one place.</p></div><div className="ebayStats"><div><span>Candidates</span><b>{stats.candidates}</b></div><div><span>Est. opportunity</span><b>€{stats.profit.toLocaleString(undefined,{maximumFractionDigits:0})}</b></div><div><span>Published</span><b>{stats.published}</b></div><div><span>Problems</span><b>{stats.problems}</b></div></div></section>
    {error&&<div className="ebayError">{error}</div>}
+   <section className="ebaySection">
+    <div className="ebaySectionHead"><div><small>SEARCH PRODUCTS</small><h2>Find products now</h2></div><span>YNOT catalogue + eBay discovery</span></div>
+    <div className="ebaySearchBar"><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")searchProducts()}} placeholder="e.g. electric bike, Hilti parts, Martin D-28, industrial PLC"/><button onClick={searchProducts} disabled={searching}>{searching?"Searching…":"Search"}</button></div>
+    {searchResults.length>0&&<div className="ebayGrid ebaySearchResults">{searchResults.map((p:any)=><article className="ebayCard" key={p.id||p.url||p.title}>
+      <div className="ebayImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}</div>
+      <div className="ebayCardBody"><div className="ebayBadges"><i>{p.source||"product"}</i>{p.currency&&<i>{p.currency}</i>}</div><h3>{p.title}</h3><p>{[p.brand,p.category].filter(Boolean).join(" · ")}</p><div className="ebayMoney"><span>Price <b>{p.currency||"EUR"} {Number(p.price||0).toLocaleString()}</b></span></div>{p.url&&<a href={p.url} target="_blank" rel="noreferrer">Open product ↗</a>}</div>
+    </article>)}</div>}
+   </section>
    <section className="ebaySection"><div className="ebaySectionHead"><div><small>PRODUCT FINDER</small><h2>Web candidates</h2></div><span>{data.candidates.length} saved</span></div>
     <div className="ebayGrid">{data.candidates.length?data.candidates.map(c=><article className="ebayCard" key={c.id}>
       <div className="ebayImage">{c.image_urls?.[0]?<img src={c.image_urls[0]} alt=""/>:<span>Y</span>}</div>
