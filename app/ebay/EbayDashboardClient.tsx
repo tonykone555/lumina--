@@ -12,7 +12,27 @@ export default function EbayDashboardClient(){
  const [data,setData]=useState<{candidates:Candidate[];attempts:Attempt[]}>({candidates:[],attempts:[]});
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
- useEffect(()=>{const t=sessionStorage.getItem("ynot-ebay-token")||"";if(t){setToken(t);setSavedToken(t)}},[]);
+ useEffect(()=>{
+  const t=sessionStorage.getItem("ynot-ebay-token")||"";
+  if(t){setToken(t);setSavedToken(t)}
+  const body=document.body,html=document.documentElement;
+  const prev={
+   bodyOverflow:body.style.overflow,bodyPosition:body.style.position,bodyHeight:body.style.height,
+   htmlOverflow:html.style.overflow,htmlHeight:html.style.height
+  };
+  body.style.overflow="auto";
+  body.style.position="static";
+  body.style.height="auto";
+  html.style.overflow="auto";
+  html.style.height="auto";
+  return()=>{
+   body.style.overflow=prev.bodyOverflow;
+   body.style.position=prev.bodyPosition;
+   body.style.height=prev.bodyHeight;
+   html.style.overflow=prev.htmlOverflow;
+   html.style.height=prev.htmlHeight;
+  };
+ },[]);
  async function load(nextToken=savedToken||token){
   if(!nextToken){setError("Enter your YNOT access token.");return}
   setLoading(true);setError("");
