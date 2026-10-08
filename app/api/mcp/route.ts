@@ -381,24 +381,27 @@ async function hydrateEbayCatalogueProduct(product:any){
 }
 
 function specialistIdentity(product:any){
- const title=cleanEbayText(product?.title);
  const hay=cleanEbayText([product?.title,product?.description].filter(Boolean).join(" "));
- const brands=["Hilti","Singer","Technics","BMW","Dell","HPE","HP","Thetford","Leica","Nikon","Siemens","Schneider","Stihl","Makita","Bernina","Epson","Allen-Bradley","Lelit","Tektronix","Rayqual"];
- const brand=cleanEbayText(product?.brand);
- const shopish=/shop|store|parts|supply|sewingmachine|caratech|xdrilled|omegacarparts/i.test(brand);
- const inferredBrand=brands.find(b=>new RegExp(`\\b${b.replace("-","[- ]?")}\\b`,"i").test(hay))||"";
- const mpnExisting=cleanEbayText(product?.mpn);
- const partPatterns=[
-  /\b(?:part(?:\s*(?:no\.?|number|#))?|mpn|oem|sku|model)\s*[:#-]?\s*([A-Z0-9][A-Z0-9._\/-]{3,})\b/i,
-  /\b([0-9]{6,}[A-Z0-9._\/-]*)\b/,
-  /\b([A-Z]{1,6}[- ]?[0-9]{3,}[A-Z0-9._\/-]*)\b/
- ];
- let inferredMpn="";
- if(!mpnExisting)for(const re of partPatterns){const m=hay.match(re);if(m?.[1]){inferredMpn=m[1].replace(/\s+/g,"").trim();break}}
- return{
-  brand:shopish?(inferredBrand||""):(brand||inferredBrand),
-  mpn:mpnExisting||inferredMpn
+ const brands=["Hilti","Singer","Technics","BMW","Dell","HPE","HP","Thetford","Leica","Nikon","Siemens","Schneider","Stihl","Makita","Bernina","Epson","Allen-Bradley","Lelit","Tektronix","Rayqual","MOTU","Novation","Roland","Bosch","Shimano","SRAM","Yamaha","Bafang","Brose","Fazua","Magura","TQ","RockShox","Fox","Garmin","Canon","Sony","Fujifilm","Panasonic"];
+ const rawBrand=cleanEbayText(product?.brand);
+ const shopish=/shop|store|parts|supply|sewingmachine|caratech|xdrilled|omegacarparts|music ?store|audio ?shop|tool ?shop|bike ?shop|cycles?|retailer|merchant/i.test(rawBrand);
+ const inferredBrand=brands.find(b=>new RegExp("\\b"+b.replace(/[.*+?^$()|[\\]\\]/g,"\\$&").replace("-","[- ]?")+"\\b","i").test(hay))||"";
+ const existing=cleanEbayText(product?.mpn);
+ const badMpn=(value:string)=>{
+  const v=value.trim();
+  if(!v)return true;
+  if(/^\d{8,14}$/.test(v))return true;
+  if(/sync|internal|shop|store|sku|stock|code/i.test(v))return true;
+  if(v.length>40)return true;
+  const title=cleanEbayText(product?.title).toLowerCase();
+  if(title&&v.toLowerCase()===title)return true;
+  return false;
  };
+ const explicitPatterns=[/\b(?:manufacturer(?:\'s)?\s*part\s*(?:number|no\.?|#)|manufacturer\s*part\s*number|mpn|oem\s*(?:part\s*)?(?:number|no\.?|#)|part\s*(?:number|no\.?|#))\s*[:#-]?\s*([A-Z0-9][A-Z0-9._\/-]{2,})\b/i];
+ let inferredMpn="";
+ for(const re of explicitPatterns){const m=hay.match(re);if(m?.[1]&&!badMpn(m[1])){inferredMpn=m[1].trim();break}}
+ const mpn=!badMpn(existing)?existing:inferredMpn;
+ return{brand:shopish?(inferredBrand||""):(inferredBrand||rawBrand),mpn};
 }
 function knownNumber(value:any){
  if(value==null||value==="")return null;
