@@ -170,6 +170,15 @@ async function catalog(query: string, country: string, source: string, limit: nu
   };
 }
 
+const EBAY_AUTO_DISCOVERY_QUERIES=[
+ "professional camera","camera lens","cinema camera","medium format camera",
+ "studio monitor","guitar amplifier","electric guitar","acoustic guitar","synthesizer","audio interface","effects processor","DJ equipment",
+ "espresso machine","commercial coffee grinder","prosumer coffee machine","kitchen appliance",
+ "electric bike","e-bike","mountain e-bike","cargo e-bike",
+ "industrial replacement part","PLC module","variable frequency drive","industrial sensor","power supply module",
+ "server hardware","enterprise networking","test equipment","oscilloscope"
+];
+
 const EBAY_QUERY_FALLBACKS:Record<string,string[]>={
  jewellery:["necklace","pendant necklace","women jewelry","bracelet","earrings"],
  jewelry:["necklace","pendant necklace","women jewelry","bracelet","earrings"],
@@ -1204,6 +1213,63 @@ export function makeHandler(basePath="/api") {
           });
           const prepared=await ebayPrepareCandidate(query,product_id);
           return text({verified:true,stored:row,prepared});
+        }
+      );
+
+      server.tool(
+        "ebay_find_products",
+        "Automatically search YNOT across a broad high-value product universe, prepare candidates for eBay France, and rank the strongest opportunities. Read-only: never publishes.",
+        {
+          max_queries:z.number().int().min(1).max(30).default(20),
+          max_candidates:z.number().int().min(1).max(100).default(40),
+          min_price:z.number().min(0).default(75)
+        },
+        async({max_queries,max_candidates,min_price})=>{
+          const queries=EBAY_AUTO_DISCOVERY_QUERIES.slice(0,max_queries);
+          const seen=new Set<string>();
+          const raw:any[]=[];
+          const queryStats:any[]=[];
+          for(const query of queries){
+            if(raw.length>=max_candidates*3)break;
+            try{
+              const products=await ebayRawCatalog(query,"FR",20);
+              let added=0;
+              for(const product of products){
+                const id=String(product?.id||"");
+                if(!id||seen.has(id)||Number(product?.price||0)<min_price)continue;
+                seen.add(id); raw.push({query,product}); added++;
+              }
+              queryStats.push({query,returned:products.length,added});
+            }catch(error){
+              queryStats.push({query,returned:0,added:0,error:error instanceof Error?error.message:"SEARCH_FAILED"});
+            }
+          }
+          const prepared:any[]=[];
+          for(const row of raw){
+            if(prepared.length>=max_candidates)break;
+            try{
+              const p:any=await ebayPrepareCandidate(row.query,String(row.product?.id||""));
+              prepared.push(p);
+            }catch(error){
+              prepared.push({ok:false,query:row.query,product:{id:row.product?.id,title:row.product?.title},error:error instanceof Error?error.message:"PREPARE_FAILED"});
+            }
+          }
+          const ranked=prepared.sort((a:any,b:any)=>{
+            const pa=Number(a?.product?.ebaySpecialistPricing?.grossProfit||0);
+            const pb=Number(b?.product?.ebaySpecialistPricing?.grossProfit||0);
+            const ea=Number(Boolean(a?.eligibility?.publishable));
+            const eb=Number(Boolean(b?.eligibility?.publishable));
+            return (eb-ea)||(pb-pa)||(Number(b?.product?.price||0)-Number(a?.product?.price||0));
+          });
+          return text({
+            marketplace:"EBAY_FR",
+            query_count:queries.length,
+            unique_products_found:seen.size,
+            prepared_count:prepared.length,
+            publishable_count:prepared.filter((x:any)=>x?.eligibility?.publishable).length,
+            query_stats:queryStats,
+            candidates:ranked
+          });
         }
       );
 
