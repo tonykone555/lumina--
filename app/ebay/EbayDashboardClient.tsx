@@ -15,6 +15,7 @@ export default function EbayDashboardClient(){
  const [searchQuery,setSearchQuery]=useState("");
  const [searching,setSearching]=useState(false);
  const [searchResults,setSearchResults]=useState<any[]>([]);
+ const [searchInterpretation,setSearchInterpretation]=useState<any>(null);
  useEffect(()=>{
   const t=sessionStorage.getItem("ynot-ebay-token")||"";
   if(t){setToken(t);setSavedToken(t)}
@@ -51,6 +52,7 @@ export default function EbayDashboardClient(){
    const j=await r.json();
    if(!r.ok)throw new Error(j?.error||`HTTP ${r.status}`);
    setSearchResults(Array.isArray(j?.products)?j.products:[]);
+   setSearchInterpretation(j?.interpreted||null);
   }catch(e){setError(e instanceof Error?e.message:"Search failed")}
   finally{setSearching(false)}
  }
@@ -80,10 +82,10 @@ export default function EbayDashboardClient(){
    {error&&<div className="ebayError">{error}</div>}
    <section className="ebaySection">
     <div className="ebaySectionHead"><div><small>SEARCH PRODUCTS</small><h2>Find products now</h2></div><span>YNOT catalogue + eBay discovery</span></div>
-    <div className="ebaySearchBar"><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")searchProducts()}} placeholder="e.g. electric bike, Hilti parts, Martin D-28, industrial PLC"/><button onClick={searchProducts} disabled={searching}>{searching?"Searching…":"Search"}</button></div>
+    <div className="ebaySearchBar"><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")searchProducts()}} placeholder="Try: Find me 30 expensive specialist products in Europe with at least €300 profit"/><button onClick={searchProducts} disabled={searching}>{searching?"Searching…":"Search"}</button></div>{searchInterpretation&&<div className="ebayIntent"><span>{searchInterpretation.requestedCount} wanted</span>{searchInterpretation.minPotentialProfit&&<span>€{searchInterpretation.minPotentialProfit}+ profit</span>}{searchInterpretation.europeOnly&&<span>Europe</span>}{searchInterpretation.specialist&&<span>Specialist</span>}<span>eBay France</span></div>}
     {searchResults.length>0&&<div className="ebayGrid ebaySearchResults">{searchResults.map((p:any)=><article className="ebayCard" key={p.id||p.url||p.title}>
       <div className="ebayImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}</div>
-      <div className="ebayCardBody"><div className="ebayBadges"><i>{p.source||"product"}</i>{p.currency&&<i>{p.currency}</i>}</div><h3>{p.title}</h3><p>{[p.brand,p.category].filter(Boolean).join(" · ")}</p><div className="ebayMoney"><span>Price <b>{p.currency||"EUR"} {Number(p.price||0).toLocaleString()}</b></span></div>{p.url&&<a href={p.url} target="_blank" rel="noreferrer">Open product ↗</a>}</div>
+      <div className="ebayCardBody"><div className="ebayBadges"><i>{p.source||"product"}</i>{p.currency&&<i>{p.currency}</i>}</div><h3>{p.title}</h3><p>{[p.brand,p.category].filter(Boolean).join(" · ")}</p><div className="ebayMoney"><span>Cost <b>{p.currency||"EUR"} {Number(p.price||0).toLocaleString()}</b></span>{p.estimatedResale!=null&&<span>Target <b>€{Number(p.estimatedResale).toLocaleString()}</b></span>}{p.estimatedProfit!=null&&<span>Est. profit <b>€{Number(p.estimatedProfit).toLocaleString()}</b></span>}</div>{p.url&&<a href={p.url} target="_blank" rel="noreferrer">Open product ↗</a>}</div>
     </article>)}</div>}
    </section>
    <section className="ebaySection"><div className="ebaySectionHead"><div><small>PRODUCT FINDER</small><h2>Web candidates</h2></div><span>{data.candidates.length} saved</span></div>
