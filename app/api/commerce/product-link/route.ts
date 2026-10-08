@@ -65,7 +65,7 @@ async function merchantPageProductData(url:string,title:string){
   const images=uniqMedia(jsonImages,metaImages,reversed).slice(0,20);
   const description=stripHtml(chosen?.description)||stripHtml([...html.matchAll(/<meta[^>]+(?:property|name)=["'](?:description|og:description)["'][^>]+content=["']([^"']+)["'][^>]*>/gi)][0]?.[1]);
   const brand=stripHtml(typeof chosen?.brand==="string"?chosen.brand:(chosen?.brand?.name||chosen?.manufacturer?.name||chosen?.manufacturer||""));
-  const mpn=stripHtml(chosen?.mpn||chosen?.sku||chosen?.model||chosen?.productID||"");
+  const mpn=stripHtml(chosen?.mpn||chosen?.manufacturerPartNumber||chosen?.manufacturer_part_number||chosen?.partNumber||chosen?.part_number||"");
   return{images,description,brand,mpn};
  }catch{return{images:[] as string[],description:'',brand:'',mpn:''}}
 }
