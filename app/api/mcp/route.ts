@@ -381,11 +381,30 @@ async function hydrateEbayCatalogueProduct(product:any){
 }
 
 function specialistIdentity(product:any){
+ const title=cleanEbayText(product?.title);
  const hay=cleanEbayText([product?.title,product?.description].filter(Boolean).join(" "));
- const brands=["Hilti","Singer","Technics","BMW","Dell","HPE","HP","Thetford","Leica","Nikon","Siemens","Schneider","Stihl","Makita","Bernina","Epson","Allen-Bradley","Lelit","Tektronix","Rayqual","MOTU","Novation","Roland","Bosch","Shimano","SRAM","Yamaha","Bafang","Brose","Fazua","Magura","TQ","RockShox","Fox","Garmin","Canon","Sony","Fujifilm","Panasonic"];
  const rawBrand=cleanEbayText(product?.brand);
- const shopish=/shop|store|parts|supply|sewingmachine|caratech|xdrilled|omegacarparts|music ?store|audio ?shop|tool ?shop|bike ?shop|cycles?|retailer|merchant/i.test(rawBrand);
- const inferredBrand=brands.find(b=>new RegExp("\\b"+b.replace(/[.*+?^$()|[\\]\\]/g,"\\$&").replace("-","[- ]?")+"\\b","i").test(hay))||"";
+ const explicitTitleBrands=[
+  ["Lapierre",/\blapierre\b/i],["Cube",/\bcube\b/i],["Martin",/\bmartin\s+d[- ]?28\b|\bmartin\b/i],
+  ["Fender",/\bfender\b/i],["PRS",/\bprs\b|\bpaul reed smith\b/i],["Neural DSP",/\bneural\s+dsp\b/i],
+  ["Pioneer",/\bpioneer\b|\bcdj[- ]?3000\b/i],["Hilti",/\bhilti\b/i],["Singer",/\bsinger\b/i],
+  ["Technics",/\btechnics\b/i],["BMW",/\bbmw\b/i],["Dell",/\bdell\b/i],["HPE",/\bhpe\b/i],
+  ["Thetford",/\bthetford\b/i],["Leica",/\bleica\b/i],["Nikon",/\bnikon\b/i],["Siemens",/\bsiemens\b/i],
+  ["Schneider",/\bschneider\b/i],["Stihl",/\bstihl\b/i],["Makita",/\bmakita\b/i],["Bernina",/\bbernina\b/i],
+  ["Epson",/\bepson\b/i],["Allen-Bradley",/\ballen[- ]?bradley\b/i],["Lelit",/\blelit\b/i],
+  ["Tektronix",/\btektronix\b/i],["Rayqual",/\brayqual\b/i],["MOTU",/\bmotu\b/i],
+  ["Novation",/\bnovation\b/i],["Roland",/\broland\b/i],["Yamaha",/\byamaha\b/i],
+  ["Line 6",/\bline\s*6\b/i],["Universal Audio",/\buniversal audio\b|\bua\s*1176\b/i],
+  ["Bosch",/\bbosch\b/i],["Shimano",/\bshimano\b/i],["SRAM",/\bsram\b/i],["Bafang",/\bbafang\b/i],
+  ["Brose",/\bbrose\b/i],["Fazua",/\bfazua\b/i],["Magura",/\bmagura\b/i],["TQ",/\btq\b/i],
+  ["RockShox",/\brockshox\b/i],["Fox",/\bfox\b/i],["Garmin",/\bgarmin\b/i],["Canon",/\bcanon\b/i],
+  ["Sony",/\bsony\b/i],["Fujifilm",/\bfujifilm\b/i],["Panasonic",/\bpanasonic\b/i]
+ ] as const;
+ const titleBrand=explicitTitleBrands.find(([,re])=>re.test(title))?.[0]||"";
+ const inferredBrand=titleBrand||explicitTitleBrands.find(([,re])=>re.test(hay))?.[0]||"";
+ const shopish=/shop|store|parts|supply|sewingmachine|caratech|xdrilled|omegacarparts|music ?store|audio ?shop|tool ?shop|bike ?shop|cycles?|retailer|merchant|swee lee/i.test(rawBrand);
+ // Component brands such as Bosch/Shimano must not override an explicit complete-product brand in the title.
+ const componentBrand=/^(bosch|shimano|sram|bafang|brose|fazua|magura|tq|rockshox|fox)$/i.test(rawBrand);
  const existing=cleanEbayText(product?.mpn);
  const badMpn=(value:string)=>{
   const v=value.trim();
@@ -393,16 +412,34 @@ function specialistIdentity(product:any){
   if(/^\d{8,14}$/.test(v))return true;
   if(/sync|internal|shop|store|sku|stock|code/i.test(v))return true;
   if(v.length>40)return true;
-  const title=cleanEbayText(product?.title).toLowerCase();
-  if(title&&v.toLowerCase()===title)return true;
+  const lowerTitle=title.toLowerCase();
+  if(lowerTitle&&v.toLowerCase()===lowerTitle)return true;
   return false;
  };
  const explicitPatterns=[/\b(?:manufacturer(?:\'s)?\s*part\s*(?:number|no\.?|#)|manufacturer\s*part\s*number|mpn|oem\s*(?:part\s*)?(?:number|no\.?|#)|part\s*(?:number|no\.?|#))\s*[:#-]?\s*([A-Z0-9][A-Z0-9._\/-]{2,})\b/i];
  let inferredMpn="";
  for(const re of explicitPatterns){const m=hay.match(re);if(m?.[1]&&!badMpn(m[1])){inferredMpn=m[1].trim();break}}
  const mpn=!badMpn(existing)?existing:inferredMpn;
- return{brand:shopish?(inferredBrand||""):(inferredBrand||rawBrand),mpn};
+ const brand=(shopish||componentBrand)?(inferredBrand||""):(inferredBrand||rawBrand);
+ return{brand,mpn};
 }
+async function eurAmount(amount:any,currency:any){
+ const value=Number(amount),from=String(currency||"EUR").trim().toUpperCase();
+ if(!Number.isFinite(value)||value<=0)return null;
+ if(!from||from==="EUR")return{value,currency:"EUR",rate:1,converted:false};
+ try{
+  const response=await fetch(`https://api.frankfurter.dev/v2/rate/${encodeURIComponent(from.toLowerCase())}/eur`,{cache:"no-store",headers:{Accept:"application/json"},signal:AbortSignal.timeout(8000)});
+  const data:any=await response.json().catch(()=>null),rate=Number(data?.rate);
+  if(response.ok&&Number.isFinite(rate)&&rate>0)return{value:Math.round(value*rate*100)/100,currency:"EUR",rate,converted:true};
+ }catch{}
+ return null;
+}
+function inferredEbayCondition(product:any){
+ const text=cleanEbayText([product?.condition,product?.title,product?.description].filter(Boolean).join(" ")).toLowerCase();
+ if(/\b(used|pre[- ]?owned|second[- ]?hand|preloved|occasion|gebraucht|usato|utilisé|utilise)\b/.test(text))return"USED_GOOD";
+ return"NEW";
+}
+
 function knownNumber(value:any){
  if(value==null||value==="")return null;
  const n=Number(value);return Number.isFinite(n)?n:null;
@@ -415,7 +452,24 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   if(!shallowProduct)return{ok:false,error:"YNOT_PRODUCT_NOT_FOUND"};
   const hydrated=await hydrateEbayCatalogueProduct(shallowProduct);
   const identity=specialistIdentity(hydrated);
-  const product={...hydrated,brand:identity.brand||hydrated.brand,mpn:identity.mpn||hydrated.mpn};
+  let product={...hydrated,brand:identity.brand||hydrated.brand,mpn:identity.mpn||hydrated.mpn};
+  const fx=await eurAmount(product?.supplierPrice??product?.price,product?.currency);
+  if(fx){
+    const originalCurrency=String(product?.currency||"EUR").toUpperCase();
+    const originalSupplier=Number(product?.supplierPrice??product?.price);
+    const sourcePrice=Number(product?.price);
+    const ratio=Number.isFinite(originalSupplier)&&originalSupplier>0&&Number.isFinite(sourcePrice)?sourcePrice/originalSupplier:1;
+    product={...product,
+      originalCurrency,
+      originalPrice:product?.price,
+      originalSupplierPrice:product?.supplierPrice,
+      supplierPrice:fx.value,
+      price:Math.round(fx.value*ratio*100)/100,
+      retailPrice:product?.retailPrice!=null?Math.round(Number(product.retailPrice)*fx.rate*100)/100:product?.retailPrice,
+      currency:"EUR",
+      fxRateToEur:fx.rate
+    };
+  }
 
   const specialistPricing=ebaySpecialistRetail(product,query);
   const ebayRetailPrice=Number.isFinite(Number(specialistPricing.retail))&&Number(specialistPricing.retail)>0
@@ -450,10 +504,10 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     if(canonicalOriginCity&&String(a?.city||"").trim().toLowerCase()!==canonicalOriginCity.toLowerCase())return false;
     if(bgLovech&&String(a?.addressLine1||"").trim().toLowerCase()!==canonicalOriginAddressLine1.toLowerCase())return false;
     if(originState&&String(a?.stateOrProvince||"").trim().toLowerCase()!==originState.toLowerCase())return false;
-    return Boolean(originPostalCode||canonicalOriginCity);
+    return Boolean((originPostalCode||canonicalOriginCity)&&String(x?.merchantLocationKey||"").trim());
   })||null;
 
-  if(originVerified&&!matchingLocation&&(originPostalCode||(originCity&&originState))){
+  if(originVerified&&(!matchingLocation||!String(matchingLocation?.merchantLocationKey||"").trim())&&(originPostalCode||(originCity&&originState))){
     try{
       matchingLocation=await ensureEbayInventoryLocationForOrigin({
         country:sourceOrigin,
@@ -494,10 +548,10 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     imageUrls,
     quantity:1,
     price:ebayRetailPrice,
-    currency:String(product.currency||"EUR"),
+    currency:"EUR",
     categoryId:taxonomy.categoryId,
     marketplaceId:"EBAY_FR" as const,
-    condition:"NEW",
+    condition:inferredEbayCondition(product),
     brand:cleanEbayText(product.brand)||undefined,
     mpn:cleanEbayText(product.mpn)||undefined,
     aspects:taxonomy.aspects,
@@ -506,13 +560,13 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   return{
     ok:true,query,product:{
       id:product.id,title:product.title,brand:product.brand,source:product.source,url:product.url,
-      price:ebayRetailPrice,currency:product.currency,image:product.image,
+      price:ebayRetailPrice,currency:"EUR",originalCurrency:(product as any).originalCurrency||product.currency,image:product.image,
       catalogueRetailPrice:Number(product.price),
       supplierPrice:specialistPricing.supplierPrice,
       ebaySpecialistPricing:specialistPricing
     },
     shipping:{shipsToFrance:true,sourceOrigin:sourceOrigin||null,originPostalCode:originPostalCode||null,originCity:canonicalOriginCity||null,originState:originState||null,originAddressLine1:canonicalOriginAddressLine1||null,originVerified,locationReady:Boolean(matchingLocation),deliveryDaysMax:eligibility.deliveryDaysMax,shippingCost:eligibility.shippingCost},
-    ebay:{marketplaceId:"EBAY_FR",categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,categoryDomainOk:taxonomy.categoryDomainOk,missingRequiredAspects:taxonomy.missingRequiredAspects,sellerReady:readiness.ready},
+    ebay:{marketplaceId:"EBAY_FR",categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,categoryDomainOk:taxonomy.categoryDomainOk,missingRequiredAspects:taxonomy.missingRequiredAspects,sellerReady:readiness.ready,condition:item.condition},
     eligibility:{publishable:eligibility.publishable,blockers:eligibility.blockers,warnings:eligibility.warnings,marginPct:eligibility.marginPct},
     item
   };
