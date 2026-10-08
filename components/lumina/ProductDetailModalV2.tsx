@@ -155,7 +155,7 @@ export default function ProductDetailModalV2({
         </button>}
 
         <div className="ynot-pv2-actions">
-          <button className="ynot-pv2-bag ynot-unified-add ynot-pv2-shop" type="button" disabled={checkoutBusy} data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"} data-ynot-cta-label="SHOP">
+          <button className="ynot-pv2-bag ynot-pv2-shop" type="button" disabled={checkoutBusy} data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"} data-ynot-cta-label="SHOP" onClick={()=>window.dispatchEvent(new CustomEvent("ynot:add-product-to-bag",{detail:{product,quantity:bundleQty,discountPercent:bundleQty===2?15:0}}))}>
             <ShoppingBag/><span>SHOP</span>
           </button>
           <button className="ynot-pv2-klarna" type="button" disabled={checkoutBusy} aria-label="Klarna" data-payment-method="klarna" data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"}>
