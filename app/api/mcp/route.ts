@@ -1217,6 +1217,77 @@ export function makeHandler(basePath="/api") {
       );
 
       server.tool(
+        "ebay_add_web_candidate",
+        "Save a product candidate found outside YNOT (for example by ChatGPT web research) into YNOT's eBay candidate queue. This does not publish.",
+        {
+          source_url:z.string().url(),
+          title:z.string().min(2).max(500),
+          merchant_name:z.string().max(300).default(""),
+          brand:z.string().max(200).default(""),
+          model:z.string().max(200).default(""),
+          description:z.string().max(5000).default(""),
+          condition:z.string().max(80).default(""),
+          supplier_price:z.number().positive(),
+          supplier_currency:z.string().min(3).max(3).default("EUR"),
+          estimated_ebay_price:z.number().positive().optional(),
+          image_urls:z.array(z.string().url()).max(12).default([]),
+          origin_country:z.string().max(2).default(""),
+          origin_city:z.string().max(160).default(""),
+          origin_postal_code:z.string().max(50).default(""),
+          origin_address_line1:z.string().max(300).default(""),
+          discovery_notes:z.string().max(4000).default(""),
+          source_evidence:z.record(z.unknown()).optional()
+        },
+        async(input)=>{
+          const estimatedProfit=input.estimated_ebay_price!=null
+            ? Math.round((input.estimated_ebay_price-input.supplier_price)*100)/100
+            : null;
+          const rows=await dbRows("ynot_ebay_web_candidates?on_conflict=source_url",{
+            method:"POST",
+            headers:{Prefer:"resolution=merge-duplicates,return=representation"},
+            body:JSON.stringify({
+              status:"new",
+              source_url:input.source_url,
+              merchant_name:input.merchant_name||null,
+              title:input.title,
+              brand:input.brand||null,
+              model:input.model||null,
+              description:input.description||null,
+              condition:input.condition||null,
+              supplier_price:input.supplier_price,
+              supplier_currency:input.supplier_currency.toUpperCase(),
+              estimated_ebay_price:input.estimated_ebay_price??null,
+              estimated_profit:estimatedProfit,
+              image_urls:input.image_urls,
+              origin_country:input.origin_country?input.origin_country.toUpperCase():null,
+              origin_city:input.origin_city||null,
+              origin_postal_code:input.origin_postal_code||null,
+              origin_address_line1:input.origin_address_line1||null,
+              source_evidence:input.source_evidence||{},
+              discovery_notes:input.discovery_notes||null,
+              discovered_by:"chatgpt-web",
+              updated_at:new Date().toISOString()
+            })
+          });
+          return text({saved:true,candidate:rows[0]||null});
+        }
+      );
+
+      server.tool(
+        "ebay_list_web_candidates",
+        "Read products ChatGPT or another researcher saved from the wider web into YNOT's eBay candidate queue.",
+        {
+          status:z.enum(["all","new","review","prepared","published","blocked"]).default("new"),
+          limit:z.number().int().min(1).max(100).default(30)
+        },
+        async({status,limit})=>{
+          const filter=status==="all"?"":`&status=eq.${encodeURIComponent(status)}`;
+          const rows=await dbRows(`ynot_ebay_web_candidates?select=id,created_at,status,source_url,merchant_name,title,brand,model,condition,supplier_price,supplier_currency,estimated_ebay_price,estimated_profit,image_urls,origin_country,origin_city,origin_postal_code,origin_address_line1,source_evidence,discovery_notes,prepared_product_id,last_error${filter}&order=estimated_profit.desc.nullslast,created_at.desc&limit=${limit}`);
+          return text({candidates:rows});
+        }
+      );
+
+      server.tool(
         "ebay_find_products",
         "Automatically search YNOT across a broad high-value product universe, prepare candidates for eBay France, and rank the strongest opportunities. Read-only: never publishes.",
         {
