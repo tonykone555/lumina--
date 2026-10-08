@@ -25,10 +25,10 @@ const SPECIALIST_QUERIES=[
 
 function parseIntent(q:string,body:any){
  const lower=q.toLowerCase();
- const countMatch=lower.match(/\b(?:find|show|get|give me)?\s*(\d{1,3})\b/);
+ const countMatch=lower.match(/\b(?:find|show|get|give me)?\s*(\d{1,5})\b/);
  const profitMatch=lower.match(/(?:at least|minimum|min\.?|over|above)\s*€?\s*(\d+(?:[.,]\d+)?).*?profit|profit.*?(?:at least|minimum|min\.?|over|above)?\s*€?\s*(\d+(?:[.,]\d+)?)/i);
  const priceMatch=lower.match(/(?:expensive|high[- ]value)/i);
- const count=Math.max(1,Math.min(100,Number(countMatch?.[1]||body?.limit||24)));
+ const count=Math.max(1,Number(countMatch?.[1]||body?.requestedCount||30));
  const minProfit=Math.max(0,Number(String(profitMatch?.[1]||profitMatch?.[2]||0).replace(",","."))||0);
  const europe=/\beurope|european|eu\b/i.test(lower);
  const specialist=/\bspecialist|industrial|professional|hard[- ]?to[- ]?find|replacement part|spare part\b/i.test(lower);
@@ -90,7 +90,7 @@ export async function POST(request:NextRequest){
   const intent=parseIntent(query,body);
   const looksNatural=/\bfind me|could i resell|potential profit|at least|in europe|specialist products|on ebay/i.test(query);
   const searches=looksNatural
-    ? [...(intent.specialist||intent.highValue?SPECIALIST_QUERIES:[]),query].slice(0,24)
+    ? [...(intent.specialist||intent.highValue?SPECIALIST_QUERIES:[]),query]
     : [query];
 
   const seen=new Set<string>();
@@ -116,7 +116,9 @@ export async function POST(request:NextRequest){
    }
   }
   products.sort((a,b)=>(Number(b.estimatedProfit||0)-Number(a.estimatedProfit||0))||(Number(b.price||0)-Number(a.price||0)));
-  const limited=products.slice(0,intent.count);
+  const offset=Math.max(0,Number(body?.offset||0));
+  const pageSize=Math.max(1,Math.min(60,Number(body?.pageSize||30)));
+  const page=products.slice(offset,offset+pageSize);
   return NextResponse.json({
     query,
     interpreted:{
@@ -128,8 +130,12 @@ export async function POST(request:NextRequest){
       note:intent.minProfit?"Potential profit is a YNOT margin estimate until live eBay comparable pricing is checked.":null
     },
     searchedQueries:searchStats,
-    products:limited,
-    totalCandidates:products.length
+    products:page,
+    totalCandidates:products.length,
+    offset,
+    pageSize,
+    nextOffset:offset+page.length,
+    hasMore:offset+page.length<products.length
   });
  }catch(error){
   return NextResponse.json({error:error instanceof Error?error.message:"SEARCH_FAILED"},{status:500});
