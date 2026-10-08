@@ -320,3 +320,15 @@ html.ynot-pv2-open .ynot-reviews-gallery{
  border:0!important;
  overflow:hidden!important;
 }
+
+/* Bubble World gallery controls must win mobile pointer/touch handling. */
+.ynot-pv2-gallery{position:relative;z-index:20;pointer-events:auto!important}
+.ynot-pv2-hero,.ynot-pv2-thumbs,.ynot-pv2-thumbs button{
+  position:relative;
+  z-index:21;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  -webkit-user-select:none;
+  user-select:none;
+}
+.ynot-pv2-hero img,.ynot-pv2-thumbs img{pointer-events:none!important}

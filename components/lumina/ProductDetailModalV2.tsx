@@ -82,9 +82,17 @@ export default function ProductDetailModalV2({
   const variants=useMemo(()=>usableVariants(product),[product]);
   const activeIndex=Math.max(0,images.findIndex(src=>src===product.image));
   const activeVariant=variants.find(v=>v.id===product.variantId);
-  const cycleImage=()=>{
+  const lastGalleryPointer=useRef(0);
+  const activateImage=(src:string,e?:React.SyntheticEvent)=>{
+    if(!src)return;
+    e?.preventDefault();
+    e?.stopPropagation();
+    lastGalleryPointer.current=Date.now();
+    onImage(src);
+  };
+  const cycleImage=(e?:React.SyntheticEvent)=>{
     if(images.length<2)return;
-    onImage(images[(activeIndex+1)%images.length]);
+    activateImage(images[(activeIndex+1)%images.length],e);
   };
   const touchStart=(e:React.TouchEvent<HTMLElement>)=>{
     const target=e.target as HTMLElement;
@@ -105,11 +113,11 @@ export default function ProductDetailModalV2({
       <button className="ynot-pv2-close" onClick={onClose} aria-label="Close product"><X/></button>
 
       <section className="ynot-pv2-gallery">
-        <button className="ynot-pv2-hero" type="button" onClick={cycleImage} aria-label={images.length>1?"Show next product image":"Product image"}>
+        <button className="ynot-pv2-hero" type="button" onPointerUp={e=>{if(e.pointerType!=="mouse")cycleImage(e)}} onClick={e=>{if(Date.now()-lastGalleryPointer.current>450)cycleImage(e)}} aria-label={images.length>1?"Show next product image":"Product image"}>
           <img src={product.image} alt={clean(product.title)} draggable={false}/>
         </button>
         {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
-          {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onClick={()=>onImage(src)} aria-label={`View image ${index+1}`}>
+          {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onPointerUp={e=>{if(e.pointerType!=="mouse")activateImage(src,e)}} onClick={e=>{if(Date.now()-lastGalleryPointer.current>450)activateImage(src,e)}} aria-label={`View image ${index+1}`}>
             <img src={src} alt="" draggable={false}/>
           </button>)}
         </div>}
