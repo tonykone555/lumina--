@@ -125,11 +125,12 @@ export async function setupEbayFranceDefaults(){
  };
 }
 
-export async function ensureEbayInventoryLocationForOrigin(input:{country:string;postalCode?:string|null;city?:string|null;state?:string|null;name?:string|null}){
+export async function ensureEbayInventoryLocationForOrigin(input:{country:string;postalCode?:string|null;city?:string|null;state?:string|null;addressLine1?:string|null;name?:string|null}){
  const country=String(input.country||"").trim().toUpperCase();
  const postalCode=String(input.postalCode||"").trim();
  const city=String(input.city||"").trim();
  const state=String(input.state||"").trim();
+ const addressLine1=String(input.addressLine1||"").trim();
  if(!country)throw new Error("EBAY_ORIGIN_COUNTRY_REQUIRED");
  if(!postalCode&&!(city&&state))throw new Error("EBAY_ORIGIN_LOCATION_INCOMPLETE");
 
@@ -141,11 +142,22 @@ export async function ensureEbayInventoryLocationForOrigin(input:{country:string
   const sameCityState=!postalCode&&city&&state&&String(a?.city||"").trim().toLowerCase()===city.toLowerCase()&&String(a?.stateOrProvince||"").trim().toLowerCase()===state.toLowerCase();
   return sameCountry&&(samePostal||sameCityState);
  });
- if(existing)return existing;
 
  const keyBase=`ynot-${country.toLowerCase()}-${(postalCode||city+"-"+state).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,30)}`;
- const merchantLocationKey=keyBase.slice(0,50);
- const address=postalCode?{postalCode,country}:{city,stateOrProvince:state,country};
+ const merchantLocationKey=String(existing?.merchantLocationKey||keyBase).slice(0,50);
+ const address:any={country};
+ if(addressLine1)address.addressLine1=addressLine1;
+ if(city)address.city=city;
+ if(state)address.stateOrProvince=state;
+ if(postalCode)address.postalCode=postalCode;
+
+ const current=existing?.location?.address||{};
+ const completeEnough=!addressLine1||(
+  String(current?.addressLine1||"").trim().toLowerCase()===addressLine1.toLowerCase()&&
+  (!city||String(current?.city||"").trim().toLowerCase()===city.toLowerCase())
+ );
+ if(existing&&completeEnough)return existing;
+
  await ebay(`/sell/inventory/v1/location/${encodeURIComponent(merchantLocationKey)}`,{
   method:"POST",
   body:JSON.stringify({
