@@ -253,7 +253,7 @@ export default function LuminaWorld(){
  function toggleSaved(product:Product){try{const parsed=JSON.parse(localStorage.getItem("ynot-saved-items")||"[]") as Product[];const items=Array.isArray(parsed)?parsed:[];const exists=items.some(item=>item.id===product.id);const next=exists?items.filter(item=>item.id!==product.id):[{...product,section:categoryKey,sections:[categoryKey],savedAt:Date.now()},...items];localStorage.setItem("ynot-saved-items",JSON.stringify(next));localStorage.setItem("ynot-saved-products",JSON.stringify(next.map(item=>item.id)));setLiked(new Set(next.map(item=>item.id)));window.dispatchEvent(new Event("ynot:saves-changed"))}catch{}}
  function zoomAround(clientX:number,clientY:number,next:number){const current=Number.isFinite(zoom)&&zoom>0?zoom:START_ZOOM,safe=Number.isFinite(next)?Math.min(2.8,Math.max(MIN_ZOOM,next)):current,stageX=(clientX-pan.x)/current,stageY=(clientY-pan.y)/current,x=clientX-stageX*safe,y=clientY-stageY*safe;if(!Number.isFinite(x)||!Number.isFinite(y))return;setZoom(safe);setPan({x,y})}
  async function openProduct(product:Product){
-  gallerySwitchRef.current++;
+  const openToken=++gallerySwitchRef.current;
   const media=(p:Product)=>[...new Set<string>([p.image,...(p.images||[]),...(p.variants||[]).flatMap(v=>[v.image,...(v.images||[])]).filter(Boolean)].filter(Boolean) as string[])];
   const initial=media(product),primary=initial[0]||product.image;
   setSelected({...product,image:primary,images:initial});
@@ -266,7 +266,12 @@ export default function LuminaWorld(){
     try{const response=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(rich),cache:"no-store"}),data=await response.json();if(response.ok&&data.product)rich={...rich,...data.product,url:data.url||data.product.url||rich.url}}catch{}
    }
    const images=media(rich);
-   setSelected(current=>current&&current.id===product.id?{...rich,image:images[0]||rich.image,images}:current);
+   setSelected(current=>{
+    if(!current||current.id!==product.id)return current;
+    const userChangedImage=gallerySwitchRef.current!==openToken;
+    const activeImage=userChangedImage&&current.image?current.image:(images[0]||rich.image);
+    return{...rich,image:activeImage,images};
+   });
   }catch{}
  }
  function swipeProduct(direction:number){
@@ -278,14 +283,11 @@ export default function LuminaWorld(){
  }
  function switchGalleryImage(image:string){
   if(!selected||!image||image===selected.image)return;
-  const productId=selected.id,request=++gallerySwitchRef.current;
+  const productId=selected.id;
+  gallerySwitchRef.current++;
+  setSelected(product=>product&&product.id===productId?{...product,image}:product);
   const preloader=new Image();
   preloader.decoding="async";
-  preloader.onload=()=>{
-   if(request!==gallerySwitchRef.current)return;
-   setSelected(product=>product&&product.id===productId?{...product,image}:product);
-  };
-  preloader.onerror=()=>{};
   preloader.src=image;
  }
 
