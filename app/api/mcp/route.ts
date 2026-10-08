@@ -653,7 +653,7 @@ function researchedDto(p: any) {
   };
 }
 
-function makeHandler() {
+export function makeHandler(basePath="/api") {
   return createMcpHandler(
     (server) => {
       server.tool(
@@ -1373,20 +1373,20 @@ function makeHandler() {
 
     },
     {},
-    { basePath: "/api", maxDuration: 60 }
+    { basePath, maxDuration: 60 }
   );
 }
 
-async function dispatch(request: Request) {
+export async function dispatchMcp(request: Request,basePath="/api") {
   if (!authorized(request)) {
     return new Response(JSON.stringify({ error: "unauthorized" }), {
       status: 401,
       headers: { "content-type": "application/json", "www-authenticate": 'Bearer realm="YNOT MCP"' },
     });
   }
-  return makeHandler()(request);
+  return makeHandler(basePath)(request);
 }
 
-export const GET = dispatch;
-export const POST = dispatch;
-export const DELETE = dispatch;
+export const GET = (request:Request)=>dispatchMcp(request,"/api");
+export const POST = (request:Request)=>dispatchMcp(request,"/api");
+export const DELETE = (request:Request)=>dispatchMcp(request,"/api");
