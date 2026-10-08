@@ -156,7 +156,7 @@ export async function ensureEbayInventoryLocationForOrigin(input:{country:string
   String(current?.addressLine1||"").trim().toLowerCase()===addressLine1.toLowerCase()&&
   (!city||String(current?.city||"").trim().toLowerCase()===city.toLowerCase())
  );
- if(existing&&completeEnough)return existing;
+ if(existing&&completeEnough&&String(existing?.merchantLocationKey||"").trim())return existing;
 
  await ebay(`/sell/inventory/v1/location/${encodeURIComponent(merchantLocationKey)}`,{
   method:"POST",
