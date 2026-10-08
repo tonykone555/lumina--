@@ -438,19 +438,29 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   const originPostalCode=cleanEbayText(product?.shipFromPostalCode||detectedOrigin.postalCode);
   const originCity=cleanEbayText(product?.shipFromCity||detectedOrigin.city);
   const originState=cleanEbayText(product?.shipFromState||detectedOrigin.state);
+  const bgLovech=sourceOrigin==="BG"&&originPostalCode==="5500";
+  const canonicalOriginCity=bgLovech?"Lovech":originCity;
+  const canonicalOriginAddressLine1=bgLovech?"Ul. Ilinden 9":"";
   const originVerified=Boolean(detectedOrigin.verified&&sourceOrigin);
 
   let matchingLocation=(readiness.locations||[]).find((x:any)=>{
     const a=x?.location?.address||{};
     if(String(a?.country||"").toUpperCase()!==sourceOrigin)return false;
-    if(originPostalCode)return String(a?.postalCode||"").trim()===originPostalCode;
-    return Boolean(originCity&&originState&&String(a?.city||"").trim().toLowerCase()===originCity.toLowerCase()&&String(a?.stateOrProvince||"").trim().toLowerCase()===originState.toLowerCase());
+    if(originPostalCode&&String(a?.postalCode||"").trim()!==originPostalCode)return false;
+    if(canonicalOriginCity&&String(a?.city||"").trim().toLowerCase()!==canonicalOriginCity.toLowerCase())return false;
+    if(bgLovech&&String(a?.addressLine1||"").trim().toLowerCase()!==canonicalOriginAddressLine1.toLowerCase())return false;
+    if(originState&&String(a?.stateOrProvince||"").trim().toLowerCase()!==originState.toLowerCase())return false;
+    return Boolean(originPostalCode||canonicalOriginCity);
   })||null;
 
   if(originVerified&&!matchingLocation&&(originPostalCode||(originCity&&originState))){
     try{
       matchingLocation=await ensureEbayInventoryLocationForOrigin({
-        country:sourceOrigin,postalCode:originPostalCode||null,city:originCity||null,state:originState||null,
+        country:sourceOrigin,
+        postalCode:originPostalCode||null,
+        city:canonicalOriginCity||null,
+        state:originState||null,
+        addressLine1:canonicalOriginAddressLine1||null,
         name:`${cleanEbayText(product.brand)||"YNOT"} supplier`
       });
     }catch{}
@@ -501,7 +511,7 @@ async function ebayPrepareCandidate(query:string,productId?:string){
       supplierPrice:specialistPricing.supplierPrice,
       ebaySpecialistPricing:specialistPricing
     },
-    shipping:{shipsToFrance:true,sourceOrigin:sourceOrigin||null,originPostalCode:originPostalCode||null,originCity:originCity||null,originState:originState||null,originVerified,locationReady:Boolean(matchingLocation),deliveryDaysMax:eligibility.deliveryDaysMax,shippingCost:eligibility.shippingCost},
+    shipping:{shipsToFrance:true,sourceOrigin:sourceOrigin||null,originPostalCode:originPostalCode||null,originCity:canonicalOriginCity||null,originState:originState||null,originAddressLine1:canonicalOriginAddressLine1||null,originVerified,locationReady:Boolean(matchingLocation),deliveryDaysMax:eligibility.deliveryDaysMax,shippingCost:eligibility.shippingCost},
     ebay:{marketplaceId:"EBAY_FR",categoryId:taxonomy.categoryId,categoryName:taxonomy.categoryName,categoryDomainOk:taxonomy.categoryDomainOk,missingRequiredAspects:taxonomy.missingRequiredAspects,sellerReady:readiness.ready},
     eligibility:{publishable:eligibility.publishable,blockers:eligibility.blockers,warnings:eligibility.warnings,marginPct:eligibility.marginPct},
     item
