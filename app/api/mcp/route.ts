@@ -616,6 +616,46 @@ async function dbRows(path: string, init?: RequestInit) {
   return body ? JSON.parse(body) : [];
 }
 
+function classifyEbayPublishError(error:any){
+ const message=cleanEbayText(error instanceof Error?error.message:error);
+ const code=(message.match(/errorId=(\d+)/i)?.[1]||message.match(/\b(\d{4,6})\b/)?.[1]||"").trim();
+ const lower=message.toLowerCase();
+ let errorClass="unknown",retryable=false;
+ if(/internal|temporar|timeout|429|rate.?limit|service unavailable|gateway/i.test(lower)){errorClass="transient_ebay";retryable=true}
+ else if(/location|merchantlocationkey|25012|address|postal/i.test(lower))errorClass="origin_location";
+ else if(/category|taxonomy|categoryid/i.test(lower))errorClass="category";
+ else if(/aspect|required|item specific|specifics/i.test(lower))errorClass="required_aspect";
+ else if(/brand|marque|manufacturer/i.test(lower))errorClass="brand";
+ else if(/condition|used|new\b/i.test(lower))errorClass="condition";
+ else if(/currency|price|amount/i.test(lower))errorClass="price_currency";
+ else if(/policy|fulfillment|payment|return/i.test(lower))errorClass="business_policy";
+ else if(/sku|offer|duplicate|25713|25001/i.test(lower))errorClass="offer_inventory";
+ else if(/image|picture|photo/i.test(lower))errorClass="image";
+ return{errorClass,errorCode:code||null,errorMessage:message,retryable};
+}
+async function logEbayPublishAttempt(input:any){
+ try{
+  const row={
+   query:input?.query||null,
+   product_id:input?.product?.id?String(input.product.id):null,
+   product_title:input?.product?.title||null,
+   stage:input?.stage||"publish",
+   status:input?.status||"failed",
+   error_class:input?.errorClass||null,
+   error_code:input?.errorCode||null,
+   error_message:input?.errorMessage||null,
+   error_details:input?.errorDetails||{},
+   listing_id:input?.listingId||null,
+   sku:input?.sku||null,
+   marketplace_id:"EBAY_FR",
+   retryable:Boolean(input?.retryable),
+   retry_count:Number(input?.retryCount||0),
+   payload_snapshot:input?.payload||{}
+  };
+  await dbRows("ynot_ebay_publish_log",{method:"POST",body:JSON.stringify(row)});
+ }catch{}
+}
+
 async function previousCreatives(productId: string, limit: number) {
   const ids = encodeURIComponent(JSON.stringify([productId]));
   return dbRows(`ynot_ad_creatives?source_product_ids=cs.${ids}&select=id,source_product_ids,template_key,aspect_ratio,hook,primary_text,headline,cta,voice_script,payload,status,quality_score,render_url,thumbnail_url,destination_url,created_at,updated_at&order=created_at.desc&limit=${limit}`);
@@ -1213,8 +1253,15 @@ export function makeHandler(basePath="/api") {
           const prepared:any=await ebayPrepareCandidate(query,product_id);
           if(!prepared?.ok)return text({published:false,...prepared});
           if(!prepared?.eligibility?.publishable)return text({published:false,error:"YNOT_ELIGIBILITY_BLOCKED",blockers:prepared?.eligibility?.blockers||[],warnings:prepared?.eligibility?.warnings||[],prepared});
-          const result=await publishEbayProduct({...prepared.item,quantity});
-          return text({published:true,result,product:prepared.product,shipping:prepared.shipping,ebay:prepared.ebay});
+          try{
+            const result=await publishEbayProduct({...prepared.item,quantity});
+            await logEbayPublishAttempt({query,product:prepared.product,stage:"publish",status:"published",listingId:result?.listingId||result?.listing_id||result?.offerId||null,sku:prepared.item?.sku,payload:{categoryId:prepared.item?.categoryId,condition:prepared.item?.condition,currency:prepared.item?.currency,merchantLocationKey:prepared.item?.merchantLocationKey}});
+            return text({published:true,result,product:prepared.product,shipping:prepared.shipping,ebay:prepared.ebay});
+          }catch(error){
+            const diagnosis=classifyEbayPublishError(error);
+            await logEbayPublishAttempt({query,product:prepared.product,stage:"publish",status:"failed",...diagnosis,sku:prepared.item?.sku,errorDetails:{blockers:prepared?.eligibility?.blockers||[],warnings:prepared?.eligibility?.warnings||[]},payload:{categoryId:prepared.item?.categoryId,condition:prepared.item?.condition,currency:prepared.item?.currency,merchantLocationKey:prepared.item?.merchantLocationKey}});
+            return text({published:false,error:"EBAY_PUBLISH_FAILED",diagnosis,product:prepared.product,shipping:prepared.shipping,ebay:prepared.ebay});
+          }
         }
       );
 
@@ -1244,14 +1291,20 @@ export function makeHandler(basePath="/api") {
               try{
                 const prepared:any=await ebayPrepareCandidate(query,productId);
                 if(!prepared?.ok||!prepared?.eligibility?.publishable){
-                  skipped.push({query,product:prepared?.product||{id:productId,title:candidate?.title||null},blockers:prepared?.eligibility?.blockers||[prepared?.error||"NOT_PUBLISHABLE"]});
+                  const blockedProduct=prepared?.product||{id:productId,title:candidate?.title||null};
+                  const blockers=prepared?.eligibility?.blockers||[prepared?.error||"NOT_PUBLISHABLE"];
+                  await logEbayPublishAttempt({query,product:blockedProduct,stage:"validation",status:"blocked",errorClass:"eligibility",errorMessage:blockers.join(" | "),errorDetails:{blockers,warnings:prepared?.eligibility?.warnings||[]},retryable:false});
+                  skipped.push({query,product:blockedProduct,blockers});
                   continue;
                 }
                 try{
                   const result=await publishEbayProduct({...prepared.item,quantity});
+                  await logEbayPublishAttempt({query,product:prepared.product,stage:"publish",status:"published",listingId:result?.listingId||result?.listing_id||result?.offerId||null,sku:prepared.item?.sku,payload:{categoryId:prepared.item?.categoryId,condition:prepared.item?.condition,currency:prepared.item?.currency,merchantLocationKey:prepared.item?.merchantLocationKey}});
                   published.push({query,product:prepared.product,result});
                 }catch(error){
-                  skipped.push({query,product:prepared.product,error:error instanceof Error?error.message:"EBAY_PUBLISH_FAILED"});
+                  const diagnosis=classifyEbayPublishError(error);
+                  await logEbayPublishAttempt({query,product:prepared.product,stage:"publish",status:"failed",...diagnosis,sku:prepared.item?.sku,errorDetails:{blockers:prepared?.eligibility?.blockers||[],warnings:prepared?.eligibility?.warnings||[]},payload:{categoryId:prepared.item?.categoryId,condition:prepared.item?.condition,currency:prepared.item?.currency,merchantLocationKey:prepared.item?.merchantLocationKey}});
+                  skipped.push({query,product:prepared.product,error:diagnosis.errorMessage,diagnosis});
                 }
               }catch(error){
                 skipped.push({query,product:{id:productId,title:candidate?.title||null},error:error instanceof Error?error.message:"EBAY_PREPARE_FAILED"});
@@ -1262,6 +1315,20 @@ export function makeHandler(basePath="/api") {
         }
       );
 
+
+      server.tool(
+        "ebay_recent_publish_diagnostics",
+        "Read recent YNOT eBay publish attempts with exact failure stage, classified reason, eBay error code/message and retryability. Read-only.",
+        {
+          limit:z.number().int().min(1).max(100).default(30),
+          status:z.enum(["all","failed","blocked","published"]).default("all")
+        },
+        async({limit,status})=>{
+          const statusFilter=status==="all"?"":`&status=eq.${encodeURIComponent(status)}`;
+          const rows=await dbRows(`ynot_ebay_publish_log?select=id,created_at,query,product_id,product_title,stage,status,error_class,error_code,error_message,error_details,listing_id,sku,marketplace_id,retryable,retry_count,payload_snapshot${statusFilter}&order=created_at.desc&limit=${limit}`);
+          return text({attempts:rows});
+        }
+      );
 
       server.tool(
         "threads_get_profile",
