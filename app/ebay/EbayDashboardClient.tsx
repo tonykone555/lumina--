@@ -16,6 +16,9 @@ export default function EbayDashboardClient(){
  const [searching,setSearching]=useState(false);
  const [searchResults,setSearchResults]=useState<any[]>([]);
  const [searchInterpretation,setSearchInterpretation]=useState<any>(null);
+ const [searchHasMore,setSearchHasMore]=useState(false);
+ const [searchOffset,setSearchOffset]=useState(0);
+ const [selected,setSelected]=useState<Set<string>>(new Set());
  useEffect(()=>{
   const t=sessionStorage.getItem("ynot-ebay-token")||"";
   if(t){setToken(t);setSavedToken(t)}
@@ -37,22 +40,34 @@ export default function EbayDashboardClient(){
    html.style.height=prev.htmlHeight;
   };
  },[]);
- async function searchProducts(){
+ function productKey(p:any){return String(p?.id||p?.url||`${p?.title||"product"}|${p?.price||""}`)}
+ function toggleSelected(p:any){
+  const key=productKey(p);
+  setSelected(prev=>{const next=new Set(prev);if(next.has(key))next.delete(key);else next.add(key);return next});
+ }
+ function selectAllLoaded(){setSelected(new Set(searchResults.map(productKey)))}
+ function clearSelected(){setSelected(new Set())}
+ async function searchProducts(append=false){
   const q=searchQuery.trim();
   if(!q){setError("Enter something to search for.");return}
   const nextToken=savedToken||token;
   if(!nextToken){setError("Enter your access code first.");return}
   setSearching(true);setError("");
   try{
+   const offset=append?searchOffset:0;
    const r=await fetch("/api/ebay/search",{
     method:"POST",
     headers:{Authorization:`Bearer ${nextToken}`,"Content-Type":"application/json"},
-    body:JSON.stringify({query:q,limit:24})
+    body:JSON.stringify({query:q,offset,pageSize:30})
    });
    const j=await r.json();
    if(!r.ok)throw new Error(j?.error||`HTTP ${r.status}`);
-   setSearchResults(Array.isArray(j?.products)?j.products:[]);
+   const incoming=Array.isArray(j?.products)?j.products:[];
+   setSearchResults(prev=>append?[...prev,...incoming]:incoming);
    setSearchInterpretation(j?.interpreted||null);
+   setSearchHasMore(Boolean(j?.hasMore));
+   setSearchOffset(Number(j?.nextOffset||incoming.length));
+   if(!append)setSelected(new Set());
   }catch(e){setError(e instanceof Error?e.message:"Search failed")}
   finally{setSearching(false)}
  }
@@ -82,11 +97,16 @@ export default function EbayDashboardClient(){
    {error&&<div className="ebayError">{error}</div>}
    <section className="ebaySection">
     <div className="ebaySectionHead"><div><small>SEARCH PRODUCTS</small><h2>Find products now</h2></div><span>YNOT catalogue + eBay discovery</span></div>
-    <div className="ebaySearchBar"><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")searchProducts()}} placeholder="Try: Find me 30 expensive specialist products in Europe with at least €300 profit"/><button onClick={searchProducts} disabled={searching}>{searching?"Searching…":"Search"}</button></div>{searchInterpretation&&<div className="ebayIntent"><span>{searchInterpretation.requestedCount} wanted</span>{searchInterpretation.minPotentialProfit&&<span>€{searchInterpretation.minPotentialProfit}+ profit</span>}{searchInterpretation.europeOnly&&<span>Europe</span>}{searchInterpretation.specialist&&<span>Specialist</span>}<span>eBay France</span></div>}
-    {searchResults.length>0&&<div className="ebayGrid ebaySearchResults">{searchResults.map((p:any)=><article className="ebayCard" key={p.id||p.url||p.title}>
-      <div className="ebayImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}</div>
-      <div className="ebayCardBody"><div className="ebayBadges"><i>{p.source||"product"}</i>{p.currency&&<i>{p.currency}</i>}</div><h3>{p.title}</h3><p>{[p.brand,p.category].filter(Boolean).join(" · ")}</p><div className="ebayMoney"><span>Cost <b>{p.currency||"EUR"} {Number(p.price||0).toLocaleString()}</b></span>{p.estimatedResale!=null&&<span>Target <b>€{Number(p.estimatedResale).toLocaleString()}</b></span>}{p.estimatedProfit!=null&&<span>Est. profit <b>€{Number(p.estimatedProfit).toLocaleString()}</b></span>}</div>{p.url&&<a href={p.url} target="_blank" rel="noreferrer">Open product ↗</a>}</div>
-    </article>)}</div>}
+    <div className="ebaySearchBar"><input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")searchProducts()}} placeholder="Try: Find me 30 expensive specialist products in Europe with at least €300 profit"/><button onClick={()=>searchProducts(false)} disabled={searching}>{searching?"Searching…":"Search"}</button></div>{searchInterpretation&&<div className="ebayIntent"><span>{searchInterpretation.requestedCount} wanted</span>{searchInterpretation.minPotentialProfit&&<span>€{searchInterpretation.minPotentialProfit}+ profit</span>}{searchInterpretation.europeOnly&&<span>Europe</span>}{searchInterpretation.specialist&&<span>Specialist</span>}<span>eBay France</span></div>}
+    {searchResults.length>0&&<>
+      <div className="ebaySelectionBar"><div><strong>{selected.size} selected</strong><span>{searchResults.length} loaded</span></div><div><button onClick={selectAllLoaded}>Select all loaded</button><button onClick={clearSelected} disabled={!selected.size}>Clear</button></div></div>
+      <div className="ebayGrid ebaySearchResults">{searchResults.map((p:any)=>{const key=productKey(p),isSelected=selected.has(key);return <article className={`ebayCard ebaySelectable ${isSelected?"selected":""}`} key={key} onClick={()=>toggleSelected(p)}>
+        <button className="ebayCheck" type="button" aria-label={isSelected?"Deselect product":"Select product"} onClick={e=>{e.stopPropagation();toggleSelected(p)}}>{isSelected?"✓":""}</button>
+        <div className="ebayImage">{p.image?<img src={p.image} alt=""/>:<span>Y</span>}</div>
+        <div className="ebayCardBody"><div className="ebayBadges"><i>{p.source||"product"}</i>{p.currency&&<i>{p.currency}</i>}</div><h3>{p.title}</h3><p>{[p.brand,p.category].filter(Boolean).join(" · ")}</p><div className="ebayMoney"><span>Cost <b>{p.currency||"EUR"} {Number(p.price||0).toLocaleString()}</b></span>{p.estimatedResale!=null&&<span>Target <b>€{Number(p.estimatedResale).toLocaleString()}</b></span>}{p.estimatedProfit!=null&&<span>Est. profit <b>€{Number(p.estimatedProfit).toLocaleString()}</b></span>}</div>{p.url&&<a href={p.url} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}>Open product ↗</a>}</div>
+      </article>})}</div>
+      <div className="ebayMore"><button onClick={()=>searchProducts(true)} disabled={searching||!searchHasMore}>{searching?"Loading…":searchHasMore?"Load 30 more":"No more new results"}</button></div>
+    </>}
    </section>
    <section className="ebaySection"><div className="ebaySectionHead"><div><small>PRODUCT FINDER</small><h2>Web candidates</h2></div><span>{data.candidates.length} saved</span></div>
     <div className="ebayGrid">{data.candidates.length?data.candidates.map(c=><article className="ebayCard" key={c.id}>
