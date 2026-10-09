@@ -40,5 +40,7 @@ export async function GET(request:NextRequest){
  response.headers.set("Cache-Control","no-store");
  response.cookies.set("etsy_oauth_state",state,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:600});
  response.cookies.set("etsy_oauth_verifier",verifier,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:600});
+ const returnTo=url.searchParams.get("returnTo")||"/room?seller=1";
+ response.cookies.set("etsy_oauth_return_to",returnTo.startsWith("/")?returnTo:"/room?seller=1",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:600});
  return response;
 }
