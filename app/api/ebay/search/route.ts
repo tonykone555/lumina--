@@ -22,6 +22,12 @@ const SPECIALIST_QUERIES=[
  "server hardware","enterprise networking","oscilloscope","test equipment",
  "Hilti parts","Siemens module","Schneider Electric drive","Allen-Bradley module","Tektronix","Leica"
 ];
+const DESIGN_LIGHTING_QUERIES=[
+ "designer pendant light","sculptural pendant light","modern pendant light","oval pendant light",
+ "acrylic pendant light","dining room pendant light","statement pendant light","designer ceiling light",
+ "modern chandelier","sculptural chandelier","contemporary chandelier","LED pendant light",
+ "minimalist pendant light","Japanese inspired pendant light","luxury pendant lighting","cluster pendant light"
+];
 
 function parseIntent(q:string,body:any){
  const lower=q.toLowerCase();
@@ -33,7 +39,8 @@ function parseIntent(q:string,body:any){
  const europe=/\beurope|european|eu\b/i.test(lower);
  const specialist=/\bspecialist|industrial|professional|hard[- ]?to[- ]?find|replacement part|spare part\b/i.test(lower);
  const ebayFrance=/ebay\s*france|ebay\.fr|resell.*france|sell.*france/i.test(lower);
- return{count,minProfit,europe,specialist,ebayFrance,highValue:Boolean(priceMatch)};
+ const designLighting=/\blamp|lamps|lighting|light fixture|pendant|chandelier|ceiling light|suspension\b/i.test(lower);
+ return{count,minProfit,europe,specialist,ebayFrance,designLighting,highValue:Boolean(priceMatch)};
 }
 function targetMargin(cost:number){
  if(cost<=50)return .30;if(cost<=75)return .27;if(cost<=100)return .25;if(cost<=150)return .23;
@@ -90,8 +97,8 @@ export async function POST(request:NextRequest){
   const intent=parseIntent(query,body);
   const looksNatural=/\bfind me|could i resell|potential profit|at least|in europe|specialist products|on ebay/i.test(query);
   const searches=looksNatural
-    ? [...(intent.specialist||intent.highValue?SPECIALIST_QUERIES:[]),query]
-    : [query];
+    ? [...(intent.specialist||intent.highValue?SPECIALIST_QUERIES:[]),...(intent.designLighting?DESIGN_LIGHTING_QUERIES:[]),query]
+    : intent.designLighting?[...DESIGN_LIGHTING_QUERIES,query]:[query];
 
   const seen=new Set<string>();
   const products:any[]=[];
