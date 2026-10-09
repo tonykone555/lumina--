@@ -16,8 +16,16 @@ export async function GET(request:NextRequest){
  if(!code||!state||!expected||state!==expected)return NextResponse.json({connected:false,error:"EBAY_OAUTH_STATE_INVALID"},{status:400});
  try{
   const token=await exchangeEbayAuthorizationCode(code);
-  await saveEbayConnection(token);
-  const response=NextResponse.redirect(new URL("/api/ebay/oauth/status?verify=1",request.url));
+  let persistent=true;
+  try{await saveEbayConnection(token)}catch(error){
+   persistent=false;
+   console.warn("eBay OAuth Supabase persistence unavailable; keeping secure browser session",error instanceof Error?error.message:error);
+  }
+  const response=NextResponse.redirect(new URL(`/api/ebay/oauth/status?verify=1&storage=${persistent?"persistent":"session_only"}`,request.url));
+  const maxAge=Math.max(60,Number(token.expires_in||7200));
+  response.cookies.set("ebay_access_token",token.access_token,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge});
+  if(token.refresh_token)response.cookies.set("ebay_refresh_token",token.refresh_token,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:60*60*24*500});
+  response.cookies.set("ebay_token_expires_at",String(Date.now()+maxAge*1000),{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge});
   response.cookies.set("ebay_oauth_state","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   return response;
  }catch(error){
