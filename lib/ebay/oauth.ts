@@ -1,4 +1,5 @@
 import {EBAY_SCOPES,EbayTokenPayload,ebayClientId,ebayClientSecret,ebayRuName,refreshEbayAccessToken} from "@/lib/ebay/auth";
+import {cookies} from "next/headers";
 
 type StoredConnection={
  id:string;
@@ -66,11 +67,27 @@ export async function deleteEbayConnection(){
 export async function getEbayAccessToken(){
  const direct=String(process.env.EBAY_USER_ACCESS_TOKEN||"").trim();
  if(direct)return direct;
- const connection=await readEbayConnection();
- if(!connection)throw new Error("EBAY_NOT_CONNECTED");
+
+ // Prefer the secure browser OAuth session so eBay keeps working even when
+ // Supabase OAuth persistence is temporarily unavailable/restricted.
+ try{
+  const jar=await cookies();
+  const access=String(jar.get("ebay_access_token")?.value||"");
+  const refresh=String(jar.get("ebay_refresh_token")?.value||"");
+  const expiresAt=Number(jar.get("ebay_token_expires_at")?.value||0);
+  if(access&&(!expiresAt||expiresAt>Date.now()+120_000))return access;
+  if(refresh){
+   const refreshed=await refreshEbayAccessToken(refresh);
+   if(refreshed?.access_token)return refreshed.access_token;
+  }
+ }catch{}
+
+ let connection:StoredConnection|null=null;
+ try{connection=await readEbayConnection()}catch{}
+ if(!connection)throw new Error("EBAY_NOT_CONNECTED_RECONNECT_EBAY");
  const expires=new Date(connection.expires_at).getTime();
  if(Number.isFinite(expires)&&expires-Date.now()>120_000)return connection.access_token;
  const refreshed=await refreshEbayAccessToken(connection.refresh_token);
- await saveEbayConnection({...refreshed,refresh_token:refreshed.refresh_token||connection.refresh_token,scope:refreshed.scope||connection.scope||EBAY_SCOPES});
+ try{await saveEbayConnection({...refreshed,refresh_token:refreshed.refresh_token||connection.refresh_token,scope:refreshed.scope||connection.scope||EBAY_SCOPES})}catch{}
  return refreshed.access_token;
 }
