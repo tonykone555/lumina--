@@ -482,3 +482,12 @@ html.ynot-pv2-open .ynot-reviews-gallery{
   border-radius:28px;
  }
 }
+
+.ynot-pv2-options-close{
+ position:relative!important;
+ z-index:30!important;
+ pointer-events:auto!important;
+ touch-action:manipulation!important;
+ cursor:pointer!important;
+}
+.ynot-pv2-options-close svg{pointer-events:none!important}
