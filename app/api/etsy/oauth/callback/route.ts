@@ -49,13 +49,15 @@ export async function GET(request:NextRequest){
    console.error("Etsy OAuth persistence failed",persistenceError);
   }
 
-  const target=new URL("/admin/etsy",request.url);
+  const returnTo=request.cookies.get("etsy_oauth_return_to")?.value||"/admin/etsy";
+  const target=new URL(returnTo.startsWith("/")?returnTo:"/admin/etsy",request.url);
   target.searchParams.set("etsy_oauth","connected");
   if(persistenceError)target.searchParams.set("etsy_storage","session_only");
   const response=NextResponse.redirect(target);
   setEtsyTokenCookies(response,token);
   response.cookies.set("etsy_oauth_state","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   response.cookies.set("etsy_oauth_verifier","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
+  response.cookies.set("etsy_oauth_return_to","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   return response;
  }catch(error){
   console.error("Etsy OAuth callback failed",error instanceof Error?error.message:error);
