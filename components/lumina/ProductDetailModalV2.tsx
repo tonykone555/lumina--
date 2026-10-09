@@ -97,6 +97,11 @@ export default function ProductDetailModalV2({
   const checkoutWithKlarna=()=>{
     window.dispatchEvent(new CustomEvent("ynot:checkout-product-klarna",{detail:{product,quantity:bundleQty,discountPercent:bundleQty===2?15:0}}));
   };
+  const closeOptions=(e?:React.SyntheticEvent)=>{
+    e?.preventDefault();
+    e?.stopPropagation();
+    setOptionsOpen(false);
+  };
   const touchStart=(e:React.TouchEvent<HTMLElement>)=>{
     const target=e.target as HTMLElement;
     const blocked=Boolean(target.closest("button,a,input,.ynot-pv2-thumbs,.ynot-pv2-similar-track,.ynot-pv2-options"));
@@ -193,9 +198,9 @@ export default function ProductDetailModalV2({
       </section>
 
       {optionsOpen&&typeof document!=="undefined"&&createPortal(
-        <div className="ynot-pv2-options-backdrop" onClick={()=>setOptionsOpen(false)}>
+        <div className="ynot-pv2-options-backdrop" onClick={closeOptions}>
           <section className="ynot-pv2-options" role="dialog" aria-modal="true" aria-label="Choose a variant" onClick={e=>e.stopPropagation()}>
-            <header><div><small>PRODUCT OPTIONS</small><h3>Choose a variant</h3></div><button onClick={()=>setOptionsOpen(false)} aria-label="Close options"><X/></button></header>
+            <header><div><small>PRODUCT OPTIONS</small><h3>Choose a variant</h3></div><button type="button" className="ynot-pv2-options-close" onPointerUp={closeOptions} onClick={closeOptions} aria-label="Close options"><X/></button></header>
             <div className="ynot-pv2-options-list">
               {variants.map(v=><button key={v.id} disabled={!v.available} className={v.id===product.variantId?"active":""} onClick={()=>{onSelectVariant(v);setOptionsOpen(false)}}>
                 {v.image&&<img src={v.image} alt=""/>}<span><b>{v.label}</b>{v.price!=null&&<small>{money({...product,price:v.price,currency:v.currency||product.currency})}</small>}</span>
