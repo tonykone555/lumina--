@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/admin/ads/automation/run",
-      "schedule": "*/5 * * * *"
+      "schedule": "*/30 * * * *"
     },
     {
       "path": "/api/admin/growth/threads/auto/run",
@@ -10,7 +10,7 @@
     },
     {
       "path": "/api/commerce/product-universe/research?limit=25&country=US",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 * * * *"
     },
     {
       "path": "/api/commerce/product-universe/sync-taxonomy",
