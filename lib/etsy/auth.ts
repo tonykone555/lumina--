@@ -16,7 +16,7 @@ export const ETSY_DEFAULT_REDIRECT_URI="https://ynotworld.app/api/etsy/oauth/cal
 // Must exactly match a Callback URL registered on the Etsy app (etsy.com/developers/your-apps).
 export function etsyRedirectUri(){return env("ETSY_REDIRECT_URI")||ETSY_DEFAULT_REDIRECT_URI}
 export const ETSY_REDIRECT_URI=ETSY_DEFAULT_REDIRECT_URI;
-export const ETSY_SCOPES="listings_r listings_w shops_r";
+export const ETSY_SCOPES="listings_r listings_w shops_r shops_w";
 export const ETSY_TOKEN_URL="https://api.etsy.com/v3/public/oauth/token";
 
 export function etsyKeystring(){
