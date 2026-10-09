@@ -557,7 +557,7 @@ export type PublishEbayProduct={
  condition?:string;brand?:string;aspects?:Record<string,string[]>;mpn?:string;upc?:string[];
 };
 
-export async function publishEbayProduct(input:PublishEbayProduct){
+async function upsertEbayProductOffer(input:PublishEbayProduct,publish=true){
  const marketplaceId=input.marketplaceId||ebayMarketplaceId();
  const market=ebayMarketplaceConfig(marketplaceId);
  const sku=input.sku.trim().slice(0,50);
@@ -688,6 +688,13 @@ export async function publishEbayProduct(input:PublishEbayProduct){
 
  if(!offerId)throw new Error("EBAY_STAGE_CREATE_OR_UPDATE_OFFER | EBAY_OFFER_ID_MISSING");
 
+ if(!publish){
+  return{
+   sku:activeSku,offerId,listingId:null,status:"draft",
+   price:{sourceValue:Number(input.price),sourceCurrency:input.currency||market.currency,listedValue:normalizedPrice.price,listedCurrency:market.currency,fxRate:normalizedPrice.rate,converted:normalizedPrice.converted}
+  };
+ }
+
  let published:any;
  try{
   published=await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}/publish`,{method:"POST"},marketplaceId);
@@ -697,4 +704,13 @@ export async function publishEbayProduct(input:PublishEbayProduct){
   sku:activeSku,offerId,listingId:published?.listingId||null,status:"published",
   price:{sourceValue:Number(input.price),sourceCurrency:input.currency||market.currency,listedValue:normalizedPrice.price,listedCurrency:market.currency,fxRate:normalizedPrice.rate,converted:normalizedPrice.converted}
  };
+}
+
+
+export async function createEbayDraftProduct(input:PublishEbayProduct){
+ return upsertEbayProductOffer(input,false);
+}
+
+export async function publishEbayProduct(input:PublishEbayProduct){
+ return upsertEbayProductOffer(input,true);
 }
