@@ -21,12 +21,17 @@ export async function GET(request:NextRequest){
    persistent=false;
    console.warn("eBay OAuth Supabase persistence unavailable; keeping secure browser session",error instanceof Error?error.message:error);
   }
-  const response=NextResponse.redirect(new URL(`/api/ebay/oauth/status?verify=1&storage=${persistent?"persistent":"session_only"}`,request.url));
+  const returnTo=request.cookies.get("ebay_oauth_return_to")?.value||"/room?seller=1";
+  const target=new URL(returnTo.startsWith("/")?returnTo:"/room?seller=1",request.url);
+  target.searchParams.set("ebay_oauth","connected");
+  target.searchParams.set("ebay_storage",persistent?"persistent":"session_only");
+  const response=NextResponse.redirect(target);
   const maxAge=Math.max(60,Number(token.expires_in||7200));
   response.cookies.set("ebay_access_token",token.access_token,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge});
   if(token.refresh_token)response.cookies.set("ebay_refresh_token",token.refresh_token,{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:60*60*24*500});
   response.cookies.set("ebay_token_expires_at",String(Date.now()+maxAge*1000),{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge});
   response.cookies.set("ebay_oauth_state","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
+  response.cookies.set("ebay_oauth_return_to","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   return response;
  }catch(error){
   console.error("eBay OAuth callback failed",error instanceof Error?error.message:error);
