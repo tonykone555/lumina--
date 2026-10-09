@@ -1,0 +1,110 @@
+/* Final masonry product-grid isolation. Loaded after legacy product-card styles. */
+.ynot-masonry-products-page{
+  min-height:100dvh!important;
+}
+.ynot-masonry-products-page .products{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:3px!important;
+  align-items:start!important;
+  width:100%!important;
+  max-height:none!important;
+  height:auto!important;
+  overflow:visible!important;
+  opacity:1!important;
+  visibility:visible!important;
+  filter:none!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+}
+.ynot-masonry-products-page .products>button{
+  display:block!important;
+  position:relative!important;
+  min-width:0!important;
+  width:100%!important;
+  height:auto!important;
+  max-height:none!important;
+  overflow:visible!important;
+  opacity:1!important;
+  visibility:visible!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  color:#fff!important;
+  box-shadow:none!important;
+  filter:none!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+}
+.ynot-masonry-products-page .products>button>div{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  aspect-ratio:.78!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  background:#151515!important;
+  opacity:1!important;
+  visibility:visible!important;
+  filter:none!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+}
+.ynot-masonry-products-page .products>button>div:before,
+.ynot-masonry-products-page .products>button>div:after{
+  content:none!important;
+  display:none!important;
+}
+.ynot-masonry-products-page .products>button img,
+.ynot-masonry-products-page .products>button>div>img{
+  position:relative!important;
+  z-index:1!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:100%!important;
+  min-height:100%!important;
+  object-fit:cover!important;
+  opacity:1!important;
+  visibility:visible!important;
+  filter:none!important;
+  mix-blend-mode:normal!important;
+  transform:none!important;
+  -webkit-mask-image:none!important;
+  mask-image:none!important;
+}
+.ynot-masonry-products-page .products>button>b,
+.ynot-masonry-products-page .products>button>span{
+  position:relative!important;
+  z-index:2!important;
+  display:block!important;
+  background:transparent!important;
+  background-color:transparent!important;
+  opacity:1!important;
+  visibility:visible!important;
+  text-shadow:none!important;
+}
+html[data-ynot-theme="light"] .ynot-masonry-products-page{
+  background:#f1f1ee!important;
+  color:#171819!important;
+}
+html[data-ynot-theme="light"] .ynot-masonry-products-page .products>button{
+  background:transparent!important;
+  color:#171819!important;
+}
+html[data-ynot-theme="light"] .ynot-masonry-products-page .products>button>div{
+  background:#fff!important;
+  box-shadow:0 4px 16px rgba(30,32,30,.08)!important;
+}
+html[data-ynot-theme="light"] .ynot-masonry-products-page .products>button>b{
+  color:#171819!important;
+  -webkit-text-fill-color:#171819!important;
+}
+html[data-ynot-theme="light"] .ynot-masonry-products-page .products>button>span{
+  color:#666a66!important;
+  -webkit-text-fill-color:#666a66!important;
+}
+@media(min-width:700px){
+  .ynot-masonry-products-page .products{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  }
+}
