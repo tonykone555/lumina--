@@ -3,6 +3,7 @@ import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
 import {createEbayDraftProduct,getEbayCategoryPreview,getEbayReadiness} from "@/lib/ebay/client";
 import {getEtsyAccessToken,readEtsyConnection} from "@/lib/etsy/oauth";
 import {etsyRequest} from "@/lib/etsy/client";
+import {getEtsyAccessToken as getSessionEtsyAccessToken} from "@/lib/etsy/auth";
 import {marketplaceOwnerAuthorized} from "@/lib/ynot/marketplace-owner";
 
 export const runtime="nodejs";
@@ -48,9 +49,16 @@ function taxonomyScore(row:any,p:Product){
  if(/digital|template|download|craft supply/.test(path))score-=250;
  return score;
 }
-async function etsyShop(){
- const token=await getEtsyAccessToken();
- if(!token)throw new Error("ETSY_NOT_CONNECTED");
+async function etsyShop(request:NextRequest){
+ let token="";
+ try{
+  const session=await getSessionEtsyAccessToken(request);
+  token=String(session?.accessToken||"");
+ }catch{}
+ if(!token){
+  try{token=String(await getEtsyAccessToken()||"")}catch{}
+ }
+ if(!token)throw new Error("ETSY_NOT_CONNECTED_RECONNECT_ETSY");
  let connection:any=null;try{connection=await readEtsyConnection()}catch{}
  const uid=String(connection?.etsy_user_id||token.split(".")[0]||"");
  if(!/^\d+$/.test(uid))throw new Error("ETSY_USER_ID_MISSING");
@@ -59,8 +67,8 @@ async function etsyShop(){
  if(!shop?.shop_id)throw new Error("ETSY_SHOP_NOT_FOUND");
  return{token,shopId:Number(shop.shop_id)};
 }
-async function createEtsyPhysicalDraft(p:Product){
- const {token,shopId}=await etsyShop();
+async function createEtsyPhysicalDraft(request:NextRequest,p:Product){
+ const {token,shopId}=await etsyShop(request);
  const [taxData,shippingData,readinessData]:any[]=await Promise.all([
   etsyRequest("/seller-taxonomy/nodes",token),
   etsyRequest(`/shops/${shopId}/shipping-profiles`,token),
@@ -152,7 +160,7 @@ export async function POST(request:NextRequest){
   const product=body?.product as Product;
   if(!product?.id||!product?.title)throw new Error("PRODUCT_REQUIRED");
   if(marketplace==="ebay")return NextResponse.json(await createEbayDraft(product));
-  if(marketplace==="etsy")return NextResponse.json(await createEtsyPhysicalDraft(product));
+  if(marketplace==="etsy")return NextResponse.json(await createEtsyPhysicalDraft(request,product));
   throw new Error("MARKETPLACE_REQUIRED");
  }catch(error){
   const status=adminErrorStatus(error);
