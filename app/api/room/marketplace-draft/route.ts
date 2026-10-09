@@ -24,6 +24,20 @@ function description(p:Product){
  const d=clean(p.description);
  return (d||`${clean(p.title)}${p.brand?` by ${clean(p.brand)}`:""}.`).slice(0,4000);
 }
+function etsyTitle(value:string){
+ let s=clean(value).replace(/[^\p{L}\p{Nd}\p{P}\p{Sm}\p{Zs}™©®]/gu," ");
+ for(const ch of ["%",":","&","+"]){
+  let seen=false;
+  s=[...s].filter(x=>x!==ch||(!seen&&(seen=true))).join("");
+ }
+ return s.replace(/\s+/g," ").trim().slice(0,140);
+}
+function rowsOf(data:any){
+ if(Array.isArray(data))return data;
+ if(Array.isArray(data?.results))return data.results;
+ if(Array.isArray(data?.data))return data.data;
+ return [];
+}
 function flatten(nodes:any[],trail:string[]=[],out:any[]=[]){
  for(const n of nodes||[]){
   const path=[...trail,String(n?.name||"")];
@@ -75,30 +89,62 @@ async function createEtsyPhysicalDraft(request:NextRequest,p:Product){
   etsyRequest(`/shops/${shopId}/shipping-profiles`,token),
   etsyRequest(`/shops/${shopId}/readiness-state-definitions`,token)
  ]);
- const taxonomy=flatten(taxData?.results||[]).sort((a,b)=>taxonomyScore(b,p)-taxonomyScore(a,p))[0];
+ const taxonomy=flatten(rowsOf(taxData)).sort((a,b)=>taxonomyScore(b,p)-taxonomyScore(a,p))[0];
  if(!taxonomy?.id)throw new Error("ETSY_PHYSICAL_TAXONOMY_NOT_FOUND");
- const shipping=(shippingData?.results||[])[0];
- const readiness=(readinessData?.results||[])[0];
- const shippingProfileId=Number(shipping?.shipping_profile_id||shipping?.id||0);
- const readinessStateId=Number(readiness?.readiness_state_id||readiness?.id||0);
- if(!shippingProfileId)throw new Error("ETSY_SHIPPING_PROFILE_REQUIRED");
+ const shipping=rowsOf(shippingData)[0]||null;
+ let readiness=rowsOf(readinessData)[0]||null;
+ let readinessStateId=Number(readiness?.readiness_state_id||readiness?.id||0);
+
+ // Physical listings use Etsy processing profiles. If the shop does not have
+ // one yet, create a reusable ready-to-ship profile. This requires shops_w.
+ if(!readinessStateId){
+  try{
+   const params=new URLSearchParams({
+    readiness_state:"ready_to_ship",
+    min_processing_time:"1",
+    max_processing_time:"3",
+    processing_time_unit:"days"
+   });
+   readiness=await etsyRequest(`/shops/${shopId}/readiness-state-definitions`,token,{
+    method:"POST",
+    headers:{"Content-Type":"application/x-www-form-urlencoded"},
+    body:params.toString()
+   });
+   readinessStateId=Number(readiness?.readiness_state_id||readiness?.id||0);
+  }catch(error){
+   const message=error instanceof Error?error.message:String(error);
+   if(/403|scope|permission|forbidden/i.test(message))throw new Error("ETSY_RECONNECT_REQUIRED_FOR_SHOPS_W");
+   throw error;
+  }
+ }
  if(!readinessStateId)throw new Error("ETSY_READINESS_PROFILE_REQUIRED");
+
  const price=Number(p.retailPrice??p.price??0);
  if(!Number.isFinite(price)||price<=0)throw new Error("ETSY_PRICE_INVALID");
- const body={
-  quantity:10,
-  title:clean(p.title).slice(0,140),
+
+ const params=new URLSearchParams({
+  quantity:"10",
+  title:etsyTitle(p.title),
   description:description(p),
-  price,
+  price:price.toFixed(2),
   who_made:"someone_else",
   when_made:"2020_2026",
-  taxonomy_id:taxonomy.id,
-  shipping_profile_id:shippingProfileId,
-  readiness_state_id:readinessStateId,
-  should_auto_renew:true,
-  is_supply:false
- };
- const listing:any=await etsyRequest(`/shops/${shopId}/listings?legacy=false`,token,{method:"POST",headers:{"Content-Type":"application/json; charset=utf-8"},body:JSON.stringify(body)});
+  taxonomy_id:String(taxonomy.id),
+  readiness_state_id:String(readinessStateId),
+  should_auto_renew:"true",
+  is_supply:"false",
+  type:"physical"
+ });
+ const shippingProfileId=Number(shipping?.shipping_profile_id||shipping?.id||0);
+ // Etsy made shipping profiles optional for draft creation in 2026. Reuse one
+ // when present, but do not block saving a draft if the shop has none yet.
+ if(shippingProfileId>0)params.set("shipping_profile_id",String(shippingProfileId));
+
+ const listing:any=await etsyRequest(`/shops/${shopId}/listings?legacy=false`,token,{
+  method:"POST",
+  headers:{"Content-Type":"application/x-www-form-urlencoded"},
+  body:params.toString()
+ });
  const listingId=Number(listing?.listing_id||0);
  if(!listingId)throw new Error("ETSY_DRAFT_ID_MISSING");
  let uploaded=0;
@@ -138,10 +184,18 @@ async function createEbayDraft(p:Product){
   aspects:taxonomy.aspects
  };
  if(!readiness.ready)throw new Error("EBAY_ACCOUNT_NOT_READY");
- if(taxonomy.categoryDomainOk!==true)throw new Error("EBAY_CATEGORY_DOMAIN_MISMATCH");
- if(taxonomy.missingRequiredAspects?.length)throw new Error(`EBAY_MISSING_REQUIRED_ASPECTS:${taxonomy.missingRequiredAspects.join(",")}`);
+ // Missing item specifics can block publication, but they should not prevent
+ // saving an unpublished eBay offer. Preserve them as draft warnings.
  const result=await createEbayDraftProduct(item);
- return{marketplace:"ebay",...result,category:{id:taxonomy.categoryId,name:taxonomy.categoryName}};
+ return{
+  marketplace:"ebay",
+  ...result,
+  category:{id:taxonomy.categoryId,name:taxonomy.categoryName},
+  warnings:[
+   ...(taxonomy.categoryDomainOk===true?[]:["CATEGORY_REVIEW_RECOMMENDED"]),
+   ...(taxonomy.missingRequiredAspects||[]).map((name:string)=>`MISSING_ASPECT:${name}`)
+  ]
+ };
 }
 
 async function ownerAccess(request:NextRequest){
@@ -164,7 +218,9 @@ export async function POST(request:NextRequest){
   if(marketplace==="etsy")return NextResponse.json(await createEtsyPhysicalDraft(request,product));
   throw new Error("MARKETPLACE_REQUIRED");
  }catch(error){
+  const message=error instanceof Error?error.message:"MARKETPLACE_DRAFT_FAILED";
+  console.error("Room marketplace draft failed",{message});
   const status=adminErrorStatus(error);
-  return NextResponse.json({error:error instanceof Error?error.message:"MARKETPLACE_DRAFT_FAILED"},{status:status===500?400:status});
+  return NextResponse.json({error:message},{status:status===500?400:status});
  }
 }
