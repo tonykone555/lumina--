@@ -25,4 +25,35 @@ function draw(card:HTMLElement,objects:Detection[]){ensureFrozen(card);const her
 async function scan(card:HTMLElement){if(active){clean();return}const img=image(card);if(!img?.src)return;const scanUrl=img.currentSrc||img.src;root=card;active=true;card.classList.add("masonry-scan-active");freezeImage(card,img);const status=document.createElement("div");status.className="masonry-scan-status";status.textContent="Scanning…";q<HTMLElement>(".hero",card)?.append(status);try{const r=await fetch("/api/room/quick/analyze-url",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({imageUrl:scanUrl})}),j=await r.json();if(!r.ok)throw new Error();analysis=j||{};detections=(Array.isArray(j.objects)?j.objects:[]).filter((d:Detection)=>Array.isArray(d.box_2d)&&d.box_2d.length===4&&String(d.label||d.searchQuery||"").trim()).sort((a:Detection,b:Detection)=>Number(b.confidence||0)-Number(a.confidence||0));status.remove();ensureFrozen(card);if(!detections.length){status.textContent="No products detected";q<HTMLElement>(".hero",card)?.append(status);setTimeout(()=>status.remove(),1600);return}draw(card,detections)}catch{status.textContent="Scan unavailable";setTimeout(()=>{status.remove();clean()},1500)}}
 function heartOnly(save:HTMLButtonElement){if(save.dataset.heartOnly)return;save.dataset.heartOnly="1";for(const node of [...save.childNodes])if(node.nodeType===Node.TEXT_NODE)node.textContent="";save.querySelectorAll("span").forEach(n=>n.remove());save.setAttribute("aria-label","Save")}
 function decorate(card:HTMLElement){const actions=q<HTMLElement>(".actions",card),hero=q<HTMLElement>(".hero",card);if(!actions||!hero)return;const buttons=actions.querySelectorAll<HTMLButtonElement>("button"),save=buttons[1];if(!save)return;heartOnly(save);if(actions.querySelector(".masonry-scan-trigger"))return;const btn=document.createElement("button");btn.type="button";btn.className="masonry-scan-trigger";btn.setAttribute("aria-label","Scan product image");btn.title="Scan";btn.innerHTML='<span></span>';btn.onclick=e=>{e.preventDefault();e.stopPropagation();void scan(card)};save.insertAdjacentElement("afterend",btn)}
-export default function MasonryProductScan(){useEffect(()=>{const sync=()=>{document.querySelectorAll<HTMLElement>(".detail").forEach(decorate);document.querySelectorAll(".masonry-card-scan").forEach(n=>n.remove());if(active&&root)ensureFrozen(root)};sync();const o=new MutationObserver(sync);o.observe(document.body,{subtree:true,childList:true});return()=>{o.disconnect();clean()}},[]);return null}
+export default function MasonryProductScan(){useEffect(()=>{
+ const ensureThemeToggle=()=>{
+  const masonryVisible=Boolean(document.querySelector(".products,.masonry-scan-grid-active,.yn-price-world"));
+  let button=document.querySelector<HTMLButtonElement>(".ynot-masonry-theme-toggle");
+  if(!masonryVisible){button?.remove();return}
+  if(!button){
+   button=document.createElement("button");
+   button.type="button";
+   button.className="ynot-masonry-theme-toggle";
+   button.setAttribute("aria-label","Toggle masonry light mode");
+   button.onclick=e=>{
+    e.preventDefault();e.stopPropagation();
+    const html=document.documentElement;
+    const next=html.dataset.ynotTheme==="light"?"dark":"light";
+    html.dataset.ynotTheme=next;
+    try{localStorage.setItem("ynot-theme",next)}catch{}
+    window.dispatchEvent(new CustomEvent("ynot:theme-changed",{detail:{theme:next}}));
+    button!.dataset.theme=next;
+    button!.textContent=next==="light"?"☀":"☾";
+   };
+   document.body.append(button);
+  }
+  const theme=document.documentElement.dataset.ynotTheme==="light"?"light":"dark";
+  button.dataset.theme=theme;
+  button.textContent=theme==="light"?"☀":"☾";
+ };
+ const sync=()=>{document.querySelectorAll<HTMLElement>(".detail").forEach(decorate);document.querySelectorAll(".masonry-card-scan").forEach(n=>n.remove());if(active&&root)ensureFrozen(root);ensureThemeToggle()};
+ sync();
+ const o=new MutationObserver(sync);
+ o.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["class","data-ynot-theme"]});
+ return()=>{o.disconnect();document.querySelector(".ynot-masonry-theme-toggle")?.remove();clean()}
+},[]);return null}
