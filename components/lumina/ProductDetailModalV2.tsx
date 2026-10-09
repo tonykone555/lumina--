@@ -94,6 +94,9 @@ export default function ProductDetailModalV2({
     if(images.length<2)return;
     activateImage(images[(activeIndex+1)%images.length],e);
   };
+  const checkoutWithKlarna=()=>{
+    window.dispatchEvent(new CustomEvent("ynot:checkout-product-klarna",{detail:{product,quantity:bundleQty,discountPercent:bundleQty===2?15:0}}));
+  };
   const touchStart=(e:React.TouchEvent<HTMLElement>)=>{
     const target=e.target as HTMLElement;
     const blocked=Boolean(target.closest("button,a,input,.ynot-pv2-thumbs,.ynot-pv2-similar-track,.ynot-pv2-options"));
@@ -113,11 +116,12 @@ export default function ProductDetailModalV2({
       <button className="ynot-pv2-close" onClick={onClose} aria-label="Close product"><X/></button>
 
       <section className="ynot-pv2-gallery">
-        <button className="ynot-pv2-hero" type="button" onPointerUp={e=>{if(e.pointerType!=="mouse")cycleImage(e)}} onClick={e=>{if(Date.now()-lastGalleryPointer.current>450)cycleImage(e)}} aria-label={images.length>1?"Show next product image":"Product image"}>
+        <button className="ynot-pv2-hero" type="button" onClick={cycleImage} aria-label={images.length>1?"Show next product image":"Product image"}>
           <img src={product.image} alt={clean(product.title)} draggable={false}/>
+          {images.length>1&&<span className="ynot-pv2-images-button" aria-hidden="true">Images · {activeIndex+1}/{images.length}</span>}
         </button>
         {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
-          {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onPointerUp={e=>{if(e.pointerType!=="mouse")activateImage(src,e)}} onClick={e=>{if(Date.now()-lastGalleryPointer.current>450)activateImage(src,e)}} aria-label={`View image ${index+1}`}>
+          {images.map((src,index)=><button key={src} className={src===product.image?"active":""} onClick={e=>activateImage(src,e)} aria-label={`View image ${index+1}`}>
             <img src={src} alt="" draggable={false}/>
           </button>)}
         </div>}
@@ -166,7 +170,7 @@ export default function ProductDetailModalV2({
           <button className="ynot-pv2-bag ynot-pv2-shop" type="button" disabled={checkoutBusy} data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"} data-ynot-cta-label="SHOP" onClick={()=>window.dispatchEvent(new CustomEvent("ynot:add-product-to-bag",{detail:{product,quantity:bundleQty,discountPercent:bundleQty===2?15:0}}))}>
             <ShoppingBag/><span>SHOP</span>
           </button>
-          <button className="ynot-pv2-klarna" type="button" disabled={checkoutBusy} aria-label="Klarna" data-payment-method="klarna" data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"}>
+          <button className="ynot-pv2-klarna" type="button" disabled={checkoutBusy} aria-label="Checkout with Klarna" data-payment-method="klarna" data-bundle-quantity={bundleQty} data-bundle-discount={bundleQty===2?"15":"0"} onClick={checkoutWithKlarna}>
             <span className="ynot-pv2-klarna-mark">Klarna.</span>
           </button>
         </div>
