@@ -22,8 +22,8 @@ export default async function SubcategoryPage({
  let initialPagination:any=null;
  try{
   const base=(process.env.NEXT_PUBLIC_APP_URL||"https://ynotworld.app").replace(/\/$/,"");
-  const url=`${base}/api/catalog?q=${encodeURIComponent(query)}&source=shopify&limit=36&category_load=1`;
-  const response=await fetch(url,{next:{revalidate:30},signal:AbortSignal.timeout(5000)});
+  const url=`${base}/api/catalog?q=${encodeURIComponent(query)}&source=shopify&limit=24&category_load=1`;
+  const response=await fetch(url,{next:{revalidate:30},signal:AbortSignal.timeout(3500)});
   const data=await response.json();
   if(response.ok&&Array.isArray(data?.products)){
    initialProducts=data.products;
