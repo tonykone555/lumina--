@@ -66,3 +66,12 @@ html[data-ynot-theme="light"] .ynot-unified-bag header{background:linear-gradien
 
 html[data-ynot-theme="light"] .ynot-unified-remove{display:grid!important;visibility:visible!important;opacity:1!important;background:rgba(255,255,255,.34)!important;border-color:rgba(255,255,255,.58)!important;color:#292a27!important;-webkit-text-fill-color:#292a27!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.78),0 5px 14px rgba(50,50,46,.08)!important}
 @media(max-width:760px){.ynot-unified-remove{right:10px!important;top:10px!important;width:32px!important;height:32px!important}.ynot-unified-remove svg{width:15px!important;height:15px!important}}
+
+.ynot-unified-close{
+ position:relative!important;
+ z-index:50!important;
+ pointer-events:auto!important;
+ touch-action:manipulation!important;
+ cursor:pointer!important;
+}
+.ynot-unified-close svg{pointer-events:none!important}
