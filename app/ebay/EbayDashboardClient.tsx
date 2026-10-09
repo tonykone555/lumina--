@@ -72,7 +72,7 @@ export default function EbayDashboardClient(){
   finally{setSearching(false)}
  }
  async function load(nextToken=savedToken||token){
-  if(!nextToken){setError("Enter your YNOT access token.");return}
+  if(!nextToken){setError("Enter your access code.");return}
   setLoading(true);setError("");
   try{
    const r=await fetch("/api/ebay/dashboard",{headers:{Authorization:`Bearer ${nextToken}`},cache:"no-store"});
@@ -91,7 +91,7 @@ export default function EbayDashboardClient(){
  }),[data]);
  return <main className="ebayAdmin">
   <header className="ebayTop"><div><a href="/" className="ebayBrand">YNOT</a><span>eBay Autopilot</span></div>{savedToken&&<button onClick={()=>load()} disabled={loading}>{loading?"Refreshing…":"Refresh"}</button>}</header>
-  {!savedToken?<section className="ebayGate"><div><small>PRIVATE YNOT TOOL</small><h1>eBay Autopilot</h1><p>Enter your YNOT access token to open the private product and publishing dashboard.</p><input type="password" value={token} onChange={e=>setToken(e.target.value)} placeholder="YNOT access token"/><button onClick={()=>load(token)} disabled={loading}>{loading?"Opening…":"Open dashboard"}</button>{error&&<em>{error}</em>}</div></section>:
+  {!savedToken?<section className="ebayGate"><div><small>PRIVATE YNOT TOOL</small><h1>eBay Autopilot</h1><p>Enter your access code to open the private product and publishing dashboard.</p><input type="password" inputMode="numeric" autoComplete="one-time-code" value={token} onChange={e=>setToken(e.target.value)} placeholder="Access code"/><button onClick={()=>load(token)} disabled={loading}>{loading?"Opening…":"Open dashboard"}</button>{error&&<em>{error}</em>}</div></section>:
   <>
    <section className="ebayHero"><div><small>YNOT · EBAY FRANCE</small><h1>Find. Check. Publish.</h1><p>Products found from ChatGPT/web research and YNOT catalogue discovery, with publishing results and exact eBay blockers in one place.</p></div><div className="ebayStats"><div><span>Candidates</span><b>{stats.candidates}</b></div><div><span>Est. opportunity</span><b>€{stats.profit.toLocaleString(undefined,{maximumFractionDigits:0})}</b></div><div><span>Published</span><b>{stats.published}</b></div><div><span>Problems</span><b>{stats.problems}</b></div></div></section>
    {error&&<div className="ebayError">{error}</div>}
