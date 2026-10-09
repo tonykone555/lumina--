@@ -11,7 +11,8 @@ export async function GET(request:NextRequest){
  const errorDescription=url.searchParams.get("error_description");
  if(error){
   console.error("Etsy OAuth authorize error",JSON.stringify({error,error_description:errorDescription}));
-  const target=new URL("/admin/etsy",request.url);
+  const returnTo=request.cookies.get("etsy_oauth_return_to")?.value||"/room/seller";
+  const target=new URL(returnTo.startsWith("/")?returnTo:"/room/seller",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error",errorDescription||error);
   return NextResponse.redirect(target);
@@ -22,7 +23,8 @@ export async function GET(request:NextRequest){
  const verifier=request.cookies.get("etsy_oauth_verifier")?.value||"";
  if(!code||!state||!expectedState||state!==expectedState||!verifier){
   console.error("Etsy OAuth callback state check failed",JSON.stringify({hasCode:Boolean(code),hasState:Boolean(state),hasStateCookie:Boolean(expectedState),stateMatches:Boolean(state)&&state===expectedState,hasVerifierCookie:Boolean(verifier)}));
-  const target=new URL("/admin/etsy",request.url);
+  const returnTo=request.cookies.get("etsy_oauth_return_to")?.value||"/room/seller";
+  const target=new URL(returnTo.startsWith("/")?returnTo:"/room/seller",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error","ETSY_OAUTH_STATE_INVALID");
   return NextResponse.redirect(target);
@@ -49,8 +51,8 @@ export async function GET(request:NextRequest){
    console.error("Etsy OAuth persistence failed",persistenceError);
   }
 
-  const returnTo=request.cookies.get("etsy_oauth_return_to")?.value||"/admin/etsy";
-  const target=new URL(returnTo.startsWith("/")?returnTo:"/admin/etsy",request.url);
+  const returnTo=request.cookies.get("etsy_oauth_return_to")?.value||"/room/seller";
+  const target=new URL(returnTo.startsWith("/")?returnTo:"/room/seller",request.url);
   target.searchParams.set("etsy_oauth","connected");
   if(persistenceError)target.searchParams.set("etsy_storage","session_only");
   const response=NextResponse.redirect(target);
@@ -61,7 +63,8 @@ export async function GET(request:NextRequest){
   return response;
  }catch(error){
   console.error("Etsy OAuth callback failed",error instanceof Error?error.message:error);
-  const target=new URL("/admin/etsy",request.url);
+  const returnTo=request.cookies.get("etsy_oauth_return_to")?.value||"/room/seller";
+  const target=new URL(returnTo.startsWith("/")?returnTo:"/room/seller",request.url);
   target.searchParams.set("etsy_oauth","error");
   target.searchParams.set("etsy_error",error instanceof Error?error.message:"ETSY_OAUTH_FAILED");
   return NextResponse.redirect(target);
