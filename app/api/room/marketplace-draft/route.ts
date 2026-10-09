@@ -3,6 +3,7 @@ import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
 import {createEbayDraftProduct,getEbayCategoryPreview,getEbayReadiness} from "@/lib/ebay/client";
 import {getEtsyAccessToken,readEtsyConnection} from "@/lib/etsy/oauth";
 import {etsyRequest} from "@/lib/etsy/client";
+import {marketplaceOwnerAuthorized} from "@/lib/ynot/marketplace-owner";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -134,14 +135,18 @@ async function createEbayDraft(p:Product){
  return{marketplace:"ebay",...result,category:{id:taxonomy.categoryId,name:taxonomy.categoryName}};
 }
 
+async function ownerAccess(request:NextRequest){
+ if(marketplaceOwnerAuthorized(request))return true;
+ try{await requireYnotAdmin(request);return true}catch{return false}
+}
+
 export async function GET(request:NextRequest){
- try{await requireYnotAdmin(request);return NextResponse.json({ownerAccess:true});}
- catch{return NextResponse.json({ownerAccess:false});}
+ return NextResponse.json({ownerAccess:await ownerAccess(request)},{headers:{"Cache-Control":"no-store"}});
 }
 
 export async function POST(request:NextRequest){
  try{
-  await requireYnotAdmin(request);
+  if(!(await ownerAccess(request)))return NextResponse.json({error:"OWNER_ACCESS_REQUIRED"},{status:403});
   const body=await request.json().catch(()=>({}));
   const marketplace=String(body?.marketplace||"").toLowerCase();
   const product=body?.product as Product;
