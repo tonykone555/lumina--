@@ -59,8 +59,9 @@ async function etsyShop(request:NextRequest){
   try{token=String(await getEtsyAccessToken()||"")}catch{}
  }
  if(!token)throw new Error("ETSY_NOT_CONNECTED_RECONNECT_ETSY");
- let connection:any=null;try{connection=await readEtsyConnection()}catch{}
- const uid=String(connection?.etsy_user_id||token.split(".")[0]||"");
+ // Etsy access tokens are prefixed with the numeric Etsy user id. Do not read
+ // Supabase merely to recover the same id; this keeps Room drafts independent.
+ const uid=String(token.split(".")[0]||"");
  if(!/^\d+$/.test(uid))throw new Error("ETSY_USER_ID_MISSING");
  const data:any=await etsyRequest(`/users/${uid}/shops`,token);
  const shop=Array.isArray(data?.results)?data.results[0]:data;
