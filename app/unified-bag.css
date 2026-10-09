@@ -1,6 +1,6 @@
 /* Unified bag — stacked glass cards before every checkout. Loaded last. */
 .ynot-cart{display:none!important}
-.ynot-unified-bag-backdrop{position:fixed;z-index:880;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:18px;background:linear-gradient(180deg,rgba(7,7,7,.20),rgba(7,7,7,.62));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.ynot-unified-bag-backdrop{position:fixed;z-index:2147483200;inset:0;display:flex;align-items:flex-end;justify-content:center;padding:18px;background:linear-gradient(180deg,rgba(7,7,7,.20),rgba(7,7,7,.62));backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
 .ynot-unified-bag{width:min(720px,calc(100vw - 24px));max-height:min(88dvh,920px);display:flex;flex-direction:column;overflow:hidden;border:1px solid rgba(255,255,255,.34);border-radius:34px;background:linear-gradient(155deg,rgba(88,84,81,.58),rgba(24,22,21,.72));box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 26px 90px rgba(0,0,0,.44);backdrop-filter:blur(34px) saturate(1.08);-webkit-backdrop-filter:blur(34px) saturate(1.08);color:#fff}
 .ynot-unified-bag header{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 14px}.ynot-unified-bag header>div{display:flex;flex-direction:column;gap:5px}.ynot-unified-bag header small{font:500 12px/1 Inter,sans-serif;letter-spacing:.22em;color:rgba(255,255,255,.62)}.ynot-unified-bag header b{font:750 12px/1 Inter,sans-serif;color:#fff}.ynot-unified-bag header button{width:42px;height:42px;border:1px solid rgba(255,255,255,.26);border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.07);color:#fff;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}.ynot-unified-bag header button svg{width:20px;height:20px;stroke-width:2.5}
 .ynot-unified-bag-scroll{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}.ynot-unified-bag-scroll::-webkit-scrollbar{display:none}.ynot-unified-bag-list{padding:4px 24px 8px;overflow:visible;display:flex;flex-direction:column;gap:12px}.ynot-unified-bag-card{position:relative;display:grid;grid-template-columns:112px minmax(0,1fr) auto;gap:18px;align-items:start;padding:18px;border:1px solid rgba(255,255,255,.18);border-radius:28px;background:linear-gradient(145deg,rgba(255,255,255,.085),rgba(255,255,255,.035));box-shadow:inset 0 1px 0 rgba(255,255,255,.09);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px)}
@@ -75,3 +75,30 @@ html[data-ynot-theme="light"] .ynot-unified-remove{display:grid!important;visibi
  cursor:pointer!important;
 }
 .ynot-unified-close svg{pointer-events:none!important}
+
+
+/* Bubble World: when the unified cart opens from inside a product popup,
+   the cart must own the top interaction layer. */
+body.ynot-bag-open .ynot-unified-bag-backdrop{
+  z-index:2147483200!important;
+  pointer-events:auto!important;
+}
+body.ynot-bag-open .ynot-unified-bag{
+  position:relative!important;
+  z-index:2147483201!important;
+  pointer-events:auto!important;
+}
+body.ynot-bag-open .ynot-unified-close{
+  position:relative!important;
+  z-index:2147483202!important;
+  pointer-events:auto!important;
+  touch-action:manipulation!important;
+  cursor:pointer!important;
+}
+body.ynot-bag-open .ynot-unified-close svg{
+  pointer-events:none!important;
+}
+html.ynot-pv2-open body.ynot-bag-open .ynot-pv2-backdrop,
+body.ynot-pv2-open.ynot-bag-open .ynot-pv2-backdrop{
+  pointer-events:none!important;
+}
