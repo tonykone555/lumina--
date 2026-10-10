@@ -52,14 +52,18 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
     }
     if(data.status==="ready"){
      const found=(Array.isArray(data.videos)?data.videos:[]).slice(0,Math.max(1,Math.min(8,maxItems)));
+     timer=undefined;
      setVideos(found);
      save({videos:found,updated:Date.now(),attempted:Date.now()});
     }else if(data.status==="pending"){
+     timer=undefined;
      save({snapshot:data.snapshot_id,updated:Date.now(),attempted:Date.now()});
     }else{
+     timer=undefined;
      save({attempted:Date.now(),updated:Date.now()});
     }
    }catch{
+    timer=undefined;
     if(alive)save({snapshot,updated:Date.now(),attempted:Date.now()});
    }finally{
     if(alive&&(!timer||attempt>=24))setLoading(false);
