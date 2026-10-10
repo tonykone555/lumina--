@@ -10,7 +10,7 @@ import modal
 
 app = modal.App("ynot-tiktok-search")
 image = (modal.Image.debian_slim(python_version="3.11")
-         .pip_install("TikTokApi>=7.1,<8", "playwright>=1.50,<2")
+         .pip_install("TikTokApi>=7.3.0,<8", "playwright>=1.50,<2")
          .run_commands("python -m playwright install --with-deps chromium"))
 
 @app.function(image=image, cpu=1, memory=2048, timeout=90)
@@ -30,8 +30,8 @@ async def search_tiktok_videos(query: str, limit: int = 24):
                 num_sessions=1, sleep_after=3, browser="chromium",
                 headless=True
             )
-            async for video in api.search.videos(query, count=count):
-                item = getattr(video, "as_dict", {}) or {}
+            response = await api.make_request(url="https://www.tiktok.com/api/search/item/full/", params={"keyword": query, "count": count, "cursor": 0, "source": "search_video"})
+            for item in (response or {}).get("item_list", []):
                 video_id = str(item.get("id") or item.get("video_id") or "")
                 if not re.fullmatch(r"\\d{10,20}", video_id) or video_id in seen:
                     continue
@@ -65,4 +65,4 @@ async def search_tiktok_videos(query: str, limit: int = 24):
                     break
         return {"ok": True, "videos": results}
     except Exception as exc:
-        return {"ok": False, "videos": [], "error": type(exc).__name__}
+        return {"ok": False, "videos": [], "error": type(exc).__name__ + ": " + str(exc)[:220]}
