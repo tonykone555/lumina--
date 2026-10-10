@@ -421,9 +421,14 @@ async function brightAsync(req:NextRequest,product:{title:string;brand:string;ta
   console.warn("Bright async trigger failed",{status:response.status});
   return NextResponse.json({status:"failed",error:"BRIGHT_TRIGGER_"+response.status,videos:[]},{status:502});
  }
- const data=await response.json();
- if(!/^s_[a-zA-Z0-9]+$/.test(String(data.snapshot_id||"")))return NextResponse.json({status:"failed",error:"BRIGHT_SNAPSHOT_ID_MISSING"},{status:502});
- return NextResponse.json({status:"pending",snapshot_id:data.snapshot_id,videos:[]},{headers:{"Cache-Control":"no-store"}});
+ const textBody=await response.text();
+ let data:any={};try{data=JSON.parse(textBody)}catch{}
+ const snapshotId=String(data?.snapshot_id||data?.snapshotId||data?.data?.snapshot_id||"");
+ if(!/^s_[a-zA-Z0-9]+$/.test(snapshotId)){
+  console.warn("Bright trigger returned unexpected payload",{httpStatus:response.status,contentType:response.headers.get("content-type"),keys:Object.keys(data||{}).slice(0,12),message:String(data?.message||data?.error||"").slice(0,130)});
+  return NextResponse.json({status:"failed",error:"BRIGHT_SNAPSHOT_ID_MISSING"},{status:502});
+ }
+ return NextResponse.json({status:"pending",snapshot_id:snapshotId,videos:[]},{headers:{"Cache-Control":"no-store"}});
 }
 
 export async function GET(req:NextRequest){
