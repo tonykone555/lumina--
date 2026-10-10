@@ -22,17 +22,55 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
  useEffect(()=>{
   let alive=true;
   const controller=new AbortController();
-  setVideos([]);setOpen(null);setLoading(true);
-  const q=new URLSearchParams({title:product.title});
+  const key="ynot-product-tiktok-v2:"+encodeURIComponent(product.id||product.title);
+  const q=new URLSearchParams({title:product.title,async:"1"});
   if(product.brand)q.set("brand",product.brand);
   if(product.description)q.set("description",product.description.slice(0,500));
   if(product.tags?.length)q.set("tags",product.tags.slice(0,10).join(","));
-  fetch("/api/product-videos?"+q.toString(),{cache:"force-cache",signal:controller.signal})
-   .then(r=>r.json())
-   .then(data=>{if(alive)setVideos((Array.isArray(data?.videos)?data.videos:[]).slice(0,Math.max(1,Math.min(8,maxItems))))})
-   .catch(()=>{})
-   .finally(()=>{if(alive)setLoading(false)});
-  return()=>{alive=false;controller.abort()};
+  const base="/api/product-videos?"+q.toString();
+  let timer:ReturnType<typeof setTimeout>|undefined;
+  setVideos([]);setOpen(null);setLoading(true);
+  let stored:{snapshot?:string;videos?:Video[];updated?:number;attempted?:number}|null=null;
+  try{stored=JSON.parse(localStorage.getItem(key)||"null")}catch{}
+  const now=Date.now();
+  if(stored?.videos?.length&&now-Number(stored.updated||0)<24*60*60*1000){
+   setVideos(stored.videos.slice(0,maxItems));setLoading(false);
+   return()=>{alive=false;controller.abort()};
+  }
+  const save=(value:object)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch{}};
+  const run=async(snapshot?:string,attempt=0):Promise<void>=>{
+   if(!alive||controller.signal.aborted)return;
+   try{
+    const url=base+(snapshot?"&snapshot_id="+encodeURIComponent(snapshot):"");
+    const response=await fetch(url,{cache:"no-store",signal:controller.signal});
+    const data=await response.json();
+    if(!alive)return;
+    if(data.status==="pending"&&typeof data.snapshot_id==="string"&&attempt<24){
+     save({snapshot:data.snapshot_id,updated:Date.now(),attempted:Date.now()});
+     timer=setTimeout(()=>{void run(data.snapshot_id,attempt+1)},Math.min(16000,4000+attempt*1000));
+     return;
+    }
+    if(data.status==="ready"){
+     const found=(Array.isArray(data.videos)?data.videos:[]).slice(0,Math.max(1,Math.min(8,maxItems)));
+     setVideos(found);
+     save({videos:found,updated:Date.now(),attempted:Date.now()});
+    }else if(data.status==="pending"){
+     save({snapshot:data.snapshot_id,updated:Date.now(),attempted:Date.now()});
+    }else{
+     save({attempted:Date.now(),updated:Date.now()});
+    }
+   }catch{
+    if(alive)save({snapshot,updated:Date.now(),attempted:Date.now()});
+   }finally{
+    if(alive&&(!timer||attempt>=24))setLoading(false);
+   }
+  };
+  if(stored?.snapshot&&now-Number(stored.updated||0)<30*60*1000){
+   void run(stored.snapshot);
+  }else if(stored?.attempted&&now-stored.attempted<10*60*1000){
+   setLoading(false);
+  }else void run();
+  return()=>{alive=false;controller.abort();if(timer)clearTimeout(timer)};
  },[product.id,product.title,product.brand,product.description,product.tags?.join("|"),maxItems]);
 
  if(!loading&&!videos.length)return null;
