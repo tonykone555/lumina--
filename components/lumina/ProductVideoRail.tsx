@@ -12,7 +12,7 @@ function compact(n:number){
  catch{return String(Number(n||0))}
 }
 
-export default function ProductVideoRail({product}:{product:Product}){
+export default function ProductVideoRail({product,maxItems=8,dark=false}:{product:Product;maxItems?:number;dark?:boolean}){
  const[videos,setVideos]=useState<Video[]>([]);
  const[loading,setLoading]=useState(false);
  const[open,setOpen]=useState<Video|null>(null);
@@ -27,15 +27,15 @@ export default function ProductVideoRail({product}:{product:Product}){
   if(product.tags?.length)q.set("tags",product.tags.slice(0,10).join(","));
   fetch(\`/api/product-videos?\${q.toString()}\`,{cache:"force-cache",signal:controller.signal})
    .then(r=>r.json())
-   .then(data=>{if(alive)setVideos(Array.isArray(data?.videos)?data.videos:[])})
+   .then(data=>{if(alive)setVideos((Array.isArray(data?.videos)?data.videos:[]).slice(0,Math.max(1,Math.min(8,maxItems))))})
    .catch(()=>{})
    .finally(()=>{if(alive)setLoading(false)});
   return()=>{alive=false;controller.abort()};
- },[product.id,product.title,product.brand,product.description,product.tags?.join("|")]);
+ },[product.id,product.title,product.brand,product.description,product.tags?.join("|"),maxItems]);
 
  if(!loading&&!videos.length)return null;
 
- return <section className="ynot-product-videos">
+ return <section className={`ynot-product-videos${dark?" dark":""}`}>
   <style jsx>{\`
    .ynot-product-videos{margin:4px 0 17px;min-width:0}
    .head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
