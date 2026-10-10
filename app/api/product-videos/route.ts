@@ -149,11 +149,47 @@ async function fetchFirstRows(){
   return[];
  }
 }
+function decodeEntities(value:string){
+ return value.replace(/&amp;/g,"&").replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&lt;/g,"<").replace(/&gt;/g,">");
+}
+async function bingTikTokCandidates(query:string){
+ try{
+  const url=new URL("https://www.bing.com/search");
+  url.searchParams.set("q",`site:tiktok.com/@ "/video/" ${query}`);
+  url.searchParams.set("format","rss");
+  url.searchParams.set("count","20");
+  const response=await fetch(url,{headers:{"user-agent":"Mozilla/5.0 YNOT/1.0"},cache:"no-store",signal:AbortSignal.timeout(10000)});
+  if(!response.ok)return[] as Candidate[];
+  const xml=await response.text();
+  const seen=new Set<string>();
+  const out:Candidate[]=[];
+  for(const chunk of xml.split("<item>").slice(1)){
+   const linkStart=chunk.indexOf("<link>"),linkEnd=chunk.indexOf("</link>");
+   if(linkStart<0||linkEnd<0)continue;
+   const link=decodeEntities(chunk.slice(linkStart+6,linkEnd)).trim();
+   if(!link.includes("tiktok.com/")||!link.includes("/video/"))continue;
+   const after=link.split("/video/")[1]||"";
+   const id=after.match(/^\d{10,20}/)?.[0]||"";
+   if(!id||seen.has(id))continue;
+   seen.add(id);
+   const titleStart=chunk.indexOf("<title>"),titleEnd=chunk.indexOf("</title>");
+   const descStart=chunk.indexOf("<description>"),descEnd=chunk.indexOf("</description>");
+   const title=titleStart>=0&&titleEnd>titleStart?decodeEntities(chunk.slice(titleStart+7,titleEnd)):"";
+   const description=descStart>=0&&descEnd>descStart?decodeEntities(chunk.slice(descStart+13,descEnd)):"";
+   out.push({id,caption:(title+" "+description).replace(/<[^>]*>/g," ").replace(/\s+/g," ").trim().slice(0,500),hashtags:[],onScreenText:[],views:0,likes:0,shares:0,saves:0,engagementRate:null,country:"",language:"en"});
+  }
+  return out.slice(0,20);
+ }catch(error){
+  console.warn("Bing TikTok discovery unavailable",{message:error instanceof Error?error.message:String(error)});
+  return[] as Candidate[];
+ }
+}
+
 async function candidates(query:string){
  const live=await liveTikTokCandidates(query);
  if(live.length)return live;
- const google=await googleTikTokCandidates(query);
- if(google.length)return google;
+ const bing=await bingTikTokCandidates(query);
+ if(bing.length)return bing;
 
  const terms=[...new Set(words(query))].slice(0,4);
  let rows:any[]=[];
