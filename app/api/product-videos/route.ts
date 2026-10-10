@@ -114,19 +114,20 @@ async function fetchFirstRows(){
  }
 }
 async function candidates(query:string){
+ const live=await liveTikTokCandidates(query);
+ if(live.length)return live;
+
  const terms=[...new Set(words(query))].slice(0,4);
  let rows:any[]=[];
  if(terms.length){
   const settled=await Promise.allSettled(terms.map(fetchSearch));
   for(const result of settled)if(result.status==="fulfilled")rows.push(...result.value);
  }
- // Never let a slow/failed search take down the whole For You feed. The
- // fallback is intentionally independent and returns [] on upstream failure.
  if(!rows.length)rows=await fetchFirstRows();
  const seen=new Set<string>();
  return rows.map(rowValue).map((r:any):Candidate|null=>{
   const id=String(r?.video_id||"");
-  if(!/^\d+$/.test(id)||seen.has(id))return null;
+  if(!/^\d{10,20}$/.test(id)||seen.has(id))return null;
   seen.add(id);
   return{
    id,
@@ -206,7 +207,7 @@ async function rankFeedWithJev(category:string,rows:Candidate[]){
  const state=new Map<string,{focus:string;relevance:string;confidence:number}>();
  for(const d of decisions){const [kind,id]=String(d.id||"").split(":");if(!id)continue;const prev=state.get(id)||{focus:"NOT_PRODUCT",relevance:"IRRELEVANT",confidence:0};if(kind==="focus")prev.focus=d.choice;if(kind==="rel")prev.relevance=d.choice;prev.confidence=Math.max(prev.confidence,Number(d.confidence||0));state.set(id,prev)}
  const score=(r:Candidate)=>{const j=state.get(r.id)||{focus:"NOT_PRODUCT",relevance:"IRRELEVANT",confidence:0};const f=j.focus==="PRODUCT_FOCUSED"?120:j.focus==="MAYBE_PRODUCT"?25:-250;const rel=j.relevance==="RELEVANT"?80:j.relevance==="ADJACENT"?15:-160;const engagement=Math.min(45,Math.log10(Math.max(1,r.views))*4+Math.log10(Math.max(1,r.saves+r.shares))*5);return f+rel+engagement};
- return rows.filter(r=>{const j=state.get(r.id);return j?.focus==="PRODUCT_FOCUSED"&&j?.relevance!=="IRRELEVANT"}).sort((a,b)=>score(b)-score(a)).slice(0,10).map(r=>({...r,url:`https://www.tiktok.com/@_/video/${r.id}`,embedUrl:`https://www.tiktok.com/player/v1/${r.id}?autoplay=0&controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,searchQuery:intentQuery(r,category),jev:{relevance:state.get(r.id)?.relevance||"RELEVANT",fit:state.get(r.id)?.focus||"PRODUCT_FOCUSED",confidence:state.get(r.id)?.confidence||0}}));
+ return rows.filter(r=>{const j=state.get(r.id);return j?.focus==="PRODUCT_FOCUSED"&&j?.relevance!=="IRRELEVANT"}).sort((a,b)=>score(b)-score(a)).slice(0,10).map(r=>({...r,url:`https://www.tiktok.com/@_/video/${r.id}`,embedUrl:`https://www.tiktok.com/player/v1/${r.id}?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,searchQuery:intentQuery(r,category),jev:{relevance:state.get(r.id)?.relevance||"RELEVANT",fit:state.get(r.id)?.focus||"PRODUCT_FOCUSED",confidence:state.get(r.id)?.confidence||0}}));
 }
 
 export async function GET(req:NextRequest){
@@ -222,7 +223,7 @@ export async function GET(req:NextRequest){
    console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length});
    const videos=await rankFeedWithJev(category,rows);
    console.info("Product video feed Jev result",{category,candidates:rows.length,selected:videos.length});
-   return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"s-maxage=900, stale-while-revalidate=3600":"no-store"}});
+   return NextResponse.json({source:"live-tiktok+jev",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"s-maxage=900, stale-while-revalidate=3600":"no-store"}});
   }catch(error){
    const message=error instanceof Error?error.message:"PRODUCT_VIDEO_FEED_FAILED";
    console.error("Product video feed failed",{category,message});
