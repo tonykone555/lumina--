@@ -82,19 +82,15 @@ async function liveTikTokCandidates(query:string){
 
 function collectTikTokLinks(value:any,out:any[]=[],depth=0){
  if(depth>6||value==null)return out;
- if(typeof value==="string"){
-  const matches=value.match(/https?:\\/\\/(?:www\\.)?tiktok\\.com\\/@[^\\s"'<>]+\\/video\\/\\d{10,20}[^\\s"'<>]*/g)||[];
-  for(const url of matches)out.push({url});
-  return out;
- }
  if(Array.isArray(value)){for(const v of value)collectTikTokLinks(v,out,depth+1);return out}
  if(typeof value==="object"){
   const url=str(value?.url,value?.link,value?.href,value?.web_url,value?.share_url);
-  if(/tiktok\\.com\\/@.+\\/video\\/\\d{10,20}/i.test(url))out.push(value);
+  if(url.includes("tiktok.com/")&&url.includes("/video/"))out.push(value);
   for(const v of Object.values(value))collectTikTokLinks(v,out,depth+1);
  }
  return out;
 }
+
 async function googleTikTokCandidates(query:string){
  if(!process.env.FETCHLAYER_API_KEY)return[] as Candidate[];
  try{
