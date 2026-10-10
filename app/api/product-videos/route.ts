@@ -431,6 +431,27 @@ async function brightAsync(req:NextRequest,product:{title:string;brand:string;ta
  return NextResponse.json({status:"pending",snapshot_id:snapshotId,videos:[]},{headers:{"Cache-Control":"no-store"}});
 }
 
+
+async function licensedHfIndexVideos(product:{title:string;brand:string;tags:string[];description:string}):Promise<Video[]|null>{
+ // Only a licensed, indexed copy can serve the commercial storefront. Do not scan Parquet per visitor.
+ if(process.env.HF_TIKTOK_COMMERCIAL_LICENSED!=="true"||!process.env.HF_TIKTOK_INDEX_URL)return null;
+ const endpoint=new URL(process.env.HF_TIKTOK_INDEX_URL);
+ if(endpoint.protocol!=="https:")throw Error("HF_INDEX_MUST_USE_HTTPS");
+ endpoint.searchParams.set("q",searchQuery(product.title,product.brand,product.tags));
+ endpoint.searchParams.set("limit","20");
+ const response=await fetch(endpoint,{headers:process.env.HF_TIKTOK_INDEX_TOKEN?{Authorization:"Bearer "+process.env.HF_TIKTOK_INDEX_TOKEN}:{},signal:AbortSignal.timeout(2200),next:{revalidate:3600}});
+ if(!response.ok)throw Error("HF_INDEX_HTTP_"+response.status);
+ const payload=await response.json();
+ const seen=new Set<string>();
+ const rows=(Array.isArray(payload)?payload:Array.isArray(payload?.results)?payload.results:[]).map((v:any):Candidate|null=>{
+  const id=String(v.video_id||v.id||"");
+  if(!/^\d{15,20}$/.test(id)||seen.has(id))return null;
+  seen.add(id);
+  return {id,caption:String(v.caption||"").slice(0,500),hashtags:arr(v.hashtags),onScreenText:arr(v.on_screen_text),views:num(v.views),likes:num(v.likes),shares:num(v.shares),saves:num(v.saves),engagementRate:null,country:String(v.country||""),language:String(v.language||""),createdAt:num(v.created_at||0),username:String(v.username||"")};
+ }).filter((v:Candidate|null):v is Candidate=>Boolean(v)).slice(0,20);
+ return validateEmbeds(await rankWithJev(product,rows));
+}
+
 export async function GET(req:NextRequest){
  const s=req.nextUrl.searchParams;
  const mode=String(s.get("mode")||"product");
@@ -465,6 +486,10 @@ export async function GET(req:NextRequest){
   }catch(error){return NextResponse.json({source:"huggingface",query,candidateCount:0,elapsedMs:Date.now()-started,error:error instanceof Error?error.message:"SEARCH_FAILED",videos:[]},{status:502})}
  }
  if(s.get("async")==="1"){
+  try{
+   const indexed=await licensedHfIndexVideos({title,brand,tags,description});
+   if(indexed?.length)return NextResponse.json({status:"ready",source:"huggingface-index",videos:indexed},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
+  }catch(error){console.warn("HF indexed video search unavailable",{message:error instanceof Error?error.message:"ERROR"})}
   try{return await brightAsync(req,{title,brand,tags,description})}
   catch(e){console.warn("Bright async request failed",{message:e instanceof Error?e.message:"UNKNOWN"});return NextResponse.json({status:"failed",videos:[],error:"BRIGHT_ASYNC_FAILED"},{status:502})}
  }
