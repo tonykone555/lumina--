@@ -39,18 +39,35 @@ function rowValue(row:any){
 function arr(v:any){return Array.isArray(v)?v.map(String).filter(Boolean):[]}
 function num(v:any){const n=Number(v);return Number.isFinite(n)?n:0}
 
-async function candidates(query:string){
+async function fetchSearch(term:string){
  const url=new URL(HF);
  url.searchParams.set("dataset",DATASET);
  url.searchParams.set("config","default");
  url.searchParams.set("split","train");
- url.searchParams.set("query",query);
+ url.searchParams.set("query",term);
  url.searchParams.set("offset","0");
- url.searchParams.set("length","30");
- const response=await fetch(url,{cache:"force-cache",next:{revalidate:3600},signal:AbortSignal.timeout(15000)});
+ url.searchParams.set("length","12");
+ const response=await fetch(url,{cache:"force-cache",next:{revalidate:3600},signal:AbortSignal.timeout(5000)});
  if(!response.ok)throw new Error(`HF_SEARCH_${response.status}`);
  const data=await response.json().catch(()=>({}));
- const rows=Array.isArray(data?.rows)?data.rows:[];
+ return Array.isArray(data?.rows)?data.rows:[];
+}
+async function fetchFirstRows(){
+ const url=new URL("https://datasets-server.huggingface.co/first-rows");
+ url.searchParams.set("dataset",DATASET);
+ url.searchParams.set("config","default");
+ url.searchParams.set("split","train");
+ const response=await fetch(url,{cache:"force-cache",next:{revalidate:21600},signal:AbortSignal.timeout(5000)});
+ if(!response.ok)return[];
+ const data=await response.json().catch(()=>({}));
+ return Array.isArray(data?.rows)?data.rows:[];
+}
+async function candidates(query:string){
+ const terms=[...new Set(words(query))].slice(0,4);
+ const settled=await Promise.allSettled(terms.map(fetchSearch));
+ let rows:any[]=[];
+ for(const result of settled)if(result.status==="fulfilled")rows.push(...result.value);
+ if(!rows.length)rows=await fetchFirstRows();
  const seen=new Set<string>();
  return rows.map(rowValue).map((r:any):Candidate|null=>{
   const id=String(r?.video_id||"");
@@ -147,7 +164,9 @@ export async function GET(req:NextRequest){
   const feedQuery=[category,...subcategories].join(" ").slice(0,180);
   try{
    const rows=await candidates(feedQuery);
+   console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length});
    const videos=await rankFeedWithJev(category,rows);
+   console.info("Product video feed Jev result",{category,candidates:rows.length,selected:videos.length});
    return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,videos},{headers:{"Cache-Control":"s-maxage=1800, stale-while-revalidate=7200"}});
   }catch(error){
    const message=error instanceof Error?error.message:"PRODUCT_VIDEO_FEED_FAILED";
@@ -163,7 +182,9 @@ export async function GET(req:NextRequest){
  const query=searchQuery(title,brand,tags);
  try{
   const rows=await candidates(query);
+  console.info("Product video candidates",{title,query,count:rows.length});
   const videos=await rankWithJev({title,brand,tags,description},rows);
+  console.info("Product video Jev result",{title,candidates:rows.length,selected:videos.length});
   return NextResponse.json({
    source:"huggingface+tiktok-embed",
    intelligence:"jev",
