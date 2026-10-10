@@ -5,7 +5,7 @@ import {X} from "lucide-react";
 import {createPortal} from "react-dom";
 
 type Product={id:string;title:string;brand?:string;description?:string;tags?:string[]};
-type Video={id:string;url:string;embedUrl:string;caption:string;views:number;likes:number;shares:number;saves:number;country:string;language:string;isShopVideo:boolean;jev:{relevance:string;fit:string;confidence:number}};
+type Video={id:string;url:string;embedUrl:string;caption:string;views:number;likes:number;shares:number;saves:number;country:string;language:string;searchQuery?:string;jev:{relevance:string;fit:string;confidence:number}};
 
 function compact(n:number){
  try{return new Intl.NumberFormat(undefined,{notation:"compact",maximumFractionDigits:1}).format(Number(n||0))}
@@ -43,7 +43,7 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
   {loading&&!videos.length?<div className="loading">Finding relevant videos…</div>:<div className="track">
    {videos.map(v=><button type="button" className="card" key={v.id} onClick={()=>setOpen(v)}>
     <div className="poster">▶</div>
-    <span className="copy"><b>{v.isShopVideo?"TikTok Shop":"TikTok"}</b><small>{v.caption||"Related product video"}</small>{v.views>0&&<em>{compact(v.views)} views</em>}</span>
+    <span className="copy"><b>TikTok</b><small>{v.caption||"Related product video"}</small>{v.views>0&&<em>{compact(v.views)} views</em>}</span>
    </button>)}
   </div>}
   {open&&typeof document!=="undefined"&&createPortal(
