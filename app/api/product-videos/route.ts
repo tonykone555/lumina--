@@ -224,7 +224,49 @@ async function validateEmbeds(rows:Video[]){
  return checked.filter((x):x is Video=>Boolean(x));
 }
 
+async function brightDataCandidates(query:string):Promise<Candidate[]|null>{
+ const token=String(process.env.BRIGHTDATA_API_TOKEN||"").trim();
+ if(!token)return null;
+ try{
+  const endpoint="https://api.brightdata.com/datasets/v3/scrape?dataset_id=gd_m7n5ixlw1gc4no56kx&format=json";
+  const requestUrl="https://www.tiktok.com/search?lang=en&q="+encodeURIComponent(query);
+  const response=await fetch(endpoint,{method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
+   body:JSON.stringify({input:[{url:requestUrl,num_of_posts:12,country:""}]}),
+   cache:"no-store",signal:AbortSignal.timeout(57000)});
+  if(response.status===202){
+   const pending=await response.json().catch(()=>({}));
+   console.warn("Bright Data TikTok collection pending",{snapshotId:String(pending?.snapshot_id||"").slice(0,45)});
+   return[];
+  }
+  if(!response.ok){
+   console.warn("Bright Data TikTok request failed",{status:response.status,message:(await response.text()).slice(0,240)});
+   return[];
+  }
+  const raw=await response.text();
+  const parsed=JSON.parse(raw.replace(/("(?:post_id|video_id|id)"\s*:\s*)(\d{15,20})(?=\s*[,}])/g,'$1"$2"'));
+  const rows=Array.isArray(parsed)?parsed:Array.isArray(parsed?.data)?parsed.data:[];
+  const seen=new Set<string>();
+  return rows.map((v:any):Candidate|null=>{
+   const videoUrl=String(v.url||v.post_url||"");
+   const videoId=String(v.post_id||v.video_id||v.id||videoUrl.match(/\/video\/(\d{15,20})/)?.[1]||"");
+   const rawDate=v.post_date_created||v.date_created||v.create_time||v.createTime||"";
+   const seconds=typeof rawDate==="number"?(rawDate>1e12?rawDate/1000:rawDate):Date.parse(String(rawDate))/1000;
+   if(!/^\d{15,20}$/.test(videoId)||seen.has(videoId)||!Number.isFinite(seconds)||seconds>Date.now()/1000||Date.now()/1000-seconds>90*86400)return null;
+   seen.add(videoId);
+   return {id:videoId,caption:String(v.description||v.caption||"").slice(0,500),hashtags:arr(v.hashtags),
+    onScreenText:[],views:num(v.play_count||v.views),likes:num(v.digg_count||v.likes),shares:num(v.share_count||v.shares),
+    saves:num(v.collect_count||v.saves),engagementRate:null,country:"",language:"",createdAt:Math.floor(seconds),
+    username:videoUrl.match(/tiktok\.com\/@([^/]+)/)?.[1]||""};
+  }).filter((x):x is Candidate=>Boolean(x));
+ }catch(error){
+  console.warn("Bright Data TikTok request unavailable",{message:error instanceof Error?error.message:"REQUEST_FAILED"});
+  return[];
+ }
+}
+
 async function candidates(query:string){
+ const bright=await brightDataCandidates(query);
+ if(bright?.length)return bright;
  const id=String(process.env.MODAL_TOKEN_ID||"");
  const secret=String(process.env.MODAL_TOKEN_SECRET||"");
  if(!id||!secret){
