@@ -15,9 +15,55 @@ function preloadMedia(p:Product){if(typeof window==="undefined")return;urls(p.im
 export default function Subcategory(){const p=useParams(),router=useRouter(),searchParams=useSearchParams(),world=YNOT_VISUAL_WORLDS.find(w=>w.id===String(p.world)),cat=world?.categories.find(c=>c.id===String(p.category)),sub=cat?.subcategories.find(s=>s.id===String(p.subcategory)),[tag,setTag]=useState("All"),[products,setProducts]=useState<Product[]>([]),[loading,setLoading]=useState(true),[loadingMore,setLoadingMore]=useState(false),[pagination,setPagination]=useState<Pagination|null>(null),[selected,setSelected]=useState<Product|null>(null),[variantId,setVariantId]=useState(""),[choices,setChoices]=useState<Record<string,string>>({}),[related,setRelated]=useState<Product[]>([]),[gallery,setGallery]=useState(false),[galleryIndex,setGalleryIndex]=useState(0),[heroIndex,setHeroIndex]=useState(0),[subtotal,setSubtotal]=useState(0),[loadError,setLoadError]=useState(""),loadRef=useRef<HTMLDivElement|null>(null),loadWave=useRef(0),loadQueryRef=useRef("");const tags=useMemo(()=>world&&cat&&sub?["All",...tagsForSubcategory(world.id,cat.id,sub.id,sub.title)]:["All"],[world?.id,cat?.id,sub?.id]);const directQuery=String(searchParams.get("q")||"").trim();const query=useMemo(()=>directQuery||(sub?[sub.queries[0],tag!=="All"?tag:""].filter(Boolean).join(" "):""),[sub?.id,tag,directQuery]);
 useEffect(()=>{if(!products.length||selected)return;const id=new URLSearchParams(location.search).get("product");if(!id)return;const found=products.find(x=>String(x.id)===id);if(found)void openProduct(found)},[products.length]);
 useEffect(()=>{const sync=()=>setSubtotal(cartSubtotal());sync();window.addEventListener("ynot:bag-changed",sync);window.addEventListener("storage",sync);return()=>{window.removeEventListener("ynot:bag-changed",sync);window.removeEventListener("storage",sync)}},[]);
-useEffect(()=>{if(!sub)return;let live=true;loadWave.current=0;loadQueryRef.current=query;setLoading(true);setLoadError("");setPagination(null);fetch(`/api/catalog?q=${encodeURIComponent(query)}&source=shopify&limit=24&category_load=1`,{cache:"no-store"}).then(r=>r.json()).then(async j=>{if(!live)return;let next=unique(Array.isArray(j.products)?j.products:[]),page=j.pagination||null;if(!next.length){try{const r2=await fetch(`/api/catalog?q=${encodeURIComponent(query)}&source=all&limit=24&category_load=1`,{cache:"no-store"}),j2=await r2.json();if(!live)return;next=unique(Array.isArray(j2.products)?j2.products:[]);page=j2.pagination||null;if(!next.length)setLoadError(j2.error||j.error||"No live products returned yet.")}catch{setLoadError(j.error||"Products are taking longer than expected.")}}setProducts(next);setPagination(page)}).catch(()=>{if(live){setProducts([]);setLoadError("Products are taking longer than expected.")}}).finally(()=>live&&setLoading(false));return()=>{live=false}},[query]);
-const loadMore=async()=>{if(loading||loadingMore||selected)return;setLoadingMore(true);try{const cursor=cursorFrom(pagination);let requestQuery=loadQueryRef.current||query;let url="";if(pagination?.has_next_page&&cursor){url=`/api/catalog?q=${encodeURIComponent(requestQuery)}&source=shopify&limit=60&cursor=${encodeURIComponent(cursor)}&category_load=1`}else{const base=sub?.queries?.[0]||sub?.title||query;const pool=[...(sub?.queries||[]),...tags.filter(t=>t!=="All").map(t=>`${base} ${t}`),...(["new arrivals","popular","best selling","premium","latest","top rated","trending","essentials","accessories","editor picks","new season","recommended"] as string[]).map(t=>`${base} ${t}`)].filter(Boolean);requestQuery=pool[loadWave.current%Math.max(pool.length,1)]||query;loadWave.current+=1;loadQueryRef.current=requestQuery;url=`/api/catalog?q=${encodeURIComponent(requestQuery)}&source=shopify&limit=60&category_load=1`;}const r=await fetch(url,{cache:"no-store"}),j=await r.json(),incoming=unique(Array.isArray(j.products)?j.products:[]);setProducts(prev=>unique([...prev,...incoming]));const next=j.pagination||{};setPagination({...next,has_next_page:Boolean(next.has_next_page||cursorFrom(next))})}finally{setLoadingMore(false)}};
-useEffect(()=>{if(selected||loading)return;const el=loadRef.current;if(!el)return;const o=new IntersectionObserver(e=>{if(e[0]?.isIntersecting)loadMore()},{rootMargin:"3200px 0px"});o.observe(el);return()=>o.disconnect()},[products.length,pagination?.has_next_page,pagination?.next_cursor,pagination?.cursor,pagination?.end_cursor,loadingMore,loading,selected,query]);
+useEffect(()=>{
+ if(!sub)return;
+ let live=true;
+ loadWave.current=0;loadQueryRef.current=query;
+ setLoading(true);setLoadError("");setPagination(null);setProducts([]);
+ const url=`/api/catalog?q=${encodeURIComponent(query)}&source=all&limit=36&category_load=1`;
+ fetch(url,{cache:"no-store"})
+  .then(async r=>{if(!r.ok)throw new Error("CATALOG_"+r.status);return r.json()})
+  .then(j=>{if(!live)return;const next=unique(Array.isArray(j.products)?j.products:[]);setProducts(next);setPagination(j.pagination||null);if(!next.length)setLoadError(j.error||"No live products returned yet.")})
+  .catch(()=>{if(live)setLoadError("Products are taking longer than expected.")})
+  .finally(()=>{if(live)setLoading(false)});
+ return()=>{live=false};
+},[query]);
+const loadMore=async()=>{
+ if(loading||loadingMore||selected)return;
+ setLoadingMore(true);
+ try{
+  const cursor=cursorFrom(pagination);
+  let requestQuery=loadQueryRef.current||query;
+  let url="";
+  if(pagination?.has_next_page&&cursor){
+   url=`/api/catalog?q=${encodeURIComponent(requestQuery)}&source=all&limit=36&cursor=${encodeURIComponent(cursor)}&category_load=1`;
+  }else{
+   const base=sub?.queries?.[0]||sub?.title||query;
+   const pool=[...(sub?.queries||[]),...tags.filter(t=>t!=="All").map(t=>`${base} ${t}`),...(["new arrivals","popular","best selling","premium","latest","top rated","trending","essentials","accessories","editor picks","new season","recommended"] as string[]).map(t=>`${base} ${t}`)].filter(Boolean);
+   requestQuery=pool[loadWave.current%Math.max(pool.length,1)]||query;
+   loadWave.current+=1;
+   loadQueryRef.current=requestQuery;
+   url=`/api/catalog?q=${encodeURIComponent(requestQuery)}&source=all&limit=36&category_load=1`;
+  }
+  const response=await fetch(url,{cache:"no-store"});
+  if(!response.ok)throw new Error("CATALOG_"+response.status);
+  const j=await response.json();
+  const incoming=unique(Array.isArray(j.products)?j.products:[]);
+  setProducts(prev=>unique([...prev,...incoming]));
+  const next=j.pagination||{};
+  setPagination({...next,has_next_page:Boolean(next.has_next_page&&cursorFrom(next))});
+  if(!incoming.length&&j.error)setLoadError(String(j.error));
+  else if(incoming.length)setLoadError("");
+ }catch{setLoadError("More products could not be loaded. Scroll to retry.")}
+ finally{setLoadingMore(false)}
+};
+useEffect(()=>{
+ if(selected||loading)return;
+ const el=loadRef.current;if(!el)return;
+ const observer=new IntersectionObserver(entries=>{if(entries[0]?.isIntersecting&&!loadingMore)void loadMore()},{rootMargin:"1200px 0px"});
+ observer.observe(el);return()=>observer.disconnect();
+},[products.length,pagination?.has_next_page,pagination?.next_cursor,pagination?.cursor,pagination?.end_cursor,loadingMore,loading,selected,query]);
+
 const openProduct=async(x:Product)=>{try{const q=String(searchParams.get("q")||"").trim();const here=`/worlds/${encodeURIComponent(String(p.world))}/${encodeURIComponent(String(p.category))}/${encodeURIComponent(String(p.subcategory))}?${q?`q=${encodeURIComponent(q)}&`:""}product=${encodeURIComponent(String(x.id))}`;history.replaceState({productId:x.id,world:String(p.world),category:String(p.category),subcategory:String(p.subcategory)},"",here)}catch{};setSelected(x);preloadMedia(x);setVariantId("");setChoices({});setGallery(false);setGalleryIndex(0);setHeroIndex(0);setRelated(unique(products.filter(y=>y.id!==x.id)).slice(0,40));scrollTo(0,0);const ynotPrice=x.price,ynotCurrency=x.currency;try{const r=await fetch(`/api/commerce/product/${encodeURIComponent(x.id)}`,{cache:"no-store"}),j=await r.json();let enriched:Product=r.ok&&j.product?{...x,...j.product,id:x.id,price:ynotPrice,currency:ynotCurrency||j.product.currency}:x;try{const lr=await fetch("/api/commerce/product-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({...enriched,price:ynotPrice,currency:ynotCurrency||enriched.currency}),cache:"no-store"}),lj=await lr.json();if(lr.ok&&lj.product)enriched={...enriched,...lj.product,id:x.id,price:ynotPrice,currency:ynotCurrency||enriched.currency}}catch{}enriched={...enriched,id:x.id,price:ynotPrice,currency:ynotCurrency||enriched.currency,images:urls(enriched.image,enriched.images,enriched.variants?.map((z:any)=>[z.image,z.images]))};preloadMedia(enriched);setSelected(enriched);const first=(enriched.variants||[]).find((v:Variant)=>v.available!==false);if(first)setVariantId(first.id)}catch{}};
 const chosen=selected?.variants?.find(v=>v.id===variantId);const images=selected?urls(chosen?.image,chosen?.images,selected.image,selected.images,selected.variants?.map(v=>[v.image,v.images])):[];const displayProduct=selected?{...selected,price:selected.price,currency:selected.currency,image:chosen?.image||selected.image,url:chosen?.url||selected.url}:null;
 const addToBag=(x:Product)=>{try{const v=x.variants?.find(z=>z.id===variantId),cart=JSON.parse(localStorage.getItem("ynot-cart")||"[]"),key=`${x.id}:${v?.id||"default"}`,found=Array.isArray(cart)?cart.find((i:any)=>i.key===key):null,item={key,productId:x.id,variantId:v?.id||null,variantLabel:v?.label||null,title:x.title,brand:x.brand,image:v?.image||x.image||"",images:urls(v?.image,v?.images,x.image,x.images),quantity:1,price:Number(x.price??0),currency:x.currency||"EUR",source:"shopify",url:v?.url||x.url};const next=found?cart.map((i:any)=>i.key===key?{...i,quantity:Math.min(10,Number(i.quantity||1)+1)}:i):[...(Array.isArray(cart)?cart:[]),item];localStorage.setItem("ynot-cart",JSON.stringify(next));window.dispatchEvent(new CustomEvent("ynot:bag-changed",{detail:next}));window.dispatchEvent(new Event("ynot:open-bag"));setSubtotal(next.reduce((s:number,i:any)=>s+Number(i.price||0)*Number(i.quantity||1),0))}catch{}};
