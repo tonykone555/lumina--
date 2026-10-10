@@ -204,7 +204,7 @@ async function candidates(query:string){
   const seen=new Set<string>();
   return (Array.isArray(data.videos)?data.videos:[]).map((v:any):Candidate|null=>{
    const id=String(v?.id||"");
-   if(!/^\\d{10,20}$/.test(id)||seen.has(id))return null;
+   if(!/^\d{10,20}$/.test(id)||seen.has(id))return null;
    seen.add(id);
    return{
     id,caption:String(v.caption||"").slice(0,500),hashtags:[],onScreenText:[],
