@@ -127,7 +127,8 @@ async function fetchSearch(term:string){
  try{
   const response=await fetch(url,{cache:"force-cache",next:{revalidate:3600},signal:AbortSignal.timeout(HF_SEARCH_TIMEOUT_MS)});
   if(!response.ok){console.warn("HF TikTok search failed",{term,status:response.status});return[]}
-  const data=await response.json().catch(()=>({}));
+  const raw=await response.text();
+  const data=JSON.parse(raw.replace(/("video_id"\s*:\s*)(\d{15,20})(?=\s*[,}])/g,'$1"$2"'));
   return Array.isArray(data?.rows)?data.rows:[];
  }catch(error){
   console.warn("HF TikTok search unavailable",{term,message:error instanceof Error?error.message:String(error)});
