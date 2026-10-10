@@ -1,6 +1,7 @@
 import {NextRequest,NextResponse} from "next/server";
 import {askJev,type JevQuestion} from "@/lib/ai/jev";
 import {ModalClient} from "modal";
+import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -479,9 +480,7 @@ export async function GET(req:NextRequest){
  if(!title)return NextResponse.json({videos:[],error:"TITLE_REQUIRED"},{status:400});
  const query=searchQuery(title,brand,tags);
  if(s.get("source")==="hf"||s.get("source")==="hf-private"){
-  const secret=String(process.env.YNOT_HF_VIDEO_TEST_KEY||"");
-  const provided=String(req.headers.get("x-ynot-hf-test-key")||"");
-  if(!secret||provided!==secret)return NextResponse.json({error:"PRIVATE_TEST_UNAUTHORIZED"},{status:401,headers:{"Cache-Control":"no-store"}});
+  try{await requireYnotAdmin(req)}catch(error){return NextResponse.json({error:"ADMIN_ACCESS_REQUIRED"},{status:adminErrorStatus(error),headers:{"Cache-Control":"no-store"}})}
   const started=Date.now();
   try{
    const rows=await datasetCandidates(query);
