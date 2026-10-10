@@ -478,7 +478,10 @@ export async function GET(req:NextRequest){
  const description=String(s.get("description")||"").trim().slice(0,500);
  if(!title)return NextResponse.json({videos:[],error:"TITLE_REQUIRED"},{status:400});
  const query=searchQuery(title,brand,tags);
- if(s.get("source")==="hf"){
+ if(s.get("source")==="hf"||s.get("source")==="hf-private"){
+  const secret=String(process.env.YNOT_HF_VIDEO_TEST_KEY||"");
+  const provided=String(req.headers.get("x-ynot-hf-test-key")||"");
+  if(!secret||provided!==secret)return NextResponse.json({error:"PRIVATE_TEST_UNAUTHORIZED"},{status:401,headers:{"Cache-Control":"no-store"}});
   const started=Date.now();
   try{
    const rows=await datasetCandidates(query);
