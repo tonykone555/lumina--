@@ -9,9 +9,9 @@ const HF="https://datasets-server.huggingface.co/search";
 
 type Candidate={
  id:string;caption:string;hashtags:string[];onScreenText:string[];views:number;likes:number;shares:number;saves:number;
- engagementRate:number|null;country:string;language:string;isShopVideo:boolean;productId:string;sellerId:string;
+ engagementRate:number|null;country:string;language:string;
 };
-type Video=Candidate&{url:string;embedUrl:string;jev:{relevance:string;fit:string;confidence:number}};
+type Video=Candidate&{url:string;embedUrl:string;searchQuery:string;jev:{relevance:string;fit:string;confidence:number}};
 
 function words(value:string){
  const stop=new Set(["the","and","for","with","from","this","that","new","shop","buy","sale","product","item","official","best"]);
@@ -22,6 +22,16 @@ function searchQuery(title:string,brand:string,tags:string[]){
  const brandWords=words(brand).slice(0,2);
  const tagWords=tags.flatMap(words).slice(0,4);
  return [...new Set([...brandWords,...titleWords,...tagWords])].join(" ").slice(0,160);
+}
+function intentQuery(row:Candidate,category=""){
+ const generic=new Set(["viral","tiktok","fyp","foryou","foryoupage","trending","video","amazon","musthave","musthaves","aesthetic","things","obsessed","love","need","found","find"]);
+ const weighted=[
+  ...row.hashtags.flatMap(words).flatMap(x=>[x,x]),
+  ...row.onScreenText.flatMap(words).flatMap(x=>[x,x]),
+  ...words(row.caption),
+  ...words(category)
+ ].filter(x=>!generic.has(x));
+ return [...new Set(weighted)].slice(0,9).join(" ").slice(0,150);
 }
 function rowValue(row:any){
  return row?.row&&typeof row.row==="object"?row.row:row;
@@ -53,9 +63,7 @@ async function candidates(query:string){
    onScreenText:arr(r?.on_screen_text).slice(0,12),
    views:num(r?.views),likes:num(r?.likes),shares:num(r?.shares),saves:num(r?.saves),
    engagementRate:Number.isFinite(Number(r?.engagement_rate))?Number(r.engagement_rate):null,
-   country:String(r?.country||""),language:String(r?.language||""),
-   isShopVideo:Number(r?.is_shop_video||0)===1,
-   productId:String(r?.product_id||"0"),sellerId:String(r?.seller_id||"0")
+   country:String(r?.country||""),language:String(r?.language||"")
   };
  }).filter((x):x is Candidate=>Boolean(x));
 }
@@ -80,7 +88,7 @@ async function rankWithJev(product:{title:string;brand:string;tags:string[];desc
   product,
   candidates:rows.slice(0,12).map(r=>({
    id:r.id,caption:r.caption,hashtags:r.hashtags,onScreenText:r.onScreenText,
-   views:r.views,shares:r.shares,saves:r.saves,engagementRate:r.engagementRate,isShopVideo:r.isShopVideo
+   views:r.views,shares:r.shares,saves:r.saves,engagementRate:r.engagementRate
   }))
  };
  const decisions=await askJev(context,questions);
@@ -109,12 +117,44 @@ async function rankWithJev(product:{title:string;brand:string;tags:string[];desc
    ...r,
    url:`https://www.tiktok.com/@_/video/${r.id}`,
    embedUrl:`https://www.tiktok.com/player/v1/${r.id}?autoplay=0&controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,
+   searchQuery:intentQuery(r,product.title),
    jev:byId.get(r.id)||{relevance:"ADJACENT",fit:"TEST",confidence:0}
   }));
 }
 
+async function rankFeedWithJev(category:string,rows:Candidate[]){
+ if(!rows.length)return[] as Video[];
+ const questions:JevQuestion[]=[];
+ for(const row of rows.slice(0,18)){
+  questions.push({id:`focus:${row.id}`,question:"Is this TikTok primarily about a discoverable physical product, product demo, styling/use case, home item, fashion item, gadget, beauty item, fitness item or other shoppable object rather than general entertainment?",choices:[{label:"PRODUCT_FOCUSED"},{label:"MAYBE_PRODUCT"},{label:"NOT_PRODUCT"}]});
+  questions.push({id:`rel:${row.id}`,question:"Is this product video useful discovery content for this YNOT category?",choices:[{label:"RELEVANT"},{label:"ADJACENT"},{label:"IRRELEVANT"}]});
+ }
+ const context={task:"Build a product-only YNOT discovery video feed. Reject memes, dances, celebrity/news clips, pure entertainment and unrelated content. Do not use TikTok Shop identifiers or merchant links.",category,candidates:rows.slice(0,18).map(r=>({id:r.id,caption:r.caption,hashtags:r.hashtags,onScreenText:r.onScreenText,views:r.views,shares:r.shares,saves:r.saves,engagementRate:r.engagementRate}))};
+ const decisions=await askJev(context,questions);
+ const state=new Map<string,{focus:string;relevance:string;confidence:number}>();
+ for(const d of decisions){const [kind,id]=String(d.id||"").split(":");if(!id)continue;const prev=state.get(id)||{focus:"NOT_PRODUCT",relevance:"IRRELEVANT",confidence:0};if(kind==="focus")prev.focus=d.choice;if(kind==="rel")prev.relevance=d.choice;prev.confidence=Math.max(prev.confidence,Number(d.confidence||0));state.set(id,prev)}
+ const score=(r:Candidate)=>{const j=state.get(r.id)||{focus:"NOT_PRODUCT",relevance:"IRRELEVANT",confidence:0};const f=j.focus==="PRODUCT_FOCUSED"?120:j.focus==="MAYBE_PRODUCT"?25:-250;const rel=j.relevance==="RELEVANT"?80:j.relevance==="ADJACENT"?15:-160;const engagement=Math.min(45,Math.log10(Math.max(1,r.views))*4+Math.log10(Math.max(1,r.saves+r.shares))*5);return f+rel+engagement};
+ return rows.filter(r=>{const j=state.get(r.id);return j?.focus==="PRODUCT_FOCUSED"&&j?.relevance!=="IRRELEVANT"}).sort((a,b)=>score(b)-score(a)).slice(0,10).map(r=>({...r,url:`https://www.tiktok.com/@_/video/${r.id}`,embedUrl:`https://www.tiktok.com/player/v1/${r.id}?autoplay=0&controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,searchQuery:intentQuery(r,category),jev:{relevance:state.get(r.id)?.relevance||"RELEVANT",fit:state.get(r.id)?.focus||"PRODUCT_FOCUSED",confidence:state.get(r.id)?.confidence||0}}));
+}
+
 export async function GET(req:NextRequest){
  const s=req.nextUrl.searchParams;
+ const mode=String(s.get("mode")||"product");
+ const category=String(s.get("category")||"").trim().slice(0,140);
+ const subcategories=String(s.get("subcategories")||"").split(",").map(x=>x.trim()).filter(Boolean).slice(0,12);
+ if(mode==="feed"){
+  if(!category)return NextResponse.json({videos:[],error:"CATEGORY_REQUIRED"},{status:400});
+  const feedQuery=[category,...subcategories].join(" ").slice(0,180);
+  try{
+   const rows=await candidates(feedQuery);
+   const videos=await rankFeedWithJev(category,rows);
+   return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,videos},{headers:{"Cache-Control":"s-maxage=1800, stale-while-revalidate=7200"}});
+  }catch(error){
+   const message=error instanceof Error?error.message:"PRODUCT_VIDEO_FEED_FAILED";
+   console.error("Product video feed failed",{category,message});
+   return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,videos:[],error:message},{headers:{"Cache-Control":"s-maxage=120, stale-while-revalidate=600"}});
+  }
+ }
  const title=String(s.get("title")||"").trim().slice(0,180);
  const brand=String(s.get("brand")||"").trim().slice(0,80);
  const tags=String(s.get("tags")||"").split(",").map(x=>x.trim()).filter(Boolean).slice(0,10);
