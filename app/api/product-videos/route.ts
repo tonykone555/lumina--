@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {askJev,type JevQuestion} from "@/lib/ai/jev";
-import {searchTikTokVideos,searchGoogleIntent} from "@/lib/intelligence/fetchlayer-social";
+import {ModalClient} from "modal";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -12,7 +12,7 @@ const HF_FALLBACK_TIMEOUT_MS=10000;
 
 type Candidate={
  id:string;caption:string;hashtags:string[];onScreenText:string[];views:number;likes:number;shares:number;saves:number;
- engagementRate:number|null;country:string;language:string;
+ engagementRate:number|null;country:string;language:string;thumbnail?:string;createdAt?:number;username?:string;
 };
 type Video=Candidate&{url:string;embedUrl:string;searchQuery:string;jev:{relevance:string;fit:string;confidence:number}};
 
@@ -186,33 +186,37 @@ async function bingTikTokCandidates(query:string){
 }
 
 async function candidates(query:string){
- const live=await liveTikTokCandidates(query);
- if(live.length)return live;
- const bing=await bingTikTokCandidates(query);
- if(bing.length)return bing;
-
- const terms=[...new Set(words(query))].slice(0,4);
- let rows:any[]=[];
- if(terms.length){
-  const settled=await Promise.allSettled(terms.map(fetchSearch));
-  for(const result of settled)if(result.status==="fulfilled")rows.push(...result.value);
+ const id=String(process.env.MODAL_TOKEN_ID||"");
+ const secret=String(process.env.MODAL_TOKEN_SECRET||"");
+ if(!id||!secret){
+  console.warn("Jev TikTok discovery: Modal credentials missing");
+  return[] as Candidate[];
  }
- if(!rows.length)rows=await fetchFirstRows();
- const seen=new Set<string>();
- return rows.map(rowValue).map((r:any):Candidate|null=>{
-  const id=String(r?.video_id||"");
-  if(!/^\d{10,20}$/.test(id)||seen.has(id))return null;
-  seen.add(id);
-  return{
-   id,
-   caption:String(r?.caption||"").slice(0,500),
-   hashtags:arr(r?.hashtags).slice(0,20),
-   onScreenText:arr(r?.on_screen_text).slice(0,12),
-   views:num(r?.views),likes:num(r?.likes),shares:num(r?.shares),saves:num(r?.saves),
-   engagementRate:Number.isFinite(Number(r?.engagement_rate))?Number(r.engagement_rate):null,
-   country:String(r?.country||""),language:String(r?.language||"")
-  };
- }).filter((x):x is Candidate=>Boolean(x));
+ const modal=new ModalClient({tokenId:id,tokenSecret:secret});
+ try{
+  const fn=await modal.functions.fromName("ynot-tiktok-search","search_tiktok_videos");
+  const call=await fn.spawn([],{query,limit:24});
+  const data:any=await call.get({timeoutMs:75000});
+  if(!data?.ok){
+   console.warn("Modal TikTok search returned no verified results",{error:String(data?.error||"WORKER_UNAVAILABLE")});
+   return[];
+  }
+  const seen=new Set<string>();
+  return (Array.isArray(data.videos)?data.videos:[]).map((v:any):Candidate|null=>{
+   const id=String(v?.id||"");
+   if(!/^\\d{10,20}$/.test(id)||seen.has(id))return null;
+   seen.add(id);
+   return{
+    id,caption:String(v.caption||"").slice(0,500),hashtags:[],onScreenText:[],
+    views:num(v.views),likes:num(v.likes),shares:num(v.shares),saves:num(v.saves),
+    engagementRate:null,country:"",language:"",thumbnail:String(v.thumbnail||""),
+    createdAt:num(v.created_at),username:String(v.username||"")
+   };
+  }).filter((x):x is Candidate=>Boolean(x));
+ }catch(error){
+  console.warn("Modal TikTok search not ready",{message:error instanceof Error?error.message:String(error)});
+  return[];
+ }finally{modal.close()}
 }
 
 async function rankWithJev(product:{title:string;brand:string;tags:string[];description:string},rows:Candidate[]){
@@ -262,7 +266,7 @@ async function rankWithJev(product:{title:string;brand:string;tags:string[];desc
   .slice(0,8)
   .map(r=>({
    ...r,
-   url:`https://www.tiktok.com/@_/video/${r.id}`,
+   url:`https://www.tiktok.com/@${r.username||"_"}/video/${r.id}`,
    embedUrl:`https://www.tiktok.com/player/v1/${r.id}?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,
    searchQuery:intentQuery(r,product.title),
    jev:byId.get(r.id)||{relevance:"ADJACENT",fit:"TEST",confidence:0}
