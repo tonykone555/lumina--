@@ -13,6 +13,8 @@ export default function MasonryForYou({open,onClose,category,subcategories,searc
  const[videos,setVideos]=useState<Video[]>([]);
  const[index,setIndex]=useState(0);
  const[loading,setLoading]=useState(false);
+ const[error,setError]=useState("");
+ const[retryKey,setRetryKey]=useState(0);
  const[query,setQuery]=useState("");
  const[paused,setPaused]=useState(false);
  const scroller=useRef<HTMLDivElement|null>(null);
@@ -21,13 +23,15 @@ export default function MasonryForYou({open,onClose,category,subcategories,searc
   if(!open)return;
   let live=true;
   const controller=new AbortController();
-  setLoading(true);setVideos([]);setIndex(0);setPaused(false);setQuery("");
+  setLoading(true);setError("");setVideos([]);setIndex(0);setPaused(false);setQuery("");
   const p=new URLSearchParams({mode:"feed",category,subcategories:subcategories.join(",")});
-  fetch("/api/product-videos?"+p.toString(),{cache:"force-cache",signal:controller.signal})
-   .then(r=>r.json()).then(data=>{if(live)setVideos(Array.isArray(data?.videos)?data.videos:[])})
-   .catch(()=>{}).finally(()=>{if(live)setLoading(false)});
+  fetch("/api/product-videos?"+p.toString(),{cache:"no-store",signal:controller.signal})
+   .then(async r=>{const data=await r.json().catch(()=>({}));if(!r.ok)throw new Error(String(data?.error||`VIDEO_FEED_${r.status}`));return data})
+   .then(data=>{if(live){setVideos(Array.isArray(data?.videos)?data.videos:[]);if(data?.error)setError(String(data.error))}})
+   .catch(err=>{if(live&&err?.name!=="AbortError")setError(String(err?.message||"VIDEO_FEED_UNAVAILABLE"))})
+   .finally(()=>{if(live)setLoading(false)});
   return()=>{live=false;controller.abort()};
- },[open,category,subcategories.join("|")]);
+ },[open,category,subcategories.join("|"),retryKey]);
 
  const active=videos[index]||null;
  const resolvedQuery=useMemo(()=>query.trim()||active?.searchQuery||category,[query,active?.searchQuery,category]);
@@ -72,6 +76,6 @@ export default function MasonryForYou({open,onClose,category,subcategories,searc
      </div>
     </div>
    </article>)}
-  </div>:<div className="ynot-foryou-empty">No strong product videos were found for this category yet.</div>}
+  </div>:<div className="ynot-foryou-empty"><div><div>{error?"Video search is temporarily unavailable.":"No strong product videos were found for this category yet."}</div>{error&&<button type="button" onClick={()=>setRetryKey(v=>v+1)} style={{marginTop:14,border:"1px solid #ffffff38",borderRadius:999,padding:"10px 16px",background:"#fff",color:"#111",fontSize:11,fontWeight:850}}>Retry</button>}</div></div>}
  </section>;
 }
