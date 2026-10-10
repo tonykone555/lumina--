@@ -370,6 +370,62 @@ async function rankFeedWithJev(category:string,rows:Candidate[]){
  return rows.filter(r=>{const j=state.get(r.id);return j?.focus==="PRODUCT_FOCUSED"&&j?.relevance!=="IRRELEVANT"}).sort((a,b)=>score(b)-score(a)).slice(0,10).map(r=>({...r,url:`https://www.tiktok.com/@_/video/${r.id}`,embedUrl:`https://www.tiktok.com/player/v1/${r.id}?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,searchQuery:intentQuery(r,category),jev:{relevance:state.get(r.id)?.relevance||"RELEVANT",fit:state.get(r.id)?.focus||"PRODUCT_FOCUSED",confidence:state.get(r.id)?.confidence||0}}));
 }
 
+
+const BRIGHT_DATASET="gd_m7n5ixlw1gc4no56kx";
+function brightToken(){return String(process.env.BRIGHTDATA_API_TOKEN||"").trim()}
+function brightRows(data:any):Candidate[]{
+ const rows=Array.isArray(data)?data:Array.isArray(data?.data)?data.data:[];
+ const seen=new Set<string>();
+ return rows.map((v:any):Candidate|null=>{
+  const url=String(v.url||v.post_url||v.video_url||"");
+  const id=String(url.match(/\/video\/(\d{15,20})/)?.[1]||v.post_id||v.video_id||v.id||"");
+  const date=v.post_date_created||v.date_created||v.create_time||v.createTime||v.date||"";
+  const seconds=typeof date==="number"?(date>1e12?date/1000:date):/^\d{10,13}$/.test(String(date))?Number(date)/(String(date).length===13?1000:1):Date.parse(String(date))/1000;
+  if(!/^\d{15,20}$/.test(id)||seen.has(id)||!Number.isFinite(seconds)||seconds<=0||seconds>Date.now()/1000||Date.now()/1000-seconds>90*86400)return null;
+  seen.add(id);
+  const stats=v.stats||{};
+  return {id,caption:String(v.description||v.caption||v.desc||"").slice(0,500),
+   hashtags:arr(v.hashtags),onScreenText:[],views:num(v.play_count||v.views||stats.playCount),
+   likes:num(v.digg_count||v.likes||stats.diggCount),shares:num(v.share_count||v.shares||stats.shareCount),
+   saves:num(v.collect_count||v.saves),engagementRate:null,country:"",language:"",
+   createdAt:Math.floor(seconds),username:url.match(/tiktok\.com\/@([^/]+)/)?.[1]||String(v.author?.uniqueId||"")};
+ }).filter((v):v is Candidate=>Boolean(v)).slice(0,30);
+}
+async function brightAsync(req:NextRequest,product:{title:string;brand:string;tags:string[];description:string}){
+ const token=brightToken();
+ if(!token)return NextResponse.json({status:"unavailable",videos:[],error:"BRIGHT_DATA_NOT_CONFIGURED"},{status:503});
+ const params=req.nextUrl.searchParams;
+ const snapshot=String(params.get("snapshot_id")||"");
+ const headers={"Authorization":"Bearer "+token};
+ if(snapshot){
+  if(!/^s_[a-zA-Z0-9]+$/.test(snapshot))return NextResponse.json({error:"INVALID_SNAPSHOT_ID"},{status:400});
+  const progress=await fetch("https://api.brightdata.com/datasets/v3/progress/"+snapshot,{headers,cache:"no-store",signal:AbortSignal.timeout(9000)});
+  if(!progress.ok)return NextResponse.json({status:"failed",error:"BRIGHT_PROGRESS_"+progress.status},{status:502});
+  const info=await progress.json();
+  if(info.status==="failed")return NextResponse.json({status:"failed",videos:[],error:"BRIGHT_COLLECTION_FAILED"});
+  if(info.status!=="ready")return NextResponse.json({status:"pending",snapshot_id:snapshot,videos:[]},{headers:{"Cache-Control":"no-store"}});
+  const response=await fetch("https://api.brightdata.com/datasets/v3/snapshot/"+snapshot+"?format=json",{headers,cache:"no-store",signal:AbortSignal.timeout(15000)});
+  if(!response.ok)return NextResponse.json({status:"failed",error:"BRIGHT_SNAPSHOT_"+response.status},{status:502});
+  const raw=await response.text();
+  const data=JSON.parse(raw.replace(/("(?:post_id|video_id|id)"\s*:\s*)(\d{15,20})(?=\s*[,}])/g,'$1"$2"'));
+  const rows=brightRows(data);
+  const videos=await validateEmbeds(await rankWithJev(product,rows));
+  return NextResponse.json({status:"ready",videos,candidateCount:rows.length,source:"brightdata+jev"},{headers:{"Cache-Control":"private, max-age=600"}});
+ }
+ const query=searchQuery(product.title,product.brand,product.tags);
+ const endpoint="https://api.brightdata.com/datasets/v3/trigger?dataset_id="+BRIGHT_DATASET+"&include_errors=true";
+ const url="https://www.tiktok.com/search?lang=en&q="+encodeURIComponent(query);
+ const response=await fetch(endpoint,{method:"POST",headers:{...headers,"Content-Type":"application/json"},
+  body:JSON.stringify([{url,num_of_posts:12,country:""}]),cache:"no-store",signal:AbortSignal.timeout(12000)});
+ if(!response.ok){
+  console.warn("Bright async trigger failed",{status:response.status});
+  return NextResponse.json({status:"failed",error:"BRIGHT_TRIGGER_"+response.status,videos:[]},{status:502});
+ }
+ const data=await response.json();
+ if(!/^s_[a-zA-Z0-9]+$/.test(String(data.snapshot_id||"")))return NextResponse.json({status:"failed",error:"BRIGHT_SNAPSHOT_ID_MISSING"},{status:502});
+ return NextResponse.json({status:"pending",snapshot_id:data.snapshot_id,videos:[]},{headers:{"Cache-Control":"no-store"}});
+}
+
 export async function GET(req:NextRequest){
  const s=req.nextUrl.searchParams;
  const mode=String(s.get("mode")||"product");
@@ -396,6 +452,10 @@ export async function GET(req:NextRequest){
  const description=String(s.get("description")||"").trim().slice(0,500);
  if(!title)return NextResponse.json({videos:[],error:"TITLE_REQUIRED"},{status:400});
  const query=searchQuery(title,brand,tags);
+ if(s.get("async")==="1"){
+  try{return await brightAsync(req,{title,brand,tags,description})}
+  catch(e){console.warn("Bright async request failed",{message:e instanceof Error?e.message:"UNKNOWN"});return NextResponse.json({status:"failed",videos:[],error:"BRIGHT_ASYNC_FAILED"},{status:502})}
+ }
  try{
   const rows=await candidates(query);
   console.info("Product video candidates",{title,query,count:rows.length});
