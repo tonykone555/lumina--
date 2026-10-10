@@ -185,24 +185,62 @@ async function bingTikTokCandidates(query:string){
  }
 }
 
+const MAX_VIDEO_AGE_DAYS=90;
+function recentCandidate(row:any):Candidate|null{
+ const x=rowValue(row);
+ const id=videoId(x);
+ const rawDate=x?.posted_at||x?.created_at||x?.create_time||x?.createTime||"";
+ const seconds=typeof rawDate==="number"?(rawDate>1e12?rawDate/1000:rawDate):Date.parse(String(rawDate))/1000;
+ if(!/^\d{15,20}$/.test(id)||!Number.isFinite(seconds))return null;
+ const age=Date.now()/1000-seconds;
+ if(age<0||age>MAX_VIDEO_AGE_DAYS*86400)return null;
+ if(x.type&&String(x.type)!=="video")return null;
+ const caption=str(x.caption,x.desc,x.description).slice(0,500);
+ const hashtags=arr(x.hashtags);
+ const onScreenText=arr(x.on_screen_text||x.onScreenText);
+ if(!caption&&!hashtags.length&&!onScreenText.length)return null;
+ return{id,caption,hashtags,onScreenText,views:num(x.views),likes:num(x.likes),shares:num(x.shares),saves:num(x.saves),engagementRate:Number.isFinite(Number(x.engagement_rate))?Number(x.engagement_rate):null,country:str(x.country),language:str(x.language),createdAt:Math.floor(seconds)};
+}
+async function datasetCandidates(query:string){
+ const terms=[query,...words(query).slice(0,3)].filter(Boolean);
+ const searches=await Promise.allSettled([...new Set(terms)].slice(0,4).map(fetchSearch));
+ const seen=new Set<string>();
+ return searches.flatMap(result=>result.status==="fulfilled"?result.value:[]).map(recentCandidate)
+  .filter((x):x is Candidate=>Boolean(x&&!seen.has(x.id)&&(seen.add(x.id),true))).slice(0,24);
+}
+async function validateEmbeds(rows:Video[]){
+ const checked=await Promise.all(rows.slice(0,10).map(async video=>{
+  try{
+   const url=new URL("https://www.tiktok.com/oembed");
+   url.searchParams.set("url",video.url);
+   const response=await fetch(url,{signal:AbortSignal.timeout(5000),cache:"no-store"});
+   if(!response.ok)return null;
+   const body=await response.json();
+   if(!body?.thumbnail_url||!body?.html)return null;
+   return{...video,thumbnail:String(body.thumbnail_url),caption:video.caption||String(body.title||"").slice(0,500)};
+  }catch{return null}
+ }));
+ return checked.filter((x):x is Video=>Boolean(x));
+}
+
 async function candidates(query:string){
  const id=String(process.env.MODAL_TOKEN_ID||"");
  const secret=String(process.env.MODAL_TOKEN_SECRET||"");
  if(!id||!secret){
   console.warn("Jev TikTok discovery: Modal credentials missing");
-  return[] as Candidate[];
+  return await datasetCandidates(query);
  }
  const modal=new ModalClient({tokenId:id,tokenSecret:secret});
  try{
   const fn=await modal.functions.fromName("ynot-tiktok-search","search_tiktok_videos");
   const call=await fn.spawn([],{query,limit:24});
-  const data:any=await call.get({timeoutMs:75000});
+  const data:any=await call.get({timeoutMs:20000});
   if(!data?.ok){
    console.warn("Modal TikTok search returned no verified results",{error:String(data?.error||"WORKER_UNAVAILABLE")});
-   return[];
+   return await datasetCandidates(query);
   }
   const seen=new Set<string>();
-  return (Array.isArray(data.videos)?data.videos:[]).map((v:any):Candidate|null=>{
+  const live=(Array.isArray(data.videos)?data.videos:[]).map((v:any):Candidate|null=>{
    const id=String(v?.id||"");
    if(!/^\d{10,20}$/.test(id)||seen.has(id))return null;
    seen.add(id);
@@ -213,9 +251,10 @@ async function candidates(query:string){
     createdAt:num(v.created_at),username:String(v.username||"")
    };
   }).filter((x):x is Candidate=>Boolean(x));
+  return live.length?live:await datasetCandidates(query);
  }catch(error){
   console.warn("Modal TikTok search not ready",{message:error instanceof Error?error.message:String(error)});
-  return[];
+  return await datasetCandidates(query);
  }finally{modal.close()}
 }
 
@@ -299,7 +338,7 @@ export async function GET(req:NextRequest){
   try{
    const rows=await candidates(feedQuery);
    console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length});
-   const videos=await rankFeedWithJev(category,rows);
+   const videos=await validateEmbeds(await rankFeedWithJev(category,rows));
    console.info("Product video feed Jev result",{category,candidates:rows.length,selected:videos.length});
    return NextResponse.json({source:"live-tiktok+jev",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"s-maxage=900, stale-while-revalidate=3600":"no-store"}});
   }catch(error){
@@ -317,7 +356,7 @@ export async function GET(req:NextRequest){
  try{
   const rows=await candidates(query);
   console.info("Product video candidates",{title,query,count:rows.length});
-  const videos=await rankWithJev({title,brand,tags,description},rows);
+  const videos=await validateEmbeds(await rankWithJev({title,brand,tags,description},rows));
   console.info("Product video Jev result",{title,candidates:rows.length,selected:videos.length});
   return NextResponse.json({
    source:"huggingface+tiktok-embed",
