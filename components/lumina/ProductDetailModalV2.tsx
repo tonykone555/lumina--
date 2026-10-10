@@ -4,6 +4,7 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
 import {ChevronDown,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
 import "./ProductDetailModalV2.css";
+import ProductVideoRail from "./ProductVideoRail";
 
 type Variant={
   id:string;label:string;price:number|null;currency?:string;image?:string;images?:string[];url?:string;available:boolean;
@@ -150,6 +151,8 @@ export default function ProductDetailModalV2({
       </section>
 
       {Number(product.price||0)>=200&&<div className="ynot-pv2-flexpay"><span className="ynot-pv2-flexpay-badge" aria-hidden="true">✹</span><b>Flexible payment</b></div>}
+
+      <ProductVideoRail product={product}/>
 
       <section className="ynot-pv2-similar">
         <div className="ynot-pv2-section-label"><Sparkles/><span>{visualSimilarLoading?"Finding similar picks…":"Similar picks"}</span></div>
