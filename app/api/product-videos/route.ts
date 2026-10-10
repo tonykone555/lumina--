@@ -1,5 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {askJev,type JevQuestion} from "@/lib/ai/jev";
+import {searchTikTokVideos} from "@/lib/intelligence/fetchlayer-social";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -40,6 +41,44 @@ function rowValue(row:any){
 }
 function arr(v:any){return Array.isArray(v)?v.map(String).filter(Boolean):[]}
 function num(v:any){const n=Number(v);return Number.isFinite(n)?n:0}
+function str(...values:any[]){for(const v of values)if(typeof v==="string"&&v.trim())return v.trim();return ""}
+function videoId(row:any){
+ const raw=str(row?.video_id,row?.videoId,row?.id,row?.item_id,row?.aweme_id,row?.awemeId);
+ if(/^\\d{10,20}$/.test(raw))return raw;
+ const url=str(row?.url,row?.web_url,row?.share_url,row?.video_url,row?.videoUrl);
+ return url.match(/\\/video\\/(\\d{10,20})/)?.[1]||"";
+}
+function providerRows(data:any){
+ const options=[data?.videos,data?.items,data?.results,data?.data?.videos,data?.data?.items,data?.data?.results,data?.data];
+ for(const x of options)if(Array.isArray(x))return x;
+ return Array.isArray(data)?data:[];
+}
+function normalizeLive(row:any):Candidate|null{
+ const id=videoId(row);if(!id)return null;
+ return{
+  id,
+  caption:str(row?.caption,row?.desc,row?.description,row?.text).slice(0,500),
+  hashtags:arr(row?.hashtags).slice(0,20),
+  onScreenText:arr(row?.on_screen_text??row?.onScreenText).slice(0,12),
+  views:num(row?.views??row?.view_count??row?.viewCount??row?.stats?.playCount),
+  likes:num(row?.likes??row?.like_count??row?.likeCount??row?.stats?.diggCount),
+  shares:num(row?.shares??row?.share_count??row?.shareCount??row?.stats?.shareCount),
+  saves:num(row?.saves??row?.save_count??row?.saveCount),
+  engagementRate:Number.isFinite(Number(row?.engagement_rate))?Number(row.engagement_rate):null,
+  country:str(row?.country,row?.region),language:str(row?.language,row?.lang)
+ };
+}
+async function liveTikTokCandidates(query:string){
+ if(!process.env.FETCHLAYER_API_KEY)return[] as Candidate[];
+ try{
+  const data=await searchTikTokVideos(query,1,20);
+  const seen=new Set<string>();
+  return providerRows(data).map(normalizeLive).filter((x):x is Candidate=>Boolean(x&& !seen.has(x.id)&&(seen.add(x.id),true))).slice(0,20);
+ }catch(error){
+  console.warn("Live TikTok video search unavailable",{message:error instanceof Error?error.message:String(error)});
+  return[];
+ }
+}
 
 async function fetchSearch(term:string){
  const url=new URL(HF);
@@ -149,7 +188,7 @@ async function rankWithJev(product:{title:string;brand:string;tags:string[];desc
   .map(r=>({
    ...r,
    url:`https://www.tiktok.com/@_/video/${r.id}`,
-   embedUrl:`https://www.tiktok.com/player/v1/${r.id}?autoplay=0&controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,
+   embedUrl:`https://www.tiktok.com/player/v1/${r.id}?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,
    searchQuery:intentQuery(r,product.title),
    jev:byId.get(r.id)||{relevance:"ADJACENT",fit:"TEST",confidence:0}
   }));
