@@ -398,7 +398,7 @@ async function brightAsync(req:NextRequest,product:{title:string;brand:string;ta
  const snapshot=String(params.get("snapshot_id")||"");
  const headers={"Authorization":"Bearer "+token};
  if(snapshot){
-  if(!/^s_[a-zA-Z0-9]+$/.test(snapshot))return NextResponse.json({error:"INVALID_SNAPSHOT_ID"},{status:400});
+  if(!/^[a-zA-Z0-9_-]{6,128}$/.test(snapshot))return NextResponse.json({error:"INVALID_SNAPSHOT_ID"},{status:400});
   const progress=await fetch("https://api.brightdata.com/datasets/v3/progress/"+snapshot,{headers,cache:"no-store",signal:AbortSignal.timeout(9000)});
   if(!progress.ok)return NextResponse.json({status:"failed",error:"BRIGHT_PROGRESS_"+progress.status},{status:502});
   const info=await progress.json();
@@ -424,7 +424,7 @@ async function brightAsync(req:NextRequest,product:{title:string;brand:string;ta
  const textBody=await response.text();
  let data:any={};try{data=JSON.parse(textBody)}catch{}
  const snapshotId=String(data?.snapshot_id||data?.snapshotId||data?.data?.snapshot_id||"");
- if(!/^s_[a-zA-Z0-9]+$/.test(snapshotId)){
+ if(!/^[a-zA-Z0-9_-]{6,128}$/.test(snapshotId)){
   console.warn("Bright trigger returned unexpected payload",{httpStatus:response.status,contentType:response.headers.get("content-type"),keys:Object.keys(data||{}).slice(0,12),message:String(data?.message||data?.error||"").slice(0,130)});
   return NextResponse.json({status:"failed",error:"BRIGHT_SNAPSHOT_ID_MISSING"},{status:502});
  }
