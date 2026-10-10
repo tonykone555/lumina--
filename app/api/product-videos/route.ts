@@ -98,7 +98,8 @@ async function googleTikTokCandidates(query:string){
   const seen=new Set<string>();
   return collectTikTokLinks(data).map((row:any):Candidate|null=>{
    const url=str(row?.url,row?.link,row?.href,row?.web_url,row?.share_url);
-   const id=url.match(/\\/video\\/(\\d{10,20})/)?.[1]||"";
+   const afterVideo=url.split("/video/")[1]||"";
+   const id=(afterVideo.match(/^\d{10,20}/)?.[0])||"";
    if(!id||seen.has(id))return null;
    seen.add(id);
    return{
