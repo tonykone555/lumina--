@@ -18,6 +18,8 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
  const[videos,setVideos]=useState<Video[]>([]);
  const[loading,setLoading]=useState(false);
  const[open,setOpen]=useState<Video|null>(null);
+ const[retryKey,setRetryKey]=useState(0);
+ const[videoStatus,setVideoStatus]=useState("Checking recent product videos…");
 
  useEffect(()=>{
   let alive=true;
@@ -29,7 +31,7 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
   if(product.tags?.length)q.set("tags",product.tags.slice(0,10).join(","));
   const base="/api/product-videos?"+q.toString();
   let timer:ReturnType<typeof setTimeout>|undefined;
-  setVideos([]);setOpen(null);setLoading(true);
+  setVideos([]);setOpen(null);setLoading(true);setVideoStatus("Searching recent product videos…");
   let stored:{snapshot?:string;videos?:Video[];updated?:number;attempted?:number}|null=null;
   try{stored=JSON.parse(localStorage.getItem(key)||"null")}catch{}
   const now=Date.now();
@@ -46,6 +48,7 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
     const data=await response.json();
     if(!alive)return;
     if(data.status==="pending"&&typeof data.snapshot_id==="string"&&attempt<24){
+     setVideoStatus("Collecting TikTok videos. This can take a few minutes…");
      save({snapshot:data.snapshot_id,updated:Date.now(),attempted:Date.now()});
      timer=setTimeout(()=>{void run(data.snapshot_id,attempt+1)},Math.min(16000,4000+attempt*1000));
      return;
@@ -54,15 +57,19 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
      const found=(Array.isArray(data.videos)?data.videos:[]).slice(0,Math.max(1,Math.min(8,maxItems)));
      timer=undefined;
      setVideos(found);
+     if(!found.length)setVideoStatus("No verified recent videos were found yet.");
      save({videos:found,updated:Date.now(),attempted:Date.now()});
     }else if(data.status==="pending"){
+     setVideoStatus("The collection is still processing. Tap retry to check again.");
      timer=undefined;
      save({snapshot:data.snapshot_id,updated:Date.now(),attempted:Date.now()});
     }else{
+     setVideoStatus("The video search could not complete. Please retry.");
      timer=undefined;
      save({attempted:Date.now(),updated:Date.now()});
     }
    }catch{
+    if(alive)setVideoStatus("Could not load videos. Please retry.");
     timer=undefined;
     if(alive)save({snapshot,updated:Date.now(),attempted:Date.now()});
    }finally{
@@ -72,17 +79,17 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
   if(stored?.snapshot&&now-Number(stored.updated||0)<30*60*1000){
    void run(stored.snapshot);
   }else if(stored?.attempted&&now-stored.attempted<10*60*1000){
+   setVideoStatus("Video search was recently attempted. Tap retry to check again.");
    setLoading(false);
   }else void run();
   return()=>{alive=false;controller.abort();if(timer)clearTimeout(timer)};
- },[product.id,product.title,product.brand,product.description,product.tags?.join("|"),maxItems]);
+ },[product.id,product.title,product.brand,product.description,product.tags?.join("|"),maxItems,retryKey]);
 
- if(!loading&&!videos.length)return null;
 
  return <section className={"ynot-product-videos"+(dark?" dark":"")}>
   <style>{CSS}</style>
   <div className="head"><div className="label">Watch in real life</div><div className="jev">Matched by Jev</div></div>
-  {loading&&!videos.length?<div className="loading">Finding relevant videos…</div>:<div className="track">
+  {!videos.length?<div className="loading">{loading?videoStatus:videoStatus+" "}{!loading&&<button type="button" onClick={()=>{try{const key="ynot-product-tiktok-v2:"+encodeURIComponent(product.id||product.title);const previous=JSON.parse(localStorage.getItem(key)||"null");if(previous?.snapshot)localStorage.setItem(key,JSON.stringify({snapshot:previous.snapshot,updated:Date.now()}));else localStorage.removeItem(key)}catch{}setRetryKey(x=>x+1)}}>Retry videos</button>}</div>:<div className="track">
    {videos.map(v=><button type="button" className="card" key={v.id} onClick={()=>setOpen(v)}>
     <div className="poster">{v.thumbnail?<img src={v.thumbnail} alt={v.caption||"TikTok product video"} loading="lazy"/>:"▶"}</div>
     <span className="copy"><b>TikTok</b><small>{v.caption||"Related product video"}</small>{v.views>0&&<em>{compact(v.views)} views</em>}</span>
