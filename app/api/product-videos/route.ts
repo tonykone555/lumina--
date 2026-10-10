@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {askJev,type JevQuestion} from "@/lib/ai/jev";
-import {searchTikTokVideos} from "@/lib/intelligence/fetchlayer-social";
+import {searchTikTokVideos,searchGoogleIntent} from "@/lib/intelligence/fetchlayer-social";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -80,6 +80,45 @@ async function liveTikTokCandidates(query:string){
  }
 }
 
+function collectTikTokLinks(value:any,out:any[]=[],depth=0){
+ if(depth>6||value==null)return out;
+ if(typeof value==="string"){
+  const matches=value.match(/https?:\\/\\/(?:www\\.)?tiktok\\.com\\/@[^\\s"'<>]+\\/video\\/\\d{10,20}[^\\s"'<>]*/g)||[];
+  for(const url of matches)out.push({url});
+  return out;
+ }
+ if(Array.isArray(value)){for(const v of value)collectTikTokLinks(v,out,depth+1);return out}
+ if(typeof value==="object"){
+  const url=str(value?.url,value?.link,value?.href,value?.web_url,value?.share_url);
+  if(/tiktok\\.com\\/@.+\\/video\\/\\d{10,20}/i.test(url))out.push(value);
+  for(const v of Object.values(value))collectTikTokLinks(v,out,depth+1);
+ }
+ return out;
+}
+async function googleTikTokCandidates(query:string){
+ if(!process.env.FETCHLAYER_API_KEY)return[] as Candidate[];
+ try{
+  const data=await searchGoogleIntent(`site:tiktok.com/@ inurl:video ${query}`,"US","en","month");
+  const seen=new Set<string>();
+  return collectTikTokLinks(data).map((row:any):Candidate|null=>{
+   const url=str(row?.url,row?.link,row?.href,row?.web_url,row?.share_url);
+   const id=url.match(/\\/video\\/(\\d{10,20})/)?.[1]||"";
+   if(!id||seen.has(id))return null;
+   seen.add(id);
+   return{
+    id,
+    caption:str(row?.title,row?.snippet,row?.description,row?.text).slice(0,500),
+    hashtags:[],onScreenText:[],
+    views:0,likes:0,shares:0,saves:0,engagementRate:null,
+    country:"",language:"en"
+   };
+  }).filter((x):x is Candidate=>Boolean(x)).slice(0,20);
+ }catch(error){
+  console.warn("Google TikTok discovery unavailable",{message:error instanceof Error?error.message:String(error)});
+  return[];
+ }
+}
+
 async function fetchSearch(term:string){
  const url=new URL(HF);
  url.searchParams.set("dataset",DATASET);
@@ -116,6 +155,8 @@ async function fetchFirstRows(){
 async function candidates(query:string){
  const live=await liveTikTokCandidates(query);
  if(live.length)return live;
+ const google=await googleTikTokCandidates(query);
+ if(google.length)return google;
 
  const terms=[...new Set(words(query))].slice(0,4);
  let rows:any[]=[];
