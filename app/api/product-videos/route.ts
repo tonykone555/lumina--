@@ -231,7 +231,7 @@ async function brightDataCandidates(query:string):Promise<Candidate[]|null>{
   const endpoint="https://api.brightdata.com/datasets/v3/scrape?dataset_id=gd_m7n5ixlw1gc4no56kx&format=json";
   const requestUrl="https://www.tiktok.com/search?lang=en&q="+encodeURIComponent(query);
   const response=await fetch(endpoint,{method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},
-   body:JSON.stringify({input:[{url:requestUrl,num_of_posts:12,country:""}]}),
+   body:JSON.stringify([{url:requestUrl,num_of_posts:12,country:""}]),
    cache:"no-store",signal:AbortSignal.timeout(57000)});
   if(response.status===202){
    const pending=await response.json().catch(()=>({}));
