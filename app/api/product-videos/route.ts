@@ -6,6 +6,8 @@ export const dynamic="force-dynamic";
 
 const DATASET="datasocial/tiktok-5.6B-videos";
 const HF="https://datasets-server.huggingface.co/search";
+const HF_SEARCH_TIMEOUT_MS=12000;
+const HF_FALLBACK_TIMEOUT_MS=10000;
 
 type Candidate={
  id:string;caption:string;hashtags:string[];onScreenText:string[];views:number;likes:number;shares:number;saves:number;
@@ -14,7 +16,7 @@ type Candidate={
 type Video=Candidate&{url:string;embedUrl:string;searchQuery:string;jev:{relevance:string;fit:string;confidence:number}};
 
 function words(value:string){
- const stop=new Set(["the","and","for","with","from","this","that","new","shop","buy","sale","product","item","official","best"]);
+ const stop=new Set(["the","and","for","with","from","this","that","new","shop","shopping","buy","sale","product","products","item","items","official","best"]);
  return String(value||"").toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(w=>w.length>2&&!stop.has(w));
 }
 function searchQuery(title:string,brand:string,tags:string[]){
@@ -47,26 +49,40 @@ async function fetchSearch(term:string){
  url.searchParams.set("query",term);
  url.searchParams.set("offset","0");
  url.searchParams.set("length","12");
- const response=await fetch(url,{cache:"force-cache",next:{revalidate:3600},signal:AbortSignal.timeout(5000)});
- if(!response.ok)throw new Error(`HF_SEARCH_${response.status}`);
- const data=await response.json().catch(()=>({}));
- return Array.isArray(data?.rows)?data.rows:[];
+ try{
+  const response=await fetch(url,{cache:"force-cache",next:{revalidate:3600},signal:AbortSignal.timeout(HF_SEARCH_TIMEOUT_MS)});
+  if(!response.ok){console.warn("HF TikTok search failed",{term,status:response.status});return[]}
+  const data=await response.json().catch(()=>({}));
+  return Array.isArray(data?.rows)?data.rows:[];
+ }catch(error){
+  console.warn("HF TikTok search unavailable",{term,message:error instanceof Error?error.message:String(error)});
+  return[];
+ }
 }
 async function fetchFirstRows(){
  const url=new URL("https://datasets-server.huggingface.co/first-rows");
  url.searchParams.set("dataset",DATASET);
  url.searchParams.set("config","default");
  url.searchParams.set("split","train");
- const response=await fetch(url,{cache:"force-cache",next:{revalidate:21600},signal:AbortSignal.timeout(5000)});
- if(!response.ok)return[];
- const data=await response.json().catch(()=>({}));
- return Array.isArray(data?.rows)?data.rows:[];
+ try{
+  const response=await fetch(url,{cache:"force-cache",next:{revalidate:21600},signal:AbortSignal.timeout(HF_FALLBACK_TIMEOUT_MS)});
+  if(!response.ok)return[];
+  const data=await response.json().catch(()=>({}));
+  return Array.isArray(data?.rows)?data.rows:[];
+ }catch(error){
+  console.warn("HF TikTok first-rows fallback unavailable",{message:error instanceof Error?error.message:String(error)});
+  return[];
+ }
 }
 async function candidates(query:string){
  const terms=[...new Set(words(query))].slice(0,4);
- const settled=await Promise.allSettled(terms.map(fetchSearch));
  let rows:any[]=[];
- for(const result of settled)if(result.status==="fulfilled")rows.push(...result.value);
+ if(terms.length){
+  const settled=await Promise.allSettled(terms.map(fetchSearch));
+  for(const result of settled)if(result.status==="fulfilled")rows.push(...result.value);
+ }
+ // Never let a slow/failed search take down the whole For You feed. The
+ // fallback is intentionally independent and returns [] on upstream failure.
  if(!rows.length)rows=await fetchFirstRows();
  const seen=new Set<string>();
  return rows.map(rowValue).map((r:any):Candidate|null=>{
@@ -167,11 +183,11 @@ export async function GET(req:NextRequest){
    console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length});
    const videos=await rankFeedWithJev(category,rows);
    console.info("Product video feed Jev result",{category,candidates:rows.length,selected:videos.length});
-   return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,videos},{headers:{"Cache-Control":"s-maxage=1800, stale-while-revalidate=7200"}});
+   return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"s-maxage=900, stale-while-revalidate=3600":"no-store"}});
   }catch(error){
    const message=error instanceof Error?error.message:"PRODUCT_VIDEO_FEED_FAILED";
    console.error("Product video feed failed",{category,message});
-   return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,videos:[],error:message},{headers:{"Cache-Control":"s-maxage=120, stale-while-revalidate=600"}});
+   return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,videos:[],error:message},{status:502,headers:{"Cache-Control":"no-store"}});
   }
  }
  const title=String(s.get("title")||"").trim().slice(0,180);
@@ -191,10 +207,10 @@ export async function GET(req:NextRequest){
    jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),
    query,
    videos
-  },{headers:{"Cache-Control":"s-maxage=1800, stale-while-revalidate=7200"}});
+  },{headers:{"Cache-Control":videos.length?"s-maxage=900, stale-while-revalidate=3600":"no-store"}});
  }catch(error){
   const message=error instanceof Error?error.message:"PRODUCT_VIDEO_SEARCH_FAILED";
   console.error("Product video lookup failed",{query,message});
-  return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query,videos:[],error:message},{headers:{"Cache-Control":"s-maxage=120, stale-while-revalidate=600"}});
+  return NextResponse.json({source:"huggingface+tiktok-embed",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query,videos:[],error:message},{status:502,headers:{"Cache-Control":"no-store"}});
  }
 }
