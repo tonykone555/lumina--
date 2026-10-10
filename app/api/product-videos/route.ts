@@ -457,6 +457,13 @@ export async function GET(req:NextRequest){
  const description=String(s.get("description")||"").trim().slice(0,500);
  if(!title)return NextResponse.json({videos:[],error:"TITLE_REQUIRED"},{status:400});
  const query=searchQuery(title,brand,tags);
+ if(s.get("source")==="hf"){
+  const started=Date.now();
+  try{
+   const rows=await datasetCandidates(query);
+   return NextResponse.json({source:"huggingface",query,candidateCount:rows.length,elapsedMs:Date.now()-started,videos:rows.slice(0,8).map(r=>({id:r.id,caption:r.caption,createdAt:r.createdAt,url:"https://www.tiktok.com/@"+(r.username||"_")+"/video/"+r.id,thumbnail:r.thumbnail||null}))},{headers:{"Cache-Control":"no-store"}});
+  }catch(error){return NextResponse.json({source:"huggingface",query,candidateCount:0,elapsedMs:Date.now()-started,error:error instanceof Error?error.message:"SEARCH_FAILED",videos:[]},{status:502})}
+ }
  if(s.get("async")==="1"){
   try{return await brightAsync(req,{title,brand,tags,description})}
   catch(e){console.warn("Bright async request failed",{message:e instanceof Error?e.message:"UNKNOWN"});return NextResponse.json({status:"failed",videos:[],error:"BRIGHT_ASYNC_FAILED"},{status:502})}
