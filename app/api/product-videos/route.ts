@@ -44,9 +44,9 @@ function num(v:any){const n=Number(v);return Number.isFinite(n)?n:0}
 function str(...values:any[]){for(const v of values)if(typeof v==="string"&&v.trim())return v.trim();return ""}
 function videoId(row:any){
  const raw=str(row?.video_id,row?.videoId,row?.id,row?.item_id,row?.aweme_id,row?.awemeId);
- if(/^\\d{10,20}$/.test(raw))return raw;
+ if(/^\d{10,20}$/.test(raw))return raw;
  const url=str(row?.url,row?.web_url,row?.share_url,row?.video_url,row?.videoUrl);
- return url.match(/\\/video\\/(\\d{10,20})/)?.[1]||"";
+ return url.match(/\/video\/(\d{10,20})/)?.[1]||"";
 }
 function providerRows(data:any){
  const options=[data?.videos,data?.items,data?.results,data?.data?.videos,data?.data?.items,data?.data?.results,data?.data];
