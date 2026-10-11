@@ -278,7 +278,7 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
   const response=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(9000)});
   if(!response.ok){console.warn("Evelode TikTok search failed",{status:response.status});return []}
   const body=await response.json();
-  const lists=[body?.aweme_list,body?.data?.aweme_list,body?.data?.data?.aweme_list,body?.result?.aweme_list,body?.data?.videos,body?.videos,body?.items,body?.data?.items];
+  const lists=[body?.aweme_list,body?.data?.aweme_list,body?.data?.data?.aweme_list,body?.result?.aweme_list,body?.tiktok?.search_item_list,body?.tiktok?.aweme_list,body?.data?.videos,body?.videos,body?.items,body?.data?.items];
   function locate(value:any,depth=0):any[]{
    if(depth>5||!value||typeof value!=="object")return [];
    if(Array.isArray(value)){
@@ -286,7 +286,7 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
     for(const v of value.slice(0,3)){const found=locate(v,depth+1);if(found.length)return found}
     return [];
    }
-   for(const key of ["aweme_list","item_list","items","videos","data","result","tiktok","response","awemeList","itemList"]){
+   for(const key of ["aweme_list","search_item_list","item_list","items","videos","data","result","tiktok","response","awemeList","itemList"]){
     if(value[key]){const found=locate(value[key],depth+1);if(found.length)return found}
    }
    return [];
@@ -296,7 +296,7 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
 
   const seen=new Set<string>();
   return rows.map((item:any):Candidate|null=>{
-   const v=item?.aweme_info||item?.aweme||item;
+   const v=item?.aweme_info||item?.aweme||item?.item?.aweme_info||item?.item||item;
    const id=String(v?.aweme_id||v?.video_id||v?.id||"");
    if(!/^\\d{10,20}$/.test(id)||seen.has(id))return null;
    seen.add(id);
