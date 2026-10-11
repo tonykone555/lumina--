@@ -3,7 +3,7 @@ import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 import {headers} from "next/headers";
 export const dynamic="force-dynamic";
 type Product={id:string;title:string;image?:string;[key:string]:unknown};
-export default async function SubcategoryPage({params,searchParams}:{params:Promise<{world:string;category:string;subcategory:string}>;searchParams:Promise<{q?:string}>}){
+export default async function SubcategoryPage({params,searchParams}:{params:Promise<{world:string;category:string;subcategory:string}>;searchParams:Promise<{q?:string;product?:string}>}){
  const p=await params;
  const s=await searchParams;
  const world=YNOT_VISUAL_WORLDS.find(w=>w.id===p.world);
@@ -26,5 +26,5 @@ export default async function SubcategoryPage({params,searchParams}:{params:Prom
    }
   }catch(error){console.warn("Masonry prefetch unavailable",{message:error instanceof Error?error.message:"UNKNOWN"})}
  }
- return <MasonryClient initialProducts={initialProducts} initialQuery={query}/>;
+ return <MasonryClient initialProducts={initialProducts} initialQuery={query} initialSelectedId={String(s.product||"")}/>;
 }
