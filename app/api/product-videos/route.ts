@@ -279,7 +279,21 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
   if(!response.ok){console.warn("Evelode TikTok search failed",{status:response.status});return []}
   const body=await response.json();
   const lists=[body?.aweme_list,body?.data?.aweme_list,body?.data?.data?.aweme_list,body?.result?.aweme_list,body?.data?.videos,body?.videos,body?.items,body?.data?.items];
-  const rows=lists.find(Array.isArray)||[];
+  function locate(value:any,depth=0):any[]{
+   if(depth>5||!value||typeof value!=="object")return [];
+   if(Array.isArray(value)){
+    if(value.some((v:any)=>v&&typeof v==="object"&&(v.aweme_id||v.aweme_info?.aweme_id||v.video_id||v.aweme?.aweme_id)))return value;
+    for(const v of value.slice(0,3)){const found=locate(v,depth+1);if(found.length)return found}
+    return [];
+   }
+   for(const key of ["aweme_list","item_list","items","videos","data","result","tiktok","response","awemeList","itemList"]){
+    if(value[key]){const found=locate(value[key],depth+1);if(found.length)return found}
+   }
+   return [];
+  }
+  const rows=lists.find((v:any)=>Array.isArray(v)&&v.length)||locate(body);
+  if(!rows.length)console.warn("Evelode response has no video list",{keys:Object.keys(body||{}).slice(0,12),code:String(body?.code||body?.status_code||"").slice(0,20)});
+
   const seen=new Set<string>();
   return rows.map((item:any):Candidate|null=>{
    const v=item?.aweme_info||item?.aweme||item;
