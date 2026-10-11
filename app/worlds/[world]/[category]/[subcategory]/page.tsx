@@ -12,6 +12,7 @@ export default async function SubcategoryPage({params,searchParams}:{params:Prom
  const sub=category?.subcategories.find(x=>x.id===p.subcategory);
  const query=String(s.q||"").trim()||String(sub?.queries?.[0]||"");
  let initialProducts:Product[]=[];
+ let initialPagination:Record<string,unknown>|null=null;
  if(query){
   try{
    const h=await headers();
@@ -19,13 +20,14 @@ export default async function SubcategoryPage({params,searchParams}:{params:Prom
    const proto=host.includes("localhost")?"http":"https";
    const url=new URL("/api/catalog",proto+"://"+host);
    url.searchParams.set("q",query);url.searchParams.set("source","all");
-   url.searchParams.set("limit","18");url.searchParams.set("category_load","1");
+   url.searchParams.set("limit","36");url.searchParams.set("category_load","1");
    const response=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(8500)});
    if(response.ok){
     const data=await response.json();
-    if(Array.isArray(data.products))initialProducts=data.products.filter((x:Product)=>Boolean(x?.id&&x?.image)).slice(0,18);
+    if(Array.isArray(data.products))initialProducts=data.products.filter((x:Product)=>Boolean(x?.id&&x?.image)).slice(0,36);
+    if(data.pagination&&typeof data.pagination==="object")initialPagination=data.pagination;
    }
   }catch(error){console.warn("Masonry prefetch unavailable",{message:error instanceof Error?error.message:"UNKNOWN"})}
  }
- return <MasonryClient initialProducts={initialProducts} initialQuery={query} initialSelectedId={String(s.product||"")}/>;
+ return <MasonryClient initialProducts={initialProducts} initialQuery={query} initialSelectedId={String(s.product||"")} initialPagination={initialPagination}/>;
 }
