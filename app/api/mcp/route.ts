@@ -454,14 +454,14 @@ function knownNumber(value:any){
  const n=Number(value);return Number.isFinite(n)?n:null;
 }
 
-async function ebayPrepareCandidate(query:string,productId?:string){
+async function ebayPrepareCandidate(query:string,productId?:string,overrides?:{aspects?:Record<string,string[]>;categoryId?:string;brand?:string;price?:number;description?:string;imageUrls?:string[];condition?:"NEW"|"USED_GOOD";merchantLocationKey?:string}){
   const products=await ebayRawCatalog(query,"FR",40);
   const shallowProduct=(productId?products.find((p:any)=>String(p?.id||"")===productId):null)||
     products.find((p:any)=>p?.id&&p?.title&&p?.image&&Number(p?.price)>0);
   if(!shallowProduct)return{ok:false,error:"YNOT_PRODUCT_NOT_FOUND"};
   const hydrated=await hydrateEbayCatalogueProduct(shallowProduct);
   const identity=specialistIdentity(hydrated);
-  let product={...hydrated,brand:identity.brand||hydrated.brand,mpn:identity.mpn||hydrated.mpn};
+  let product={...hydrated,brand:overrides?.brand?.trim()||identity.brand||hydrated.brand,mpn:identity.mpn||hydrated.mpn};
   const fx=await eurAmount(product?.supplierPrice??product?.price,product?.currency);
   if(fx){
     const originalCurrency=String(product?.currency||"EUR").toUpperCase();
@@ -486,7 +486,7 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     :Number(product.price);
 
   const [taxonomy,readiness]=await Promise.all([
-    getEbayCategoryPreview(product,query,"EBAY_FR"),
+    getEbayCategoryPreview(product,query,"EBAY_FR",overrides?.categoryId),
     getEbayReadiness("EBAY_FR")
   ]);
 
@@ -529,6 +529,21 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     }catch{}
   }
 
+  const providedAspects=overrides?.aspects||{};
+  const combinedAspects:Record<string,string[]>={...taxonomy.aspects};
+  for(const [name,values] of Object.entries(providedAspects)){
+    const actualName=[...taxonomy.requiredAspects,...Object.keys(combinedAspects)].find((x:string)=>x.toLocaleLowerCase()===name.toLocaleLowerCase())||name;
+    const cleanValues=values.map(cleanEbayText).filter(Boolean);
+    if(cleanValues.length)combinedAspects[actualName]=cleanValues;
+  }
+  if(overrides?.brand?.trim()){
+    const brandKey=[...taxonomy.requiredAspects,...Object.keys(combinedAspects)].find((x:string)=>/^(brand|marque|marke)$/i.test(x))||"Marque";
+    combinedAspects[brandKey]=[overrides.brand.trim()];
+  }
+  taxonomy.aspects=combinedAspects;
+  taxonomy.missingRequiredAspects=taxonomy.requiredAspects.filter((name:string)=>!combinedAspects[name]?.length);
+  if(overrides?.merchantLocationKey){const found=(readiness.locations||[]).find((x:any)=>String(x?.merchantLocationKey||"")===overrides.merchantLocationKey);if(!found||!matchingLocation||String(found.merchantLocationKey)!==String(matchingLocation.merchantLocationKey))return{ok:false,error:"EBAY_SHIP_FROM_LOCATION_NOT_VERIFIED_FOR_PRODUCT"};matchingLocation=found;}
+  const finalEbayPrice=overrides?.price??ebayRetailPrice;
   const eligibility=evaluateEbayEligibility({
     shipsTo:true,
     sellerReady:readiness.ready,
@@ -538,12 +553,12 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     deliveryDaysMax:knownNumber(product?.deliveryDaysMax),
     shippingCost:knownNumber(product?.shippingCost),
     supplierPrice:Number.isFinite(Number(product?.supplierPrice))?Number(product.supplierPrice):null,
-    retailPrice:ebayRetailPrice,
+    retailPrice:finalEbayPrice,
     available:product?.available!==false
   });
 
-  const description=buildEbayDescription(product,taxonomy,sourceOrigin);
-  const imageUrls=uniqueEbayImages(product);
+  const description=overrides?.description?.trim()||buildEbayDescription(product,taxonomy,sourceOrigin);
+  const imageUrls=overrides?.imageUrls?.length?[...new Set(overrides.imageUrls.filter((v:string)=>/^https:\/\//i.test(v)))].slice(0,12):uniqueEbayImages(product);
   const defaults={
     merchantLocationKey:matchingLocation?.merchantLocationKey||"",
     fulfillmentPolicyId:readiness.fulfillmentPolicies?.[0]?.id||"",
@@ -556,11 +571,11 @@ async function ebayPrepareCandidate(query:string,productId?:string){
     description,
     imageUrls,
     quantity:1,
-    price:ebayRetailPrice,
+    price:finalEbayPrice,
     currency:"EUR",
     categoryId:taxonomy.categoryId,
     marketplaceId:"EBAY_FR" as const,
-    condition:inferredEbayCondition(product),
+    condition:overrides?.condition||inferredEbayCondition(product),
     brand:cleanEbayText(product.brand)||undefined,
     mpn:cleanEbayText(product.mpn)||undefined,
     aspects:taxonomy.aspects,
@@ -569,7 +584,7 @@ async function ebayPrepareCandidate(query:string,productId?:string){
   return{
     ok:true,query,product:{
       id:product.id,title:product.title,brand:product.brand,source:product.source,url:product.url,
-      price:ebayRetailPrice,currency:"EUR",originalCurrency:(product as any).originalCurrency||product.currency,image:product.image,
+      price:finalEbayPrice,currency:"EUR",originalCurrency:(product as any).originalCurrency||product.currency,image:product.image,
       catalogueRetailPrice:Number(product.price),
       supplierPrice:specialistPricing.supplierPrice,
       ebaySpecialistPricing:specialistPricing
@@ -1444,11 +1459,19 @@ export function makeHandler(basePath="/api") {
           query:z.string().min(2).max(180),
           product_id:z.string().max(300).optional(),
           quantity:z.number().int().min(1).max(20).default(5),
+          aspects:z.record(z.array(z.string().min(1).max(250)).min(1).max(10)).optional(),
+          categoryId:z.string().regex(/^\\d{1,12}$/).optional(),
+          brand:z.string().min(1).max(100).optional(),
+          price:z.number().positive().max(1000000).optional(),
+          description:z.string().min(20).max(4000).optional(),
+          imageUrls:z.array(z.string().url().startsWith("https://")).min(1).max(12).optional(),
+          condition:z.enum(["NEW","USED_GOOD"]).optional(),
+          merchantLocationKey:z.string().min(1).max(100).optional(),
           confirm:z.boolean()
         },
-        async({query,product_id,quantity,confirm})=>{
+        async({query,product_id,quantity,aspects,categoryId,brand,price,description,imageUrls,condition,merchantLocationKey,confirm})=>{
           if(confirm!==true)return text({published:false,error:"EXPLICIT_CONFIRMATION_REQUIRED"});
-          const prepared:any=await ebayPrepareCandidate(query,product_id);
+          const prepared:any=await ebayPrepareCandidate(query,product_id,{aspects,categoryId,brand,price,description,imageUrls,condition,merchantLocationKey});
           if(!prepared?.ok)return text({published:false,...prepared});
           if(!prepared?.eligibility?.publishable)return text({published:false,error:"YNOT_ELIGIBILITY_BLOCKED",blockers:prepared?.eligibility?.blockers||[],warnings:prepared?.eligibility?.warnings||[],prepared});
           try{
