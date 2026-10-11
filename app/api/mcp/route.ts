@@ -1,7 +1,7 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
 import { getThreadsProfile, hideThreadReply, listRecentThreads, listThreadMentions, listThreadReplies, publishImageThread, publishTextThread, publishVideoThread, searchPublicThreads } from "@/lib/social/threads";
-import { ensureEbayInventoryLocationForOrigin, getEbayCategoryPreview, getEbayReadiness, publishEbayProduct } from "@/lib/ebay/client";
+import { ensureEbayInventoryLocationForOrigin, getEbayCategoryPreview, getEbayReadiness, publishEbayProduct, getYnotEbayListing, reviseYnotEbayListing, endYnotEbayListing, getYnotEbayTraffic, getYnotEbayPromotionCampaigns } from "@/lib/ebay/client";
 import { evaluateEbayEligibility } from "@/lib/ebay/eligibility";
 import { detectShopifyOrigin } from "@/lib/catalog/shopify-origin";
 
@@ -1461,6 +1461,51 @@ export function makeHandler(basePath="/api") {
             return text({published:false,error:"EBAY_PUBLISH_FAILED",diagnosis,product:prepared.product,shipping:prepared.shipping,ebay:prepared.ebay});
           }
         }
+      );
+
+      server.tool(
+        "ebay_listing_status",
+        "Check live eBay status of an existing YNOT-managed listing by YNOT SKU. Does not change the listing.",
+        {sku:z.string().min(8).max(50)},
+        async({sku})=>{try{return text(await getYnotEbayListing(sku))}catch(error){return text({ok:false,error:String(error instanceof Error?error.message:error)})}}
+      );
+
+      server.tool(
+        "ebay_revise_listing",
+        "Revise an existing published YNOT eBay France offer. Requires explicit confirmation; only price, description and quantity can change. Source merchant, shipping origin and seller remain locked.",
+        {sku:z.string().min(8).max(50),offerId:z.string().min(1).max(50),price:z.number().positive().max(1000000).optional(),description:z.string().min(20).max(4000).optional(),quantity:z.number().int().min(1).max(100).optional(),confirm:z.boolean()},
+        async({sku,offerId,price,description,quantity,confirm})=>{
+          if(!confirm)return text({revised:false,error:"EXPLICIT_CONFIRMATION_REQUIRED"});
+          if(price===undefined&&description===undefined&&quantity===undefined)return text({revised:false,error:"NO_CHANGES_REQUESTED"});
+          try{return text(await reviseYnotEbayListing({sku,offerId,price,description,quantity}))}catch(error){return text({revised:false,error:String(error instanceof Error?error.message:error)})}
+        }
+      );
+
+      server.tool(
+        "ebay_end_listing",
+        "Withdraw an existing published YNOT-managed eBay France listing. Explicit confirmation required; irreversible listing visibility change.",
+        {sku:z.string().min(8).max(50),offerId:z.string().min(1).max(50),confirm:z.boolean()},
+        async({sku,offerId,confirm})=>{
+          if(!confirm)return text({ended:false,error:"EXPLICIT_CONFIRMATION_REQUIRED"});
+          try{return text(await endYnotEbayListing(sku,offerId))}catch(error){return text({ended:false,error:String(error instanceof Error?error.message:error)})}
+        }
+      );
+
+      server.tool(
+        "ebay_listing_traffic",
+        "Read eBay traffic impressions and views for existing listings. Dates are inclusive YYYYMMDD; no advertising is enabled.",
+        {listingIds:z.array(z.string().regex(/^\\d{5,20}$/)).min(1).max(20),startDate:z.string().regex(/^\\d{8}$/),endDate:z.string().regex(/^\\d{8}$/)},
+        async({listingIds,startDate,endDate})=>{
+          if(startDate>endDate)return text({ok:false,error:"INVALID_DATE_RANGE"});
+          try{return text(await getYnotEbayTraffic(listingIds,startDate,endDate))}catch(error){return text({ok:false,error:String(error instanceof Error?error.message:error),hint:"Verify eBay Analytics permissions and traffic report availability"})}
+        }
+      );
+
+      server.tool(
+        "ebay_promotion_campaigns",
+        "Read existing eBay Promoted Listings campaigns and check connected-account access. Does not create ads or spend money.",
+        {},
+        async()=>{try{return text(await getYnotEbayPromotionCampaigns())}catch(error){return text({ok:false,error:String(error instanceof Error?error.message:error),hint:"eBay Marketing access or seller eligibility may not be enabled"})}}
       );
 
       server.tool(
