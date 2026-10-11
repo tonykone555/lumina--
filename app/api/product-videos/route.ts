@@ -524,15 +524,15 @@ export async function GET(req:NextRequest){
  }
  if(s.get("async")==="1"){
   try{
-   const indexed=await licensedHfIndexVideos({title,brand,tags,description});
-   if(indexed?.length)return NextResponse.json({status:"ready",source:"huggingface-index",videos:indexed},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
-  }catch(error){console.warn("HF indexed video search unavailable",{message:error instanceof Error?error.message:"ERROR"})}
-  try{
    const evelode=await evelodeCandidates(query);
    if(evelode.length){
     const videos=await validateEmbeds(await rankWithJev({title,brand,tags,description},evelode));
     if(videos.length)return NextResponse.json({status:"ready",source:"evelode",videos},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
    }
+   try{
+    const indexed=await licensedHfIndexVideos({title,brand,tags,description});
+    if(indexed?.length)return NextResponse.json({status:"ready",source:"huggingface-index",videos:indexed},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
+   }catch(error){console.warn("HF indexed video search unavailable",{message:error instanceof Error?error.message:"ERROR"})}
    return await brightAsync(req,{title,brand,tags,description});
   }
   catch(e){console.warn("Bright async request failed",{message:e instanceof Error?e.message:"UNKNOWN"});return NextResponse.json({status:"failed",videos:[],error:"BRIGHT_ASYNC_FAILED"},{status:502})}
