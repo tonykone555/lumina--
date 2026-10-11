@@ -1,3 +1,4 @@
+import "./masonry-grid.css";
 import MasonryClient from "./MasonryClient";
 import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 import {headers} from "next/headers";
