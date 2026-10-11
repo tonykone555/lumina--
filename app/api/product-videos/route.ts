@@ -265,7 +265,42 @@ async function brightDataCandidates(query:string):Promise<Candidate[]|null>{
  }
 }
 
+async function evelodeCandidates(query:string):Promise<Candidate[]>{
+ const license=String(process.env.EVELODE_LICENSE_KEY||"").trim();
+ if(!license)return [];
+ try{
+  const url=new URL("https://tiktok.evelode.com/tiktok-api/searchVideo");
+  url.searchParams.set("license_key",license);
+  url.searchParams.set("keyword",query.slice(0,160));
+  url.searchParams.set("count","20");
+  url.searchParams.set("date_posted","all-time");
+  url.searchParams.set("sort_by","relevance");
+  const response=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(9000)});
+  if(!response.ok){console.warn("Evelode TikTok search failed",{status:response.status});return []}
+  const body=await response.json();
+  const lists=[body?.aweme_list,body?.data?.aweme_list,body?.data?.data?.aweme_list,body?.result?.aweme_list,body?.data?.videos,body?.videos,body?.items,body?.data?.items];
+  const rows=lists.find(Array.isArray)||[];
+  const seen=new Set<string>();
+  return rows.map((item:any):Candidate|null=>{
+   const v=item?.aweme_info||item?.aweme||item;
+   const id=String(v?.aweme_id||v?.video_id||v?.id||"");
+   if(!/^\\d{10,20}$/.test(id)||seen.has(id))return null;
+   seen.add(id);
+   const stats=v?.statistics||v?.stats||{};
+   const cover=v?.video?.cover?.url_list?.[0]||v?.video?.origin_cover?.url_list?.[0]||v?.video?.dynamic_cover?.url_list?.[0]||v?.cover||"";
+   const author=v?.author||{};
+   const text=String(v?.desc||v?.description||v?.caption||"");
+   return {id,caption:text.slice(0,500),hashtags:Array.isArray(v?.text_extra)?v.text_extra.map((x:any)=>String(x?.hashtag_name||"")).filter(Boolean):[],
+     onScreenText:[],views:num(stats?.play_count??stats?.playCount??v?.views),likes:num(stats?.digg_count??stats?.diggCount??v?.likes),
+     shares:num(stats?.share_count??stats?.shareCount??v?.shares),saves:num(stats?.collect_count??v?.saves),
+     engagementRate:null,country:"",language:"",thumbnail:typeof cover==="string"?cover:"",createdAt:num(v?.create_time),username:String(author?.unique_id||author?.uniqueId||author?.unique_id_str||"")};
+  }).filter((x:Candidate|null):x is Candidate=>Boolean(x)).slice(0,20);
+ }catch(error){console.warn("Evelode TikTok search unavailable",{message:error instanceof Error?error.message:"UNAVAILABLE"});return []}
+}
+
 async function candidates(query:string){
+ const evelode=await evelodeCandidates(query);
+ if(evelode.length)return evelode;
  const bright=await brightDataCandidates(query);
  if(bright?.length)return bright;
  const id=String(process.env.MODAL_TOKEN_ID||"");
@@ -492,7 +527,14 @@ export async function GET(req:NextRequest){
    const indexed=await licensedHfIndexVideos({title,brand,tags,description});
    if(indexed?.length)return NextResponse.json({status:"ready",source:"huggingface-index",videos:indexed},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
   }catch(error){console.warn("HF indexed video search unavailable",{message:error instanceof Error?error.message:"ERROR"})}
-  try{return await brightAsync(req,{title,brand,tags,description})}
+  try{
+   const evelode=await evelodeCandidates(query);
+   if(evelode.length){
+    const videos=await validateEmbeds(await rankWithJev({title,brand,tags,description},evelode));
+    if(videos.length)return NextResponse.json({status:"ready",source:"evelode",videos},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
+   }
+   return await brightAsync(req,{title,brand,tags,description});
+  }
   catch(e){console.warn("Bright async request failed",{message:e instanceof Error?e.message:"UNKNOWN"});return NextResponse.json({status:"failed",videos:[],error:"BRIGHT_ASYNC_FAILED"},{status:502})}
  }
  try{
