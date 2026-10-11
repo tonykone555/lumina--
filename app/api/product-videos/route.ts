@@ -277,7 +277,8 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
   url.searchParams.set("sort_by","relevance");
   const response=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(9000)});
   if(!response.ok){console.warn("Evelode TikTok search failed",{status:response.status});return []}
-  const body=await response.json();
+  const raw=await response.text();
+  const body=JSON.parse(raw.replace(/("(?:aweme_id|video_id|id)"\s*:\s*)(\d{16,20})(?=\s*[,}])/g,'$1"$2"'));
   const lists=[body?.aweme_list,body?.data?.aweme_list,body?.data?.data?.aweme_list,body?.result?.aweme_list,body?.tiktok?.search_item_list,body?.tiktok?.aweme_list,body?.data?.videos,body?.videos,body?.items,body?.data?.items];
   function locate(value:any,depth=0):any[]{
    if(depth>5||!value||typeof value!=="object")return [];
@@ -546,7 +547,7 @@ export async function GET(req:NextRequest){
   try{
    const evelode=await evelodeCandidates(query);
    if(evelode.length){
-    const videos=await validateEmbeds(await rankWithJev({title,brand,tags,description},evelode));
+    const videos=await rankWithJev({title,brand,tags,description},evelode);
     if(videos.length)return NextResponse.json({status:"ready",source:"evelode",videos},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
    }
    try{
