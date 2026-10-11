@@ -306,7 +306,7 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
   return rows.map((item:any):Candidate|null=>{
    const v=item?.aweme_info||item?.aweme||item?.item?.aweme_info||item?.item||item;
    const id=String(v?.aweme_id||v?.video_id||v?.id||"");
-   if(!/^\\d{10,20}$/.test(id)||seen.has(id))return null;
+   if(!/^\d{10,20}$/.test(id)||seen.has(id))return null;
    seen.add(id);
    const stats=v?.statistics||v?.stats||{};
    const cover=v?.video?.cover?.url_list?.[0]||v?.video?.origin_cover?.url_list?.[0]||v?.video?.dynamic_cover?.url_list?.[0]||v?.cover||"";
