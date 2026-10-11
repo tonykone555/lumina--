@@ -375,7 +375,7 @@ function scoreCategorySuggestion(s:any,queryHint:string,product:any){
  return score;
 }
 
-export async function getEbayCategoryPreview(product:any,queryHint="",marketplaceId:string=ebayMarketplaceId()){
+export async function getEbayCategoryPreview(product:any,queryHint="",marketplaceId:string=ebayMarketplaceId(),preferredCategoryId?:string){
  const marketplace=encodeURIComponent(marketplaceId);
  const tree=await ebayTaxonomy(`/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`,marketplaceId);
  const treeId=String(tree?.categoryTreeId||"");
@@ -392,7 +392,9 @@ export async function getEbayCategoryPreview(product:any,queryHint="",marketplac
   seen.add(id);return true;
  });
  const ranked=[...allSuggestions].sort((a,b)=>scoreCategorySuggestion(b,queryHint,product)-scoreCategorySuggestion(a,queryHint,product));
- const top=ranked[0];
+ const chosen=preferredCategoryId?ranked.find((row:any)=>String(row?.category?.categoryId||"")===preferredCategoryId):undefined;
+ if(preferredCategoryId&&!chosen)throw new Error("EBAY_CATEGORY_OVERRIDE_NOT_RECOMMENDED_FOR_PRODUCT");
+ const top=chosen||ranked[0];
  const categoryId=String(top?.category?.categoryId||"");
  if(!categoryId)throw new Error("EBAY_CATEGORY_SUGGESTION_MISSING");
  const domainOk=categoryDomainOk(top,queryHint,product);
