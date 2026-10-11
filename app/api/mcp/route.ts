@@ -904,15 +904,19 @@ export function makeHandler(basePath="/api") {
         {
           niche: z.string().min(2).max(100),
           country: z.string().length(2).default("FR"),
-          limit: z.number().int().min(1).max(12).default(6),
+          limit: z.number().int().min(1).max(30).default(12),
         },
         async ({ niche, country, limit }) => {
           const researched = await promotedProducts(niche, limit);
-          if (researched.length) {
+          if (researched.length >= limit) {
             return text({ niche, source: "ynot-researched-products", candidates: researched.map(researchedDto) });
           }
-          const data = await catalog(niche, country.toUpperCase(), "shopify", limit);
-          if (!data.products.length) {
+          const searchTerms=[niche,`${niche} accessories`,`${niche} premium`];
+          const found=await Promise.allSettled(searchTerms.map(q=>catalog(q,country.toUpperCase(),"shopify",Math.min(30,limit))));
+          const used=new Set<string>();
+          const live=found.flatMap(result=>result.status==="fulfilled"?result.value.products:[]).filter(p=>{const key=String(p.id||p.url||"");if(!key||used.has(key))return false;used.add(key);return true});
+          const candidates=[...researched.map(researchedDto),...live].slice(0,limit);
+          if (!candidates.length) {
             return text({
               niche,
               source: "none",
@@ -922,9 +926,9 @@ export function makeHandler(basePath="/api") {
           }
           return text({
             niche,
-            source: "shopify-global-catalog",
-            note: "No approved researched YNOT products matched yet; returning bounded real Shopify candidates for research.",
-            candidates: data.products,
+            source: researched.length?"ynot-researched-plus-shopify":"shopify-global-catalog",
+            note: "No approved researched YNOT products matched yet; returning diversified real Shopify candidates for research.",
+            candidates,
           });
         }
       );
