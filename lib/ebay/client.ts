@@ -698,3 +698,61 @@ export async function publishEbayProduct(input:PublishEbayProduct){
   price:{sourceValue:Number(input.price),sourceCurrency:input.currency||market.currency,listedValue:normalizedPrice.price,listedCurrency:market.currency,fxRate:normalizedPrice.rate,converted:normalizedPrice.converted}
  };
 }
+
+/** Live eBay listing management; only touches offers belonging to the connected seller. */
+export async function getYnotEbayListing(sku:string,marketplaceId:EbayMarketplaceId="EBAY_FR"){
+ const safeSku=sku.trim();
+ if(!/^YNOT-FR-[A-Za-z0-9_-]{1,40}$/.test(safeSku))throw new Error("YNOT_SKU_REQUIRED");
+ const [inventory,offers]=await Promise.all([
+  ebay(`/sell/inventory/v1/inventory_item/${encodeURIComponent(safeSku)}`,{},marketplaceId),
+  getOffersForSku(safeSku,marketplaceId)
+ ]);
+ return{sku:safeSku,inventory,offers:offers.map((o:any)=>({offerId:o.offerId,status:o.status,listing:o.listing,marketplaceId:o.marketplaceId,pricingSummary:o.pricingSummary,categoryId:o.categoryId,merchantLocationKey:o.merchantLocationKey,listingPolicies:o.listingPolicies,availableQuantity:o.availableQuantity,listingDescription:o.listingDescription}))};
+}
+export async function endYnotEbayListing(sku:string,offerId:string,marketplaceId:EbayMarketplaceId="EBAY_FR"){
+ const current=await getYnotEbayListing(sku,marketplaceId);
+ const offer=current.offers.find((o:any)=>String(o.offerId)===offerId&&o.marketplaceId===marketplaceId);
+ if(!offer)throw new Error("YNOT_EBAY_OFFER_NOT_FOUND");
+ if(offer.status!=="PUBLISHED")throw new Error("YNOT_EBAY_OFFER_NOT_PUBLISHED");
+ await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(offerId)}/withdraw`,{method:"POST",body:"{}"},marketplaceId);
+ return{sku,offerId,ended:true};
+}
+export async function reviseYnotEbayListing(input:{sku:string;offerId:string;price?:number;description?:string;quantity?:number;marketplaceId?:EbayMarketplaceId}){
+ const marketplaceId=input.marketplaceId||"EBAY_FR";
+ const current=await getYnotEbayListing(input.sku,marketplaceId);
+ const existing=current.offers.find((o:any)=>String(o.offerId)===input.offerId&&o.marketplaceId===marketplaceId);
+ if(!existing)throw new Error("YNOT_EBAY_OFFER_NOT_FOUND");
+ if(existing.status!=="PUBLISHED")throw new Error("YNOT_EBAY_OFFER_NOT_PUBLISHED");
+ const original=await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(input.offerId)}`,{},marketplaceId);
+ const body:any={
+  sku:input.sku,marketplaceId,format:original.format||"FIXED_PRICE",
+  listingDuration:original.listingDuration||"GTC",
+  categoryId:original.categoryId,
+  merchantLocationKey:original.merchantLocationKey,
+  listingPolicies:original.listingPolicies,
+  availableQuantity:input.quantity??original.availableQuantity,
+  pricingSummary:original.pricingSummary,
+  listingDescription:input.description??original.listingDescription
+ };
+ if(input.price!==undefined)body.pricingSummary={...body.pricingSummary,price:{currency:"EUR",value:input.price.toFixed(2)}};
+ await ebay(`/sell/inventory/v1/offer/${encodeURIComponent(input.offerId)}`,{method:"PUT",body:JSON.stringify(body)},marketplaceId);
+ return{sku:input.sku,offerId:input.offerId,revised:true,price:body.pricingSummary?.price,quantity:body.availableQuantity};
+}
+
+export async function getYnotEbayTraffic(listingIds:string[],startDate:string,endDate:string){
+ const ids=[...new Set(listingIds)].filter(x=>/^\d{5,20}$/.test(x)).slice(0,20);
+ if(!ids.length)throw new Error("EBAY_LISTING_IDS_REQUIRED");
+ const params=new URLSearchParams({
+  dimension:"LISTING",
+  filter:`listing_ids:{${ids.join("|")}},date_range:[${startDate}..${endDate}]`,
+  metric:"LISTING_IMPRESSION_SEARCH_RESULTS_PAGE,LISTING_IMPRESSION_STORE,LISTING_IMPRESSION_TOTAL,LISTING_VIEWS_TOTAL"
+ });
+ const data=await ebay(`/sell/analytics/v1/traffic_report?${params.toString()}`,{},"EBAY_FR");
+ return{listingIds:ids,startDate,endDate,report:data};
+}
+
+export async function getYnotEbayPromotionCampaigns(){
+ const params=new URLSearchParams({limit:"50",offset:"0"});
+ const campaigns=await ebay(`/sell/marketing/v1/ad_campaign?${params.toString()}`,{},"EBAY_FR");
+ return{campaigns:campaigns?.campaigns||[],total:campaigns?.total||0,advertisingEnabledByThisCall:false};
+}
