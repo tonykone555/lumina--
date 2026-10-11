@@ -292,7 +292,7 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
    return [];
   }
   const rows=lists.find((v:any)=>Array.isArray(v)&&v.length)||locate(body);
-  if(!rows.length)console.warn("Evelode response has no video list",{keys:Object.keys(body||{}).slice(0,12),code:String(body?.code||body?.status_code||"").slice(0,20)});
+  if(!rows.length)console.warn("Evelode response has no video list",{keys:Object.keys(body||{}).slice(0,12),tiktokKeys:Object.keys(body?.tiktok||{}).slice(0,15),tiktokDataKeys:Object.keys(body?.tiktok?.data||{}).slice(0,15),status:String(body?.status||"").slice(0,40),code:String(body?.code||body?.status_code||"").slice(0,20)});
 
   const seen=new Set<string>();
   return rows.map((item:any):Candidate|null=>{
