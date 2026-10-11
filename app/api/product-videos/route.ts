@@ -301,6 +301,7 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
     firstItemKeys:Object.keys(rows[0]?.item||{}).slice(0,12),
     firstAwemeKeys:Object.keys(rows[0]?.aweme_info||{}).slice(0,12),
     rateLimited:Boolean(body?.rate_limit_reached),tiktokStatus:body?.tiktok?.status_code});
+  console.warn("Evelode ID sample format",{type:typeof rows[0]?.aweme_info?.aweme_id,length:String(rows[0]?.aweme_info?.aweme_id||"").length,digitsOnly:/^\d+$/.test(String(rows[0]?.aweme_info?.aweme_id||""))});
   const seen=new Set<string>();
   return rows.map((item:any):Candidate|null=>{
    const v=item?.aweme_info||item?.aweme||item?.item?.aweme_info||item?.item||item;
@@ -546,8 +547,10 @@ export async function GET(req:NextRequest){
  if(s.get("async")==="1"){
   try{
    const evelode=await evelodeCandidates(query);
+   console.warn("Evelode normalized candidate count",{count:evelode.length});
    if(evelode.length){
     const videos=await rankWithJev({title,brand,tags,description},evelode);
+    console.warn("Evelode ranked video count",{count:videos.length});
     if(videos.length)return NextResponse.json({status:"ready",source:"evelode",videos},{headers:{"Cache-Control":"public, s-maxage=900, stale-while-revalidate=3600"}});
    }
    try{
