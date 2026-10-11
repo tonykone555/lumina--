@@ -860,6 +860,34 @@ export function makeHandler(basePath="/api") {
       );
 
       server.tool(
+        "shopify_catalog_page",
+        "Page through real Shopify Global Catalog results in YNOT. Use next_cursor repeatedly to explore hundreds or thousands of products across calls without a total discovery ceiling. Read-only; product availability varies.",
+        {
+          query:z.string().min(2).max(160),
+          country:z.string().length(2).default("FR"),
+          cursor:z.string().min(1).max(4000).optional(),
+          limit:z.number().int().min(5).max(80).default(60)
+        },
+        async({query,country,cursor,limit})=>{
+          const base=appUrl();if(!base)return text({error:"YNOT_APP_URL_NOT_CONFIGURED"});
+          const url=new URL("/api/catalog",base);
+          url.searchParams.set("q",query);
+          url.searchParams.set("country",country.toUpperCase());
+          url.searchParams.set("source","shopify");
+          url.searchParams.set("category_load","1");
+          url.searchParams.set("limit",String(limit));
+          if(cursor)url.searchParams.set("cursor",cursor);
+          const response=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(25000)});
+          if(!response.ok)return text({error:"SHOPIFY_PAGE_UNAVAILABLE",status:response.status});
+          const data:any=await response.json();
+          const products=Array.isArray(data?.products)?data.products:[];
+          const page=data?.pagination||{};
+          const nextCursor=[page.next_cursor,page.nextCursor,page.end_cursor,page.endCursor,page.cursor,page.page_info?.end_cursor,page.pageInfo?.endCursor].find(v=>typeof v==="string"&&v.length>0)||null;
+          return text({query,country:country.toUpperCase(),count:products.length,products:products.slice(0,limit).map((p:any)=>({id:p.id,title:p.title,brand:p.brand,price:p.price,currency:p.currency,image:p.image,source:p.source,merchant_url:p.url,ynot_url:ynotProductUrl(String(p.id||""),country.toUpperCase(),inferCategory(p),"mcp-discovery"),description:String(p.description||"").slice(0,220)})),next_cursor:nextCursor,has_next_page:Boolean(page.has_next_page??page.hasNextPage??nextCursor),error:data.error||null,note:"Pass next_cursor in the next call; use distinct queries to broaden catalogue discovery. Results are live, not a guarantee of stock or suitability."});
+        }
+      );
+
+      server.tool(
         "get_product",
         "Get one real YNOT product from a bounded catalogue search, including description, category, variants, images and merchant URL.",
         {
