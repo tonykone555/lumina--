@@ -101,7 +101,7 @@ async function catalog(query: string, country: string, source: string, limit: nu
     const recUrl = new URL("/api/commerce/recommendations", base);
     recUrl.searchParams.set("q", query);
     recUrl.searchParams.set("country", country);
-    recUrl.searchParams.set("limit", String(Math.min(20, limit)));
+    recUrl.searchParams.set("limit", String(Math.min(30, limit)));
     const recResponse = await fetch(recUrl, { cache: "no-store" });
     if (!recResponse.ok) throw new Error(`YNOT_RECOMMENDATIONS_${recResponse.status}`);
     const recData: any = await recResponse.json();
@@ -110,7 +110,7 @@ async function catalog(query: string, country: string, source: string, limit: nu
       query: recData?.query || query,
       source: "ynot-canonical-catalog",
       error: recData?.error,
-      products: products.slice(0, Math.min(20, limit)).map((p: any) => ({
+      products: products.slice(0, Math.min(30, limit)).map((p: any) => ({
         id: p.ynotId,
         title: p.title,
         brand: p.sourceBrand || p.brand || "YNOT",
@@ -828,6 +828,35 @@ export function makeHandler(basePath="/api") {
           limit: z.number().int().min(1).max(20).default(10),
         },
         async ({ query, country, source, limit }) => text(await catalog(query, country.toUpperCase(), source, limit))
+      );
+
+      server.tool(
+        "discover_shopify_products",
+        "Explore a broad selection of real YNOT Shopify catalogue products using several distinct searches. Deduplicates products, preserves YNOT product URLs, and reports how many results each search provided. Research tool only; no publishing.",
+        {
+          queries:z.array(z.string().min(2).max(160)).min(1).max(8),
+          country:z.string().length(2).default("FR"),
+          per_query:z.number().int().min(5).max(30).default(25),
+          limit:z.number().int().min(5).max(120).default(80)
+        },
+        async({queries,country,per_query,limit})=>{
+          const searches=await Promise.allSettled([...new Set(queries.map(q=>q.trim()).filter(Boolean))].slice(0,8).map(async query=>{
+            const data=await catalog(query,country.toUpperCase(),"shopify",per_query);
+            return{query,products:data.products||[],error:data.error||null};
+          }));
+          const used=new Set<string>();const results:any[]=[];const searchSummary:any[]=[];
+          for(let i=0;i<searches.length;i++){
+            const item=searches[i];
+            if(item.status!=="fulfilled"){searchSummary.push({query:queries[i],count:0,error:"SOURCE_UNAVAILABLE"});continue}
+            searchSummary.push({query:item.value.query,count:item.value.products.length,error:item.value.error});
+            for(const product of item.value.products){
+              const key=String(product.id||product.url||"").toLowerCase();
+              if(!key||used.has(key))continue;
+              used.add(key);results.push({...product,discovered_for:item.value.query});
+            }
+          }
+          return text({country:country.toUpperCase(),total:Math.min(limit,results.length),searched:searchSummary,products:results.slice(0,limit),note:"Real current catalogue results. Validate availability, competitive pricing and merchant suitability before promoting."});
+        }
       );
 
       server.tool(
