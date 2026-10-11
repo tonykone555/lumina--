@@ -294,6 +294,12 @@ async function evelodeCandidates(query:string):Promise<Candidate[]>{
   const rows=lists.find((v:any)=>Array.isArray(v)&&v.length)||locate(body);
   if(!rows.length)console.warn("Evelode response has no video list",{keys:Object.keys(body||{}).slice(0,12),tiktokKeys:Object.keys(body?.tiktok||{}).slice(0,15),tiktokDataKeys:Object.keys(body?.tiktok?.data||{}).slice(0,15),status:String(body?.status||"").slice(0,40),code:String(body?.code||body?.status_code||"").slice(0,20)});
 
+  console.info("Evelode search shape",{searchItemCount:Array.isArray(body?.tiktok?.search_item_list)?body.tiktok.search_item_list.length:-1,
+    awemeCount:Array.isArray(body?.tiktok?.aweme_list)?body.tiktok.aweme_list.length:-1,
+    chosenCount:rows.length,firstKeys:Object.keys(rows[0]||{}).slice(0,12),
+    firstItemKeys:Object.keys(rows[0]?.item||{}).slice(0,12),
+    firstAwemeKeys:Object.keys(rows[0]?.aweme_info||{}).slice(0,12),
+    rateLimited:Boolean(body?.rate_limit_reached),tiktokStatus:body?.tiktok?.status_code});
   const seen=new Set<string>();
   return rows.map((item:any):Candidate|null=>{
    const v=item?.aweme_info||item?.aweme||item?.item?.aweme_info||item?.item||item;
