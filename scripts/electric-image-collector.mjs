@@ -21,7 +21,7 @@ async function hasImage(bucket,folder){
  const res=await fetch(`${sb}/storage/v1/object/list/${encodeURIComponent(bucket)}`,{method:"POST",headers:{apikey:service,Authorization:`Bearer ${service}`,"Content-Type":"application/json"},body:JSON.stringify({prefix:folder,limit:100,offset:0})});
  if(!res.ok)throw new Error(`Storage list ${res.status}`);
  const rows=await res.json();
- return Array.isArray(rows)&&rows.some(x=>/\\.(jpe?g|png|webp|avif)$/i.test(x.name||""));
+ return Array.isArray(rows)&&rows.some(x=>/\.(jpe?g|png|webp|avif)$/i.test(x.name||""));
 }
 async function process(items,category,subcategory,query,discovery){for(const item of items){try{
  const folderKey=`${category}/${subcategory}`;
