@@ -755,6 +755,15 @@ export function makeHandler(basePath="/api") {
         async ({limit}) => text({products:await dbRows("ynot_grok_product_queue?status=eq.pending&select=id,product_id,product,status,created_at&order=created_at.asc&limit="+limit)})
       );
       server.tool(
+        "acknowledge_grok_product",
+        "Explicitly confirm Grok Bot received a queued YNOT Room product and started reviewing it. Only call after Grok has received the product; this is the source of truth for Received by Grok.",
+        {queue_id:z.string().uuid()},
+        async ({queue_id})=>{
+          const rows=await dbRows("ynot_grok_product_queue?id=eq."+encodeURIComponent(queue_id)+"&status=eq.pending",{method:"PATCH",body:JSON.stringify({status:"in_review",updated_at:new Date().toISOString()})});
+          return text({acknowledged:rows.length>0,queue_id,status:rows.length?"in_review":"unchanged"});
+        }
+      );
+      server.tool(
         "submit_grok_product_review",
         "Save Grok's assessment of a Room-selected product. Reviews do not authorize Etsy listing publication.",
         {queue_id:z.string().uuid(),eligible:z.boolean(),reason:z.string().min(5).max(3000),category:z.string().max(150).optional(),evidence:z.array(z.string().max(500)).max(12).default([])},
