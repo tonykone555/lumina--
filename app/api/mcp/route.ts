@@ -749,6 +749,22 @@ export function makeHandler(basePath="/api") {
   return createMcpHandler(
     (server) => {
       server.tool(
+        "get_grok_product_queue",
+        "Read products selected with the Grok Bot button in YNOT Room. Review Etsy eligibility before drafting; never automatically publish.",
+        {limit:z.number().int().min(1).max(100).default(25)},
+        async ({limit}) => text({products:await dbRows("ynot_grok_product_queue?status=eq.pending&select=id,product_id,product,status,created_at&order=created_at.asc&limit="+limit)})
+      );
+      server.tool(
+        "submit_grok_product_review",
+        "Save Grok's assessment of a Room-selected product. Reviews do not authorize Etsy listing publication.",
+        {queue_id:z.string().uuid(),eligible:z.boolean(),reason:z.string().min(5).max(3000),category:z.string().max(150).optional(),evidence:z.array(z.string().max(500)).max(12).default([])},
+        async (input) => {
+          const review={eligible:input.eligible,reason:input.reason,category:input.category||null,evidence:input.evidence,reviewed_at:new Date().toISOString(),etsy_publish_approved:false};
+          const rows=await dbRows("ynot_grok_product_queue?id=eq."+encodeURIComponent(input.queue_id),{method:"PATCH",body:JSON.stringify({status:input.eligible?"reviewed":"rejected",review,updated_at:new Date().toISOString()})});
+          return text({saved:rows.length>0,review,publication_enabled:false});
+        }
+      );
+      server.tool(
         "get_growth_campaign_brief",
         "Read the authoritative YNOT Growth creative-campaign operating contract. Grok Bot should call this before starting a new creative campaign or when campaign state is unclear.",
         {},
