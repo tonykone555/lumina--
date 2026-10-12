@@ -238,7 +238,7 @@ function hostMatches(a:string,b:string){
   return Boolean(x&&y&&(x===y||x.endsWith("."+y)||y.endsWith("."+x)));
 }
 async function storedEbayOrigin(productId:string){
-  const rows=await dbRows(`ynot_ebay_origin_evidence?product_id=eq.${encodeURIComponent(productId)}&verified=eq.true&select=product_id,merchant_host,source_url,country,postal_code,city,state,evidence_text,verification_method,verified_at&limit=1`);
+  const rows=await dbRows(`ynot_ebay_origin_evidence?product_id=eq.${encodeURIComponent(productId)}&verified=eq.true&select=product_id,merchant_host,source_url,country,postal_code,city,state,evidence_text,verification_method,verified_at&limit=1`).catch(error=>{if(/YNOT_DB_402/.test(String(error)))return [];throw error;});
   const row=rows[0];
   return row?{
     country:String(row.country||"").toUpperCase(),
