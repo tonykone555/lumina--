@@ -20,10 +20,10 @@ function marketplaceIdentity(p:any){
  const originalBrand=String(p?.sourceBrand||p?.brand||p?.merchant_name||"").trim()||null;
  const sourceUrl=String(p?.source_url||p?.merchant_url||p?.url||"").trim()||null;
  const label=String([p?.title,p?.category,...(Array.isArray(p?.tags)?p.tags:[])].filter(Boolean).join(" ")).toLowerCase();
- const craft= /\\b(beads?|charms?|clasps?|jewelry findings|jewellery findings|embroidery supplies|crochet hooks?|knitting needles?|yarn|wool skeins?|fabric by the|sewing patterns?|craft blanks?|scrapbook supplies|lamp shade making kit|lampshade kit|craft kit|diy kit)\\b/i.test(label);
- const party= /\\b(party supplies|party balloons?|balloon garland|party garland|gift wrapping paper|party favors?|party favours?)\\b/i.test(label);
- const personalized= /\\b(personali[sz]ed|custom name|engraved name|name necklace|custom text|your name|your photo)\\b/i.test(label);
- const vintage= /\\b(vintage|antique)\\b/i.test(label);
+ const craft= /\b(beads?|charms?|clasps?|jewelry findings|jewellery findings|embroidery supplies|crochet hooks?|knitting needles?|yarn|wool skeins?|fabric by the|sewing patterns?|craft blanks?|scrapbook supplies|lamp shade making kit|lampshade kit|craft kit|diy kit)\b/i.test(label);
+ const party= /\b(party supplies|party balloons?|balloon garland|party garland|gift wrapping paper|party favors?|party favours?)\b/i.test(label);
+ const personalized= /\b(personali[sz]ed|custom name|engraved name|name necklace|custom text|your name|your photo)\b/i.test(label);
+ const vintage= /\b(vintage|antique)\b/i.test(label);
  const originalDesign=Boolean(p?.ynot_design_verified===true&&p?.design_evidence_url&&p?.production_partner_verified===true);
  const evidence=originalDesign?"ynot_original_design":craft?"possible_craft_supply":party?"possible_party_supply":personalized?"possible_buyer_personalization":vintage?"possible_vintage":null;
  const etsyStatus=originalDesign?"candidate_review":evidence?"candidate_review":"unverified";
