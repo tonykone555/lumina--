@@ -11,8 +11,14 @@ export async function GET(req:NextRequest){
 }
 export async function POST(req:NextRequest){
  const origin=req.headers.get("origin"),referer=req.headers.get("referer");
- if(origin&&new URL(origin).host!==req.nextUrl.host)return NextResponse.json({error:"INVALID_ORIGIN"},{status:403});
- if(!origin&&(!referer||new URL(referer).host!==req.nextUrl.host))return NextResponse.json({error:"INVALID_REFERER"},{status:403});
+ // Safari and privacy-focused browsers can send the literal Origin "null".
+ // The unguessable single-use link remains the authorization capability.
+ const safeHost=(value:string|null)=>{
+  if(!value||value==="null")return null;
+  try{return new URL(value).host}catch{return null}
+ };
+ if(origin&&origin!=="null"&&safeHost(origin)!==req.nextUrl.host)return NextResponse.json({error:"INVALID_ORIGIN"},{status:403});
+ if(referer&&referer!=="null"&&safeHost(referer)!==req.nextUrl.host)return NextResponse.json({error:"INVALID_REFERER"},{status:403});
  const form=await req.formData().catch(()=>null),key=String(form?.get("key")||"");
  if(!ownerPin())return NextResponse.json({error:"EBAY_OWNER_SESSION_NOT_CONFIGURED"},{status:503});
  try{
