@@ -770,12 +770,13 @@ export function makeHandler(basePath="/api") {
       );
       server.tool(
         "submit_grok_product_review",
-        "Save Grok's assessment of a Room-selected product. Reviews do not authorize Etsy listing publication.",
-        {queue_id:z.string().uuid(),eligible:z.boolean(),reason:z.string().min(5).max(3000),category:z.string().max(150).optional(),evidence:z.array(z.string().max(500)).max(12).default([])},
+        "Save Etsy assessment without publishing. Use decision=needs_evidence when facts such as maker, shipping origin or duties still require verification. Retry transient storage errors; do not mark unverified items rejected.",
+        {queue_id:z.string().uuid(),eligible:z.boolean().optional(),decision:z.enum(["reviewed","rejected","needs_evidence"]).optional(),reason:z.string().min(5).max(3000),category:z.string().max(150).optional(),evidence:z.array(z.string().max(500)).max(12).default([])},
         async (input) => {
-          const review={eligible:input.eligible,reason:input.reason,category:input.category||null,evidence:input.evidence,reviewed_at:new Date().toISOString(),etsy_publish_approved:false};
-          const saved=await updateGrokProduct(input.queue_id,{status:input.eligible?"reviewed":"rejected",review});const rows=saved?[saved]:[];
-          return text({saved:rows.length>0,review,publication_enabled:false,seller:"YNOT",seller_identity_locked:true,review_changes_seller:false});
+          const status=input.decision||(input.eligible===true?"reviewed":input.eligible===false?"rejected":"needs_evidence");
+          const review={eligible:status==="reviewed",decision:status,reason:input.reason,category:input.category||null,evidence:input.evidence,reviewed_at:new Date().toISOString(),etsy_publish_approved:false};
+          const saved=await updateGrokProduct(input.queue_id,{status,review});
+          return text({saved:!!saved,status,review,publication_enabled:false,seller:"YNOT",seller_identity_locked:true,review_changes_seller:false});
         }
       );
       server.tool(
