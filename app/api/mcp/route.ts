@@ -751,7 +751,7 @@ export function makeHandler(basePath="/api") {
     (server) => {
       server.tool(
         "get_grok_product_queue",
-        "Read YNOT-owned retail offers selected in YNOT Room. The seller is authoritatively YNOT, while the original manufacturer and supplier remain in product.provenance. The seller identity is not a review decision. Review marketplace eligibility without changing seller attribution; never automatically publish.",
+        "Read YNOT-owned retail offers selected in YNOT Room. The seller is authoritatively YNOT, while the original manufacturer and supplier remain in product.provenance. The seller identity is not a review decision. Original brand is NOT an automatic disqualification. Assess Etsy policy eligibility separately from eBay commercial viability. For Etsy, reseller branding alone does not establish original design, vintage status, or craft-supply status. For eBay, outside manufacturers are ordinarily allowed; check origin, rights, shipping, duties, margins and fulfilment. A failure for Etsy must not cause an eBay rejection. Use needs_evidence if crucial facts are unverified. Never automatically publish.",
         {limit:z.number().int().min(1).max(100).default(25),status:z.enum(["pending","in_review","reviewed","rejected","all"]).default("pending")},
         async ({limit,status}) => {
           const rows=await listGrokProducts(100);
@@ -770,7 +770,7 @@ export function makeHandler(basePath="/api") {
       );
       server.tool(
         "submit_grok_product_review",
-        "Save Etsy assessment without publishing. Use decision=needs_evidence when facts such as maker, shipping origin or duties still require verification. Retry transient storage errors; do not mark unverified items rejected.",
+        "Save marketplace assessment without publishing. Do not reject solely because original_brand differs from YNOT: YNOT is retailer, not necessarily maker. Etsy and eBay require separate decisions; Etsy rejection alone does not reject eBay. Use decision=needs_evidence when facts such as maker, shipping origin or duties still require verification. Retry transient storage errors; do not mark unverified items rejected.",
         {queue_id:z.string().uuid(),eligible:z.boolean().optional(),decision:z.enum(["reviewed","rejected","needs_evidence"]).optional(),reason:z.string().min(5).max(3000),category:z.string().max(150).optional(),evidence:z.array(z.string().max(500)).max(12).default([])},
         async (input) => {
           const status=input.decision||(input.eligible===true?"reviewed":input.eligible===false?"rejected":"needs_evidence");
