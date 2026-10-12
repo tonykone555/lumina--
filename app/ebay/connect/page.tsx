@@ -1,8 +1,7 @@
-"use client";
-import {useSearchParams} from "next/navigation";
-export default function EbayConnect(){
- const params=useSearchParams();
- const success=params.get("connected")==="1";
+export const dynamic="force-dynamic";
+export default async function EbayConnect({searchParams}:{searchParams:Promise<{connected?:string}>}){
+ const params=await searchParams;
+ const success=params.connected==="1";
  return <main style={{maxWidth:560,margin:"10vh auto",padding:24,fontFamily:"system-ui",position:"relative",zIndex:1000}}>
   <p style={{opacity:.65}}>YNOT / eBay</p>
   <h1>{success?"eBay authorization saved":"Connect eBay"}</h1>
