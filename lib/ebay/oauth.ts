@@ -63,7 +63,15 @@ export async function deleteEbayConnection(){
  await fetch(`${url}/rest/v1/ebay_oauth_connections?id=eq.primary`,{method:"DELETE",headers:dbHeaders(),cache:"no-store"});
 }
 
+// Optional server-only fallback for quota-restricted Supabase projects.
+// Configure EBAY_USER_REFRESH_TOKEN in Vercel; never use NEXT_PUBLIC_ variables.
 export async function getEbayAccessToken(){
+ const refresh=String(process.env.EBAY_USER_REFRESH_TOKEN||"").trim();
+ if(refresh){
+  const token=await refreshEbayAccessToken(refresh);
+  if(!token.access_token)throw new Error("EBAY_REFRESH_FAILED");
+  return token.access_token;
+ }
  const direct=String(process.env.EBAY_USER_ACCESS_TOKEN||"").trim();
  if(direct)return direct;
  const connection=await readEbayConnection();
