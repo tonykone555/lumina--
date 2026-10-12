@@ -1,3 +1,4 @@
+import {readIndependentEbayToken,saveIndependentEbayToken} from "@/lib/ebay/independent-store";
 import {EBAY_SCOPES,EbayTokenPayload,ebayClientId,ebayClientSecret,ebayRuName,refreshEbayAccessToken} from "@/lib/ebay/auth";
 
 type StoredConnection={
@@ -66,14 +67,22 @@ export async function deleteEbayConnection(){
 // Optional server-only fallback for quota-restricted Supabase projects.
 // Configure EBAY_USER_REFRESH_TOKEN in Vercel; never use NEXT_PUBLIC_ variables.
 export async function getEbayAccessToken(){
- const refresh=String(process.env.EBAY_USER_REFRESH_TOKEN||"").trim();
- if(refresh){
-  const token=await refreshEbayAccessToken(refresh);
-  if(!token.access_token)throw new Error("EBAY_REFRESH_FAILED");
-  return token.access_token;
- }
  const direct=String(process.env.EBAY_USER_ACCESS_TOKEN||"").trim();
+ const explicitRefresh=String(process.env.EBAY_USER_REFRESH_TOKEN||"").trim();
+ if(explicitRefresh){
+  const result=await refreshEbayAccessToken(explicitRefresh);
+  if(!result.access_token)throw new Error("EBAY_REFRESH_FAILED");
+  return result.access_token;
+ }
  if(direct)return direct;
+ const independent=await readIndependentEbayToken();
+ if(independent?.refresh_token){
+  const expires=new Date(independent.expires_at||"").getTime();
+  if(Number.isFinite(expires)&&expires-Date.now()>120_000&&independent.access_token)return independent.access_token;
+  const refreshed=await refreshEbayAccessToken(independent.refresh_token);
+  await saveIndependentEbayToken({...refreshed,refresh_token:refreshed.refresh_token||independent.refresh_token,scope:refreshed.scope||independent.scope||EBAY_SCOPES});
+  return refreshed.access_token;
+ }
  const connection=await readEbayConnection();
  if(!connection)throw new Error("EBAY_NOT_CONNECTED");
  const expires=new Date(connection.expires_at).getTime();
