@@ -1,6 +1,6 @@
 import {NextRequest,NextResponse} from "next/server";
 import {exchangeEbayAuthorizationCode} from "@/lib/ebay/auth";
-import {saveEbayConnection} from "@/lib/ebay/oauth";
+import {saveIndependentEbayToken} from "@/lib/ebay/independent-store";
 import {validEbayOwnerSession} from "@/lib/ebay/owner-session";
 
 export const runtime="nodejs";
@@ -18,8 +18,8 @@ export async function GET(request:NextRequest){
  if(!validEbayOwnerSession(request))return NextResponse.json({connected:false,error:"OWNER_VERIFICATION_REQUIRED",message:"eBay authorization started, but YNOT cannot link a seller account without verifying its owner."},{status:403});
  try{
   const token=await exchangeEbayAuthorizationCode(code);
-  await saveEbayConnection(token);
-  const response=NextResponse.redirect(new URL("/api/ebay/oauth/status?verify=1",request.url));
+  await saveIndependentEbayToken(token);
+  const response=NextResponse.redirect(new URL("/ebay/connect?connected=1",request.url));
   response.cookies.set("ebay_oauth_state","",{httpOnly:true,secure:true,sameSite:"lax",path:"/",maxAge:0});
   return response;
  }catch(error){
