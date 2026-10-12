@@ -1,13 +1,12 @@
 import {NextRequest,NextResponse} from "next/server";
 import {EBAY_SCOPES,ebayAuthBase,ebayClientId,ebayLocale,ebayRuName,randomState} from "@/lib/ebay/auth";
-import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
+import {validEbayOwnerSession} from "@/lib/ebay/owner-session";
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 
 export async function GET(request:NextRequest){
- try{await requireYnotAdmin(request)}
- catch(error){return NextResponse.json({error:error instanceof Error?error.message:"OWNER_ACCESS_REQUIRED"},{status:adminErrorStatus(error)})}
+ if(!validEbayOwnerSession(request))return NextResponse.redirect(new URL("/ebay/connect",request.url));
  const clientId=ebayClientId(),runame=ebayRuName();
  if(!clientId||!runame)return NextResponse.json({error:"EBAY_OAUTH_NOT_CONFIGURED",clientIdConfigured:Boolean(clientId),ruNameConfigured:Boolean(runame)},{status:503});
  const state=randomState(24);
