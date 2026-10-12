@@ -4,7 +4,7 @@ export type GrokQueueRow={id:string;product_id:string;product:Record<string,unkn
 const prefix="grok-queue/v1/";
 const pathFor=(id:string)=>prefix+createHash("sha256").update(id).digest("hex")+".json";
 export async function readGrokProduct(id:string):Promise<GrokQueueRow|null>{
- const res=await get(pathFor(id),{access:"private",useCache:false});
+ const res=await get(pathFor(id),{access:"private"});
  if(!res)return null;
  return await new Response(res.stream).json() as GrokQueueRow;
 }
@@ -21,7 +21,7 @@ export async function listGrokProducts(limit=25):Promise<GrokQueueRow[]>{
  do{
   const page=await list({prefix,limit:100,cursor});
   for(const blob of page.blobs){
-   const res=await get(blob.pathname,{access:"private",useCache:false});
+   const res=await get(blob.pathname,{access:"private"});
    if(res)rows.push(await new Response(res.stream).json() as GrokQueueRow);
   }
   cursor=page.hasMore?page.cursor:undefined;
