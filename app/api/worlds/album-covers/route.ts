@@ -2,7 +2,7 @@ import {NextRequest,NextResponse} from "next/server";
 import crypto from "node:crypto";
 import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 export const maxDuration=300;export const dynamic="force-dynamic";
-const SB=process.env.NEXT_PUBLIC_SUPABASE_URL||"",KEY=process.env.SUPABASE_SERVICE_ROLE_KEY||"",PEXELS=process.env.PEXELS_API_KEY||process.env.PEXELS_KEY||"",APIFY=process.env.APIFY_API_KEY||process.env.APIFY_API_TOKEN||process.env.APIFY_TOKEN||process.env.APIFY_KEY||"",ACTOR=process.env.PINTEREST_APIFY_ACTOR||"accountable_eel~pinterest-search-lookup",BUCKET="YNOT FEED",ROOT="album-covers",TARGET=5,DEFAULT_BATCH=8;
+const SB=process.env.NEXT_PUBLIC_SUPABASE_URL||"",KEY=process.env.SUPABASE_SERVICE_ROLE_KEY||"",PEXELS=process.env.PEXELS_API_KEY||process.env.PEXELS_KEY||"",APIFY=process.env.APIFY_API_KEY||process.env.APIFY_API_TOKEN||process.env.APIFY_TOKEN||process.env.APIFY_KEY||"",ACTOR=process.env.PINTEREST_APIFY_ACTOR||"accountable_eel~pinterest-search-lookup",BUCKET="YNOT FEED",ROOT="album-covers",TARGET=2,DEFAULT_BATCH=8;
 const enc=(s:string)=>s.split("/").map(encodeURIComponent).join("/");
 async function list(prefix:string){const r=await fetch(`${SB}/storage/v1/object/list/${encodeURIComponent(BUCKET)}`,{method:"POST",headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,"Content-Type":"application/json"},body:JSON.stringify({prefix,limit:100,offset:0}),cache:"no-store"});if(!r.ok)return[];const j=await r.json();return Array.isArray(j)?j:[]}
 async function count(d:Def){return (await list(d.folder)).filter((x:any)=>/\.(jpe?g|png|webp)$/i.test(x.name||"")).length}
