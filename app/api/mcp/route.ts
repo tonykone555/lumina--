@@ -14,6 +14,19 @@ type Product = {
   source?: string; category?: string; variants?: unknown[]; [key: string]: unknown;
 };
 
+// Seller identity and provenance are separate: being offered by YNOT does not make an item YNOT-made.
+// Preserve original catalogue values; eligibility is explicitly unverified unless evidenced.
+function marketplaceIdentity(p:any){
+ const originalBrand=String(p?.sourceBrand||p?.brand||p?.merchant_name||"").trim()||null;
+ const sourceUrl=String(p?.source_url||p?.merchant_url||p?.url||"").trim()||null;
+ return {
+  seller:{name:"YNOT",role:"retailer",controls:["customer_offer","retail_price","customer_service"]},
+  provenance:{original_brand:originalBrand,original_maker:p?.manufacturer||p?.maker||null,original_supplier:p?.supplier||p?.merchant_name||null,source_product_url:sourceUrl,source_platform:p?.source||null},
+  fulfillment:{model:"supplier_or_production_partner",supplier_stock_verified:false,shipping_origin_verified:false},
+  marketplace_eligibility:{etsy:"unverified",ebay:"unverified",notes:"YNOT is the retailer, not necessarily the designer or maker. Etsy requires independently evidenced creative eligibility; never claim handmade by YNOT or disclose a production partner without proof."}
+ };
+}
+
 function text(value: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] };
 }
@@ -842,7 +855,7 @@ export function makeHandler(basePath="/api") {
           source: z.enum(["shopify", "amazon", "all"]).default("shopify"),
           limit: z.number().int().min(1).max(20).default(10),
         },
-        async ({ query, country, source, limit }) => text(await catalog(query, country.toUpperCase(), source, limit))
+        async ({ query, country, source, limit }) => { const result=await catalog(query,country.toUpperCase(),source,limit);return text({...result,products:(result.products||[]).map((p:any)=>({...p,...marketplaceIdentity(p)}))}); }
       );
 
       server.tool(
@@ -867,7 +880,7 @@ export function makeHandler(basePath="/api") {
             for(const product of item.value.products){
               const key=String(product.id||product.url||"").toLowerCase();
               if(!key||used.has(key))continue;
-              used.add(key);results.push({...product,discovered_for:item.value.query});
+              used.add(key);results.push({...product,...marketplaceIdentity(product),discovered_for:item.value.query});
             }
           }
           return text({country:country.toUpperCase(),total:Math.min(limit,results.length),searched:searchSummary,products:results.slice(0,limit),note:"Real current catalogue results. Validate availability, competitive pricing and merchant suitability before promoting."});
@@ -898,7 +911,7 @@ export function makeHandler(basePath="/api") {
           const products=Array.isArray(data?.products)?data.products:[];
           const page=data?.pagination||{};
           const nextCursor=[page.next_cursor,page.nextCursor,page.end_cursor,page.endCursor,page.cursor,page.page_info?.end_cursor,page.pageInfo?.endCursor].find(v=>typeof v==="string"&&v.length>0)||null;
-          return text({query,country:country.toUpperCase(),count:products.length,products:products.slice(0,limit).map((p:any)=>({id:p.id,title:p.title,brand:p.brand,price:p.price,currency:p.currency,image:p.image,source:p.source,merchant_url:p.url,ynot_url:ynotProductUrl(String(p.id||""),country.toUpperCase(),inferCategory(p),"mcp-discovery"),description:String(p.description||"").slice(0,220)})),next_cursor:nextCursor,has_next_page:Boolean(page.has_next_page??page.hasNextPage??nextCursor),error:data.error||null,note:"Pass next_cursor in the next call; use distinct queries to broaden catalogue discovery. Results are live, not a guarantee of stock or suitability."});
+          return text({query,country:country.toUpperCase(),count:products.length,products:products.slice(0,limit).map((p:any)=>({...marketplaceIdentity(p),id:p.id,title:p.title,brand:p.brand,price:p.price,currency:p.currency,image:p.image,source:p.source,merchant_url:p.url,ynot_url:ynotProductUrl(String(p.id||""),country.toUpperCase(),inferCategory(p),"mcp-discovery"),description:String(p.description||"").slice(0,220)})),next_cursor:nextCursor,has_next_page:Boolean(page.has_next_page??page.hasNextPage??nextCursor),error:data.error||null,note:"Pass next_cursor in the next call; use distinct queries to broaden catalogue discovery. Results are live, not a guarantee of stock or suitability."});
         }
       );
 
@@ -914,7 +927,7 @@ export function makeHandler(basePath="/api") {
         async ({ product_id, query, country, source }) => {
           const data = await catalog(query, country.toUpperCase(), source, 20);
           const product = data.products.find((p: Product) => String(p.id) === product_id);
-          return text(product || { error: "PRODUCT_NOT_FOUND", product_id });
+          return text(product ? {...product,...marketplaceIdentity(product)} : { error: "PRODUCT_NOT_FOUND", product_id });
         }
       );
 
