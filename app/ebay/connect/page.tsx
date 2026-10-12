@@ -1,14 +1,12 @@
 "use client";
+import {useSearchParams} from "next/navigation";
 export default function EbayConnect(){
- const url="/api/ebay/oauth/start";
+ const params=useSearchParams();
+ const success=params.get("connected")==="1";
  return <main style={{maxWidth:560,margin:"10vh auto",padding:24,fontFamily:"system-ui",position:"relative",zIndex:1000}}>
   <p style={{opacity:.65}}>YNOT / eBay</p>
-  <h1>Connect eBay</h1>
-  <p>Open eBay's official authorization screen. No separate YNOT PIN is needed to start.</p>
-  <form method="GET" action={url}>
-   <button type="submit" onClick={(e)=>{e.preventDefault();window.location.assign(url);}} style={{display:"inline-block",cursor:"pointer",padding:"14px 22px",borderRadius:10,border:0,background:"#111",color:"#fff",fontSize:16,fontWeight:600,touchAction:"manipulation"}}>Open eBay authorization</button>
-  </form>
-  <p style={{marginTop:20}}><a href={url} target="_self" style={{textDecoration:"underline"}}>If the button does not respond, open eBay authorization directly</a></p>
-  <p style={{opacity:.7,marginTop:24}}>eBay authorization is not yet fully connected to independent token storage. Grokbot publishing remains paused until the seller connection is securely saved and verified.</p>
+  <h1>{success?"eBay authorization saved":"Connect eBay"}</h1>
+  <p>{success?"Your eBay authorization was securely saved outside Supabase. YNOT can refresh access automatically.":"For security, eBay account linking uses a private, single-use owner link. No PIN is required. Open the private connection link provided in your chat to authorize your existing seller account."}</p>
+  {success?<a href="/admin/ebay">Return to eBay launch queue</a>:<p>Do not use a public authorization link: it cannot verify ownership of the YNOT seller account.</p>}
  </main>;
 }
