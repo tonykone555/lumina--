@@ -30,7 +30,6 @@ async function folderFiles(prefix:string){
 }
 async function plan(){
  const album=await folderFiles("album-covers/");
- const electric=await folderFiles("electric/");
  const groups=new Map<string,FileRow[]>();
  for(const f of album.filter(x=>image(x.name))){
   const folder=f.name.substring(0,f.name.lastIndexOf("/"));
@@ -41,21 +40,7 @@ async function plan(){
   entries.sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))||b.name.localeCompare(a.name));
   deletes.push(...entries.slice(2).map(x=>x.name));
  }
- const egroups=new Map<string,FileRow[]>();
- for(const f of electric.filter(x=>image(x.name))){
-  const folder=f.name.substring(0,f.name.lastIndexOf("/"));
-  egroups.set(folder,[...(egroups.get(folder)||[]),f]);
- }
- const retained=new Set<string>();
- for(const entries of egroups.values()){
-  entries.sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))||b.name.localeCompare(a.name));
-  retained.add(entries[0].name.replace(/\.[^.]+$/,""));
-  deletes.push(...entries.slice(1).map(x=>x.name));
- }
- // Keep the sidecar JSON that belongs to the retained Electric image.
- for(const f of electric.filter(x=>/\.json$/i.test(x.name)))
-  if(!retained.has(f.name.replace(/\.json$/i,"")))deletes.push(f.name);
- return {deletes,albumTotal:album.filter(x=>image(x.name)).length,electricImages:electric.filter(x=>image(x.name)).length,albumFolders:groups.size,electricFolders:egroups.size,estimatedBytes:[...album,...electric].filter(f=>deletes.includes(f.name)).reduce((n,f)=>n+Number(f.metadata?.size||0),0)};
+ return {deletes,albumTotal:album.filter(x=>image(x.name)).length,albumFolders:groups.size,estimatedBytes:album.filter(f=>deletes.includes(f.name)).reduce((n,f)=>n+Number(f.metadata?.size||0),0)};
 }
 async function handle(req:NextRequest,remove:boolean){
  if(!authorized(req))return NextResponse.json({error:"Unauthorized"},{status:401});
@@ -66,7 +51,7 @@ async function handle(req:NextRequest,remove:boolean){
    if(body.confirm!=="DELETE_SURPLUS_COVERS")return NextResponse.json({error:"Confirmation required"},{status:400});
   }
   const p=await plan();
-  if(!remove)return NextResponse.json({ok:true,albumTotal:p.albumTotal,electricImages:p.electricImages,albumFolders:p.albumFolders,electricFolders:p.electricFolders,surplus:p.deletes.length,estimatedBytes:p.estimatedBytes});
+  if(!remove)return NextResponse.json({ok:true,albumTotal:p.albumTotal,albumFolders:p.albumFolders,surplus:p.deletes.length,estimatedBytes:p.estimatedBytes});
   const batch=p.deletes.slice(0,100);
   if(batch.length){
    const result=await api(`/object/${encodeURIComponent(BUCKET)}`,"DELETE",{prefixes:batch});
