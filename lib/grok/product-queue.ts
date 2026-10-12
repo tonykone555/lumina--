@@ -1,6 +1,6 @@
 import {get,list,put} from "@vercel/blob";
 import {createHash,randomUUID} from "node:crypto";
-export type GrokQueueRow={id:string;product_id:string;product:Record<string,unknown>;status:"pending"|"in_review"|"reviewed"|"rejected";review:Record<string,unknown>|null;created_at:string;updated_at:string};
+export type GrokQueueRow={id:string;product_id:string;product:Record<string,unknown>;status:"pending"|"in_review"|"reviewed"|"rejected"|"needs_evidence";review:Record<string,unknown>|null;created_at:string;updated_at:string};
 export function labelGrokRoomProduct(product:Record<string,unknown>):Record<string,unknown>{
  const priorBrand=String(product.original_brand||product.brand||"").trim();
  const provenance=(product.provenance&&typeof product.provenance==="object"?product.provenance:{}) as Record<string,unknown>;
@@ -43,11 +43,24 @@ export async function listGrokProducts(limit=25):Promise<GrokQueueRow[]>{
  }while(cursor&&rows.length<500);
  return rows.sort((a,b)=>a.created_at.localeCompare(b.created_at)).slice(0,Math.min(100,Math.max(1,limit)));
 }
+async function withRetry<T>(action:()=>Promise<T>):Promise<T>{
+ let error:unknown;
+ for(let attempt=0;attempt<5;attempt++){
+  try{return await action()}catch(e){error=e;if(attempt<4)await new Promise(resolve=>setTimeout(resolve,200*Math.pow(2,attempt)+Math.floor(Math.random()*100)))}
+ }
+ throw error;
+}
 export async function updateGrokProduct(queueId:string,patch:{status:GrokQueueRow["status"];review?:Record<string,unknown>}){
- const entries=await listGrokProducts(100);
- const row=entries.find(p=>p.id===queueId);
- if(!row)return null;
- const updated={...row,...patch,updated_at:new Date().toISOString()};
- await put(pathFor(row.product_id),JSON.stringify(updated),{access:"private",allowOverwrite:true,contentType:"application/json",cacheControlMaxAge:60});
- return updated;
+ // Listing can lag behind rapid submissions. Retry both discovery and writes.
+ for(let attempt=0;attempt<5;attempt++){
+  const entries=await withRetry(()=>listGrokProducts(100));
+  const row=entries.find(p=>p.id===queueId);
+  if(row){
+   const updated={...row,...patch,updated_at:new Date().toISOString()};
+   await withRetry(()=>put(pathFor(row.product_id),JSON.stringify(updated),{access:"private",allowOverwrite:true,contentType:"application/json",cacheControlMaxAge:60}));
+   return updated;
+  }
+  if(attempt<4)await new Promise(resolve=>setTimeout(resolve,250*Math.pow(2,attempt)));
+ }
+ return null;
 }
