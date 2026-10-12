@@ -751,9 +751,9 @@ export function makeHandler(basePath="/api") {
     (server) => {
       server.tool(
         "get_grok_product_queue",
-        "Read products selected with the Grok Bot button in YNOT Room. Review Etsy eligibility before drafting; never automatically publish.",
+        "Read YNOT-owned retail offers selected in YNOT Room. The seller is authoritatively YNOT, while the original manufacturer and supplier remain in product.provenance. The seller identity is not a review decision. Review marketplace eligibility without changing seller attribution; never automatically publish.",
         {limit:z.number().int().min(1).max(100).default(25)},
-        async ({limit}) => text({products:(await listGrokProducts(limit)).filter(row=>row.status==="pending")})
+        async ({limit}) => text({seller:"YNOT",seller_role:"retailer",seller_identity_locked:true,original_supplier_kept_in:"product.provenance",products:(await listGrokProducts(limit)).filter(row=>row.status==="pending")})
       );
       server.tool(
         "acknowledge_grok_product",
@@ -761,7 +761,7 @@ export function makeHandler(basePath="/api") {
         {queue_id:z.string().uuid()},
         async ({queue_id})=>{
           const current=(await listGrokProducts(100)).find(row=>row.id===queue_id&&row.status==="pending");const rows=current?[await updateGrokProduct(queue_id,{status:"in_review"})]:[];
-          return text({acknowledged:rows.length>0,queue_id,status:rows.length?"in_review":"unchanged"});
+          return text({acknowledged:rows.length>0,queue_id,status:rows.length?"in_review":"unchanged",seller:"YNOT",seller_identity_locked:true});
         }
       );
       server.tool(
@@ -771,7 +771,7 @@ export function makeHandler(basePath="/api") {
         async (input) => {
           const review={eligible:input.eligible,reason:input.reason,category:input.category||null,evidence:input.evidence,reviewed_at:new Date().toISOString(),etsy_publish_approved:false};
           const saved=await updateGrokProduct(input.queue_id,{status:input.eligible?"reviewed":"rejected",review});const rows=saved?[saved]:[];
-          return text({saved:rows.length>0,review,publication_enabled:false});
+          return text({saved:rows.length>0,review,publication_enabled:false,seller:"YNOT",seller_identity_locked:true,review_changes_seller:false});
         }
       );
       server.tool(
