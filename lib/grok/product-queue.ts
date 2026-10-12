@@ -12,7 +12,16 @@ export function labelGrokRoomProduct(product:Record<string,unknown>):Record<stri
   source_product_url:provenance.source_product_url||product.source_url||product.url||null,
   source_platform:provenance.source_platform||product.source||null
  };
- return {...product,seller,provenance:origin,fulfillment:{model:"supplier_or_production_partner",supplier_stock_verified:false,shipping_origin_verified:false},marketplace_eligibility:{etsy:"unverified",ebay:"unverified",publish_approved:false,note:"YNOT is the retailer. Source maker and brand are retained. Etsy eligibility needs independent verification; never claim an outside product was made or designed by YNOT."}};
+ const listing_view={
+  seller_name:"YNOT",seller_role:"retailer",
+  title:product.title||"",description:product.description||"",
+  images:Array.isArray(product.images)&&product.images.length?product.images:(product.image?[product.image]:[]),
+  retail_price:product.price??null,currency:product.currency||"EUR",
+  product_url:product.ynot_url||product.url||null,
+  publication_approved:false,
+  note:"Use YNOT as the shop seller. Do not copy supplier storefront ownership or supplier marketing copy into Etsy drafts. Preserve any actual branded-product identification and required manufacturer disclosures."
+ };
+ return {...product,listing_view,seller,provenance:origin,fulfillment:{model:"supplier_or_production_partner",supplier_stock_verified:false,shipping_origin_verified:false},marketplace_eligibility:{etsy:"unverified",ebay:"unverified",publish_approved:false,note:"YNOT is the retailer. Source maker and brand are retained. Etsy eligibility needs independent verification; never claim an outside product was made or designed by YNOT."}};
 }
 export function labelGrokRoomRow(row:GrokQueueRow):GrokQueueRow{return {...row,product:labelGrokRoomProduct(row.product)}}
 const prefix="grok-queue/v1/";
