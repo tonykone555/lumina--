@@ -752,8 +752,12 @@ export function makeHandler(basePath="/api") {
       server.tool(
         "get_grok_product_queue",
         "Read YNOT-owned retail offers selected in YNOT Room. The seller is authoritatively YNOT, while the original manufacturer and supplier remain in product.provenance. The seller identity is not a review decision. Review marketplace eligibility without changing seller attribution; never automatically publish.",
-        {limit:z.number().int().min(1).max(100).default(25)},
-        async ({limit}) => text({seller:"YNOT",seller_role:"retailer",seller_identity_locked:true,original_supplier_kept_in:"product.provenance",products:(await listGrokProducts(limit)).filter(row=>row.status==="pending")})
+        {limit:z.number().int().min(1).max(100).default(25),status:z.enum(["pending","in_review","reviewed","rejected","all"]).default("pending")},
+        async ({limit,status}) => {
+          const rows=await listGrokProducts(100);
+          const selected=rows.filter(row=>status==="all"||row.status===status).slice(0,limit);
+          return text({seller:"YNOT",seller_role:"retailer",seller_identity_locked:true,original_supplier_kept_in:"product.provenance",status_filter:status,count:selected.length,products:selected});
+        }
       );
       server.tool(
         "acknowledge_grok_product",
