@@ -1,3 +1,4 @@
+import { requireYnotAdmin, adminErrorStatus } from "@/lib/ynot/admin-server";
 import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -7,10 +8,6 @@ const BASE = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL ||
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 type FileRow = { name: string; created_at?: string; metadata?: { size?: number } };
 const image = (n:string) => /\.(jpe?g|png|webp|avif)$/i.test(n);
-function authorized(req:NextRequest) {
- const supplied = req.headers.get("authorization")?.replace(/^Bearer\s+/i,"") || "";
- return Boolean(supplied && ((process.env.YNOT_EBAY_DASHBOARD_PIN && supplied===process.env.YNOT_EBAY_DASHBOARD_PIN) || (process.env.YNOT_MCP_TOKEN && supplied===process.env.YNOT_MCP_TOKEN)));
-}
 function headers(){return {apikey:KEY,Authorization:`Bearer ${KEY}`,"Content-Type":"application/json"};}
 async function api(path:string, method:string, body:unknown){
  const r=await fetch(`${BASE.replace(/\/$/,"")}/storage/v1${path}`,{method,headers:headers(),body:JSON.stringify(body),cache:"no-store"});
@@ -43,7 +40,11 @@ async function plan(){
  return {deletes,albumTotal:album.filter(x=>image(x.name)).length,albumFolders:groups.size,estimatedBytes:album.filter(f=>deletes.includes(f.name)).reduce((n,f)=>n+Number(f.metadata?.size||0),0)};
 }
 async function handle(req:NextRequest,remove:boolean){
- if(!authorized(req))return NextResponse.json({error:"Unauthorized"},{status:401});
+ try { await requireYnotAdmin(req); } catch (e) { return NextResponse.json({error:"YNOT admin sign-in required"},{status:adminErrorStatus(e)}); }
+ if(remove) {
+  const origin=req.headers.get("origin");
+  if(!origin || new URL(origin).host!==req.nextUrl.host)return NextResponse.json({error:"Invalid request origin"},{status:403});
+ }
  if(!BASE||!KEY)return NextResponse.json({error:"Supabase server credentials unavailable"},{status:503});
  try {
   if(remove){
