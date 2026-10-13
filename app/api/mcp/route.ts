@@ -1,3 +1,4 @@
+import { getBuyerSignals } from "@/lib/grok/buyer-radar-store";
 import { chooseBuyerChannel } from "@/lib/grok/buyer-channel";
 import { discoverBuyerSignals } from "@/lib/grok/buyer-radar";
 import {listGrokProducts,updateGrokProduct} from "@/lib/grok/product-queue";
@@ -756,6 +757,13 @@ export function makeHandler(basePath="/api") {
         "Find free, attributable recent public research signals about home furnishing demand, moving, rental setup, and newly leasing apartments in UK/US. Results are NOT verified individuals, personal contact lists, or permission to message. Never mass-message people; only reply where community rules permit or contact public business offices with relevant individual proposals.",
         {country:z.enum(["UK","US"]).default("US"),intent:z.enum(["wanted","moving","apartment","rental"]).default("wanted"),limit:z.number().int().min(1).max(30).default(15)},
         async ({country,intent,limit})=>text(await discoverBuyerSignals({country,intent,limit}))
+      );
+
+      server.tool(
+        "get_buyer_radar_queue",
+        "Read saved free UK/US public buyer-research signals collected by YNOT hourly cron. These are NOT verified buyers or consent to contact. Use with choose_buyer_outreach_channel, search_catalogue and source verification before drafting.",
+        {limit:z.number().int().min(1).max(150).default(40),country:z.enum(["UK","US"]).optional()},
+        async ({limit,country})=>{const rows=await getBuyerSignals(limit);return text({items:country?rows.filter(r=>r.country===country):rows,approval_required:true,published:0,messages_sent:0})}
       );
 
       server.tool(
