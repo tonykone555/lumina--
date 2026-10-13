@@ -1,3 +1,4 @@
+import { discoverBuyerSignals } from "@/lib/grok/buyer-radar";
 import {listGrokProducts,updateGrokProduct} from "@/lib/grok/product-queue";
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
@@ -749,6 +750,31 @@ function researchedDto(p: any) {
 export function makeHandler(basePath="/api") {
   return createMcpHandler(
     (server) => {
+      server.tool(
+        "discover_free_buyer_signals",
+        "Find free, attributable recent public research signals about home furnishing demand, moving, rental setup, and newly leasing apartments in UK/US. Results are NOT verified individuals, personal contact lists, or permission to message. Never mass-message people; only reply where community rules permit or contact public business offices with relevant individual proposals.",
+        {country:z.enum(["UK","US"]).default("US"),intent:z.enum(["wanted","moving","apartment","rental"]).default("wanted"),limit:z.number().int().min(1).max(30).default(15)},
+        async ({country,intent,limit})=>text(await discoverBuyerSignals({country,intent,limit}))
+      );
+
+      server.tool(
+        "get_buyer_outreach_playbook",
+        "Get source-specific free buyer research, product match and permitted publishing playbook. No paid providers or private homeowner contact enrichment. This does not start a background job or send external messages.",
+        {},
+        async ()=>text({
+          aim:"Bring new-home buyers, renters and rental operators to YNOT through useful, relevant outreach rather than unsolicited bulk messages.",
+          discovery:[
+            {tool:"discover_free_buyer_signals",sources:"public news/search RSS",status:"research-only"},
+            {tool:"threads_search_public",sources:"connected Threads API",status:"subject to API access and quotas"},
+            {tool:"find_recent_home_sales",sources:"UK Land Registry; selected US county lookup",status:"UK potentially delayed; US is discovery not transactions"},
+            {source:"Reddit, BiggerPockets, public wanted ads, Airbnb communities",status:"manual or permitted API integration still required; do not assume scraping or bot posting permission"}
+          ],
+          workflow:["Check source freshness and source URL","Confirm explicit buyer intent rather than an article or real-estate advertisement","Do not collect personal phones/emails from residential addresses","Match up to three YNOT products using search_catalogue, confirm shipping/availability","Draft genuinely useful platform-appropriate response","Use threads_publish_text only for the connected YNOT account and approved posts; replies to others require compliant permissions and non-spam behavior","For apartment leasing offices, use public business channels and relevant one-to-one proposals; log opt-outs","Do not auto-publish unrelated promotional replies or spend on paid services"],
+          automation:"Grok MCP is request-response. Always-on autonomous Grok actions require an external authorized scheduler/worker and channel credentials; this MCP tool does not wake Grok.",
+          free_policy:"Never call paid Apify actors, paid lead databases, ad spending, or enrichment without prior approval."
+        })
+      );
+
       server.tool(
         "find_recent_home_sales",
         "Research recently sold homes for YNOT by location. UK: query official HM Land Registry Price Paid Data (England and Wales; delayed registrations). US: identify official county record search routes, not invented transactions or homeowner contacts. This is market research, not a permission to contact residents.",
