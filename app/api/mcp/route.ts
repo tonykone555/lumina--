@@ -750,6 +750,45 @@ export function makeHandler(basePath="/api") {
   return createMcpHandler(
     (server) => {
       server.tool(
+        "find_recent_home_sales",
+        "Research recently sold homes for YNOT by location. UK: query official HM Land Registry Price Paid Data (England and Wales; delayed registrations). US: identify official county record search routes, not invented transactions or homeowner contacts. This is market research, not a permission to contact residents.",
+        {country:z.enum(["UK","US"]),area:z.string().min(2).max(100),days:z.number().int().min(7).max(365).default(90),limit:z.number().int().min(1).max(20).default(10)},
+        async ({country,area,days,limit})=>{
+          if(country==="US"){
+            const counties=[
+              {match:/charlotte|mecklenburg/i,url:"https://www.mecknc.gov/deeds",name:"Mecklenburg County Register of Deeds"},
+              {match:/austin|travis/i,url:"https://countyclerk.traviscountytx.gov/departments/recording/real-property/",name:"Travis County Clerk"}
+            ];
+            const found=counties.find(x=>x.match.test(area));
+            return text({country,area,verified_transactions:[],live_query_performed:false,status:"county_source_required",source:found?{name:found.name,url:found.url}:null,directions:"US property sales are recorded by county. Identify the relevant county recorder or assessor, consult its public transaction records and validate recording date. Do not invent sales, property owners or contact details.",contact_policy:"Use public agent/developer business contacts or opt-in homeowner introductions; no personal-contact harvesting."});
+          }
+          const safeArea=area.trim().replace(/[\\\"']/g," ").slice(0,90);
+          const date=new Date(Date.now()-days*86400000).toISOString().slice(0,10);
+          const sparql=`PREFIX ppd: <http://landregistry.data.gov.uk/def/ppi/>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+SELECT ?price ?date ?property ?street ?town ?district ?county WHERE {
+ ?tx a ppd:TransactionRecord; ppd:pricePaid ?price; ppd:transactionDate ?date; ppd:propertyAddress ?address.
+ ?address ppd:paon ?property; ppd:street ?street; ppd:town ?town; ppd:district ?district; ppd:county ?county.
+ FILTER(?date >= "${date}"^^xsd:date)
+ FILTER(CONTAINS(LCASE(STR(?town)), LCASE("${safeArea}")) || CONTAINS(LCASE(STR(?district)), LCASE("${safeArea}")))
+} ORDER BY DESC(?date) LIMIT ${limit}`;
+          try{
+            const url="https://landregistry.data.gov.uk/landregistry/query?query="+encodeURIComponent(sparql);
+            const response=await fetch(url,{headers:{Accept:"application/sparql-results+json"},signal:AbortSignal.timeout(18000),cache:"no-store"});
+            if(!response.ok)throw Error("LAND_REGISTRY_HTTP_"+response.status);
+            const data=await response.json();
+            const rows=(data?.results?.bindings||[]).map((x:any)=>Object.fromEntries(Object.entries(x).map(([k,v])=>[k,(v as any).value])));
+            return text({country,area,days,source:"HM Land Registry Price Paid Data",source_url:"https://landregistry.data.gov.uk/app/ppd/",registration_delay_possible:true,count:rows.length,transactions:rows,owner_contact_information_included:false});
+          }catch(e:any){return text({country,area,status:"official_source_temporarily_unavailable",error:String(e?.message||e).slice(0,120),source_url:"https://landregistry.data.gov.uk/app/ppd/",transactions:[],note:"No transactions verified. Do not claim any property sold based on this response."})}
+        }
+      );
+      server.tool(
+        "find_homebuyer_contact_channels",
+        "Find compliant paths to reach recent homebuyers: professional estate agents, homebuilders, relocation companies and opt-in programs, not private purchaser identity or personal contact enrichment.",
+        {country:z.enum(["UK","US"]),area:z.string().min(2).max(100)},
+        async ({country,area})=>text({country,area,contact_routes:["Independent estate agents with public business websites","New-development sales offices and homebuilders","Relocation providers","Opt-in furnishing or move-in offers","Location-based marketing where legally permitted"],required_evidence:["Current business website and public professional contact","New-build or recently sold activity with source URL","Permission or suitable legal basis for outreach"],research_queries:[`estate agents new home buyers ${area}`,`new build developers sales office ${area}`,`relocation services ${area}`],status:"research_plan_only",note:"No contacts have been retrieved or verified; corroborate findings and do not infer private new owners from property transaction data."}))
+      );
+      server.tool(
         "get_grok_product_queue",
         "Read YNOT retail offers selected in Room. Before analyzing or drafting, use product.listing_view as the customer-facing YNOT offer; product.provenance is compliance evidence, NOT the seller identity. Never present the supplier storefront as the listing owner. Keep source maker facts for Etsy eligibility and accurate mandatory disclosures. The seller is YNOT. The seller identity is not a review decision. When drafting a listing, use YNOT as the shop/seller; do not automatically place upstream merchant names in the listing title, promotional description, or SEO tags. Retain truthful manufacturer and origin details internally and disclose them wherever required for accurate buyer information or marketplace compliance. Never relabel another manufacturer as YNOT-made. Original brand is NOT an automatic disqualification. Assess Etsy policy eligibility separately from eBay commercial viability. For Etsy, reseller branding alone does not establish original design, vintage status, or craft-supply status. For eBay, outside manufacturers are ordinarily allowed; check origin, rights, shipping, duties, margins and fulfilment. A failure for Etsy must not cause an eBay rejection. Use needs_evidence if crucial facts are unverified. Never automatically publish.",
         {limit:z.number().int().min(1).max(100).default(25),status:z.enum(["pending","in_review","reviewed","rejected","all"]).default("pending")},
