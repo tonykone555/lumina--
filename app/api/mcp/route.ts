@@ -1,3 +1,4 @@
+import { chooseBuyerChannel } from "@/lib/grok/buyer-channel";
 import { discoverBuyerSignals } from "@/lib/grok/buyer-radar";
 import {listGrokProducts,updateGrokProduct} from "@/lib/grok/product-queue";
 import { createMcpHandler } from "mcp-handler";
@@ -755,6 +756,19 @@ export function makeHandler(basePath="/api") {
         "Find free, attributable recent public research signals about home furnishing demand, moving, rental setup, and newly leasing apartments in UK/US. Results are NOT verified individuals, personal contact lists, or permission to message. Never mass-message people; only reply where community rules permit or contact public business offices with relevant individual proposals.",
         {country:z.enum(["UK","US"]).default("US"),intent:z.enum(["wanted","moving","apartment","rental"]).default("wanted"),limit:z.number().int().min(1).max(30).default(15)},
         async ({country,intent,limit})=>text(await discoverBuyerSignals({country,intent,limit}))
+      );
+
+      server.tool(
+        "choose_buyer_outreach_channel",
+        "Score a verified public buyer need, identify the most appropriate channel and outreach angle for Grok. Returns a draft-only or approval-required action; never sends or publishes. Do not infer consent from addresses, sale records, or publicly displayed personal data.",
+        {
+          source:z.string().min(2).max(120),url:z.string().url(),summary:z.string().min(10).max(1400),
+          country:z.enum(["UK","US"]),
+          kind:z.enum(["explicit_request","apartment_development","real_estate_agent","rental_operator","recent_sale","general_discussion"]),
+          permission:z.enum(["public_reply_allowed","business_email_public","opt_in","unknown","no_contact"]).default("unknown"),
+          product_category:z.string().max(80).optional(),budget:z.string().max(80).optional()
+        },
+        async (opportunity)=>text(chooseBuyerChannel(opportunity))
       );
 
       server.tool(
