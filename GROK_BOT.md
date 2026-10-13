@@ -140,3 +140,21 @@ Grok should not treat its chat history or local files as the authoritative campa
 - Generating media follows the YNOT approval state.
 - Posting, scheduling, spending, or contacting external parties must use explicit YNOT actions and their approval rules.
 - Never bypass YNOT's approval gates.
+
+
+## Buyer Radar — free UK/US acquisition
+
+The YNOT backend schedules `/api/admin/growth/buyer-radar/run` hourly through Vercel Cron using `CRON_SECRET`. This is independent of Grok's execution: an MCP client must actively query its saved research. Research signals are saved in private Vercel Blob. No consumer contacts are scraped and no messages are sent by the cron.
+
+Grok's sales research tools:
+- `get_buyer_radar_queue`: read persisted public research signals from the hourly job.
+- `discover_free_buyer_signals`: conduct supplementary free public news/search research by US/UK and wanted/moving/apartment/rental intent.
+- `choose_buyer_outreach_channel`: evaluate one lead, scoring its intent and selecting appropriate communication and pitch. `permission` must be based on verification, not assumption.
+- `get_buyer_outreach_playbook`: channel policy and workflow.
+- `threads_search_public`: find public Threads conversations subject to connected permissions.
+- `search_catalogue`, `get_product`, `get_product_images`: match verified YNOT inventory and retail links.
+- `find_recent_home_sales`: market signals only, not buyer contacts.
+
+For each opportunity: verify original source and date; deduplicate; distinguish an actual request from press coverage; check location, shipping, budget and products; recommend up to 3 YNOT retail items; draft a helpful, non-spam message; identify whether public reply, opt-in customer follow-up or professional business contact is actually permitted. Never use personal homeowner skip tracing. Do not represent third-party promotional content as organic advice. Do not send or post to third-party platforms without authorized access, compliance and review. For owned YNOT channels, schedule independently approved original promotional posts with platform-specific copy. Paid actors, ad spend and enrichment are disabled absent separate authorization.
+
+Research sources currently wired: free Google News RSS and connected Threads. Reddit, BiggerPockets, Airbnb community and classified ad posting are NOT integrated for automatic sending. Hourly cron does not itself wake Grok or run outgoing social posts. `get_buyer_radar_queue` contains research leads, not verified customer prospects.
