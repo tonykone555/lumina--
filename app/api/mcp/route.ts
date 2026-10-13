@@ -765,10 +765,15 @@ export function makeHandler(basePath="/api") {
           const safeArea=area.trim().replace(/[\\\"']/g," ").slice(0,90);
           const date=new Date(Date.now()-days*86400000).toISOString().slice(0,10);
           const sparql=`PREFIX ppd: <http://landregistry.data.gov.uk/def/ppi/>
+PREFIX common: <http://landregistry.data.gov.uk/def/common/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 SELECT ?price ?date ?property ?street ?town ?district ?county WHERE {
- ?tx a ppd:TransactionRecord; ppd:pricePaid ?price; ppd:transactionDate ?date; ppd:propertyAddress ?address.
- ?address ppd:paon ?property; ppd:street ?street; ppd:town ?town; ppd:district ?district; ppd:county ?county.
+ ?tx ppd:pricePaid ?price; ppd:transactionDate ?date; ppd:propertyAddress ?address.
+ ?address common:town ?town.
+ OPTIONAL { ?address common:paon ?property }
+ OPTIONAL { ?address common:street ?street }
+ OPTIONAL { ?address common:district ?district }
+ OPTIONAL { ?address common:county ?county }
  FILTER(?date >= "${date}"^^xsd:date)
  FILTER(CONTAINS(LCASE(STR(?town)), LCASE("${safeArea}")) || CONTAINS(LCASE(STR(?district)), LCASE("${safeArea}")))
 } ORDER BY DESC(?date) LIMIT ${limit}`;
