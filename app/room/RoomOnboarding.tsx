@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from "react";
 import {ArrowRight,ScanLine,Sparkles,ShoppingBag,CreditCard,X} from "lucide-react";
 
-const HERO_VIDEO="https://iycxkwoxbkanfyraohge.supabase.co/storage/v1/object/public/ad-creatives/_users_7b03795e-f119-48bf-b017-4126fcff6c6d_generated_6d3444c9-fbfb-40d4-a0dc-68fd88e7d032_generated_video.mp4";
+const HERO_VIDEO="https://0wssoj8xujsebagb.public.blob.vercel-storage.com/demo.mp4";
 const HOME_RETAILERS=[
  {name:"IKEA",domain:"ikea.com"},{name:"The Home Depot",domain:"homedepot.com"},{name:"Walmart",domain:"walmart.com"},{name:"Wayfair",domain:"wayfair.com"},{name:"West Elm",domain:"westelm.com"},{name:"CB2",domain:"cb2.com"},{name:"Pottery Barn",domain:"potterybarn.com"},{name:"Crate & Barrel",domain:"crateandbarrel.com"},{name:"Article",domain:"article.com"},{name:"Ashley",domain:"ashleyfurniture.com"},{name:"Target",domain:"target.com"},{name:"Lowe’s",domain:"lowes.com"},{name:"Zara Home",domain:"zarahome.com"}
 ];
