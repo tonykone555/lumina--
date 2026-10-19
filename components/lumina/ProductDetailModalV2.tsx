@@ -46,6 +46,13 @@ function media(product:ProductDetailV2Product){
     ...(product.variants||[]).flatMap(v=>[v.image,...(v.images||[])])
   ].filter(Boolean) as string[])];
 }
+function descriptionSections(value:string){
+  const raw=String(value||"").replace(/\\r/g,"").trim();
+  if(!raw)return [];
+  const blocks=raw.split(/\\n\\s*\\n+/).map(x=>x.trim()).filter(Boolean);
+  const source=blocks.length>1?blocks:raw.split(/(?<=[.!?])\\s+(?=[A-Z0-9])/).reduce<string[]>((acc,s)=>{if(!s.trim())return acc;const last=acc[acc.length-1];if(last&&last.length<260)acc[acc.length-1]=last+" "+s.trim();else acc.push(s.trim());return acc},[]);
+  return source.map(block=>block.replace(/\\s+/g," ").trim()).filter(Boolean);
+}
 function usableVariants(product:ProductDetailV2Product){
   const seen=new Set<string>();
   return (product.variants||[]).filter(v=>{
@@ -187,7 +194,16 @@ export default function ProductDetailModalV2({
           Description {descriptionOpen?"−":"+"}
         </button>
         {descriptionOpen&&<div className="ynot-pv2-description">
-          <p>{product.description||`Discover more details about ${clean(product.title)}.`}</p>
+          {descriptionSections(product.description||`Discover more details about ${clean(product.title)}.`).map((section,index)=><div className="ynot-pv2-description-block" key={index}>
+            {index>0&&<h4>{index===1?"Product details":index===2?"Designed with details in mind":"More to discover"}</h4>}
+            <p>{section}</p>
+            {index<descriptionSections(product.description||"").length-1&&(()=>{
+              const variantImages=variants.filter(v=>v.image||v.images?.length).map(v=>({src:v.image||v.images?.[0]||"",label:v.label,id:v.id})).filter(v=>v.src);
+              const gallery=variantImages.length?variantImages:images.filter(src=>src!==product.image).map((src,i)=>({src,label:"Product view "+(i+1),id:src}));
+              const item=gallery[index%Math.max(1,gallery.length)];
+              return item?<figure className="ynot-pv2-description-media"><img src={item.src} alt={item.label} loading="lazy"/><figcaption>{item.label}</figcaption></figure>:null;
+            })()}
+          </div>)}
           {product.url&&<a href={product.url} target="_blank" rel="noopener noreferrer">Original product <ExternalLink/></a>}
         </div>}
       </section>
