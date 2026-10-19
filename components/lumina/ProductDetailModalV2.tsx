@@ -205,10 +205,15 @@ export default function ProductDetailModalV2({
           Description {descriptionOpen?"−":"+"}
         </button>
         {descriptionOpen&&<div className="ynot-pv2-description">
-          {descriptionSections(product.description||\`Discover more details about \${clean(product.title)}.\`).map((section,index)=><div className="ynot-pv2-description-block" key={index}>
-            {index>0&&<h4>{index===1?"Product details":index===2?"Designed with details in mind":"More to discover"}</h4>}
-            <p>{section}</p>
-          </div>)}
+          {descriptionSections(product.description||("Discover more details about "+clean(product.title)+".")).map((section,index,sections)=><React.Fragment key={index}>
+            <div className="ynot-pv2-description-block">
+              {index>0&&<h4>{index===1?"Product details":index===2?"Designed with details in mind":"More to discover"}</h4>}
+              <p>{section}</p>
+            </div>
+            {index < sections.length-1 && images.length>0 && <button className="ynot-pv2-description-image" type="button" onClick={()=>activateImage(images[(index+1)%images.length])} aria-label={"View product image "+((index+1)%images.length+1)}>
+              <img src={images[(index+1)%images.length]} alt={clean(product.title)+" — product detail "+(index+1)} loading="lazy"/>
+            </button>}
+          </React.Fragment>)}
           {product.url&&<a href={product.url} target="_blank" rel="noopener noreferrer">Original product <ExternalLink/></a>}
         </div>}
       </section>
