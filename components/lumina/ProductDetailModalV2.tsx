@@ -47,7 +47,7 @@ function media(product:ProductDetailV2Product){
   ].filter(Boolean) as string[])];
 }
 function descriptionSections(value:string){
-  const raw=String(value||"").replace(/\\r/g,"").replace(/<br\\s*\\/?\\s*>/gi,"\n").replace(/<\\/(?:p|div|li|h[1-6])\\s*>/gi,"\n").replace(/<[^>]+>/g," ").trim();
+  const raw=String(value||"").replaceAll("\\r","").replace(/<[^>]*>/g," ").trim();
   if(!raw)return [];
   const blocks=raw.split(/\n+/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
   const source=blocks.length>1?blocks:raw.split(". ").reduce<string[]>((acc,s)=>{const part=s.trim();if(!part)return acc;const last=acc[acc.length-1];if(last&&last.length<260)acc[acc.length-1]=last+". "+part;else acc.push(part);return acc},[]);
