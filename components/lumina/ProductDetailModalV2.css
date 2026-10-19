@@ -99,7 +99,14 @@
 .ynot-pv2-directions small{display:inline-grid;place-items:center;width:15px;height:15px;margin-left:3px;border-radius:50%;background:rgba(20,22,20,.08);font-size:9px}
 .ynot-pv2-description-toggle{width:100%;min-height:48px;margin-top:16px;border:1px solid rgba(24,26,24,.15);border-radius:22px;background:rgba(255,255,255,.60);color:#171917;font-size:12px;font-weight:850}
 .ynot-pv2-description{margin-top:8px;padding:13px;border:1px solid rgba(24,26,24,.10);border-radius:20px;background:rgba(255,255,255,.42)}
-.ynot-pv2-description p{margin:0;font-size:11px;line-height:1.5;color:#3c403c}
+.ynot-pv2-description{display:flex;flex-direction:column;gap:13px}
+.ynot-pv2-description-block{display:flex;flex-direction:column;gap:8px;min-width:0}
+.ynot-pv2-description-block h4{margin:3px 0 0;font-size:13px;line-height:1.25;font-weight:850;letter-spacing:-.015em;color:#171917}
+.ynot-pv2-description p{margin:0;font-size:12px;line-height:1.65;color:#3c403c;white-space:normal;overflow-wrap:anywhere}
+.ynot-pv2-description-media{margin:1px 0 3px;overflow:hidden;border-radius:15px;background:rgba(255,255,255,.52);border:1px solid rgba(24,26,24,.08)}
+.ynot-pv2-description-media img{display:block;width:100%;max-height:300px;aspect-ratio:5/4;object-fit:contain;padding:8px}
+.ynot-pv2-description-media figcaption{padding:0 11px 10px;font-size:10px;line-height:1.3;color:#666b66;font-weight:650}
+.ynot-pv2-description a{display:flex;align-items:center;gap:6px;width:max-content;margin-top:10px;color:#161816;font-weight:800;font-size:10px;text-decoration:none}
 .ynot-pv2-description a{display:flex;align-items:center;gap:6px;width:max-content;margin-top:10px;color:#161816;font-weight:800;font-size:10px;text-decoration:none}
 .ynot-pv2-description a svg{width:15px}
 .ynot-pv2-error{margin:14px 0 0;padding:11px 13px;border-radius:14px;background:#fff2f0;color:#8d3831;font-size:12px}
