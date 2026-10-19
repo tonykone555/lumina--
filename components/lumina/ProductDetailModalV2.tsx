@@ -47,11 +47,22 @@ function media(product:ProductDetailV2Product){
   ].filter(Boolean) as string[])];
 }
 function descriptionSections(value:string){
-  const raw=String(value||"").replaceAll("\\r","").replace(/<[^>]*>/g," ").trim();
+  const raw=String(value||"").replace(/\r/g,"").replace(/<br\s*\/?\s*>/gi,"\n").replace(/<\/(?:p|div|li|h[1-6])\s*>/gi,"\n").replace(/<[^>]+>/g," ").replace(/&nbsp;/gi," ").replace(/&amp;/gi,"&").trim();
   if(!raw)return [];
-  const blocks=raw.split(/\n+/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
-  const source=blocks.length>1?blocks:raw.split(". ").reduce<string[]>((acc,s)=>{const part=s.trim();if(!part)return acc;const last=acc[acc.length-1];if(last&&last.length<260)acc[acc.length-1]=last+". "+part;else acc.push(part);return acc},[]);
-  return source.map(block=>block.replace(/\s+/g," ").trim()).filter(Boolean);
+  const paragraphs=raw.split(/\n\s*\n+|\n+/).map(x=>x.replace(/\s+/g," ").trim()).filter(Boolean);
+  const result:string[]=[];
+  for(const paragraph of paragraphs){
+    const sentences=paragraph.match(/[^.!?]+(?:[.!?]+[”’"']*|$)/g)||[paragraph];
+    let block="";
+    for(const sentence of sentences){
+      const part=sentence.trim();
+      if(!part)continue;
+      if(block&&(block.length+part.length+1>360||block.split(/(?<=[.!?])\s+/).length>=2)){result.push(block.trim());block="";}
+      block=block?block+" "+part:part;
+    }
+    if(block.trim())result.push(block.trim());
+  }
+  return result.length?result:[raw];
 }
 function usableVariants(product:ProductDetailV2Product){
   const seen=new Set<string>();
@@ -194,15 +205,9 @@ export default function ProductDetailModalV2({
           Description {descriptionOpen?"−":"+"}
         </button>
         {descriptionOpen&&<div className="ynot-pv2-description">
-          {descriptionSections(product.description||`Discover more details about ${clean(product.title)}.`).map((section,index)=><div className="ynot-pv2-description-block" key={index}>
+          {descriptionSections(product.description||\`Discover more details about \${clean(product.title)}.\`).map((section,index)=><div className="ynot-pv2-description-block" key={index}>
             {index>0&&<h4>{index===1?"Product details":index===2?"Designed with details in mind":"More to discover"}</h4>}
             <p>{section}</p>
-            {index<descriptionSections(product.description||"").length-1&&(()=>{
-              const variantImages=variants.filter(v=>v.image||v.images?.length).map(v=>({src:v.image||v.images?.[0]||"",label:v.label,id:v.id})).filter(v=>v.src);
-              const gallery=variantImages.length?variantImages:images.filter(src=>src!==product.image).map((src,i)=>({src,label:"Product view "+(i+1),id:src}));
-              const item=gallery[index%Math.max(1,gallery.length)];
-              return item?<figure className="ynot-pv2-description-media"><img src={item.src} alt={item.label} loading="lazy"/><figcaption>{item.label}</figcaption></figure>:null;
-            })()}
           </div>)}
           {product.url&&<a href={product.url} target="_blank" rel="noopener noreferrer">Original product <ExternalLink/></a>}
         </div>}
