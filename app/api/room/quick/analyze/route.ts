@@ -5,7 +5,7 @@ export const maxDuration=60;
 
 const GEMINI_KEY=process.env.GEMINI_API_KEY||process.env.GOOGLE_GENERATIVE_AI_API_KEY||process.env.GOOGLE_API_KEY;
 const configuredGemini=process.env.GEMINI_VISION_MODEL?.trim();
-const GEMINI_MODELS=[...new Set([configuredGemini,"gemini-3.8-flash","gemini-3.6-flash","gemini-3.5-flash"].filter(Boolean) as string[])];
+const GEMINI_MODELS=[...new Set([configuredGemini,"gemini-2.5-flash","gemini-2.5-flash-lite","gemini-2.0-flash"].filter(Boolean) as string[])];
 
 const schema={type:"object",additionalProperties:false,properties:{sceneTitle:{type:"string"},roomType:{type:"string"},sceneKind:{type:"string"},sceneDescription:{type:"string"},styleDescription:{type:"string"},opportunitySummary:{type:"string"},objects:{type:"array",items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},label:{type:"string"},category:{type:"string"},searchQuery:{type:"string"},alternateQueries:{type:"array",items:{type:"string"}},confidence:{type:"number"},box_2d:{type:"array",items:{type:"integer"}},mask:{type:"array",items:{type:"array",items:{type:"integer"}}}},required:["id","label","category","searchQuery","alternateQueries","confidence","box_2d","mask"]}},suggestionSpots:{type:"array",items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},label:{type:"string"},reason:{type:"string"},suggestedCategories:{type:"array",items:{type:"string"}},searchQuery:{type:"string"},point_2d:{type:"array",items:{type:"integer"}}},required:["id","label","reason","suggestedCategories","searchQuery","point_2d"]}}},required:["sceneTitle","roomType","sceneKind","sceneDescription","styleDescription","opportunitySummary","objects","suggestionSpots"]};
 
@@ -62,5 +62,5 @@ export async function POST(req:NextRequest){
   const gemini=await scanGemini(bytes,image.type);
   if(gemini.ok)return NextResponse.json({...gemini.data,scanner:"gemini",scannerModel:String(gemini.model||"")},{headers:{"Cache-Control":"no-store","X-YNOT-Scanner":"gemini","X-YNOT-Scanner-Model":String(gemini.model||"")}});
   console.error("YNOT_ROOM_SCAN_FAILED",{gemini:gemini.error});
-  return NextResponse.json({error:"Could not analyze this photo",code:"VISION_ANALYSIS_FAILED",detail:gemini.error},{status:502});
+  return NextResponse.json({error:"Could not analyze this image",code:"VISION_ANALYSIS_FAILED",detail:gemini.error},{status:502});
 }
