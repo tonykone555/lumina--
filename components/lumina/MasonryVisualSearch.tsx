@@ -1,14 +1,13 @@
 "use client";
 
-import {useRef,useState} from "react";
+import {useEffect,useRef,useState} from "react";
 import {Camera,ScanSearch,X,LoaderCircle,Search} from "lucide-react";
 
 type Detection={id:string;label:string;category?:string;searchQuery:string;alternateQueries?:string[];confidence?:number;box_2d:number[]};
 type Product={id:string;title:string;brand?:string;price?:number|null;currency?:string;image?:string;url?:string;source?:string;[key:string]:any};
 
-function useStateScanBridge(inputRef:React.RefObject<HTMLInputElement|null>){const [ready,setReady]=useState(false);useState(()=>{if(typeof window!=="undefined")setReady(true);return 0});if(ready&&typeof window!=="undefined"&&!inputRef.current?.dataset.scanBridge){inputRef.current!.dataset.scanBridge="1";window.addEventListener("ynot:masonry-open-camera",()=>inputRef.current?.click());} }
-export default function MasonryVisualSearch(){
- const inputRef=useRef<HTMLInputElement>(null);
+export default function MasonryVisualSearch(){ const inputRef=useRef<HTMLInputElement>(null);
+ useEffect(()=>{const open=()=>inputRef.current?.click();window.addEventListener("ynot:masonry-open-camera",open);return()=>window.removeEventListener("ynot:masonry-open-camera",open)},[]);
  const [file,setFile]=useState<File|null>(null),[preview,setPreview]=useState(""),[detections,setDetections]=useState<Detection[]>([]),[busy,setBusy]=useState(false),[message,setMessage]=useState(""),[query,setQuery]=useState("");
  const reset=()=>{setFile(null);setPreview("");setDetections([]);setMessage("");setQuery("");if(inputRef.current)inputRef.current.value=""};
  useStateScanBridge(inputRef);
