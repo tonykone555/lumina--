@@ -20,7 +20,7 @@ export default function MasonryVisualSearch(){ const inputRef=useRef<HTMLInputEl
   {detections.length>0&&<div className="mvsDetected"><b>Detected products</b>{detections.map((d,i)=><button type="button" key={d.id||i} disabled={busy} onClick={()=>void searchObject(d)}>{d.label}<Search size={13}/></button>)}</div>}
   {message&&<p className="mvsMessage" role="status">{message}</p>}
   <style jsx global>{`
-   .masonryVisualSearch{position:relative;width:min(520px,94vw);margin:0 auto 12px;color:#fff;z-index:50;pointer-events:auto}
+   .masonryVisualSearch{position:fixed;left:50%;bottom:calc(125px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(520px,94vw);margin:0 auto;color:#fff;z-index:2147483001;pointer-events:auto}
    .masonryVisualSearch input[type=file]{display:none}
    .mvsBar{height:46px;display:flex;align-items:center;gap:9px;padding:4px 5px 4px 7px;border:1px solid #ffffff38;border-radius:999px;background:rgba(24,24,27,.82);box-shadow:0 5px 24px #0005,inset 0 1px #ffffff18;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
    .mvsBar>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;color:#ffffffc9}
@@ -34,7 +34,7 @@ export default function MasonryVisualSearch(){ const inputRef=useRef<HTMLInputEl
    .mvsDetected{display:flex;gap:6px;overflow-x:auto;padding:8px 1px 2px;scrollbar-width:none;align-items:center}.mvsDetected>b{font-size:10px;color:#ffffff9e;white-space:nowrap;margin-right:2px}
    .mvsDetected>button{flex:none;display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #ffffff25;border-radius:999px;background:#ffffff0c;color:#fff;font-size:11px}
    .mvsMessage{margin:6px 8px 0;font-size:11px;line-height:1.4;color:#ffffffb9;text-align:center}
-   @media(max-width:650px){.masonryVisualSearch{width:94vw;margin-bottom:10px}.mvsBar{height:44px}.mvsPreview{max-height:42vh}.mvsPreview>img{max-height:42vh}}
+   @media(max-width:650px){.masonryVisualSearch{width:94vw;bottom:calc(126px + env(safe-area-inset-bottom))}.mvsBar{height:44px}.mvsPreview{max-height:42vh}.mvsPreview>img{max-height:42vh}}
   `}</style>
  </section>;
 }
