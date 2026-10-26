@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ADMIN_PATH = "/admin/growth";
+const ACCESS_PATH = "/access";
+const ACCESS_COOKIE = "ynot-site-access";
 
 function deny(req: NextRequest) {
   const url = req.nextUrl.clone();
@@ -9,6 +11,23 @@ function deny(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 function serviceHeaders(key:string){return{apikey:key,...(key.startsWith("sb_")?{}:{Authorization:`Bearer ${key}`}),"Content-Type":"application/json"}}
+
+async function hasValidSiteSession(req: NextRequest) {
+  const secret = process.env.YNOT_SITE_SESSION_SECRET;
+  const token = req.cookies.get(ACCESS_COOKIE)?.value || "";
+  if (!secret || !token) return false;
+  const [expires, supplied, extra] = token.split(".");
+  if (!expires || !supplied || extra || !/^\d{13}$/.test(expires) || Number(expires) <= Date.now()) return false;
+  try {
+    const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode("ynot-site-access:" + expires));
+    const expected = Array.from(new Uint8Array(signature), (b) => b.toString(16).padStart(2, "0")).join("");
+    if (expected.length !== supplied.length) return false;
+    let diff = 0;
+    for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ supplied.charCodeAt(i);
+    return diff === 0;
+  } catch { return false; }
+}
 
 async function captureCreatorReferral(req:NextRequest){
   const ref=String(req.nextUrl.searchParams.get("ref")||"").toLowerCase().replace(/[^a-z0-9_-]/g,"").slice(0,40);
@@ -32,12 +51,23 @@ async function captureCreatorReferral(req:NextRequest){
 }
 
 export async function middleware(req: NextRequest) {
-  if(req.nextUrl.pathname==="/"){
+  const pathname = req.nextUrl.pathname;
+
+  // Allow only the password entry page before a valid site session.
+  if (pathname === ACCESS_PATH) return NextResponse.next();
+  if (!(await hasValidSiteSession(req))) {
+    const url = req.nextUrl.clone();
+    url.pathname = ACCESS_PATH;
+    url.searchParams.set("next", pathname + req.nextUrl.search);
+    return NextResponse.redirect(url);
+  }
+
+  if(pathname==="/"){
     const tracked=await captureCreatorReferral(req);
     if(tracked)return tracked;
     return NextResponse.next();
   }
-  if (!req.nextUrl.pathname.startsWith(ADMIN_PATH)) return NextResponse.next();
+  if (!pathname.startsWith(ADMIN_PATH)) return NextResponse.next();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -64,4 +94,6 @@ export async function middleware(req: NextRequest) {
   return Array.isArray(rows) && rows.length ? NextResponse.next() : deny(req);
 }
 
-export const config = { matcher: ["/", "/admin/growth/:path*"] };
+export const config = {
+  matcher: ["/((?!api/|_next/|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|woff2?|ttf|otf|mp4|webm)$).*)"],
+};
