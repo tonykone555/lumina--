@@ -33,7 +33,7 @@ function valid(x:any){return !!(x&&Array.isArray(x.objects)&&x.objects.length>0&
 
 // Use a compact schema first: Gemini can reject deeply nested polygon schemas or omit required fields.
 const simpleSchema={type:"OBJECT",properties:{sceneTitle:{type:"STRING"},sceneKind:{type:"STRING"},objects:{type:"ARRAY",items:{type:"OBJECT",properties:{label:{type:"STRING"},searchQuery:{type:"STRING"},category:{type:"STRING"},box_2d:{type:"ARRAY",items:{type:"INTEGER"}}},required:["label","searchQuery"]}}},required:["objects"]};
-function parseAnswer(value:string){const cleaned=value.trim().replace(/^\`\`\`(?:json)?\\s*/i,"").replace(/\`\`\`\\s*$/,"");return JSON.parse(cleaned)}
+function parseAnswer(value:string){const cleaned=value.trim().replace(/^\`\`\`(?:json)?\s*/i,"").replace(/\`\`\`\s*$/,"");return JSON.parse(cleaned)}
 async function scanGemini(bytes:string,mime:string){
  if(!GEMINI_KEY)return {ok:false as const,error:"Gemini is not configured"};
  let last="";
