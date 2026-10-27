@@ -1,6 +1,6 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from "react";
-import {Clapperboard,ChevronUp,Heart,LoaderCircle,ShoppingBag,Shuffle,X} from "lucide-react";
+import {Clapperboard,ChevronUp,LoaderCircle,ShoppingBag,Shuffle,X} from "lucide-react";
 type Item={id:string;title:string;image:string;images?:string[];videos?:string[];price?:number|null;currency?:string;brand?:string;source?:string;url?:string};
 const SEARCHES=["sculptural home decor","streetwear sneakers","coffee brewing accessories","pet accessories","modern furniture","travel organizer","retro gaming accessories","fitness equipment","statement lighting","smart kitchen tools","vintage style jackets","automotive accessories","creative desk accessories","designer bags","outdoor camping gear","headphones audio","home improvement tools","women fashion","collectible objects","bicycle accessories","baby essentials","sports equipment","decorative mirrors","home textiles","photography accessories"];
 const isUrl=(s:unknown):s is string=>typeof s==="string"&&/^https:\/\//i.test(s);
@@ -33,7 +33,7 @@ export default function WorldProductReels(){
     <img className="ynReelImage" src={p.image} alt={p.title} loading={Math.abs(i-active)<=2?"eager":"lazy"}/>
     <div className="ynReelShade"/>
     <div className="ynReelDetails"><small>{p.brand||p.source||"YNOT catalogue"}</small><h2>{p.title}</h2>{price(p)&&<strong>{price(p)}</strong>}<p>PRODUCT CODE · {String(p.id).slice(-24)}</p><a href={catalogLink(p)}><ShoppingBag size={17}/> Explore this product</a></div>
-    <aside className="ynReelSide"><button onClick={()=>{navigator.clipboard?.writeText?.(String(p.id)).catch(()=>{})}} aria-label="Copy product code"><Shuffle size={19}/><span>Code</span></button><button onClick={next} aria-label="Next product"><ChevronUp size={23} style={{transform:"rotate(180deg)"}}/><span>Next</span></button></aside>
+    <aside className="ynReelSide"><button onClick={()=>{void navigator.clipboard?.writeText?.(String(p.id))?.catch(()=>{})}} aria-label="Copy product code"><Shuffle size={19}/><span>Code</span></button><button onClick={next} aria-label="Next product"><ChevronUp size={23} style={{transform:"rotate(180deg)"}}/><span>Next</span></button></aside>
     <div className="ynReelCount">{i+1} / {items.length}</div>
    </article>)}
    {loading&&<div className="ynReelStatus"><LoaderCircle className="ynReelSpin" size={22}/> Discovering random products…</div>}
