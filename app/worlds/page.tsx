@@ -34,4 +34,40 @@ cursor:pointer!important;transition:box-shadow .25s ease,filter .25s ease!import
 .worlds .ynReelBubble span{font-size:10px!important;line-height:13px!important;font-weight:750!important;letter-spacing:0!important;position:relative;z-index:2;text-shadow:0 2px 9px #000!important}
 .worlds .ynReelBubble:before{content:"";position:absolute;inset:5px;border-radius:50%;border-top:2px solid #ffffffb5;border-left:1px solid #bed7ff48;border-right:1px solid #ffffff12;pointer-events:none}
 .worlds .ynReelBubble:after{content:"";position:absolute;width:54%;height:22%;left:23%;top:7%;border-radius:50%;background:linear-gradient(#ffffff66,#fff0);filter:blur(4px);pointer-events:none}
+
+/* Mood is the same physical glass orb as YNOTWORLD; never use label pseudo-elements. */
+.worlds .worldsMoodSlider button.ynMoodGlassOrb{
+left:calc(50% - 144px)!important;bottom:calc(18px + env(safe-area-inset-bottom))!important;
+height:84px!important;width:84px!important;min-height:84px!important;min-width:84px!important;
+display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:row!important;
+gap:0!important;position:fixed!important;overflow:hidden!important;padding:0!important;
+border-radius:50%!important;border:1px solid #ffffff62!important;
+background:radial-gradient(circle at 50% 54%,#07090d70 0 47%,#2a34444d 67%,#d9e9ff38 83%,#ffffff70 96%,#ffffff20)!important;
+box-shadow:inset 11px 14px 22px #ffffff1c,inset -13px -17px 25px #0007,inset 0 0 4px #ffffffd0,0 10px 34px #0007!important;
+backdrop-filter:blur(8px) saturate(150%)!important;-webkit-backdrop-filter:blur(8px) saturate(150%)!important;
+color:#fff!important;font-size:10px!important;font-weight:900!important;line-height:1!important;
+}
+.worlds .worldsMoodSlider button.ynMoodGlassOrb:before{
+content:""!important;position:absolute!important;inset:5px!important;z-index:1!important;
+border-radius:50%!important;border-top:2px solid #ffffffb5!important;
+border-left:1px solid #bed7ff48!important;border-right:1px solid #ffffff12!important;
+background:transparent!important;box-shadow:none!important;pointer-events:none!important;
+}
+.worlds .worldsMoodSlider button.ynMoodGlassOrb:after{
+content:""!important;position:absolute!important;width:54%!important;height:22%!important;
+left:23%!important;top:7%!important;z-index:1!important;border-radius:50%!important;
+background:linear-gradient(#ffffff66,#fff0)!important;filter:blur(4px)!important;
+font-size:0!important;line-height:0!important;pointer-events:none!important;
+}
+.worlds .worldsMoodSlider button.ynMoodGlassOrb .ynMoodOrbLabel{
+display:block!important;position:relative!important;z-index:3!important;color:#fff!important;
+font-size:10px!important;font-weight:900!important;letter-spacing:.015em!important;
+text-shadow:0 2px 9px #000!important;line-height:1!important;white-space:nowrap!important;
+}
+.worlds .worldsMoodSlider button.ynMoodGlassOrb .ynMoodGlint{
+display:block!important;position:absolute!important;z-index:2!important;border-radius:50%!important;
+background:#fff!important;filter:blur(1px)!important;opacity:.8!important;pointer-events:none!important;
+}
+.worlds .worldsMoodSlider button.ynMoodGlassOrb .ynMoodGlint.a{width:7px!important;height:4px!important;left:20px!important;top:20px!important;transform:rotate(-25deg)!important}
+.worlds .worldsMoodSlider button.ynMoodGlassOrb .ynMoodGlint.b{width:4px!important;height:7px!important;right:16px!important;bottom:21px!important;opacity:.35!important}
 `}</style></main>}
