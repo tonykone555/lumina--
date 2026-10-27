@@ -1,45 +1,46 @@
 "use client";
 import {useCallback,useEffect,useRef,useState} from "react";
 import {Clapperboard,ChevronUp,LoaderCircle,ShoppingBag,Shuffle,X} from "lucide-react";
-type Item={id:string;title:string;image:string;images?:string[];videos?:string[];video?:string;videoUrl?:string;tiktokUrl?:string;price?:number|null;currency?:string;brand?:string;source?:string;url?:string};
-const SEARCHES=["sculptural home decor","streetwear sneakers","coffee brewing accessories","pet accessories","modern furniture","travel organizer","retro gaming accessories","fitness equipment","statement lighting","smart kitchen tools","vintage style jackets","automotive accessories","creative desk accessories","designer bags","outdoor camping gear","headphones audio","home improvement tools","women fashion","collectible objects","bicycle accessories","baby essentials","sports equipment","decorative mirrors","home textiles","photography accessories"];
-const videoFor=(p:Item)=>[...(Array.isArray(p.videos)?p.videos:[]),p.video,p.videoUrl].find(isUrl);
-const isUrl=(s:unknown):s is string=>typeof s==="string"&&/^https:\/\//i.test(s);
+type Video={id:string;caption:string;embedUrl:string;url:string;thumbnail?:string;searchQuery?:string;username?:string};
+const CATEGORIES=["home decor","fashion accessories","kitchen gadgets","pet products","fitness equipment","beauty products","travel accessories","smart home","baby products","desk accessories","home renovation","sports equipment"];
 function shuffle<T>(arr:T[]){const out=[...arr];for(let i=out.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[out[i],out[j]]=[out[j],out[i]]}return out}
-function price(p:Item){if(!Number.isFinite(p.price))return"";try{return new Intl.NumberFormat(undefined,{style:"currency",currency:p.currency||"EUR"}).format(Number(p.price))}catch{return`${p.price} ${p.currency||"EUR"}`}}
-const catalogLink=(p:Item)=>`/worlds/electric/ride/dirt-bikes?product=${encodeURIComponent(p.id)}&q=${encodeURIComponent(p.title)}`;
+const ynotLink=(v:Video)=>"/worlds?q="+encodeURIComponent((v.searchQuery||v.caption||"product").slice(0,150));
 export default function WorldProductReels(){
- const[open,setOpen]=useState(false),[items,setItems]=useState<Item[]>([]),[loading,setLoading]=useState(false),[error,setError]=useState(""),[active,setActive]=useState(0);
- const seen=useRef(new Set<string>()),loadLock=useRef(false),batchNo=useRef(0),rail=useRef<HTMLDivElement>(null);
+ const[open,setOpen]=useState(false),[items,setItems]=useState<Video[]>([]),[loading,setLoading]=useState(false),[error,setError]=useState(""),[active,setActive]=useState(0);
+ const seen=useRef(new Set<string>()),loadLock=useRef(false),rail=useRef<HTMLDivElement>(null),batchNo=useRef(0);
  const load=useCallback(async()=>{
   if(loadLock.current)return;
   loadLock.current=true;setLoading(true);setError("");
-  const batch=batchNo.current++;
-  const selected=shuffle(SEARCHES).slice(0,6);
+  const categories=shuffle(CATEGORIES).slice(0,3);
   try{
-   const replies=await Promise.allSettled(selected.map(async q=>{const res=await fetch(`/api/catalog?q=${encodeURIComponent(q)}&source=shopify&country=FR&limit=60`,{cache:"no-store"});if(!res.ok)throw Error("Catalogue unavailable");const json=await res.json();return Array.isArray(json.products)?json.products as Item[]:[]}));
-   const found=shuffle(replies.flatMap(r=>r.status==="fulfilled"?r.value:[])).filter(p=>p.id&&p.title&&isUrl(p.image)&&!!videoFor(p)).filter(p=>{const id=String(p.id);if(seen.current.has(id))return false;seen.current.add(id);return true});
-   if(found.length){setItems(v=>[...v,...found.slice(0,65)])}else if(batch===0)setError("No playable product videos were returned. TikTok search is not connected yet; retry to check more products.");
-  }catch{setError("Could not load products. Try again.")}finally{loadLock.current=false;setLoading(false)}
- },[]);
- useEffect(()=>{void load()},[load]);
- useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow="hidden";const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")setOpen(false);if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();const n=Math.max(0,Math.min(items.length-1,active+(e.key==="ArrowDown"?1:-1)));rail.current?.children[n]?.scrollIntoView({behavior:"smooth"});setActive(n)}};window.addEventListener("keydown",onKey);if(!items.length&&!loading)void load();return()=>{document.body.style.overflow=prev;window.removeEventListener("keydown",onKey)}},[open,items.length,active,load]);
- const onScroll=()=>{const el=rail.current;if(!el)return;const n=Math.max(0,Math.round(el.scrollTop/Math.max(1,el.clientHeight)));setActive(n);if(items.length>0&&n>=items.length-5&&!loading)void load()};
- useEffect(()=>{if(!open)return;document.querySelectorAll<HTMLVideoElement>(".ynReelMedia").forEach(v=>{const slide=v.closest(".ynReelSlide");const index=slide?Array.from(slide.parentElement?.children||[]).indexOf(slide):-1;if(index===active){void v.play().catch(()=>{})}else v.pause()})},[active,open,items.length]);
+   const results=await Promise.allSettled(categories.map(async category=>{
+    const res=await fetch("/api/product-videos?mode=feed&category="+encodeURIComponent(category),{cache:"default"});
+    if(!res.ok)throw Error("Video source unavailable");
+    const data=await res.json();
+    return (Array.isArray(data.videos)?data.videos:[]) as Video[];
+   }));
+   const videos=shuffle(results.flatMap(r=>r.status==="fulfilled"?r.value:[])).filter(v=>/^\\d{10,20}$/.test(String(v.id))&&typeof v.embedUrl==="string"&&v.embedUrl.startsWith("https://www.tiktok.com/player/")).filter(v=>{if(seen.current.has(v.id))return false;seen.current.add(v.id);return true});
+   if(videos.length)setItems(previous=>[...previous,...videos]);
+   else if(!items.length)setError("No verified TikTok product videos available right now. Try again.");
+  }catch{setError("TikTok videos are temporarily unavailable. Try again.")}
+  finally{loadLock.current=false;setLoading(false);batchNo.current++}
+ },[items.length]);
+ useEffect(()=>{void load()},[]);
+ useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow="hidden";const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")setOpen(false);if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();const n=Math.max(0,Math.min(items.length-1,active+(e.key==="ArrowDown"?1:-1)));rail.current?.children[n]?.scrollIntoView({behavior:"smooth"});setActive(n)}};window.addEventListener("keydown",onKey);return()=>{document.body.style.overflow=prev;window.removeEventListener("keydown",onKey)}},[open,items.length,active]);
+ const onScroll=()=>{const el=rail.current;if(!el)return;const n=Math.max(0,Math.round(el.scrollTop/Math.max(1,el.clientHeight)));setActive(n);if(items.length>0&&n>=items.length-3&&!loading)void load()};
  const next=()=>{const n=active+1;if(n<items.length)rail.current?.children[n]?.scrollIntoView({behavior:"smooth"});else void load()};
- return <><button type="button" className="ynReelBubble" aria-label="Discover product videos" onClick={()=>setOpen(true)}><Clapperboard size={21}/><span>Discover</span></button>
+ return <><button type="button" className="ynReelBubble" aria-label="Discover TikTok product videos" onClick={()=>setOpen(true)}><Clapperboard size={21}/><span>Discover</span></button>
  {open&&<div className="ynReelOverlay" role="dialog" aria-modal="true" aria-label="Discover products swipe feed">
   <header className="ynReelHeader"><span><b>YNOT</b> / DISCOVER</span><button type="button" onClick={()=>setOpen(false)} aria-label="Close Discover"><X size={22}/></button></header>
   <div className="ynReelRail" ref={rail} onScroll={onScroll}>
-   {items.map((p,i)=><article key={p.id+"-"+i} className="ynReelSlide">
-    {Math.abs(i-active)<=1&&videoFor(p)?<video className="ynReelMedia" autoPlay={i===active&&open} muted loop playsInline controls={i===active} preload={Math.abs(i-active)<=1?"auto":"metadata"} poster={p.image} src={videoFor(p)} onError={e=>{e.currentTarget.style.display="none"}}/>:null}
-    <img className="ynReelImage" src={p.image} alt={p.title} loading={Math.abs(i-active)<=2?"eager":"lazy"}/>
+   {items.map((v,i)=><article key={v.id} className="ynReelSlide">
+    {Math.abs(i-active)<=1?<iframe key={v.id} className="ynReelMedia" src={v.embedUrl} title={"TikTok product video "+v.id} loading={i===active?"eager":"lazy"} allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowFullScreen referrerPolicy="strict-origin-when-cross-origin"/>:v.thumbnail?<img className="ynReelImage" src={v.thumbnail} alt="Product video preview" loading="lazy"/>:null}
     <div className="ynReelShade"/>
-    <div className="ynReelDetails"><small>{p.brand||p.source||"YNOT catalogue"}</small><h2>{p.title}</h2>{price(p)&&<strong>{price(p)}</strong>}<p>PRODUCT VIDEO · {String(p.id).slice(-24)}</p><a href={catalogLink(p)}><ShoppingBag size={17}/> Find on YNOT</a></div>
-    <aside className="ynReelSide"><button onClick={()=>{void navigator.clipboard?.writeText?.(String(p.id))?.catch(()=>{})}} aria-label="Copy product code"><Shuffle size={19}/><span>Code</span></button><button onClick={next} aria-label="Next product"><ChevronUp size={23} style={{transform:"rotate(180deg)"}}/><span>Next</span></button></aside>
+    <div className="ynReelDetails"><small>TIKTOK PRODUCT DISCOVERY</small><h2>{v.caption||"Discover this product"}</h2><a href={ynotLink(v)}><ShoppingBag size={17}/> Find on YNOT</a></div>
+    <aside className="ynReelSide"><button onClick={()=>{void navigator.clipboard?.writeText?.(v.id)?.catch(()=>{})}} aria-label="Copy TikTok video code"><Shuffle size={19}/><span>Code</span></button><button onClick={next} aria-label="Next video"><ChevronUp size={23} style={{transform:"rotate(180deg)"}}/><span>Next</span></button></aside>
     <div className="ynReelCount">{i+1} / {items.length}</div>
    </article>)}
-   {loading&&<div className="ynReelStatus"><LoaderCircle className="ynReelSpin" size={22}/> Finding playable product videos…</div>}
+   {loading&&<div className="ynReelStatus"><LoaderCircle className="ynReelSpin" size={22}/> Loading TikTok product videos…</div>}
    {!loading&&error&&<div className="ynReelStatus">{error}<button type="button" onClick={()=>void load()}>Retry</button></div>}
   </div>
  </div>}
