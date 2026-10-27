@@ -5,7 +5,7 @@ export const maxDuration=60;
 
 const GEMINI_KEY=process.env.GEMINI_API_KEY||process.env.GOOGLE_GENERATIVE_AI_API_KEY||process.env.GOOGLE_API_KEY;
 const configuredGemini=process.env.GEMINI_VISION_MODEL?.trim();
-const GEMINI_MODELS=[...new Set([configuredGemini,"gemini-2.5-flash","gemini-2.5-flash-lite"].filter(Boolean) as string[])];
+const GEMINI_MODELS=[...new Set(["gemini-3.5-flash-lite",...(configuredGemini&&/^gemini-3\.(5|6|7|8)-flash(?:-lite)?$/.test(configuredGemini)?[configuredGemini]:[]),"gemini-3.5-flash"].filter(Boolean) as string[])];
 
 const schema={type:"object",additionalProperties:false,properties:{sceneTitle:{type:"string"},roomType:{type:"string"},sceneKind:{type:"string"},sceneDescription:{type:"string"},styleDescription:{type:"string"},opportunitySummary:{type:"string"},objects:{type:"array",items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},label:{type:"string"},category:{type:"string"},searchQuery:{type:"string"},alternateQueries:{type:"array",items:{type:"string"}},confidence:{type:"number"},box_2d:{type:"array",items:{type:"integer"}},mask:{type:"array",items:{type:"array",items:{type:"integer"}}}},required:["id","label","category","searchQuery","alternateQueries","confidence","box_2d","mask"]}},suggestionSpots:{type:"array",items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},label:{type:"string"},reason:{type:"string"},suggestedCategories:{type:"array",items:{type:"string"}},searchQuery:{type:"string"},point_2d:{type:"array",items:{type:"integer"}}},required:["id","label","reason","suggestedCategories","searchQuery","point_2d"]}}},required:["sceneTitle","roomType","sceneKind","sceneDescription","styleDescription","opportunitySummary","objects","suggestionSpots"]};
 
@@ -41,9 +41,9 @@ async function scanGemini(bytes:string,mime:string){
  const oneProductPrompt="Analyze the WHOLE image. Set sceneKind to room when this depicts an actual apartment or interior; otherwise set sceneKind to product. For a room, identify ALL clearly visible distinct furniture/decor objects with boxes [ymin,xmin,ymax,xmax], plus up to four plausible empty placement suggestionSpots, each with point_2d [y,x]. For a product screenshot or single-item image, identify the one main purchasable product with a box and set suggestionSpots to []. Coordinates must be 0-1000 relative to the original FULL image. Ignore browser UI and social controls. Each detected object needs label and searchQuery. Do not guess brands. Respond as JSON.";
  for(const model of GEMINI_MODELS){
   for(const attempt of [0,1]){
-   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),attempt?11000:17000);
+   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),attempt?13000:19000);
    try{
-    const config=attempt?{responseMimeType:"application/json",temperature:0}:{responseMimeType:"application/json",responseSchema:simpleSchema,temperature:0};
+    const config=attempt?{responseMimeType:"application/json",temperature:0,thinkingConfig:{thinkingLevel:"minimal"}}:{responseMimeType:"application/json",responseSchema:simpleSchema,temperature:0,thinkingConfig:{thinkingLevel:"minimal"}};
     const reqBody={contents:[{parts:[{text:attempt?oneProductPrompt:prompt},{inlineData:{mimeType:mime,data:bytes}}]}],generationConfig:config};
     const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json","x-goog-api-key":GEMINI_KEY},body:JSON.stringify(reqBody)});
     const raw=await r.json().catch(()=>({}));
