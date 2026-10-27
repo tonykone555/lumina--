@@ -44,12 +44,14 @@ export default function MoodboardPanel(){
  .ynMoodFilters button.selected{color:#111;font-weight:760}
  .ynMoodFilters button.selected:after{content:"";height:2px;position:absolute;bottom:2px;left:0;right:0;background:#111;border-radius:99px}
  .ynMoodSlideArrow{flex:0 0 32px;width:32px;height:35px;display:grid;place-items:center;border:0;background:transparent;color:#111;font-size:31px;font-weight:300;cursor:pointer;opacity:.78}
- .ynMoodScroll{position:relative;z-index:0;padding-top:0;min-height:0}
+ .ynMoodScroll{position:relative;z-index:0;padding-top:0;min-height:0;background:#101010;-webkit-mask-image:linear-gradient(to bottom,transparent 0%,#000 85px,#000 calc(100% - 55px),transparent 100%);mask-image:linear-gradient(to bottom,transparent 0%,#000 85px,#000 calc(100% - 55px),transparent 100%)}
  /* Full-screen immersive Mood view; independent horizontal product rows. */
  .ynMoodOverlay{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;align-items:stretch!important;justify-content:stretch!important;background:#101010!important;z-index:2147483647!important}
  .ynMoodPanel{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;border:0!important;border-radius:0!important;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);box-shadow:none!important}
  .ynMoodRows{display:flex;flex-direction:column;gap:8px}
  .ynMoodRow{display:flex;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+ /* Fade the horizontal carousel into the actual dark gallery background. */
+ .ynMoodRow{-webkit-mask-image:linear-gradient(to right,transparent 0%,#000 4%,#000 92%,transparent 100%);mask-image:linear-gradient(to right,transparent 0%,#000 4%,#000 92%,transparent 100%);padding-inline:12px}
  .ynMoodRow::-webkit-scrollbar{display:none}
  .ynMoodRow .ynMoodTile{flex:0 0 clamp(210px,26vw,380px);width:clamp(210px,26vw,380px);scroll-snap-align:start}
  @media(max-width:650px){.ynMoodRow .ynMoodTile{flex-basis:57vw;width:57vw}}
