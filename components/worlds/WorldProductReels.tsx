@@ -22,15 +22,17 @@ export default function WorldProductReels(){
    if(found.length){setItems(v=>[...v,...found.slice(0,65)])}else if(batch===0)setError("No playable product videos were returned. TikTok search is not connected yet; retry to check more products.");
   }catch{setError("Could not load products. Try again.")}finally{loadLock.current=false;setLoading(false)}
  },[]);
- useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow="hidden";const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")setOpen(false);if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();const n=Math.max(0,Math.min(items.length-1,active+(e.key==="ArrowDown"?1:-1)));rail.current?.children[n]?.scrollIntoView({behavior:"smooth"});setActive(n)}};window.addEventListener("keydown",onKey);if(!items.length)void load();return()=>{document.body.style.overflow=prev;window.removeEventListener("keydown",onKey)}},[open,items.length,active,load]);
- const onScroll=()=>{const el=rail.current;if(!el)return;const n=Math.max(0,Math.round(el.scrollTop/Math.max(1,el.clientHeight)));setActive(n);if(n>=items.length-5&&!loading)void load()};
+ useEffect(()=>{void load()},[load]);
+ useEffect(()=>{if(!open)return;const prev=document.body.style.overflow;document.body.style.overflow="hidden";const onKey=(e:KeyboardEvent)=>{if(e.key==="Escape")setOpen(false);if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();const n=Math.max(0,Math.min(items.length-1,active+(e.key==="ArrowDown"?1:-1)));rail.current?.children[n]?.scrollIntoView({behavior:"smooth"});setActive(n)}};window.addEventListener("keydown",onKey);if(!items.length&&!loading)void load();return()=>{document.body.style.overflow=prev;window.removeEventListener("keydown",onKey)}},[open,items.length,active,load]);
+ const onScroll=()=>{const el=rail.current;if(!el)return;const n=Math.max(0,Math.round(el.scrollTop/Math.max(1,el.clientHeight)));setActive(n);if(items.length>0&&n>=items.length-5&&!loading)void load()};
+ useEffect(()=>{if(!open)return;document.querySelectorAll<HTMLVideoElement>(".ynReelMedia").forEach(v=>{const slide=v.closest(".ynReelSlide");const index=slide?Array.from(slide.parentElement?.children||[]).indexOf(slide):-1;if(index===active){void v.play().catch(()=>{})}else v.pause()})},[active,open,items.length]);
  const next=()=>{const n=active+1;if(n<items.length)rail.current?.children[n]?.scrollIntoView({behavior:"smooth"});else void load()};
  return <><button type="button" className="ynReelBubble" aria-label="Discover product videos" onClick={()=>setOpen(true)}><Clapperboard size={21}/><span>Discover</span></button>
  {open&&<div className="ynReelOverlay" role="dialog" aria-modal="true" aria-label="Discover products swipe feed">
   <header className="ynReelHeader"><span><b>YNOT</b> / DISCOVER</span><button type="button" onClick={()=>setOpen(false)} aria-label="Close Discover"><X size={22}/></button></header>
   <div className="ynReelRail" ref={rail} onScroll={onScroll}>
    {items.map((p,i)=><article key={p.id+"-"+i} className="ynReelSlide">
-    {Math.abs(i-active)<=1&&videoFor(p)?<video className="ynReelMedia" autoPlay={i===active} muted loop playsInline controls={i===active} preload={i===active?"auto":"metadata"} poster={p.image} src={videoFor(p)} onError={e=>{e.currentTarget.style.display="none"}}/>:null}
+    {Math.abs(i-active)<=1&&videoFor(p)?<video className="ynReelMedia" autoPlay={i===active&&open} muted loop playsInline controls={i===active} preload={Math.abs(i-active)<=1?"auto":"metadata"} poster={p.image} src={videoFor(p)} onError={e=>{e.currentTarget.style.display="none"}}/>:null}
     <img className="ynReelImage" src={p.image} alt={p.title} loading={Math.abs(i-active)<=2?"eager":"lazy"}/>
     <div className="ynReelShade"/>
     <div className="ynReelDetails"><small>{p.brand||p.source||"YNOT catalogue"}</small><h2>{p.title}</h2>{price(p)&&<strong>{price(p)}</strong>}<p>PRODUCT VIDEO · {String(p.id).slice(-24)}</p><a href={catalogLink(p)}><ShoppingBag size={17}/> Find on YNOT</a></div>
