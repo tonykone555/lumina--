@@ -7,6 +7,7 @@ import {createPortal} from "react-dom";
 type Product={id:string;title:string;brand?:string;description?:string;tags?:string[]};
 type Video={id:string;url:string;embedUrl:string;thumbnail?:string;caption:string;views:number;likes:number;shares:number;saves:number;country:string;language:string;searchQuery?:string;jev:{relevance:string;fit:string;confidence:number}};
 
+function playable(v:Video){return /^\\d{10,20}$/.test(String(v?.id||""))&&typeof v?.embedUrl==="string"&&/^https:\/\/www\\.tiktok\\.com\/player\/v1\/\\d{10,20}/.test(v.embedUrl)}
 function compact(n:number){
  try{return new Intl.NumberFormat(undefined,{notation:"compact",maximumFractionDigits:1}).format(Number(n||0))}
  catch{return String(Number(n||0))}
@@ -36,7 +37,7 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
   try{stored=JSON.parse(localStorage.getItem(key)||"null")}catch{}
   const now=Date.now();
   if(stored?.videos?.length&&now-Number(stored.updated||0)<24*60*60*1000){
-   setVideos(stored.videos.slice(0,maxItems));setLoading(false);
+   setVideos(stored.videos.filter(playable).slice(0,maxItems));setLoading(false);
    return()=>{alive=false;controller.abort()};
   }
   const save=(value:object)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch{}};
@@ -54,7 +55,7 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
      return;
     }
     if(data.status==="ready"){
-     const found=(Array.isArray(data.videos)?data.videos:[]).slice(0,Math.max(1,Math.min(8,maxItems)));
+     const found=(Array.isArray(data.videos)?data.videos:[]).filter(playable).slice(0,Math.max(1,Math.min(8,maxItems)));
      timer=undefined;
      setVideos(found);
      if(!found.length)setVideoStatus("No verified recent videos were found yet.");
@@ -86,6 +87,7 @@ export default function ProductVideoRail({product,maxItems=8,dark=false}:{produc
  },[product.id,product.title,product.brand,product.description,product.tags?.join("|"),maxItems,retryKey]);
 
 
+ if(!videos.length)return null;
  return <section className={"ynot-product-videos"+(dark?" dark":"")}>
   <style>{CSS}</style>
   <div className="head"><div className="label">Watch in real life</div><div className="jev">Matched by Jev</div></div>
