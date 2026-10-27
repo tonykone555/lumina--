@@ -5,7 +5,7 @@ export const maxDuration=60;
 
 const GEMINI_KEY=process.env.GEMINI_API_KEY||process.env.GOOGLE_GENERATIVE_AI_API_KEY||process.env.GOOGLE_API_KEY;
 const configuredGemini=process.env.GEMINI_VISION_MODEL?.trim();
-const GEMINI_MODELS=[...new Set([configuredGemini,"gemini-2.5-flash","gemini-2.5-flash-lite","gemini-2.0-flash"].filter(Boolean) as string[])];
+const GEMINI_MODELS=[...new Set([configuredGemini,"gemini-2.5-flash","gemini-2.5-flash-lite"].filter(Boolean) as string[])];
 
 const schema={type:"object",additionalProperties:false,properties:{sceneTitle:{type:"string"},roomType:{type:"string"},sceneKind:{type:"string"},sceneDescription:{type:"string"},styleDescription:{type:"string"},opportunitySummary:{type:"string"},objects:{type:"array",items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},label:{type:"string"},category:{type:"string"},searchQuery:{type:"string"},alternateQueries:{type:"array",items:{type:"string"}},confidence:{type:"number"},box_2d:{type:"array",items:{type:"integer"}},mask:{type:"array",items:{type:"array",items:{type:"integer"}}}},required:["id","label","category","searchQuery","alternateQueries","confidence","box_2d","mask"]}},suggestionSpots:{type:"array",items:{type:"object",additionalProperties:false,properties:{id:{type:"string"},label:{type:"string"},reason:{type:"string"},suggestedCategories:{type:"array",items:{type:"string"}},searchQuery:{type:"string"},point_2d:{type:"array",items:{type:"integer"}}},required:["id","label","reason","suggestedCategories","searchQuery","point_2d"]}}},required:["sceneTitle","roomType","sceneKind","sceneDescription","styleDescription","opportunitySummary","objects","suggestionSpots"]};
 
@@ -23,34 +23,39 @@ function normalize(raw:any){
   const x=raw&&typeof raw==="object"?raw:{};
   const seen=new Set<string>();
   const objects=(Array.isArray(x.objects)?x.objects:[]).map((o:any,i:number)=>{
-    const box=Array.isArray(o?.box_2d)&&o.box_2d.length===4?o.box_2d.map(clamp):[0,0,0,0];
+    const box=Array.isArray(o?.box_2d)&&o.box_2d.length===4?o.box_2d.map(clamp):[50,50,950,950];
     return {id:text(o?.id,`object-${i}`),label:text(o?.label,"Item"),category:text(o?.category,"shopping"),searchQuery:text(o?.searchQuery,text(o?.label,"item")),alternateQueries:strings(o?.alternateQueries).slice(0,5),confidence:Number.isFinite(Number(o?.confidence))?Number(o.confidence):0,box_2d:box,mask:Array.isArray(o?.mask)?o.mask:[]};
-  }).filter((o:any)=>{const [y1,x1,y2,x2]=o.box_2d;const key=`${o.label.toLowerCase()}|${Math.round(x1/20)}|${Math.round(y1/20)}|${Math.round(x2/20)}|${Math.round(y2/20)}`;if(seen.has(key))return false;seen.add(key);return y2>y1&&x2>x1&&(y2-y1)>3&&(x2-x1)>3&&o.searchQuery}).slice(0,14);
+  }).filter((o:any)=>{const [y1,x1,y2,x2]=o.box_2d;const key=`${o.label.toLowerCase()}|${Math.round(x1/20)}|${Math.round(y1/20)}|${Math.round(x2/20)}|${Math.round(y2/20)}`;if(seen.has(key))return false;seen.add(key);return y2>y1&&x2>x1&&o.searchQuery}).slice(0,14);
   const suggestionSpots=(Array.isArray(x.suggestionSpots)?x.suggestionSpots:[]).map((s:any,i:number)=>({id:text(s?.id,`spot-${i}`),label:text(s?.label,"Suggestion"),reason:text(s?.reason,""),suggestedCategories:strings(s?.suggestedCategories),searchQuery:text(s?.searchQuery,text(s?.label,"home decor")),point_2d:Array.isArray(s?.point_2d)&&s.point_2d.length>=2?[clamp(s.point_2d[0]),clamp(s.point_2d[1])]:[]})).filter((s:any)=>s.point_2d.length===2&&s.searchQuery);
   return {sceneTitle:text(x.sceneTitle,"Your space"),roomType:text(x.roomType,""),sceneKind:text(x.sceneKind,""),sceneDescription:text(x.sceneDescription,""),styleDescription:text(x.styleDescription,""),opportunitySummary:text(x.opportunitySummary,""),objects,suggestionSpots};
 }
 function valid(x:any){return !!(x&&Array.isArray(x.objects)&&x.objects.length>0&&Array.isArray(x.suggestionSpots))}
 
+// Use a compact schema first: Gemini can reject deeply nested polygon schemas or omit required fields.
+const simpleSchema={type:"OBJECT",properties:{sceneTitle:{type:"STRING"},sceneKind:{type:"STRING"},objects:{type:"ARRAY",items:{type:"OBJECT",properties:{label:{type:"STRING"},searchQuery:{type:"STRING"},category:{type:"STRING"},box_2d:{type:"ARRAY",items:{type:"INTEGER"}}},required:["label","searchQuery"]}}},required:["objects"]};
+function parseAnswer(value:string){const cleaned=value.trim().replace(/^\`\`\`(?:json)?\\s*/i,"").replace(/\`\`\`\\s*$/,"");return JSON.parse(cleaned)}
 async function scanGemini(bytes:string,mime:string){
-  if(!GEMINI_KEY)return {ok:false as const,error:"Gemini is not configured"};
-  let last="";
-  const geminiSchema=JSON.parse(JSON.stringify(schema).replace(/"object"/g,'"OBJECT"').replace(/"string"/g,'"STRING"').replace(/"array"/g,'"ARRAY"').replace(/"integer"/g,'"INTEGER"').replace(/"number"/g,'"NUMBER"'));
-  function strip(o:any){if(o&&typeof o==="object"){delete o.additionalProperties;for(const v of Object.values(o))strip(v)}}
-  strip(geminiSchema);
-  for(const model of GEMINI_MODELS){
-    const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),15000);
-    try{
-      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json","x-goog-api-key":GEMINI_KEY},body:JSON.stringify({contents:[{parts:[{text:prompt},{inlineData:{mimeType:mime,data:bytes}}]}],generationConfig:{responseMimeType:"application/json",responseSchema:geminiSchema,temperature:0}})});
-      const raw=await r.json().catch(()=>({}));
-      if(!r.ok){last=raw?.error?.message||`${model} failed`;continue}
-      const answer=raw?.candidates?.[0]?.content?.parts?.find((p:any)=>typeof p?.text==="string")?.text;
-      if(!answer){last=`${model} returned no analysis`;continue}
-      const parsed=normalize(JSON.parse(answer.replace(/^```(?:json)?\\s*/i,"").replace(/```\\s*$/,"")));
-      if(valid(parsed))return {ok:true as const,data:parsed,model};
-      last=`${model} returned no usable detected objects`;
-    }catch(e){last=e instanceof Error?(e.name==="AbortError"?`${model} timed out`:e.message):"Gemini scanner failed"}finally{clearTimeout(timeout)}
+ if(!GEMINI_KEY)return {ok:false as const,error:"Gemini is not configured"};
+ let last="";
+ const oneProductPrompt="Examine the WHOLE uploaded image as a visual-shopping search. It may be a website screenshot or a photograph, not an apartment. Find the single main purchasable item, even if it is alone on a white background. Ignore browser bars, text overlays and social-media controls. Return at least one object with a specific visible label, a usable product searchQuery and box_2d [ymin,xmin,ymax,xmax] in 0-1000 coordinates. Only name brands that are visibly readable. If it is a room, identify its main visible purchasable object. Respond as JSON.";
+ for(const model of GEMINI_MODELS){
+  for(const attempt of [0,1]){
+   const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),attempt?11000:17000);
+   try{
+    const config=attempt?{responseMimeType:"application/json",temperature:0}:{responseMimeType:"application/json",responseSchema:simpleSchema,temperature:0};
+    const reqBody={contents:[{parts:[{text:attempt?oneProductPrompt:prompt},{inlineData:{mimeType:mime,data:bytes}}]}],generationConfig:config};
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,{method:"POST",signal:controller.signal,headers:{"Content-Type":"application/json","x-goog-api-key":GEMINI_KEY},body:JSON.stringify(reqBody)});
+    const raw=await r.json().catch(()=>({}));
+    if(!r.ok){last=`${model}: ${raw?.error?.message||r.status}`;if(r.status===401||r.status===403||r.status===429)break;continue}
+    const answer=raw?.candidates?.[0]?.content?.parts?.filter((p:any)=>typeof p?.text==="string").map((p:any)=>p.text).join("")||"";
+    if(!answer){last=`${model} returned no visual description`;continue}
+    const parsed=normalize(parseAnswer(answer));
+    if(valid(parsed))return {ok:true as const,data:parsed,model};
+    last=`${model} returned no identified item`;
+   }catch(e){last=e instanceof Error?(e.name==="AbortError"?`${model} timed out`:e.message):"Gemini scanner failed"}finally{clearTimeout(timeout)}
   }
-  return {ok:false as const,error:last||"Gemini scanner failed"};
+ }
+ return {ok:false as const,error:last||"Gemini scanner failed"};
 }
 
 export async function POST(req:NextRequest){
