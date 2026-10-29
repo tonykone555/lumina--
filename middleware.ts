@@ -53,6 +53,12 @@ async function captureCreatorReferral(req:NextRequest){
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
+  // Keep image-analysis endpoints behind the same signed access session as the private website.
+  const protectedPrivateApi = pathname === "/api/room/quick/analyze";
+  if (protectedPrivateApi && !(await hasValidSiteSession(req))) {
+    return NextResponse.json({error:"ACCESS_REQUIRED"},{status:401,headers:{"Cache-Control":"no-store"}});
+  }
+
   // Allow only the password entry page before a valid site session.
   if (pathname === ACCESS_PATH) return NextResponse.next();
   if (!(await hasValidSiteSession(req))) {
@@ -95,5 +101,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!api/|_next/|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|woff2?|ttf|otf|mp4|webm)$).*)"],
+  matcher: ["/((?!api/|_next/|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|woff2?|ttf|otf|mp4|webm)$).*)", "/api/room/quick/analyze"],
 };
