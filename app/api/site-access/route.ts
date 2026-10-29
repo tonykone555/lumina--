@@ -15,6 +15,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "ACCESS_NOT_CONFIGURED" }, { status: 503 });
   }
 
+  // Refuse oversized guesses before parsing to limit unnecessary work on the login route.
+  const contentLength = Number(request.headers.get("content-length") || 0);
+  if (contentLength > 2048) return NextResponse.json({error:"INVALID_REQUEST"},{status:413,headers:{"Cache-Control":"no-store"}});
   let body: { password?: unknown };
   try {
     body = await request.json();
@@ -22,10 +25,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 400 });
   }
   const supplied = typeof body.password === "string" ? body.password : "";
+  if (supplied.length > 512) return NextResponse.json({ error:"INVALID_PASSWORD" },{status:401,headers:{"Cache-Control":"no-store"}});
   const a = Buffer.from(supplied);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) {
-    return NextResponse.json({ error: "INVALID_PASSWORD" }, { status: 401 });
+    return NextResponse.json({ error: "INVALID_PASSWORD" }, { status: 401, headers: {"Cache-Control":"no-store"} });
   }
 
   const expires = String(Date.now() + 12 * 60 * 60 * 1000);
