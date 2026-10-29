@@ -1,0 +1,24 @@
+name: Security dependency audit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '21 6 * * 1'
+  push:
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/security-audit.yml'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
