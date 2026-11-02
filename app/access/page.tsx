@@ -38,7 +38,7 @@ export default function AccessPage() {
         <p className="ynot-access-copy">Enter your access password to continue.</p>
         <form onSubmit={submit}>
           <label htmlFor="access-password">Access password</label>
-          <input id="access-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required autoFocus />
+          <input id="access-password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required enterKeyHint="go" />
           {error ? <p className="ynot-access-error" role="alert">{error}</p> : null}
           <button type="submit" disabled={busy || !password}>{busy ? "Checking…" : "Enter YNOT"}</button>
         </form>
