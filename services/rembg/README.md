@@ -6,7 +6,7 @@ Free/open-source background removal for the Saved notebook product bubbles.
 
 ```bash
 docker build -t ynot-rembg .
-docker run --rm -p 7000:7000 ynot-rembg
+docker run --rm -p 7000:80 ynot-rembg
 ```
 
 Health check:
