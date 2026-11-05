@@ -328,8 +328,10 @@ async function candidates(query:string){
  const id=String(process.env.MODAL_TOKEN_ID||"");
  const secret=String(process.env.MODAL_TOKEN_SECRET||"");
  if(!id||!secret){
-  console.warn("Jev TikTok discovery: Modal credentials missing");
-  return await datasetCandidates(query);
+  console.warn("TikTok discovery using public sources");
+  const results=await Promise.allSettled([bingTikTokCandidates(query),datasetCandidates(query)]);
+  const seen=new Set<string>();
+  return results.flatMap(r=>r.status==="fulfilled"?r.value:[]).filter(r=>!seen.has(r.id)&&(seen.add(r.id),true)).slice(0,24);
  }
  const modal=new ModalClient({tokenId:id,tokenSecret:secret});
  try{
