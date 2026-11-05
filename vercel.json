@@ -15,7 +15,8 @@
     },
     "rembg": {
       "root": "services/rembg",
-      "runtime": "container"
+      "runtime": "container",
+      "entrypoint": "Dockerfile"
     }
   },
   "rewrites": [
