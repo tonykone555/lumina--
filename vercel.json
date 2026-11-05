@@ -1,4 +1,32 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "app": {
+      "root": ".",
+      "framework": "nextjs",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "rembg",
+          "format": "url",
+          "env": "REMBG_INTERNAL_URL"
+        }
+      ]
+    },
+    "rembg": {
+      "root": "services/rembg",
+      "framework": "fastapi",
+      "entrypoint": "app:app"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "app"
+      }
+    }
+  ],
   "crons": [
     {
       "path": "/api/admin/ads/automation/run",
