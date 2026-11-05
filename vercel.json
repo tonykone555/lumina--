@@ -26,27 +26,5 @@
         "service": "app"
       }
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/admin/ads/automation/run",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/admin/growth/threads/auto/run",
-      "schedule": "*/15 * * * *"
-    },
-    {
-      "path": "/api/commerce/product-universe/research?limit=25&country=US",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/api/commerce/product-universe/sync-taxonomy",
-      "schedule": "0 3 * * 0"
-    },
-    {
-      "path": "/api/admin/growth/buyer-radar/run",
-      "schedule": "0 * * * *"
-    }
   ]
 }
