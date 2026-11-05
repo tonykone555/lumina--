@@ -11,7 +11,7 @@ export async function GET(req:NextRequest){
  const src=req.nextUrl.searchParams.get("src")||"";
  try{const parsed=new URL(src);if(!/^https?:$/.test(parsed.protocol))throw new Error("invalid source")}catch{return NextResponse.json({error:"Invalid image source"},{status:400})}
 
- const service=safeServiceUrl(process.env.REMBG_SERVICE_URL||"");
+ const service=safeServiceUrl(process.env.REMBG_INTERNAL_URL||process.env.REMBG_SERVICE_URL||"");
  if(!service)return NextResponse.redirect(src,307);
 
  try{
