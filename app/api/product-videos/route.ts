@@ -329,9 +329,11 @@ async function candidates(query:string){
  const secret=String(process.env.MODAL_TOKEN_SECRET||"");
  if(!id||!secret){
   console.warn("TikTok discovery using public sources");
-  const results=await Promise.allSettled([bingTikTokCandidates(query),datasetCandidates(query)]);
+  const queries=[query,...words(query).filter(w=>!["product","discovery","products","gadgets"].includes(w)).slice(0,3)];
+  const results=await Promise.allSettled([...new Set(queries)].map(q=>bingTikTokCandidates(q)));
   const seen=new Set<string>();
-  return results.flatMap(r=>r.status==="fulfilled"?r.value:[]).filter(r=>!seen.has(r.id)&&(seen.add(r.id),true)).slice(0,24);
+  const rows=results.flatMap(r=>r.status==="fulfilled"?r.value:[]).filter(r=>!seen.has(r.id)&&(seen.add(r.id),true)).slice(0,24);
+  return rows.length?rows:await datasetCandidates(query);
  }
  const modal=new ModalClient({tokenId:id,tokenSecret:secret});
  try{
