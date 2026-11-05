@@ -15,8 +15,7 @@
     },
     "rembg": {
       "root": "services/rembg",
-      "framework": "fastapi",
-      "entrypoint": "app:app"
+      "runtime": "container"
     }
   },
   "rewrites": [
