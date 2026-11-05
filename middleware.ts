@@ -59,6 +59,12 @@ export async function middleware(req: NextRequest) {
     return NextResponse.json({error:"ACCESS_REQUIRED"},{status:401,headers:{"Cache-Control":"no-store"}});
   }
 
+  // Public YNOT product discovery for launch links (e.g. Reddit).
+  // Keep /admin, /account, /room and other private pages session-gated.
+  if (pathname === "/worlds" || pathname.startsWith("/worlds/")) {
+    return NextResponse.next();
+  }
+
   // Allow only the password entry page before a valid site session.
   if (pathname === ACCESS_PATH) return NextResponse.next();
   if (!(await hasValidSiteSession(req))) {
