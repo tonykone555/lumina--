@@ -19,13 +19,13 @@ The Next.js app calls `POST /remove` with a multipart image file and receives a 
 
 ## Connect Lumina / YNOT
 
-Set this environment variable on the web app deployment:
+When deploying the repository with **Vercel Services**, the `app` service receives `REMBG_INTERNAL_URL` automatically through its service binding. **Do not create or override this variable manually.** The `rembg` service remains internal, with no public rewrite.\n\nFor a separate Docker deployment outside Vercel Services, set this environment variable on the web app deployment:
 
 ```text
 REMBG_SERVICE_URL=https://your-rembg-service.example.com
 ```
 
-No remove.bg key is required. If `REMBG_SERVICE_URL` is missing or the cutout service is temporarily unavailable, `/api/cutout` falls back to the original product image so Saved never breaks.
+No remove.bg key is required. If neither `REMBG_INTERNAL_URL` nor `REMBG_SERVICE_URL` is available, or the cutout service is temporarily unavailable, `/api/cutout` falls back to the original product image so Saved never breaks.
 
 ## Hosting
 
