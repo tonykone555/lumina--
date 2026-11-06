@@ -2,7 +2,7 @@
 
 import {useEffect,useRef,useState} from "react";
 import {useRouter} from "next/navigation";
-import {ChevronLeft,ChevronRight,Play,Search,ExternalLink} from "lucide-react";
+import {Play,Search,ExternalLink} from "lucide-react";
 
 type Video={id:string;url:string;embedUrl:string;thumbnail?:string;caption:string;searchQuery?:string;hashtags?:string[]};
 const CATEGORIES=[
@@ -125,11 +125,14 @@ export default function TikTokProductSlider(){
     <div className="yntvBrand">YNOT <span>PRODUCT STORIES</span></div>
     <nav className="yntvCats" aria-label="Video categories">{CATEGORIES.map((c,i)=><button key={c.label} type="button" className={i===category?"selected":""} aria-pressed={i===category} onClick={()=>setCategory(i)}>{c.label}</button>)}</nav>
    </div>
-   {videos.length>1&&<div className="yntvNavigation">
-    <button type="button" aria-label="Previous product" onClick={()=>select(index-1)}><ChevronLeft size={25}/></button>
-    <span aria-label={`Product ${index+1} of ${videos.length}`}>{index+1} <span>/</span> {videos.length}</span>
-    <button type="button" aria-label="Next product" onClick={()=>select(index+1)}><ChevronRight size={25}/></button>
-   </div>}
+   <div className="yntvBubbleNav" aria-label="YNOT World video navigation">
+    <button className="yntvNavDot" type="button" aria-label="Previous video" disabled={videos.length<2} onClick={()=>select(index-1)}><span/></button>
+    <button className="yntvWorldBubble" type="button" aria-label="Go to YNOT World" onClick={()=>router.push("/worlds")}>
+     <span className="yntvBubbleShine"/><span className="yntvBubbleLetter">Y</span>
+     <span className="yntvBubbleName">YNOT</span>
+    </button>
+    <button className="yntvNavDot" type="button" aria-label="Next video" disabled={videos.length<2} onClick={()=>select(index+1)}><span/></button>
+   </div>
   </div>
   <style jsx global>{`
   .yntv{width:100%;max-width:none;background:#060606;color:#fff;position:relative;isolation:isolate;outline:none}
@@ -197,6 +200,19 @@ export default function TikTokProductSlider(){
     .yntvScene:before{height:calc(env(safe-area-inset-top,0px) + 180px)}
   }
   @media(prefers-reduced-motion:reduce){.yntvImage{animation:none;transform:scale(1.08)}}
+
+  /* Centered YNOT World orb with two dot navigation controls; no bottom slider. */
+  .yntvNavigation{display:none!important}
+  .yntvBubbleNav{position:absolute;z-index:8;bottom:calc(16px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:24px;pointer-events:auto}
+  .yntvWorldBubble{position:relative;isolation:isolate;width:69px;height:69px;flex-shrink:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0;border-radius:50%;border:1px solid rgba(255,255,255,.55);background:radial-gradient(circle at 29% 16%,rgba(255,255,255,.32),rgba(65,72,95,.35) 42%,rgba(8,10,15,.72) 87%);box-shadow:0 10px 35px #0009,inset 0 2px 1px #fff6,inset 0 -4px 9px #0008;color:white;backdrop-filter:blur(25px) saturate(170%);-webkit-backdrop-filter:blur(25px) saturate(170%);cursor:pointer;overflow:hidden}
+  .yntvBubbleShine{position:absolute;top:5px;left:13px;width:35px;height:17px;background:#fffa;filter:blur(11px);border-radius:50%;opacity:.35;pointer-events:none}
+  .yntvBubbleLetter{font-size:24px;font-weight:780;line-height:1;letter-spacing:-.08em;z-index:1}
+  .yntvBubbleName{font-size:7px;font-weight:750;letter-spacing:.2em;z-index:1;margin-top:3px;padding-left:2px}
+  .yntvNavDot{width:34px;height:34px;padding:0;display:grid;place-items:center;background:rgba(34,38,48,.24);border:1px solid rgba(255,255,255,.28);border-radius:50%;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer}
+  .yntvNavDot span{width:7px;height:7px;background:#fff;border-radius:50%;box-shadow:0 0 9px #fffb}
+  .yntvNavDot:disabled{opacity:.28;cursor:default}
+  .yntvNavDot:active:not(:disabled){transform:scale(.89)}
+  @media(max-width:650px){.yntvBubbleNav{bottom:calc(12px + env(safe-area-inset-bottom));gap:19px}.yntvWorldBubble{width:65px;height:65px}.yntvInfo{bottom:calc(107px + env(safe-area-inset-bottom))}}
   `}</style>
  </section>;
 }
