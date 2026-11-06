@@ -18,6 +18,7 @@ const TERMS:Record<string,string[]>={
 };
 function kind(category:string){
  const q=category.toLowerCase();
+ if(/product discovery|for you/.test(q))return"all";
  if(/beauty|skincare|hair|makeup/.test(q))return"beauty";
  if(/fitness|gym|sport/.test(q))return"fitness";
  if(/kitchen|coffee|cook/.test(q))return"kitchen";
@@ -87,7 +88,7 @@ export async function apifyProductTikToks(category:string):Promise<ProductTikTok
    }catch{return null}
   }));
   const videos=verified.filter((v):v is ProductTikTokVideo=>Boolean(v)).slice(0,20);
-  if(videos.length)memo.set(group,{timestamp:Date.now(),videos});
+  memo.set(group,{timestamp:Date.now(),videos});
   console.info("Apify TikTok category",group,"queries",queries.length,"results",items.length,"verified",videos.length);
   return videos;
  }catch(error){
