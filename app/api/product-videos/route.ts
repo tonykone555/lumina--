@@ -1,3 +1,4 @@
+import {brightTikTokConfigured,brightTikTokFeed} from "@/lib/catalog/bright-tiktok-feed";
 import {apifyTikTokFeed} from "@/lib/catalog/apify-tiktok-feed-v2";
 import {NextRequest,NextResponse} from "next/server";
 import {apifyConfigured,apifyProductTikToks} from "@/lib/catalog/apify-tiktok-products";
@@ -561,16 +562,17 @@ export async function GET(req:NextRequest){
   if(!category)return NextResponse.json({videos:[],error:"CATEGORY_REQUIRED"},{status:400});
   const feedQuery=[category,...subcategories].join(" ").slice(0,180);
   try{
-   const apifyVideos=apifyConfigured()?await apifyTikTokFeed(category):[];
+   const brightVideos=brightTikTokConfigured()?await brightTikTokFeed(category):[];
+   const apifyVideos=!brightVideos.length&&apifyConfigured()?await apifyTikTokFeed(category):[];
    // Avoid repeating slow, failing public dataset searches when curated seeds exist.
-   const curatedVideos=apifyVideos.length?[]:await curatedProductVideos(category);
-   const rows=apifyVideos.length||curatedVideos.length?[]:await candidates(feedQuery);
+   const curatedVideos=brightVideos.length||apifyVideos.length?[]:await curatedProductVideos(category);
+   const rows=brightVideos.length||apifyVideos.length||curatedVideos.length?[]:await candidates(feedQuery);
    console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length,apifyCount:apifyVideos.length});
    const liveVideos=rows.length?await validateEmbeds(await rankFeedWithJev(category,rows)):[];
-   const videos=apifyVideos.length?apifyVideos:curatedVideos.length?curatedVideos:liveVideos;
-   console.info("TikTok feed source",apifyVideos.length?"apify":curatedVideos.length?"curated":"public",videos.length);
+   const videos=brightVideos.length?brightVideos:apifyVideos.length?apifyVideos:curatedVideos.length?curatedVideos:liveVideos;
+   console.info("TikTok feed source",brightVideos.length?"brightdata":apifyVideos.length?"apify":curatedVideos.length?"curated":"public",videos.length);
    console.info("Product video feed Jev result",{category,candidates:rows.length,selected:videos.length});
-   return NextResponse.json({source:apifyVideos.length?"apify":curatedVideos.length?"curated":"public",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"public, s-maxage=21600, stale-while-revalidate=86400":"no-store"}});
+   return NextResponse.json({source:brightVideos.length?"brightdata":apifyVideos.length?"apify":curatedVideos.length?"curated":"public",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"public, s-maxage=21600, stale-while-revalidate=86400":"no-store"}});
   }catch(error){
    const message=error instanceof Error?error.message:"PRODUCT_VIDEO_FEED_FAILED";
    console.error("Product video feed failed",{category,message});
