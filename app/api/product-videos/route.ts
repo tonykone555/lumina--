@@ -1,3 +1,4 @@
+import {apifyTikTokFeed} from "@/lib/catalog/apify-tiktok-feed-v2";
 import {NextRequest,NextResponse} from "next/server";
 import {apifyConfigured,apifyProductTikToks} from "@/lib/catalog/apify-tiktok-products";
 import {askJev,type JevQuestion} from "@/lib/ai/jev";
@@ -560,7 +561,7 @@ export async function GET(req:NextRequest){
   if(!category)return NextResponse.json({videos:[],error:"CATEGORY_REQUIRED"},{status:400});
   const feedQuery=[category,...subcategories].join(" ").slice(0,180);
   try{
-   const apifyVideos=apifyConfigured()?await apifyProductTikToks(category):[];
+   const apifyVideos=apifyConfigured()?await apifyTikTokFeed(category):[];
    // Avoid repeating slow, failing public dataset searches when curated seeds exist.
    const curatedVideos=apifyVideos.length?[]:await curatedProductVideos(category);
    const rows=apifyVideos.length||curatedVideos.length?[]:await candidates(feedQuery);
