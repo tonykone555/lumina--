@@ -65,7 +65,11 @@ export async function apifyTikTokFeed(category:string):Promise<FeedVideo[]>{
   for(let round=0;round<8&&chosen.length<20;round++)
    for(const q of queries){
     const v=pools.get(q)?.[round];
-    if(v&&!ids.has(v.id)){\n     const creator=v.url.match(/tiktok\\.com\\/@([^/]+)/)?.[1]||"";\n     if(creator&&creator!=="_"&&seenCreators.has(creator))continue;\n     chosen.push(v);ids.add(v.id);if(creator)seenCreators.add(creator);\n    }
+    if(v&&!ids.has(v.id)){
+     const creator=v.url.split("tiktok.com/@")[1]?.split("/")[0]||"";
+     if(creator&&creator!=="_"&&seenCreators.has(creator))continue;
+     chosen.push(v);ids.add(v.id);if(creator)seenCreators.add(creator);
+    }
     if(chosen.length>=20)break;
    }
   // Only check a small set with TikTok. A thumbnail field is NOT required for a valid embed.
