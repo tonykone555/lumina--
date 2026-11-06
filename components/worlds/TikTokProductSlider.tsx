@@ -2,7 +2,7 @@
 
 import {useEffect,useRef,useState} from "react";
 import {useRouter} from "next/navigation";
-import {ChevronLeft,ChevronRight,Play,Search,X,ExternalLink} from "lucide-react";
+import {ChevronLeft,ChevronRight,Play,Search,ExternalLink} from "lucide-react";
 
 type Video={id:string;url:string;embedUrl:string;thumbnail?:string;caption:string;searchQuery?:string;hashtags?:string[]};
 const CATEGORIES=[
@@ -104,7 +104,7 @@ export default function TikTokProductSlider(){
     </button>}
     {playing&&<div className="yntvVideo">
       <iframe key={current.id} src={current.embedUrl} title={current.caption||"TikTok product"} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen onError={()=>setPlayerFailed(true)}/>
-      <button className="yntvStop" type="button" onClick={()=>setPlaying(false)} aria-label="Close video"><X size={20}/></button>
+      <button className="yntvStop" type="button" onClick={()=>setPlaying(false)} aria-label="Return to product thumbnail">Preview</button>
       {playerFailed&&<a className="yntvOriginal" href={current.url} target="_blank" rel="noopener noreferrer">Watch on TikTok <ExternalLink size={14}/></a>}
      </div>}
     <div className="yntvInfo"><span className="yntvKicker">YNOT / DISCOVER</span>
@@ -150,7 +150,7 @@ export default function TikTokProductSlider(){
   .yntvNavigation span span{opacity:.5;margin:0 4px}
   .yntvVideo{position:absolute;z-index:2;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
   .yntvVideo iframe{border:0;height:100%;width:min(100%,560px);background:#000}
-  .yntvStop{position:absolute;z-index:5;top:132px;right:20px;border:1px solid #fff7;background:#0009;color:white;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;cursor:pointer}
+  .yntvStop{position:absolute;z-index:5;top:calc(env(safe-area-inset-top,0px) + 128px);right:16px;border:1px solid #fff5;background:#0007;color:white;border-radius:999px;padding:9px 15px;font-size:11px;font-weight:600;backdrop-filter:blur(12px);cursor:pointer}
   .yntvOriginal{position:absolute;bottom:160px;right:20px;display:flex;align-items:center;gap:5px;color:#fff;background:#000b;padding:9px 13px;border-radius:99px}
   .yntvEmpty{height:100%;display:flex;align-items:center;justify-content:center;gap:12px;flex-direction:column;font-size:14px;color:#eee;padding:30px;text-align:center}
   .yntvEmpty button{border:1px solid #fff7;border-radius:99px;padding:10px 20px;background:#ffffff1b;color:white;cursor:pointer}
@@ -159,7 +159,7 @@ export default function TikTokProductSlider(){
   .ynTikTokWorldOverlay .ynTikTokWorldHead>span{display:none}
   .ynTikTokWorldOverlay .ynTikTokWorldContent{overflow:hidden}
   .ynTikTokWorldOverlay .yntvStage{height:100dvh}
-  @media(max-width:650px){.yntvTop{padding:calc(66px + env(safe-area-inset-top)) 12px 0}.yntvBrand{font-size:15px}.yntvBrand span{font-size:8px}.yntvCats{padding-top:12px}.yntvInfo{left:14px;bottom:110px;width:calc(100% - 28px)}.yntvInfo p{font-size:21px}.yntvNavigation{bottom:calc(20px + env(safe-area-inset-bottom))}.yntvStop{top:145px}.yntvStage{min-height:450px}}
+  @media(max-width:650px){.yntvTop{padding:calc(66px + env(safe-area-inset-top)) 12px 0}.yntvBrand{font-size:15px}.yntvBrand span{font-size:8px}.yntvCats{padding-top:12px}.yntvInfo{left:14px;bottom:110px;width:calc(100% - 28px)}.yntvInfo p{font-size:21px}.yntvNavigation{bottom:calc(20px + env(safe-area-inset-bottom))}.yntvStop{top:calc(env(safe-area-inset-top,0px) + 140px)}.yntvStage{min-height:450px}}
 
   /* Clear, editorial text tabs laid directly over the cover image. */
   .yntvCats{gap:clamp(17px,3vw,30px);padding:17px 0 9px}
