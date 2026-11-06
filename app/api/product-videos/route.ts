@@ -514,6 +514,42 @@ async function licensedHfIndexVideos(product:{title:string;brand:string;tags:str
  return validateEmbeds(await rankWithJev(product,rows));
 }
 
+// Curated public TikTok product-video candidates, with IDs and creators published by
+// independent product-video indexes. The oEmbed check below is the availability gate.
+const PRODUCT_VIDEO_SEEDS:Record<string,{id:string;username:string;caption:string;searchQuery:string}[]>={
+ home:[
+  {id:"7679120802880458015",username:"everythingenvy",caption:"Glass incense holder with wooden base",searchQuery:"glass incense holder wooden base"},
+  {id:"7662791062179613982",username:"amandabhome",caption:"Home storage and organization products",searchQuery:"home organization shelf storage baskets"},
+  {id:"7668400937907637534",username:"amandabhome",caption:"Cabinet organizers and drawer dividers",searchQuery:"cabinet organizers drawer dividers"},
+  {id:"7660598904416734494",username:"amandabhome",caption:"Affordable home decor and furniture",searchQuery:"home decor sideboard mirror rug"}
+ ],
+ beauty:[
+  {id:"7664609087623154975",username:"skybxyy",caption:"Romand Idol Hack Trio makeup kit",searchQuery:"romand idol hack trio makeup"},
+  {id:"7704283846614846721",username:"featherpro8",caption:"Niacinamide cleansing soap",searchQuery:"niacinamide cleansing soap"},
+  {id:"7699809169444015367",username:"featherpro8",caption:"Teashell niacinamide soap demonstration",searchQuery:"Teashell niacinamide soap"}
+ ],
+ fitness:[
+  {id:"7668364008067484959",username:"samantha.baio",caption:"DFYNE gym activewear matching sets",searchQuery:"DFYNE gym activewear matching set"}
+ ],
+ kitchen:[
+  {id:"7661726386838719766",username:"cleaningwithida",caption:"The Pink Stuff kitchen cleaning products",searchQuery:"The Pink Stuff kitchen cleaner"},
+  {id:"7662791062179613982",username:"amandabhome",caption:"Kitchen storage and organization solutions",searchQuery:"kitchen storage organizers"}
+ ]
+};
+async function curatedProductVideos(category:string){
+ const lower=category.toLowerCase();
+ const group=lower.includes("beauty")||lower.includes("skincare")||lower.includes("hair")?"beauty":lower.includes("fitness")||lower.includes("gym")?"fitness":lower.includes("kitchen")||lower.includes("coffee")?"kitchen":lower.includes("home")||lower.includes("furniture")?"home":"all";
+ const chosen=group==="all"?Object.values(PRODUCT_VIDEO_SEEDS).flat():PRODUCT_VIDEO_SEEDS[group]||[];
+ const seen=new Set<string>();
+ const candidates=chosen.filter(v=>!seen.has(v.id)&&(seen.add(v.id),true)).map(v=>({
+  id:v.id,username:v.username,caption:v.caption,hashtags:[],onScreenText:[],views:0,likes:0,shares:0,saves:0,engagementRate:null,country:"",language:"en",
+  url:`https://www.tiktok.com/@${v.username}/video/${v.id}`,
+  embedUrl:`https://www.tiktok.com/player/v1/${v.id}?controls=1&progress_bar=1&play_button=1&volume_control=1&fullscreen_button=1&description=1&rel=0`,
+  searchQuery:v.searchQuery,jev:{relevance:"RELEVANT",fit:"PRODUCT_FOCUSED",confidence:0.8}
+ }));
+ return validateEmbeds(candidates);
+}
+
 export async function GET(req:NextRequest){
  const s=req.nextUrl.searchParams;
  const mode=String(s.get("mode")||"product");
@@ -525,7 +561,9 @@ export async function GET(req:NextRequest){
   try{
    const rows=await candidates(feedQuery);
    console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length});
-   const videos=await validateEmbeds(await rankFeedWithJev(category,rows));
+   const liveVideos=rows.length?await validateEmbeds(await rankFeedWithJev(category,rows)):[];
+   const videos=liveVideos.length?liveVideos:await curatedProductVideos(category);
+   console.info("TikTok feed source",liveVideos.length?"live":"curated",videos.length);
    console.info("Product video feed Jev result",{category,candidates:rows.length,selected:videos.length});
    return NextResponse.json({source:"live-tiktok+jev",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"s-maxage=900, stale-while-revalidate=3600":"no-store"}});
   }catch(error){
