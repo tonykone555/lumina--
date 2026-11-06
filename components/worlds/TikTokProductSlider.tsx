@@ -24,7 +24,7 @@ function readCache(query:string):Video[]{
   const payload=JSON.parse(raw);
   if(!payload||Date.now()-Number(payload.savedAt)>CACHE_TTL)return[];
   const seen=new Set<string>();
-  const found=(Array.isArray(payload.videos)?payload.videos:[]).filter((v:Video)=>valid(v)&&!seen.has(v.id)&&(seen.add(v.id),true)).slice(0,20);
+  const found=(Array.isArray(payload.videos)?payload.videos:[]).filter((v:Video)=>valid(v)&&!seen.has(v.id)&&(seen.add(v.id),true)).slice(0,40);
   if(found.length)cache.set(query,found);
   return found;
  }catch{return[]}
@@ -59,7 +59,7 @@ export default function TikTokProductSlider(){
  };
  useEffect(()=>{
   if(!videos.length)return;
-  for(const v of videos.slice(index+1,index+3)){
+  for(const v of videos.slice(index+1,index+5)){
    if(v.thumbnail){const img=new Image();img.src=v.thumbnail}
   }
  },[index,videos]);
@@ -73,17 +73,25 @@ export default function TikTokProductSlider(){
   if(!visible)return;
   const query=CATEGORIES[category].search;
   const cached=readCache(query);
-  if(cached?.length){setVideos(cached);setIndex(0);setLoading(false);setError("");return}
+  if(cached.length){setVideos(cached);setIndex(0);setLoading(false);setError("")}
+  else{setVideos([]);setIndex(0);setPlaying(false);setLoading(true);setError("")}
   const controller=new AbortController();
-  setVideos([]);setIndex(0);setPlaying(false);setLoading(true);setError("");
+  // Show cached thumbnails immediately, then merge a fresh feed in the background.
+  // Server CDN cache prevents every shopper from starting a new paid provider search.
   fetch("/api/product-videos?"+new URLSearchParams({mode:"feed",category:query}),{signal:controller.signal})
    .then(async r=>{const j=await r.json();if(!r.ok)throw Error(String(j.error||"Video feed unavailable"));return j})
    .then(j=>{
+    if(controller.signal.aborted)return;
     const unique=new Set<string>();
-    const found=(Array.isArray(j.videos)?j.videos:[]).filter((v:Video)=>valid(v)&&!unique.has(v.id)&&(unique.add(v.id),true)).slice(0,20);
-    if(found.length){saveCache(query,found);setVideos(found)}
-    else setError("No available product videos for this category yet.");
-   }).catch(e=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:"Video feed unavailable")})
+    const fresh=(Array.isArray(j.videos)?j.videos:[]).filter((v:Video)=>valid(v)&&!unique.has(v.id)&&(unique.add(v.id),true)).slice(0,20);
+    if(fresh.length){
+      const previous=readCache(query);
+      const seen=new Set<string>();
+      // Preserve existing card positions while appending new video IDs.
+      const merged=[...previous,...fresh].filter(v=>!seen.has(v.id)&&(seen.add(v.id),true)).slice(0,40);
+      saveCache(query,merged);setVideos(merged);setError("");
+    }else if(!cached.length)setError("No available product videos for this category yet.");
+   }).catch(e=>{if(!controller.signal.aborted&&!cached.length)setError(e instanceof Error?e.message:"Video feed unavailable")})
    .finally(()=>{if(!controller.signal.aborted)setLoading(false)});
   return()=>controller.abort();
  },[visible,category,retry]);
