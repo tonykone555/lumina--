@@ -1,4 +1,5 @@
 import {NextRequest,NextResponse} from "next/server";
+import {apifyConfigured,apifyProductTikToks} from "@/lib/catalog/apify-tiktok-products";
 import {askJev,type JevQuestion} from "@/lib/ai/jev";
 import {ModalClient} from "modal";
 import {requireYnotAdmin,adminErrorStatus} from "@/lib/ynot/admin-server";
@@ -559,13 +560,16 @@ export async function GET(req:NextRequest){
   if(!category)return NextResponse.json({videos:[],error:"CATEGORY_REQUIRED"},{status:400});
   const feedQuery=[category,...subcategories].join(" ").slice(0,180);
   try{
-   const rows=await candidates(feedQuery);
-   console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length});
+   const apifyVideos=apifyConfigured()?await apifyProductTikToks(category):[];
+   // Avoid repeating slow, failing public dataset searches when curated seeds exist.
+   const curatedVideos=apifyVideos.length?[]:await curatedProductVideos(category);
+   const rows=apifyVideos.length||curatedVideos.length?[]:await candidates(feedQuery);
+   console.info("Product video feed candidates",{category,query:feedQuery,count:rows.length,apifyCount:apifyVideos.length});
    const liveVideos=rows.length?await validateEmbeds(await rankFeedWithJev(category,rows)):[];
-   const videos=liveVideos.length?liveVideos:await curatedProductVideos(category);
-   console.info("TikTok feed source",liveVideos.length?"live":"curated",videos.length);
+   const videos=apifyVideos.length?apifyVideos:curatedVideos.length?curatedVideos:liveVideos;
+   console.info("TikTok feed source",apifyVideos.length?"apify":curatedVideos.length?"curated":"public",videos.length);
    console.info("Product video feed Jev result",{category,candidates:rows.length,selected:videos.length});
-   return NextResponse.json({source:"live-tiktok+jev",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"s-maxage=900, stale-while-revalidate=3600":"no-store"}});
+   return NextResponse.json({source:apifyVideos.length?"apify":curatedVideos.length?"curated":"public",intelligence:"jev",jevEnabled:Boolean(process.env.TYPESAFE_API_KEY),query:feedQuery,candidateCount:rows.length,videos},{headers:{"Cache-Control":videos.length?"public, s-maxage=21600, stale-while-revalidate=86400":"no-store"}});
   }catch(error){
    const message=error instanceof Error?error.message:"PRODUCT_VIDEO_FEED_FAILED";
    console.error("Product video feed failed",{category,message});
