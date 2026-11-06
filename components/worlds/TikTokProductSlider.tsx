@@ -125,10 +125,10 @@ export default function TikTokProductSlider(){
   </div>
   <style jsx global>{`
   .yntv{width:100%;max-width:none;background:#060606;color:#fff;position:relative;isolation:isolate;outline:none}
-  .yntvStage{height:100svh;min-height:540px;position:relative;overflow:hidden;background:#0c0c0c}
+  .yntvStage{height:100svh;min-height:540px;position:relative;overflow:hidden;background:#080808}
   .yntvScene{position:absolute;inset:0;animation:yntvFade .65s ease both}
   @keyframes yntvFade{from{opacity:.25;transform:scale(1.02)}to{opacity:1;transform:scale(1)}}
-  .yntvImage{width:100%;height:100%;object-fit:cover;object-position:center;display:block;filter:saturate(.95)}
+  .yntvImage{width:100%;height:100%;object-fit:cover;object-position:center;display:block;filter:saturate(.95);will-change:transform}
   .yntvMissing{height:100%;display:grid;place-items:center;font-size:clamp(52px,12vw,160px);font-weight:800;letter-spacing:-.09em;color:#303030}
   .yntvTint{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#0009 0%,transparent 28%,transparent 55%,#000c 90%,#000f 100%)}
   .yntvTop{position:absolute;z-index:6;top:0;left:0;right:0;padding:22px 22px 0;pointer-events:none}
@@ -174,6 +174,21 @@ export default function TikTokProductSlider(){
   .yntvGlassThumb{position:absolute;top:50%;width:17px;height:17px;border-radius:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.94);border:1px solid #fff;box-shadow:0 1px 10px #0007;pointer-events:none;transition:left .12s ease}
   .yntvCount{flex:none;min-width:34px;text-align:center;font-size:10px;font-weight:650;letter-spacing:.03em}
   @media(max-width:650px){.yntvStage{height:100dvh;min-height:0}.yntvCats{gap:21px;padding-top:12px}.yntvCats button,.yntvCats button.selected{font-size:12px}.yntvNavigation{bottom:calc(18px + env(safe-area-inset-bottom));max-width:calc(100vw - 26px)}.yntvInfo{bottom:calc(103px + env(safe-area-inset-bottom))}}
+
+  /* Full-bleed photographic image travels beneath the status-bar / Dynamic Island safe area. */
+  .yntvStage{width:100%;border:0;border-radius:0}
+  .yntvScene:before{content:"";position:absolute;z-index:1;pointer-events:none;left:0;right:0;top:0;height:calc(env(safe-area-inset-top,0px) + 155px);background:linear-gradient(180deg,rgba(0,0,0,.68) 0%,rgba(0,0,0,.34) 38%,rgba(0,0,0,.08) 72%,transparent 100%)}
+  .yntvImage{transform:scale(1.075);transform-origin:center 38%;animation:yntvNotchZoom 8s ease-out both}
+  @keyframes yntvNotchZoom{from{transform:scale(1.11)}to{transform:scale(1.075)}}
+  @media(max-width:650px){
+    .yntv,.yntvStage,.ynTikTokWorldOverlay,.ynTikTokWorldContent{border-radius:0!important;border:0!important}
+    .yntvStage{height:100dvh;min-height:0;padding:0;overflow:hidden}
+    .yntvImage{object-position:center 32%;animation:yntvMobileNotchZoom 8s ease-out both;transform-origin:50% 26%}
+    @keyframes yntvMobileNotchZoom{from{transform:scale(1.18)}to{transform:scale(1.10)}}
+    .yntvTop{padding-top:calc(env(safe-area-inset-top,0px) + 60px)}
+    .yntvScene:before{height:calc(env(safe-area-inset-top,0px) + 180px)}
+  }
+  @media(prefers-reduced-motion:reduce){.yntvImage{animation:none;transform:scale(1.08)}}
   `}</style>
  </section>;
 }
