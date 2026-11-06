@@ -34,6 +34,7 @@ export default function TikTokProductSlider(){
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
  const [active,setActive]=useState<Video|null>(null);
+ const [playerFailed,setPlayerFailed]=useState(false);
  const rail=useRef<HTMLDivElement>(null);
  const [visible,setVisible]=useState(false);
  const anchor=useRef<HTMLElement>(null);
@@ -60,6 +61,7 @@ export default function TikTokProductSlider(){
    .finally(()=>{if(!controller.signal.aborted)setLoading(false)});
   return()=>controller.abort();
  },[visible,category]);
+ useEffect(()=>{if(!active)return;setPlayerFailed(false);const timer=setTimeout(()=>setPlayerFailed(true),9000);return()=>clearTimeout(timer)},[active?.id]);
  const search=(v:Video)=>{
   const q=productTerms(v);
   if(!q)return;
@@ -80,7 +82,8 @@ export default function TikTokProductSlider(){
   </article>)}</div>:<div className="ynTikTokMessage" role="status">{error||"Browse a category to discover product videos."}<button type="button" onClick={()=>{cache.delete(CATEGORIES[category].search);setVisible(false);requestAnimationFrame(()=>setVisible(true))}}>Retry</button></div>}
   {active&&<div className="ynTikTokBackdrop" role="presentation" onClick={()=>setActive(null)}><div className="ynTikTokPlayer" role="dialog" aria-modal="true" aria-label="TikTok product video" onClick={e=>e.stopPropagation()}>
    <button className="ynTikTokClose" type="button" aria-label="Close video" onClick={()=>setActive(null)}><X size={20}/></button>
-   <iframe src={active.embedUrl} title={active.caption||"TikTok product video"} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen/>
+   <iframe src={active.embedUrl} title={active.caption||"TikTok product video"} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen onLoad={()=>setPlayerFailed(false)} onError={()=>setPlayerFailed(true)}/>
+   {playerFailed&&<div className="ynTikTokPlayerHelp">If this video does not play, <a href={active.url} target="_blank" rel="noopener noreferrer">watch on TikTok</a>.</div>}
    <button className="ynTikTokPlayerFind" type="button" onClick={()=>search(active)}><Search size={16}/> Find product on YNOT</button>
   </div></div>}
   <style jsx global>{`
