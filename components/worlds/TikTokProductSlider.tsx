@@ -15,6 +15,24 @@ const CATEGORIES=[
  {label:"Tech",search:"electronics tech accessories"}
 ];
 const cache=new Map<string,Video[]>();
+const CACHE_TTL=6*60*60*1000;
+function readCache(query:string):Video[]{
+ const inMemory=cache.get(query);if(inMemory?.length)return inMemory;
+ try{
+  const raw=localStorage.getItem("ynot:tiktok-feed:v3:"+query);
+  if(!raw)return[];
+  const payload=JSON.parse(raw);
+  if(!payload||Date.now()-Number(payload.savedAt)>CACHE_TTL)return[];
+  const seen=new Set<string>();
+  const found=(Array.isArray(payload.videos)?payload.videos:[]).filter((v:Video)=>valid(v)&&!seen.has(v.id)&&(seen.add(v.id),true)).slice(0,20);
+  if(found.length)cache.set(query,found);
+  return found;
+ }catch{return[]}
+}
+function saveCache(query:string,found:Video[]){
+ cache.set(query,found);
+ try{localStorage.setItem("ynot:tiktok-feed:v3:"+query,JSON.stringify({savedAt:Date.now(),videos:found}))}catch{}
+}
 function valid(v:Video){return /^\d{15,20}$/.test(String(v?.id||""))&&/^https:\/\/www\.tiktok\.com\/player\/v1\/\d{15,20}/.test(String(v?.embedUrl||""))}
 function searchTerms(v:Video){return String(v.searchQuery||v.caption||"").replace(/#(fyp|viral|trending|tiktok|foryoupage)\b/gi,"").slice(0,130).trim()}
 export default function TikTokProductSlider(){
@@ -30,6 +48,21 @@ export default function TikTokProductSlider(){
  const [retry,setRetry]=useState(0);
  const anchor=useRef<HTMLElement>(null);
  const startX=useRef<number|null>(null);
+ const glassTrack=useRef<HTMLDivElement>(null);
+ const dragActive=useRef(false);
+ const dragStart=useRef<number|null>(null);
+ const changeViaGlass=(clientX:number)=>{
+  const bounds=glassTrack.current?.getBoundingClientRect();
+  if(!bounds||!videos.length)return;
+  const ratio=Math.max(0,Math.min(1,(clientX-bounds.left)/bounds.width));
+  setIndex(Math.min(videos.length-1,Math.round(ratio*(videos.length-1))));
+ };
+ useEffect(()=>{
+  if(!videos.length)return;
+  for(const v of videos.slice(index+1,index+3)){
+   if(v.thumbnail){const img=new Image();img.src=v.thumbnail}
+  }
+ },[index,videos]);
  useEffect(()=>{
   const node=anchor.current;if(!node)return;
   if(typeof IntersectionObserver==="undefined"){setVisible(true);return}
@@ -39,7 +72,7 @@ export default function TikTokProductSlider(){
  useEffect(()=>{
   if(!visible)return;
   const query=CATEGORIES[category].search;
-  const cached=cache.get(query);
+  const cached=readCache(query);
   if(cached?.length){setVideos(cached);setIndex(0);setLoading(false);setError("");return}
   const controller=new AbortController();
   setVideos([]);setIndex(0);setPlaying(false);setLoading(true);setError("");
@@ -48,7 +81,7 @@ export default function TikTokProductSlider(){
    .then(j=>{
     const unique=new Set<string>();
     const found=(Array.isArray(j.videos)?j.videos:[]).filter((v:Video)=>valid(v)&&!unique.has(v.id)&&(unique.add(v.id),true)).slice(0,20);
-    if(found.length){cache.set(query,found);setVideos(found)}
+    if(found.length){saveCache(query,found);setVideos(found)}
     else setError("No available product videos for this category yet.");
    }).catch(e=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:"Video feed unavailable")})
    .finally(()=>{if(!controller.signal.aborted)setLoading(false)});
@@ -127,6 +160,20 @@ export default function TikTokProductSlider(){
   .ynTikTokWorldOverlay .ynTikTokWorldContent{overflow:hidden}
   .ynTikTokWorldOverlay .yntvStage{height:100dvh}
   @media(max-width:650px){.yntvTop{padding:calc(66px + env(safe-area-inset-top)) 12px 0}.yntvBrand{font-size:15px}.yntvBrand span{font-size:8px}.yntvCats{padding-top:12px}.yntvInfo{left:14px;bottom:110px;width:calc(100% - 28px)}.yntvInfo p{font-size:21px}.yntvNavigation{bottom:calc(20px + env(safe-area-inset-bottom))}.yntvStop{top:145px}.yntvStage{min-height:450px}}
+
+  /* Clear, editorial text tabs laid directly over the cover image. */
+  .yntvCats{gap:clamp(17px,3vw,30px);padding:17px 0 9px}
+  .yntvCats button,.yntvCats button.selected{padding:6px 0 10px;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;backdrop-filter:none!important;color:rgba(255,255,255,.65)!important;font-size:13px;letter-spacing:.02em;position:relative;text-shadow:0 1px 12px #0009}
+  .yntvCats button.selected{color:#fff!important;font-weight:700}
+  .yntvCats button.selected:after{content:"";height:2px;background:#fff;border-radius:10px;position:absolute;bottom:2px;left:0;right:0}
+  .yntvNavigation{gap:9px;min-width:min(315px,calc(100vw - 32px));justify-content:space-between;background:rgba(215,223,237,.18);border:1px solid rgba(255,255,255,.37);box-shadow:0 8px 32px #0005,inset 0 1px 0 #fff5;backdrop-filter:blur(22px) saturate(150%);-webkit-backdrop-filter:blur(22px) saturate(150%);padding:5px 9px}
+  .yntvNavigation button{flex:none;border-radius:50%;width:37px;height:37px;background:rgba(255,255,255,.09)}
+  .yntvGlassTrack{position:relative;height:25px;flex:1;min-width:80px;cursor:ew-resize;touch-action:none;outline-offset:5px}
+  .yntvGlassTrack:before{content:"";position:absolute;top:50%;left:0;right:0;height:3px;transform:translateY(-50%);border-radius:10px;background:#ffffff55}
+  .yntvGlassProgress{position:absolute;left:0;top:50%;height:3px;transform:translateY(-50%);background:#fffd;border-radius:10px;pointer-events:none}
+  .yntvGlassThumb{position:absolute;top:50%;width:17px;height:17px;border-radius:50%;transform:translate(-50%,-50%);background:rgba(255,255,255,.94);border:1px solid #fff;box-shadow:0 1px 10px #0007;pointer-events:none;transition:left .12s ease}
+  .yntvCount{flex:none;min-width:34px;text-align:center;font-size:10px;font-weight:650;letter-spacing:.03em}
+  @media(max-width:650px){.yntvStage{height:100dvh;min-height:0}.yntvCats{gap:21px;padding-top:12px}.yntvCats button,.yntvCats button.selected{font-size:12px}.yntvNavigation{bottom:calc(18px + env(safe-area-inset-bottom));max-width:calc(100vw - 26px)}.yntvInfo{bottom:calc(103px + env(safe-area-inset-bottom))}}
   `}</style>
  </section>;
 }
