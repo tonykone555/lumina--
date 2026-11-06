@@ -2,13 +2,9 @@
 
 import {useEffect,useRef,useState} from "react";
 import {useRouter} from "next/navigation";
-import {ChevronLeft,ChevronRight,Play,Search,X} from "lucide-react";
+import {ChevronLeft,ChevronRight,Play,Search,X,ExternalLink} from "lucide-react";
 
-type Video={
- id:string;url:string;embedUrl:string;thumbnail?:string;caption:string;
- searchQuery?:string;hashtags?:string[];views?:number;
- jev?:{relevance:string;fit:string;confidence:number};
-};
+type Video={id:string;url:string;embedUrl:string;thumbnail?:string;caption:string;searchQuery?:string;hashtags?:string[]};
 const CATEGORIES=[
  {label:"For you",search:"product discovery home decor fashion beauty kitchen gadgets"},
  {label:"Home",search:"home decor furniture organization"},
@@ -19,75 +15,118 @@ const CATEGORIES=[
  {label:"Tech",search:"electronics tech accessories"}
 ];
 const cache=new Map<string,Video[]>();
-function valid(v:Video){
- return /^\d{10,20}$/.test(String(v?.id||""))&&/^https:\/\/www\.tiktok\.com\/player\/v1\/\d{10,20}(?:[?]|$)/.test(String(v.embedUrl||""));
-}
-function productTerms(v:Video){
- const q=String(v.searchQuery||"").trim();
- if(q)return q;
- return String(v.caption||"").replace(/#(fyp|viral|trending|tiktok|foryoupage)\b/gi,"").slice(0,120).trim();
-}
+function valid(v:Video){return /^\d{15,20}$/.test(String(v?.id||""))&&/^https:\/\/www\.tiktok\.com\/player\/v1\/\d{15,20}/.test(String(v?.embedUrl||""))}
+function searchTerms(v:Video){return String(v.searchQuery||v.caption||"").replace(/#(fyp|viral|trending|tiktok|foryoupage)\b/gi,"").slice(0,130).trim()}
 export default function TikTokProductSlider(){
  const router=useRouter();
  const [category,setCategory]=useState(0);
  const [videos,setVideos]=useState<Video[]>([]);
+ const [index,setIndex]=useState(0);
  const [loading,setLoading]=useState(false);
  const [error,setError]=useState("");
- const [active,setActive]=useState<Video|null>(null);
+ const [playing,setPlaying]=useState(false);
  const [playerFailed,setPlayerFailed]=useState(false);
- const rail=useRef<HTMLDivElement>(null);
  const [visible,setVisible]=useState(false);
+ const [retry,setRetry]=useState(0);
  const anchor=useRef<HTMLElement>(null);
+ const startX=useRef<number|null>(null);
  useEffect(()=>{
   const node=anchor.current;if(!node)return;
-  const observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){setVisible(true);observer.disconnect()}},{rootMargin:"500px"});
-  observer.observe(node);return()=>observer.disconnect();
+  if(typeof IntersectionObserver==="undefined"){setVisible(true);return}
+  const o=new IntersectionObserver(entries=>{if(entries.some(x=>x.isIntersecting)){setVisible(true);o.disconnect()}},{rootMargin:"600px"});
+  o.observe(node);return()=>o.disconnect()
  },[]);
  useEffect(()=>{
   if(!visible)return;
   const query=CATEGORIES[category].search;
-  const stored=cache.get(query);
-  if(stored){setVideos(stored);setError(stored.length?"":"No verified product videos available yet.");setLoading(false);return;}
+  const cached=cache.get(query);
+  if(cached?.length){setVideos(cached);setIndex(0);setLoading(false);setError("");return}
   const controller=new AbortController();
-  setVideos([]);setLoading(true);setError("");
+  setVideos([]);setIndex(0);setPlaying(false);setLoading(true);setError("");
   fetch("/api/product-videos?"+new URLSearchParams({mode:"feed",category:query}),{signal:controller.signal})
-   .then(async response=>{const data=await response.json();if(!response.ok)throw Error(String(data.error||"Video search unavailable"));return data})
-   .then(data=>{
-    const found=(Array.isArray(data.videos)?data.videos:[]).filter(valid).slice(0,10);
-    cache.set(query,found);setVideos(found);
-    if(!found.length)setError("No verified product videos available for this category yet.");
-   })
-   .catch(err=>{if(!controller.signal.aborted)setError(err instanceof Error?err.message:"Video search unavailable")})
+   .then(async r=>{const j=await r.json();if(!r.ok)throw Error(String(j.error||"Video feed unavailable"));return j})
+   .then(j=>{
+    const unique=new Set<string>();
+    const found=(Array.isArray(j.videos)?j.videos:[]).filter((v:Video)=>valid(v)&&!unique.has(v.id)&&(unique.add(v.id),true)).slice(0,20);
+    if(found.length){cache.set(query,found);setVideos(found)}
+    else setError("No available product videos for this category yet.");
+   }).catch(e=>{if(!controller.signal.aborted)setError(e instanceof Error?e.message:"Video feed unavailable")})
    .finally(()=>{if(!controller.signal.aborted)setLoading(false)});
   return()=>controller.abort();
- },[visible,category]);
- useEffect(()=>{if(!active)return;setPlayerFailed(false);const timer=setTimeout(()=>setPlayerFailed(true),9000);return()=>clearTimeout(timer)},[active?.id]);
- const search=(v:Video)=>{
-  const q=productTerms(v);
-  if(!q)return;
-  setActive(null);
-  router.push("/?q="+encodeURIComponent(q));
- };
- return <section className="ynTikTokShelf" ref={anchor} aria-label="TikTok product discovery">
-  <div className="ynTikTokTop"><div><span className="ynTikTokEyebrow">YNOT DISCOVER</span><h2>Products on TikTok</h2><p>Watch real videos. Find the products inside YNOT.</p></div>
-   <div className="ynTikTokArrows"><button type="button" aria-label="Previous videos" onClick={()=>rail.current?.scrollBy({left:-460,behavior:"smooth"})}><ChevronLeft size={18}/></button><button type="button" aria-label="Next videos" onClick={()=>rail.current?.scrollBy({left:460,behavior:"smooth"})}><ChevronRight size={18}/></button></div></div>
-  <nav className="ynTikTokCategories" aria-label="Product video categories">{CATEGORIES.map((c,i)=><button key={c.label} type="button" className={i===category?"selected":""} aria-pressed={i===category} onClick={()=>{setCategory(i);rail.current?.scrollTo({left:0})}}>{c.label}</button>)}</nav>
-  {loading?<div className="ynTikTokMessage" role="status">Finding verified product videos…</div>:videos.length?<div className="ynTikTokRail" ref={rail}>{videos.map(v=><article key={v.id} className="ynTikTokCard">
-   <button type="button" className="ynTikTokPoster" onClick={()=>setActive(v)} aria-label={"Play TikTok video: "+(v.caption||"Product video")}>
-    {v.thumbnail?<img src={v.thumbnail} alt={v.caption||"Product video"} loading="lazy"/>:<div className="ynTikTokPosterFallback">TikTok</div>}
-    <span className="ynTikTokPlay"><Play size={18} fill="currentColor"/></span><span className="ynTikTokTag">PRODUCT VIDEO</span>
-   </button>
-   <p>{v.caption||"Discover this product"}</p>
-   <button type="button" className="ynTikTokFind" onClick={()=>search(v)}><Search size={14}/> Find on YNOT</button>
-  </article>)}</div>:<div className="ynTikTokMessage" role="status">{error||"Browse a category to discover product videos."}<button type="button" onClick={()=>{cache.delete(CATEGORIES[category].search);setVisible(false);requestAnimationFrame(()=>setVisible(true))}}>Retry</button></div>}
-  {active&&<div className="ynTikTokBackdrop" role="presentation" onClick={()=>setActive(null)}><div className="ynTikTokPlayer" role="dialog" aria-modal="true" aria-label="TikTok product video" onClick={e=>e.stopPropagation()}>
-   <button className="ynTikTokClose" type="button" aria-label="Close video" onClick={()=>setActive(null)}><X size={20}/></button>
-   <iframe src={active.embedUrl} title={active.caption||"TikTok product video"} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen onLoad={()=>setPlayerFailed(false)} onError={()=>setPlayerFailed(true)}/>
-   {playerFailed&&<div className="ynTikTokPlayerHelp">If this video does not play, <a href={active.url} target="_blank" rel="noopener noreferrer">watch on TikTok</a>.</div>}
-   <button className="ynTikTokPlayerFind" type="button" onClick={()=>search(active)}><Search size={16}/> Find product on YNOT</button>
-  </div></div>}
+ },[visible,category,retry]);
+ useEffect(()=>{setPlaying(false);setPlayerFailed(false)},[category,index]);
+ const current=videos[index]||null;
+ const select=(n:number)=>{if(!videos.length)return;setIndex((n+videos.length)%videos.length)};
+ const shop=(video:Video)=>{const q=searchTerms(video);if(q)router.push("/worlds/electric/ride/dirt-bikes?q="+encodeURIComponent(q))};
+ return <section className="yntv" ref={anchor} aria-label="YNOT TikTok product slideshow" tabIndex={-1}
+  onKeyDown={e=>{if(e.key==="ArrowRight")select(index+1);if(e.key==="ArrowLeft")select(index-1)}}
+  onTouchStart={e=>{startX.current=e.touches[0]?.clientX??null}}
+  onTouchEnd={e=>{if(startX.current===null)return;const diff=e.changedTouches[0].clientX-startX.current;startX.current=null;if(Math.abs(diff)>65)select(index+(diff<0?1:-1))}}>
+  <div className="yntvStage">
+   {current&&<div key={current.id} className="yntvScene">
+    {current.thumbnail?<img className="yntvImage" src={current.thumbnail} alt={current.caption||"TikTok product"} fetchPriority={index===0?"high":"auto"}/>:<div className="yntvMissing">YNOT</div>}
+    <div className="yntvTint"/>
+    {!playing&&<button className="yntvPlayHit" type="button" onClick={()=>{setPlaying(true);setPlayerFailed(false)}} aria-label={"Watch "+(current.caption||"TikTok product video")}>
+     <span className="yntvPlayCircle"><Play fill="currentColor" size={24}/></span>
+    </button>}
+    {playing&&<div className="yntvVideo">
+      <iframe key={current.id} src={current.embedUrl} title={current.caption||"TikTok product"} allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen onError={()=>setPlayerFailed(true)}/>
+      <button className="yntvStop" type="button" onClick={()=>setPlaying(false)} aria-label="Close video"><X size={20}/></button>
+      {playerFailed&&<a className="yntvOriginal" href={current.url} target="_blank" rel="noopener noreferrer">Watch on TikTok <ExternalLink size={14}/></a>}
+     </div>}
+    <div className="yntvInfo"><span className="yntvKicker">YNOT / DISCOVER</span>
+     <p>{current.caption||"Discover this product"}</p>
+     <button type="button" className="yntvShop" onClick={()=>shop(current)}><Search size={16}/> Find on YNOT</button>
+    </div>
+   </div>}
+   {!current&&<div className="yntvEmpty">{loading?"Discovering product videos…":error||"Select a category to discover products."}{!loading&&<button type="button" onClick={()=>{cache.delete(CATEGORIES[category].search);setRetry(x=>x+1)}}>Retry</button>}</div>}
+   <div className="yntvTop">
+    <div className="yntvBrand">YNOT <span>PRODUCT STORIES</span></div>
+    <nav className="yntvCats" aria-label="Video categories">{CATEGORIES.map((c,i)=><button key={c.label} type="button" className={i===category?"selected":""} aria-pressed={i===category} onClick={()=>setCategory(i)}>{c.label}</button>)}</nav>
+   </div>
+   {videos.length>1&&<div className="yntvNavigation">
+    <button type="button" aria-label="Previous product" onClick={()=>select(index-1)}><ChevronLeft size={25}/></button>
+    <span aria-label={`Product ${index+1} of ${videos.length}`}>{index+1} <span>/</span> {videos.length}</span>
+    <button type="button" aria-label="Next product" onClick={()=>select(index+1)}><ChevronRight size={25}/></button>
+   </div>}
+  </div>
   <style jsx global>{`
-.ynTikTokShelf{position:relative;z-index:1;max-width:1700px;margin:0 auto;padding:27px 20px 130px;color:#fff;background:#000}.ynTikTokTop{display:flex;justify-content:space-between;align-items:end;gap:16px}.ynTikTokEyebrow{font-size:9px;letter-spacing:.18em;color:#aaa}.ynTikTokTop h2{margin:5px 0;font-size:clamp(23px,3vw,37px);font-weight:650;letter-spacing:-.045em}.ynTikTokTop p{color:#aaa;font-size:12px;margin:0}.ynTikTokArrows{display:flex;gap:7px}.ynTikTokArrows button{width:36px;height:36px;border:1px solid #ffffff45;background:#161616;color:white;border-radius:50%;display:grid;place-items:center;cursor:pointer}.ynTikTokCategories{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:20px 0 16px}.ynTikTokCategories button{flex-shrink:0;padding:10px 16px;border:1px solid #ffffff29;border-radius:999px;background:#181818;color:#bbb;font-size:12px;cursor:pointer}.ynTikTokCategories button.selected{background:#fff;color:#111}.ynTikTokRail{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-width:none;padding:0 0 8px}.ynTikTokRail::-webkit-scrollbar,.ynTikTokCategories::-webkit-scrollbar{display:none}.ynTikTokCard{flex:0 0 clamp(180px,21vw,250px);scroll-snap-align:start;min-width:0;border:1px solid #ffffff1c;background:#131313;border-radius:20px;overflow:hidden;padding:7px}.ynTikTokPoster{width:100%;aspect-ratio:9/13;position:relative;border:0;border-radius:14px;background:#242424;overflow:hidden;color:white;cursor:pointer;padding:0}.ynTikTokPoster img{width:100%;height:100%;object-fit:cover}.ynTikTokPosterFallback{display:grid;place-items:center;height:100%;font-size:20px;font-weight:700;letter-spacing:-.04em}.ynTikTokPlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:#0008;border:1px solid #fff8}.ynTikTokTag{position:absolute;bottom:10px;left:10px;background:#000a;border:1px solid #fff4;border-radius:20px;padding:5px 8px;font-size:8px;letter-spacing:.09em}.ynTikTokCard p{height:35px;overflow:hidden;margin:10px 6px;color:#ddd;font-size:11px;line-height:1.5}.ynTikTokFind{width:calc(100% - 12px);margin:0 6px 7px;display:flex;align-items:center;justify-content:center;gap:7px;border:1px solid #ffffff45;border-radius:999px;background:#ffffff17;color:#fff;padding:10px;font-size:11px;cursor:pointer}.ynTikTokMessage{padding:30px 8px;color:#aaa;font-size:12px;min-height:135px}.ynTikTokMessage button{margin-left:12px;background:transparent;border:1px solid #fff5;color:white;padding:7px 12px;border-radius:20px;cursor:pointer}.ynTikTokBackdrop{position:fixed;inset:0;z-index:2147483500;background:#000c;display:grid;place-items:center;padding:16px}.ynTikTokPlayer{position:relative;width:min(430px,95vw);height:min(770px,88dvh);background:#000;border-radius:18px;overflow:hidden}.ynTikTokPlayer iframe{width:100%;height:calc(100% - 60px);border:0}.ynTikTokClose{position:absolute;top:10px;right:10px;width:40px;height:40px;border:0;border-radius:50%;background:#000c;color:white;z-index:2;display:grid;place-items:center;cursor:pointer}.ynTikTokPlayerFind{display:flex;justify-content:center;align-items:center;gap:8px;width:100%;height:60px;border:0;background:white;color:#111;font-weight:700;cursor:pointer}@media(max-width:650px){.ynTikTokShelf{padding:25px 12px 145px}.ynTikTokCard{flex-basis:62vw}.ynTikTokTop p{font-size:11px}.ynTikTokArrows button{width:32px;height:32px}}
-`}</style>
+  .yntv{width:100%;max-width:none;background:#060606;color:#fff;position:relative;isolation:isolate;outline:none}
+  .yntvStage{height:100svh;min-height:540px;position:relative;overflow:hidden;background:#0c0c0c}
+  .yntvScene{position:absolute;inset:0;animation:yntvFade .65s ease both}
+  @keyframes yntvFade{from{opacity:.25;transform:scale(1.02)}to{opacity:1;transform:scale(1)}}
+  .yntvImage{width:100%;height:100%;object-fit:cover;object-position:center;display:block;filter:saturate(.95)}
+  .yntvMissing{height:100%;display:grid;place-items:center;font-size:clamp(52px,12vw,160px);font-weight:800;letter-spacing:-.09em;color:#303030}
+  .yntvTint{position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,#0009 0%,transparent 28%,transparent 55%,#000c 90%,#000f 100%)}
+  .yntvTop{position:absolute;z-index:6;top:0;left:0;right:0;padding:22px 22px 0;pointer-events:none}
+  .yntvBrand{font-size:17px;font-weight:800;letter-spacing:-.055em;text-shadow:0 1px 10px #0008}
+  .yntvBrand span{font-size:9px;font-weight:550;letter-spacing:.21em;margin-left:12px}
+  .yntvCats{pointer-events:auto;display:flex;gap:7px;overflow:auto;scrollbar-width:none;max-width:100%;padding:20px 0 8px}
+  .yntvCats::-webkit-scrollbar{display:none}
+  .yntvCats button{white-space:nowrap;flex:0 0 auto;color:#fff;background:#0007;border:1px solid #fff5;backdrop-filter:blur(14px);border-radius:999px;padding:9px 14px;font-size:11px;cursor:pointer}
+  .yntvCats button.selected{color:#111;background:#fff;border-color:#fff}
+  .yntvPlayHit{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;cursor:pointer;display:grid;place-items:center;color:#fff;z-index:1}
+  .yntvPlayCircle{width:68px;height:68px;display:grid;place-items:center;background:#0006;border:1px solid #fff8;backdrop-filter:blur(10px);border-radius:50%;transition:transform .2s}
+  .yntvPlayHit:hover .yntvPlayCircle{transform:scale(1.08)}
+  .yntvInfo{position:absolute;z-index:3;left:max(22px,env(safe-area-inset-left));bottom:clamp(90px,12vh,150px);width:min(600px,calc(100% - 44px));pointer-events:none;text-shadow:0 2px 14px #0009}
+  .yntvKicker{font-size:10px;letter-spacing:.22em;opacity:.8}
+  .yntvInfo p{font-size:clamp(18px,2.4vw,31px);line-height:1.2;font-weight:600;letter-spacing:-.03em;max-width:540px;margin:11px 0 18px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .yntvShop{pointer-events:auto;border:1px solid #fff8;backdrop-filter:blur(12px);background:#ffffff26;border-radius:100px;color:#fff;padding:12px 18px;display:inline-flex;align-items:center;gap:10px;font-size:12px;font-weight:650;cursor:pointer}
+  .yntvNavigation{position:absolute;z-index:5;bottom:25px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:16px;font-size:12px;background:#0006;border:1px solid #fff4;backdrop-filter:blur(12px);padding:4px 7px;border-radius:100px}
+  .yntvNavigation button{width:38px;height:38px;border:0;background:transparent;color:#fff;display:grid;place-items:center;cursor:pointer}
+  .yntvNavigation span span{opacity:.5;margin:0 4px}
+  .yntvVideo{position:absolute;z-index:2;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
+  .yntvVideo iframe{border:0;height:100%;width:min(100%,560px);background:#000}
+  .yntvStop{position:absolute;z-index:5;top:132px;right:20px;border:1px solid #fff7;background:#0009;color:white;border-radius:50%;width:42px;height:42px;display:grid;place-items:center;cursor:pointer}
+  .yntvOriginal{position:absolute;bottom:160px;right:20px;display:flex;align-items:center;gap:5px;color:#fff;background:#000b;padding:9px 13px;border-radius:99px}
+  .yntvEmpty{height:100%;display:flex;align-items:center;justify-content:center;gap:12px;flex-direction:column;font-size:14px;color:#eee;padding:30px;text-align:center}
+  .yntvEmpty button{border:1px solid #fff7;border-radius:99px;padding:10px 20px;background:#ffffff1b;color:white;cursor:pointer}
+  .ynTikTokWorldOverlay .ynTikTokWorldHead{position:absolute;right:0;left:0;top:0;z-index:30;background:transparent;border:0;pointer-events:none}
+  .ynTikTokWorldOverlay .ynTikTokWorldHead button{pointer-events:auto}
+  .ynTikTokWorldOverlay .ynTikTokWorldHead>span{display:none}
+  .ynTikTokWorldOverlay .ynTikTokWorldContent{overflow:hidden}
+  .ynTikTokWorldOverlay .yntvStage{height:100dvh}
+  @media(max-width:650px){.yntvTop{padding:calc(66px + env(safe-area-inset-top)) 12px 0}.yntvBrand{font-size:15px}.yntvBrand span{font-size:8px}.yntvCats{padding-top:12px}.yntvInfo{left:14px;bottom:110px;width:calc(100% - 28px)}.yntvInfo p{font-size:21px}.yntvNavigation{bottom:calc(20px + env(safe-area-inset-bottom))}.yntvStop{top:145px}.yntvStage{min-height:450px}}
+  `}</style>
  </section>;
 }
