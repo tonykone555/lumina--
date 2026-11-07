@@ -125,13 +125,23 @@ export default function TikTokProductSlider(){
     <div className="yntvBrand">YNOT <span>PRODUCT STORIES</span></div>
     <nav className="yntvCats" aria-label="Video categories">{CATEGORIES.map((c,i)=><button key={c.label} type="button" className={i===category?"selected":""} aria-pressed={i===category} onClick={()=>setCategory(i)}>{c.label}</button>)}</nav>
    </div>
-   <div className="yntvBubbleNav" aria-label="YNOT World video navigation">
-    <button className="yntvNavDot" type="button" aria-label="Previous video" disabled={videos.length<2} onClick={()=>select(index-1)}><span/></button>
-    <button className="yntvWorldBubble" type="button" aria-label="Go to YNOT World" onClick={()=>router.push("/worlds")}>
-     <span className="yntvBubbleShine"/><span className="yntvBubbleLetter">Y</span>
-     <span className="yntvBubbleName">YNOT</span>
-    </button>
-    <button className="yntvNavDot" type="button" aria-label="Next video" disabled={videos.length<2} onClick={()=>select(index+1)}><span/></button>
+   <div className="yntvBubbleNav yntvGlassDock" aria-label="YNOT glass video navigation">
+    <button className="yntvNavDot yntvDockArrow" type="button" aria-label="Previous video" disabled={videos.length<2} onClick={()=>select(index-1)}><ChevronLeft size={25}/></button>
+    <div className="yntvDockMiddle">
+     <button className="yntvWorldBubble" type="button" aria-label="Go to YNOT World" onClick={()=>router.push("/worlds")}>
+      <span className="yntvBubbleShine"/><span className="yntvBubbleLetter">Y</span><span className="yntvBubbleName">YNOT</span>
+     </button>
+     {videos.length>1&&<div ref={glassTrack} className="yntvDockScrubber" role="slider" tabIndex={0} aria-label="Scrub between product videos" aria-valuemin={1} aria-valuemax={videos.length} aria-valuenow={index+1}
+      onKeyDown={e=>{if(e.key==="ArrowLeft"){e.preventDefault();select(index-1)}else if(e.key==="ArrowRight"){e.preventDefault();select(index+1)}}}
+      onPointerDown={e=>{e.stopPropagation();dragActive.current=true;e.currentTarget.setPointerCapture(e.pointerId);changeViaGlass(e.clientX)}}
+      onPointerMove={e=>{if(dragActive.current)changeViaGlass(e.clientX)}}
+      onPointerUp={e=>{dragActive.current=false;if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)}}
+      onPointerCancel={()=>{dragActive.current=false}}>
+      <span className="yntvDockTrackFill" style={{width:`${((index+1)/videos.length)*100}%`}}/>
+      <span className="yntvDockTrackThumb" style={{left:`${videos.length>1?(index/(videos.length-1))*100:50}%`}}/>
+     </div>}
+    </div>
+    <button className="yntvNavDot yntvDockArrow" type="button" aria-label="Next video" disabled={videos.length<2} onClick={()=>select(index+1)}><ChevronRight size={25}/></button>
    </div>
   </div>
   <style jsx global>{`
@@ -213,6 +223,20 @@ export default function TikTokProductSlider(){
   .yntvNavDot:disabled{opacity:.28;cursor:default}
   .yntvNavDot:active:not(:disabled){transform:scale(.89)}
   @media(max-width:650px){.yntvBubbleNav{bottom:calc(12px + env(safe-area-inset-bottom));gap:19px}.yntvWorldBubble{width:65px;height:65px}.yntvInfo{bottom:calc(107px + env(safe-area-inset-bottom))}}
+
+  /* Floating glass dock with central raised YNOT orb */
+  .yntvBubbleNav.yntvGlassDock{position:absolute;z-index:20;left:50%;bottom:calc(15px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(91vw,440px);height:77px;display:flex;align-items:center;justify-content:space-between;gap:0;padding:0 22px;border-radius:999px;border:1px solid rgba(255,255,255,.31);background:linear-gradient(140deg,rgba(80,86,96,.50),rgba(12,14,19,.59) 48%,rgba(54,58,73,.50));box-shadow:0 14px 38px #000a,inset 0 1px 0 #ffffff5c,inset 0 -1px 0 #ffffff18;backdrop-filter:blur(28px) saturate(175%);-webkit-backdrop-filter:blur(28px) saturate(175%);isolation:isolate}
+  .yntvGlassDock:before{content:"";position:absolute;inset:3px;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.12),transparent 50%,rgba(255,255,255,.035))}
+  .yntvGlassDock .yntvDockArrow{position:relative;z-index:2;width:52px;height:52px;border-radius:50%;border:0;background:rgba(255,255,255,.065);display:grid;place-items:center;color:white;transition:background .2s}
+  .yntvGlassDock .yntvDockArrow:active:not(:disabled){background:#ffffff38}
+  .yntvDockMiddle{height:100%;flex:1;position:relative;display:flex;justify-content:center;align-items:flex-end;min-width:0;padding-bottom:12px}
+  .yntvGlassDock .yntvWorldBubble{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);width:66px;height:66px;z-index:3;border-color:#ffffff80;box-shadow:0 10px 28px #000c,inset 0 2px 2px #ffffff78,inset 0 -3px 7px #0008}
+  .yntvDockScrubber{position:relative;width:min(122px,100%);height:18px;flex:none;touch-action:none;cursor:ew-resize;outline-offset:4px;z-index:4}
+  .yntvDockScrubber:before{content:"";position:absolute;left:0;right:0;top:8px;height:3px;background:#ffffff51;border-radius:6px}
+  .yntvDockTrackFill{position:absolute;left:0;top:8px;height:3px;border-radius:6px;background:#fffd;pointer-events:none}
+  .yntvDockTrackThumb{position:absolute;top:9px;width:13px;height:13px;border-radius:50%;background:white;box-shadow:0 1px 9px #0008;transform:translate(-50%,-50%);pointer-events:none}
+  .yntvGlassDock .yntvNavDot:disabled{opacity:.33}
+  @media(max-width:650px){.yntvBubbleNav.yntvGlassDock{bottom:calc(12px + env(safe-area-inset-bottom));height:73px;width:min(93vw,420px);padding:0 17px}.yntvGlassDock .yntvWorldBubble{bottom:28px;width:64px;height:64px}.yntvGlassDock .yntvDockArrow{width:49px;height:49px}.yntvInfo{bottom:calc(125px + env(safe-area-inset-bottom))}}
   `}</style>
  </section>;
 }
