@@ -1,66 +1,129 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkoutEnabled, checkoutMode, shippingFor, type CheckoutProduct } from "@/lib/commerce/checkout";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
+// Each feed is market-specific. Add a market only once YNOT actually serves it.
+const MARKETS: Record<string, string> = {
+  FR: "EUR", DE: "EUR", IT: "EUR", ES: "EUR", NL: "EUR", BE: "EUR",
+};
 const SITE = "https://ynotworld.app";
-const QUERIES = [
-  "fashion clothing dresses bags accessories",
-  "kids baby clothing toys nursery",
-  "fitness activewear training equipment",
-  "beauty skincare self care",
-  "hair care styling tools",
-  "home furniture lighting decor",
-  "tech electronics audio accessories",
-];
-
-type Variant = { available?: boolean };
-type Product = {
-  id?: string; title?: string; description?: string; brand?: string; price?: number | null;
-  currency?: string; image?: string; images?: string[]; url?: string; source?: string;
-  variants?: Variant[]; gtin?: string; mpn?: string; condition?: string; availability?: string;
+type Row = Record<string, any>;
+const esc = (v: unknown) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
+const clean = (v: unknown) => String(v ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+const validHttps = (v: unknown) => { try { return new URL(String(v)).protocol === "https:"; } catch { return false; } };
+const normalizeStock = (v: unknown) => {
+  const s = String(v ?? "").toLowerCase().replace(/[\s-]+/g, "_");
+  return ["in_stock", "out_of_stock", "preorder", "backorder"].includes(s) ? s : "";
+};
+const normalizeCondition = (v: unknown) => {
+  const s = String(v ?? "").toLowerCase().replace(/[\s-]+/g, "_");
+  return ["new", "used", "refurbished"].includes(s) ? s : "";
 };
 
-const esc = (v: unknown) => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
-const text = (v: unknown) => String(v ?? "").replace(/<[^>]+>/g," ").replace(/\s+/g," ").trim();
-function knownAvailability(p: Product) {
-  const raw = String(p.availability || "").toLowerCase();
-  if (["in_stock","out_of_stock","preorder","backorder"].includes(raw)) return raw;
-  if (Array.isArray(p.variants) && p.variants.length) return p.variants.some(v => v.available === true) ? "in_stock" : p.variants.every(v => v.available === false) ? "out_of_stock" : "";
-  return "";
-}
-function knownCondition(p: Product) {
-  const raw = String(p.condition || "").toLowerCase().replace(/\s+/g,"_");
-  return ["new","used","refurbished"].includes(raw) ? raw : "";
-}
-function quality(p: Product) {
-  const availability = knownAvailability(p), condition = knownCondition(p);
-  const reasons: string[] = [];
-  if (!p.id) reasons.push("missing_id"); if (!text(p.title)) reasons.push("missing_title");
-  if (!p.image) reasons.push("missing_image"); if (!p.url) reasons.push("missing_merchant_url");
-  if (!(Number(p.price) > 0)) reasons.push("missing_price"); if (!p.currency) reasons.push("missing_currency");
-  if (!availability) reasons.push("unknown_availability"); if (!condition) reasons.push("unknown_condition");
-  return { ok: reasons.length === 0, reasons, availability, condition };
-}
-async function catalogue(req: NextRequest) {
-  const products: Product[] = [];
-  for (const q of QUERIES) {
-    const u = new URL("/api/catalog", req.nextUrl.origin);
-    u.searchParams.set("q", q); u.searchParams.set("country", "FR"); u.searchParams.set("source", "shopify"); u.searchParams.set("category_load", "1");
-    const r = await fetch(u, { cache: "no-store", headers: { accept: "application/json" } });
-    if (!r.ok) continue;
-    const j = await r.json(); if (Array.isArray(j?.products)) products.push(...j.products);
+async function catalogPages(country: string): Promise<Row[]> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("CATALOG_NOT_CONFIGURED");
+  const out: Row[] = [];
+  // Paginate across the persisted catalog rather than sampling a few keyword searches.
+  for (let offset = 0; offset < 100000; offset += 1000) {
+    const query = new URL(url.replace(/\/$/, "") + "/rest/v1/ynot_catalog_products");
+    query.searchParams.set("select", "*");
+    query.searchParams.set("country", "eq." + country);
+    query.searchParams.set("active", "eq.true");
+    query.searchParams.set("ad_eligible", "eq.true");
+    query.searchParams.set("commerce_status", "eq.commerce_ready");
+    query.searchParams.set("order", "ynot_id.asc");
+    query.searchParams.set("limit", "1000");
+    query.searchParams.set("offset", String(offset));
+    const response = await fetch(query, {
+      headers: { apikey: key, Authorization: "Bearer " + key },
+      cache: "no-store",
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!response.ok) throw new Error("CATALOG_READ_FAILED_" + response.status);
+    const rows: Row[] = await response.json();
+    out.push(...rows);
+    if (rows.length < 1000) return out;
   }
-  const seen = new Set<string>();
-  return products.filter(p => { const k = String(p.id || ""); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+  throw new Error("CATALOG_PAGINATION_LIMIT_REACHED");
+}
+
+function assess(p: Row, country: string, expectedCurrency: string) {
+  const reasons: string[] = [];
+  const attrs: Row = p.normalized_attributes && typeof p.normalized_attributes === "object" ? p.normalized_attributes : {};
+  const id = String(p.ynot_id || "");
+  const title = clean(p.cleaned_title || p.title);
+  const description = clean(p.enriched_description || p.description || "");
+  const image = String(p.image_url || "");
+  const price = Number(p.ynot_price);
+  const currency = String(p.currency || "").toUpperCase();
+  const availability = normalizeStock(p.availability ?? attrs.availability);
+  const condition = normalizeCondition(p.condition ?? attrs.condition);
+  const supplierUrl = String(p.best_source_url || "");
+  const source = String(p.source || "shopify-global-catalog");
+  const supplier: CheckoutProduct = {
+    id, title, price, currency, image, url: supplierUrl,
+    source, category: String(p.category || ""), variantId: p.source_variant_id || undefined,
+  };
+  if (!id) reasons.push("missing_id");
+  if (!title) reasons.push("missing_title");
+  if (!description) reasons.push("missing_description");
+  if (!validHttps(image)) reasons.push("invalid_image");
+  if (!Number.isFinite(price) || price <= 0) reasons.push("invalid_price");
+  if (currency !== expectedCurrency) reasons.push("market_currency_mismatch");
+  if (!availability) reasons.push("unverified_stock");
+  if (!condition) reasons.push("unverified_condition");
+  if (!validHttps(supplierUrl) || checkoutMode(supplier).mode !== "ynot") reasons.push("not_ynot_checkout");
+  if (!checkoutEnabled()) reasons.push("checkout_disabled");
+  // No guessed shipping prices. A region must have an explicit verified rule.
+  try {
+    const quote = shippingFor(supplier, { country });
+    if (quote.currency !== expectedCurrency) reasons.push("shipping_currency_mismatch");
+  } catch {
+    reasons.push("unverified_shipping");
+  }
+  if (p.feed_selected === false) reasons.push("not_selected");
+  return { eligible: reasons.length === 0, reasons, id, title, description, image, price, currency, availability, condition, attrs };
 }
 
 export async function GET(req: NextRequest) {
-  const all = await catalogue(req);
-  const accepted = all.map(p => ({ p, q: quality(p) })).filter(x => x.q.ok);
-  const rejected = all.map(p => ({ id:p.id,title:p.title,reasons:quality(p).reasons })).filter(x => x.reasons.length);
-  if (req.nextUrl.searchParams.get("diagnostics") === "1") return NextResponse.json({ generated_at:new Date().toISOString(), scanned:all.length, eligible:accepted.length, withheld:rejected.length, withheld_products:rejected.slice(0,200) }, { headers:{"Cache-Control":"no-store"} });
-  const items = accepted.map(({p,q}) => `<item><g:id>${esc(p.id)}</g:id><g:title>${esc(text(p.title).slice(0,150))}</g:title><g:description>${esc(text(p.description || p.title).slice(0,5000))}</g:description><g:link>${esc(`${SITE}/p/${encodeURIComponent(String(p.id))}`)}</g:link><g:image_link>${esc(p.image)}</g:image_link><g:availability>${q.availability}</g:availability><g:price>${Number(p.price).toFixed(2)} ${esc(p.currency)}</g:price><g:condition>${q.condition}</g:condition>${p.brand?`<g:brand>${esc(p.brand)}</g:brand>`:""}${p.gtin?`<g:gtin>${esc(p.gtin)}</g:gtin>`:p.mpn?`<g:mpn>${esc(p.mpn)}</g:mpn>`:"<g:identifier_exists>no</g:identifier_exists>"}<g:custom_label_0>YNOT</g:custom_label_0><g:custom_label_1>${esc(p.source||"shopify")}</g:custom_label_1></item>`).join("");
-  const xml = `<?xml version="1.0" encoding="UTF-8"?><rss xmlns:g="http://base.google.com/ns/1.0" version="2.0"><channel><title>YNOT World Product Feed</title><link>${SITE}</link><description>Eligible YNOT products prepared for Google Merchant Center.</description>${items}</channel></rss>`;
-  return new NextResponse(xml,{status:200,headers:{"Content-Type":"application/xml; charset=utf-8","Cache-Control":"public, max-age=0, s-maxage=1800"}});
+  const country = String(req.nextUrl.searchParams.get("country") || "FR").toUpperCase();
+  const currency = MARKETS[country];
+  if (!currency) return NextResponse.json({ error: "UNSUPPORTED_MARKET", supported: Object.keys(MARKETS) }, { status: 400 });
+  try {
+    const products = await catalogPages(country);
+    const assessed = products.map(p => ({ p, audit: assess(p, country, currency) }));
+    const accepted = assessed.filter(x => x.audit.eligible);
+    const rejected = assessed.filter(x => !x.audit.eligible);
+    if (req.nextUrl.searchParams.get("diagnostics") === "1") {
+      const reasons: Record<string, number> = {};
+      for (const x of rejected) for (const reason of x.audit.reasons) reasons[reason] = (reasons[reason] || 0) + 1;
+      return NextResponse.json({ country, scanned: assessed.length, eligible: accepted.length, withheld: rejected.length, reasons, published: process.env.YNOT_GOOGLE_MERCHANT_LAUNCH_ENABLED === "true" }, { headers: { "Cache-Control": "no-store" } });
+    }
+    // An empty feed is intentional until the merchant account, website and operational rules are approved.
+    const published = process.env.YNOT_GOOGLE_MERCHANT_LAUNCH_ENABLED === "true";
+    const items = (published ? accepted : []).map(({ p, audit: a }) => {
+      const brand = clean(p.source_brand || p.brand);
+      const gtin = clean(p.gtin || a.attrs.gtin);
+      const mpn = clean(p.mpn || a.attrs.mpn);
+      const extra = Array.isArray(p.image_urls) ? p.image_urls.filter((u: unknown) => validHttps(u) && u !== a.image).slice(0, 10) : [];
+      const tags = [
+        brand ? `<g:brand>${esc(brand)}</g:brand>` : "",
+        gtin ? `<g:gtin>${esc(gtin)}</g:gtin>` : "",
+        mpn ? `<g:mpn>${esc(mpn)}</g:mpn>` : "",
+        ...extra.map((url: string) => `<g:additional_image_link>${esc(url)}</g:additional_image_link>`),
+      ].join("");
+      const link = SITE + "/p/" + encodeURIComponent(a.id) + "?country=" + country + "&src=google";
+      return `<item><g:id>${esc(country + ":" + a.id)}</g:id><g:title>${esc(a.title.slice(0, 150))}</g:title><g:description>${esc(a.description.slice(0, 5000))}</g:description><g:link>${esc(link)}</g:link><g:image_link>${esc(a.image)}</g:image_link><g:price>${a.price.toFixed(2)} ${currency}</g:price><g:availability>${a.availability}</g:availability><g:condition>${a.condition}</g:condition>${tags}</item>`;
+    }).join("");
+    const xml = `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel><title>YNOT World — ${country}</title><link>${SITE}</link><description>Verified eligible products offered by YNOT.</description>${items}</channel></rss>`;
+    return new NextResponse(xml, { headers: { "Content-Type": "application/xml; charset=utf-8", "Cache-Control": "no-store", "X-YNOT-Feed-Country": country, "X-YNOT-Feed-Items": String(published ? accepted.length : 0) } });
+  } catch (error) {
+    console.error("MERCHANT_FEED_ERROR", error);
+    return NextResponse.json({ error: "MERCHANT_FEED_UNAVAILABLE" }, { status: 503, headers: { "Cache-Control": "no-store" } });
+  }
 }
