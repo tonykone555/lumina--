@@ -39,7 +39,9 @@ function quality(p: Product) {
   if (!p.id) reasons.push("missing_id"); if (!text(p.title)) reasons.push("missing_title");
   if (!p.image) reasons.push("missing_image"); if (!p.url) reasons.push("missing_merchant_url");
   if (!(Number(p.price) > 0)) reasons.push("missing_price"); if (!p.currency) reasons.push("missing_currency");
-  if (!availability) reasons.push("unknown_availability"); if (!condition) reasons.push("unknown_condition");
+  if (!availability) reasons.push("unknown_availability");
+  // Google only requires condition for used/refurbished goods. Unknown is not proof of "new".
+  if (p.condition && !condition) reasons.push("invalid_condition");
   return { ok: reasons.length === 0, reasons, availability, condition };
 }
 async function catalogue(req: NextRequest) {
@@ -60,7 +62,7 @@ export async function GET(req: NextRequest) {
   const accepted = all.map(p => ({ p, q: quality(p) })).filter(x => x.q.ok);
   const rejected = all.map(p => ({ id:p.id,title:p.title,reasons:quality(p).reasons })).filter(x => x.reasons.length);
   if (req.nextUrl.searchParams.get("diagnostics") === "1") return NextResponse.json({ generated_at:new Date().toISOString(), scanned:all.length, eligible:accepted.length, withheld:rejected.length, withheld_products:rejected.slice(0,200) }, { headers:{"Cache-Control":"no-store"} });
-  const items = accepted.map(({p,q}) => `<item><g:id>${esc(p.id)}</g:id><g:title>${esc(text(p.title).slice(0,150))}</g:title><g:description>${esc(text(p.description || p.title).slice(0,5000))}</g:description><g:link>${esc(`${SITE}/p/${encodeURIComponent(String(p.id))}`)}</g:link><g:image_link>${esc(p.image)}</g:image_link><g:availability>${q.availability}</g:availability><g:price>${Number(p.price).toFixed(2)} ${esc(p.currency)}</g:price><g:condition>${q.condition}</g:condition>${p.brand?`<g:brand>${esc(p.brand)}</g:brand>`:""}${p.gtin?`<g:gtin>${esc(p.gtin)}</g:gtin>`:p.mpn?`<g:mpn>${esc(p.mpn)}</g:mpn>`:"<g:identifier_exists>no</g:identifier_exists>"}<g:custom_label_0>YNOT</g:custom_label_0><g:custom_label_1>${esc(p.source||"shopify")}</g:custom_label_1></item>`).join("");
+  const items = accepted.map(({p,q}) => `<item><g:id>${esc(p.id)}</g:id><g:title>${esc(text(p.title).slice(0,150))}</g:title><g:description>${esc(text(p.description || p.title).slice(0,5000))}</g:description><g:link>${esc(`${SITE}/p/${encodeURIComponent(String(p.id))}`)}</g:link><g:image_link>${esc(p.image)}</g:image_link><g:availability>${q.availability}</g:availability><g:price>${Number(p.price).toFixed(2)} ${esc(p.currency)}</g:price>${q.condition?`<g:condition>${q.condition}</g:condition>`:""}${p.brand?`<g:brand>${esc(p.brand)}</g:brand>`:""}${p.gtin?`<g:gtin>${esc(p.gtin)}</g:gtin>`:p.mpn?`<g:mpn>${esc(p.mpn)}</g:mpn>`:"<g:identifier_exists>no</g:identifier_exists>"}<g:custom_label_0>YNOT</g:custom_label_0><g:custom_label_1>${esc(p.source||"shopify")}</g:custom_label_1></item>`).join("");
   const xml = `<?xml version="1.0" encoding="UTF-8"?><rss xmlns:g="http://base.google.com/ns/1.0" version="2.0"><channel><title>YNOT World Product Feed</title><link>${SITE}</link><description>Eligible YNOT products prepared for Google Merchant Center.</description>${items}</channel></rss>`;
   return new NextResponse(xml,{status:200,headers:{"Content-Type":"application/xml; charset=utf-8","Cache-Control":"public, max-age=0, s-maxage=1800"}});
 }
