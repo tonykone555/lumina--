@@ -48,7 +48,7 @@ export async function googleMerchantAccessToken(): Promise<string> {
   const signer = createSign("RSA-SHA256");
   signer.update(unsigned);
   signer.end();
-  const assertion = unsigned + "." + base64url(signer.sign(c.private_key.replace(/\\n/g, "\n")));
+  const assertion = unsigned + "." + base64url(signer.sign(c.private_key));
   const response = await fetch(TOKEN_URL, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded" },
