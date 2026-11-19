@@ -32,7 +32,7 @@ function validate(x: Review) {
   if (!x.offerId || !/^[A-Za-z0-9._-]{1,80}$/.test(x.offerId)) errors.push("valid offerId required");
   if (!x.title || x.title.trim().length < 5 || x.title.length > 150) errors.push("title required (5-150 characters)");
   if (!x.description || x.description.trim().length < 15) errors.push("description required");
-  if (!x.link || !validHttps(x.link) || new URL(x.link).hostname !== "ynotworld.app") errors.push("verified YNOT product page URL required");
+  if (!x.link || !validHttps(x.link) || !["ynotworld.app", "shop.ynotworld.app"].includes(new URL(x.link).hostname)) errors.push("verified YNOT product page URL required");
   if (!x.imageLink || !validHttps(x.imageLink)) errors.push("image URL required");
   if (!Number.isFinite(x.price) || Number(x.price) <= 0) errors.push("valid positive price required");
   if (!x.currency || !/^[A-Z]{3}$/.test(x.currency)) errors.push("currency required");
