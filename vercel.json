@@ -1,1 +1,1 @@
-{"buildCommand":"npm run build && node scripts/merchant-verify-ten.mjs"}
+{}
