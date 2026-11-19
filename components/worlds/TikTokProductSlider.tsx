@@ -2,7 +2,7 @@
 
 import {useEffect,useRef,useState} from "react";
 import {useRouter} from "next/navigation";
-import {Play,Search,ExternalLink} from "lucide-react";
+import {Play,Search,ExternalLink,ChevronLeft,ChevronRight} from "lucide-react";
 
 type Video={id:string;url:string;embedUrl:string;thumbnail?:string;caption:string;searchQuery?:string;hashtags?:string[]};
 const CATEGORIES=[
