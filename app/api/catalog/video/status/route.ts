@@ -8,11 +8,11 @@ export const maxDuration=60;
 type Job={id:string;product_id:string;source_image_url:string;source_image_hash:string;title:string;category?:string|null;prompt:string;provider:string;model:string;external_job_id?:string|null;status:string;video_url?:string|null;poster_url?:string|null;error?:string|null};
 
 const HF_PROVIDER="huggingface_zerogpu_lightricks",HF_MODEL="ltx_video_0_9_8_13b_distilled";
-const MODAL_PROVIDER="modal_ltx",MODAL_MODEL="ltx_video_2b_fast";
+const MODAL_PROVIDER="modal_ltx25",MODAL_MODEL="ltx_2_5_22b_distilled";
 
 function provider(){
- if(modalConfigured())return{provider:MODAL_PROVIDER,model:MODAL_MODEL,configured:true};
- return{provider:HF_PROVIDER,model:HF_MODEL,configured:huggingFaceConfigured()};
+ // LTX-2.5 is the only supported on-click model; keep photos when not deployed.
+ return {provider:MODAL_PROVIDER,model:MODAL_MODEL,configured:modalConfigured()};
 }
 
 async function rowsFor(ids:string[],providerName:string,modelName:string){
