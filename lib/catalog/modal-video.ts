@@ -12,7 +12,8 @@ function modalClient(){
 }
 
 export function modalConfigured(){
- return Boolean(process.env.MODAL_TOKEN_ID&&process.env.MODAL_TOKEN_SECRET);
+ // Explicit opt-in: never silently send product clicks to a retired model.
+ return Boolean(process.env.MODAL_VIDEO_MODEL==="ltx25"&&process.env.MODAL_TOKEN_ID&&process.env.MODAL_TOKEN_SECRET);
 }
 
 export async function submitModalVideo(product:VideoProduct,prompt:string){
@@ -23,9 +24,9 @@ export async function submitModalVideo(product:VideoProduct,prompt:string){
    image_url:product.image,
    prompt,
    product_id:product.id,
-   width:512,
-   height:320,
-   num_frames:25
+   width:640,
+   height:384,
+   num_frames:49
   });
   return call.functionCallId;
  }finally{
@@ -54,8 +55,8 @@ export async function pollModalVideo(callId:string,timeoutMs=0):Promise<ModalVid
     status:"ready",
     video_base64:String(result.video_base64),
     content_type:String(result.content_type||"video/mp4"),
-    model:String(result.model||"Lightricks/LTX-Video"),
-    gpu:String(result.gpu||"L4"),
+    model:String(result.model||"ltx-2.5-22b-distilled"),
+    gpu:String(result.gpu||"H100"),
     generation_seconds:Number(result.generation_seconds||0)
    };
   }catch(e){
@@ -90,7 +91,7 @@ export async function persistModalVideo(productId:string,hash:string,videoBase64
  if(!key.startsWith("sb_"))restHeaders.Authorization="Bearer "+key;
  const media=await fetch(base+"/rest/v1/ynot_product_media?on_conflict=product_id,media_type,source_image_hash",{
   method:"POST",headers:restHeaders,cache:"no-store",
-  body:JSON.stringify([{product_id:productId,source_image_url:posterUrl,source_image_hash:hash,media_type:"video_ai",provider:"modal-ltx",video_url:publicUrl,poster_url:posterUrl,preset:null,status:"ready",priority:60,metadata:{...metadata,cached:true},updated_at:new Date().toISOString()}])
+  body:JSON.stringify([{product_id:productId,source_image_url:posterUrl,source_image_hash:hash,media_type:"video_ai",provider:"modal-ltx25",video_url:publicUrl,poster_url:posterUrl,preset:null,status:"ready",priority:60,metadata:{...metadata,cached:true},updated_at:new Date().toISOString()}])
  });
  if(!media.ok)throw new Error("MODAL_MEDIA_DB_"+media.status+":"+(await media.text()).slice(0,160));
  return publicUrl;
