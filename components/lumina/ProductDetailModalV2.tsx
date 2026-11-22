@@ -4,6 +4,7 @@ import {useEffect,useMemo,useRef,useState} from "react";
 import {createPortal} from "react-dom";
 import {ChevronDown,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
 import "./ProductDetailModalV2.css";
+import ProductAiMotion from "./ProductAiMotion";
 
 type Variant={
   id:string;label:string;price:number|null;currency?:string;image?:string;images?:string[];url?:string;available:boolean;
@@ -136,6 +137,7 @@ export default function ProductDetailModalV2({
       <section className="ynot-pv2-gallery">
         <button className="ynot-pv2-hero" type="button" onClick={cycleImage} aria-label={images.length>1?"Show next product image":"Product image"}>
           <img src={product.image} alt={clean(product.title)} draggable={false}/>
+          <ProductAiMotion product={product}/>
           {images.length>1&&<span className="ynot-pv2-images-button" aria-hidden="true">Images · {activeIndex+1}/{images.length}</span>}
         </button>
         {images.length>1&&<div className="ynot-pv2-thumbs" aria-label="Product images">
