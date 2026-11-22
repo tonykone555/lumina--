@@ -1,6 +1,6 @@
 import type {VideoProduct} from "./hf-video";
 
-export type VideoGenerationSource="search"|"showcase"|"admin";
+export type VideoGenerationSource="search"|"showcase"|"admin"|"product";
 
 export type ScoredVideoCandidate={
  product:VideoProduct;
@@ -42,6 +42,7 @@ export function scoreVideoCandidate(product:VideoProduct,source:VideoGenerationS
 
  if(source==="search"){score+=32;reasons.push("search_intent")}
  else if(source==="showcase"){score+=12;reasons.push("showcase")}
+ else if(source==="product"){score+=42;reasons.push("product_open")}
  else {score+=42;reasons.push("admin")}
 
  if(product.image){score+=8;reasons.push("has_image")}
