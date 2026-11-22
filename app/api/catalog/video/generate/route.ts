@@ -76,8 +76,8 @@ export async function POST(req:NextRequest){
   const active=provider();
   if(!products.length)return NextResponse.json({configured:active.configured,provider:active.provider,jobs:{}});
   const requestedSource=String(b?.source||"search");
-  const source:VideoGenerationSource=requestedSource==="showcase"?"showcase":requestedSource==="admin"?"admin":"search";
-  const selected=selectVideoCandidates(products,source),selectedIds=new Set(selected.map(x=>x.product.id));
+  const source:VideoGenerationSource=requestedSource==="product"?"product":requestedSource==="showcase"?"showcase":requestedSource==="admin"?"admin":"search";
+  const selected=source==="product"?products.slice(0,1):selectVideoCandidates(products,source),selectedIds=new Set(selected.map(x=>("product" in x?x.product.id:x.id)));
   let slots=Math.max(0,1-await countProcessing(active.provider,active.model));
   const out:Record<string,any>={};
 
