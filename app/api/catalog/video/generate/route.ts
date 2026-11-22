@@ -9,11 +9,11 @@ export const maxDuration=60;
 type JobRow={id:string;product_id:string;source_image_hash:string;external_job_id?:string|null;status:string;video_url?:string|null;error?:string|null};
 
 const HF_PROVIDER="huggingface_zerogpu_lightricks",HF_MODEL="ltx_video_0_9_8_13b_distilled";
-const MODAL_PROVIDER="modal_ltx",MODAL_MODEL="ltx_video_2b_fast";
+const MODAL_PROVIDER="modal_ltx25",MODAL_MODEL="ltx_2_5_22b_distilled";
 
 function provider(){
- if(modalConfigured())return{provider:MODAL_PROVIDER,model:MODAL_MODEL,configured:true};
- return{provider:HF_PROVIDER,model:HF_MODEL,configured:huggingFaceConfigured()};
+ // LTX-2.5 is the only supported on-click model; keep photos when not deployed.
+ return {provider:MODAL_PROVIDER,model:MODAL_MODEL,configured:modalConfigured()};
 }
 
 async function countProcessing(providerName:string,modelName:string){
@@ -48,7 +48,7 @@ async function createOrResetJob(product:VideoProduct,hash:string,prompt:string,p
   error:null,
   poster_url:product.image,
   metadata:isModal
-   ?{duration_seconds:2,width:512,height:320,source:"ynot-deals",runtime:"modal",gpu:"L4",function:"generate_video"}
+   ?{duration_seconds:2,width:640,height:384,source:"ynot-product",runtime:"modal",gpu:"H100",function:"generate_video"}
    :{duration_seconds:2,width:512,height:640,source:"ynot-deals",space:"Lightricks/ltx-video-distilled",api:"image_to_video"},
   updated_at:new Date().toISOString()
  }];
@@ -77,7 +77,9 @@ export async function POST(req:NextRequest){
   if(!products.length)return NextResponse.json({configured:active.configured,provider:active.provider,jobs:{}});
   const requestedSource=String(b?.source||"search");
   const source:VideoGenerationSource=requestedSource==="product"?"product":requestedSource==="showcase"?"showcase":requestedSource==="admin"?"admin":"search";
-  const selected=source==="product"?products.slice(0,1):selectVideoCandidates(products,source),selectedIds=new Set(selected.map(x=>("product" in x?x.product.id:x.id)));
+  const selectedIds=source==="product"
+   ?new Set(products.slice(0,1).map(p=>p.id))
+   :new Set(selectVideoCandidates(products,source).map(x=>x.product.id));
   let slots=Math.max(0,1-await countProcessing(active.provider,active.model));
   const out:Record<string,any>={};
 
@@ -97,7 +99,7 @@ export async function POST(req:NextRequest){
 
    const prompt=motionPrompt(product);
    let job=await jobFor(product.id,hash,active.provider,active.model);
-   if(!job||job.status==="failed")job=await createOrResetJob(product,hash,prompt,active.provider,active.model);
+   if(!job)job=await createOrResetJob(product,hash,prompt,active.provider,active.model);
 
    if(job.status==="queued"&&slots>0&&active.configured){
     try{
