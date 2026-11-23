@@ -1,0 +1,76 @@
+/*
+ * YNOT viewport surface cleanup (2026-11-24).
+ * The app formerly stacked multiple fixed "header canopy" pseudo-elements:
+ * deep-explore.css .lv4-shell:after, final-ui-refinement.css,
+ * mobile-header-card-fix.css .ynot-app-shell::before, and the
+ * bottom-search pseudo-element from mobile-search-browser-blend.css.
+ * These layers stayed fixed over the world even when the actual product
+ * imagery and controls extended beneath them, producing black "bezels".
+ *
+ * This file loads LAST in the root layout. Keep dialog dimmers, the
+ * actual product card, and the viewport-size interactive world intact.
+ */
+@media (max-width:899px) {
+  /* The homepage world is visible at all depths, including behind the
+     translucent site header. A fixed black mask is never needed. */
+  body .ynot-app-shell:not(.chrome-hidden)::before,
+  body .ynot-app-shell:not(.chrome-hidden)::after,
+  body .ynot-app-shell:not(.chrome-hidden) .lv4-shell::before,
+  body .ynot-app-shell:not(.chrome-hidden) .lv4-shell::after {
+    content:none!important;
+    display:none!important;
+    opacity:0!important;
+    height:0!important;
+    background:none!important;
+    filter:none!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+    box-shadow:none!important;
+    pointer-events:none!important;
+  }
+
+  /* The mobile search should float above the world without a black
+     pseudo-element that fades down to #000 near the home indicator. */
+  body .ynot-app-shell:not(.chrome-hidden) .ynot-search::before,
+  body .ynot-app-shell:not(.chrome-hidden) .world-search::before,
+  body .ynot-app-shell:not(.chrome-hidden) .search-pill::before,
+  body .ynot-app-shell:not(.chrome-hidden) .voice-search::before,
+  body .ynot-app-shell:not(.chrome-hidden) .world-search-bar::before,
+  body .ynot-app-shell:not(.chrome-hidden) .world-search-pill::before,
+  body .ynot-app-shell:not(.chrome-hidden) [class*="search-pill"]::before,
+  body .ynot-app-shell:not(.chrome-hidden) [class*="search-bar"]::before {
+    content:none!important;
+    display:none!important;
+    background:none!important;
+    filter:none!important;
+    opacity:0!important;
+  }
+
+  /* Maintain edge-to-edge world media and keep only the controls in
+     the safe areas. No extra top inset, mask or border on its canvas. */
+  body .ynot-app-shell:not(.chrome-hidden) .lv4-shell,
+  body .ynot-app-shell:not(.chrome-hidden) .lv4-world {
+    margin-top:0!important;
+    padding-top:0!important;
+    border-top:0!important;
+    border-bottom:0!important;
+    border-radius:0!important;
+    clip-path:none!important;
+    -webkit-clip-path:none!important;
+    mask-image:none!important;
+    -webkit-mask-image:none!important;
+  }
+  body .ynot-app-shell:not(.chrome-hidden) .lv4-world {
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+  }
+
+  /* World covers and category grids remain the scrolling foreground;
+     only their floating search controls should overlay them. */
+  html[data-ynot-document-scroll="true"] .worlds::before,
+  html[data-ynot-document-scroll="true"] .worlds::after {
+    content:none!important;
+    display:none!important;
+  }
+}
