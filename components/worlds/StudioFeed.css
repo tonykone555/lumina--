@@ -57,3 +57,50 @@
 .studio-zip-bubble{border-radius:999px;padding:5px 9px;min-width:33px}
 .studio-stage .studio-retry{border:1px solid #ffffff99;background:#17171785;color:#fff;padding:4px 10px;border-radius:999px;cursor:pointer;letter-spacing:0;text-transform:none}
 @media(max-width:700px){.studio-zip-wrap{top:32%;height:31%;right:8px}.studio-zip{width:36px}.studio-topbar .studio-project-trigger span{display:block}}
+
+
+/* Studio immersive viewport: images, blur and fade flow under the entire
+   device cutout / home indicator area; safe-area padding applies to UI only. */
+html:has(.studio-stage),body:has(.studio-stage){
+ margin:0!important;padding:0!important;width:100%!important;height:100%!important;
+ min-height:100dvh!important;overflow:hidden!important;background:#10100f!important;
+ overscroll-behavior:none!important;
+}
+body:has(.studio-stage) #__next,body:has(.studio-stage) main{margin:0}
+.studio-stage{
+ position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;
+ width:100vw!important;width:100dvw!important;height:100vh!important;height:100dvh!important;
+ min-height:0!important;max-height:none!important;margin:0!important;padding:0!important;
+ border:0!important;border-radius:0!important;box-shadow:none!important;
+ overflow:hidden!important;overscroll-behavior:none;
+ background:#10100f!important;touch-action:pan-x;
+}
+.studio-backdrop{
+ position:absolute!important;inset:-16% -16%!important;
+ background-size:cover!important;background-position:center center!important;
+ filter:blur(42px) brightness(.74) saturate(.88)!important;
+ transform:scale(1.10);opacity:1!important;pointer-events:none;
+}
+.studio-hero{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ border:0!important;padding:0!important;margin:0!important;border-radius:0!important;overflow:hidden!important}
+.studio-hero img{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+ max-height:none!important;object-fit:contain!important;object-position:center 39%!important;
+ border:0!important;margin:0!important;padding:0!important;mask-image:linear-gradient(to bottom,#000 0%,#000 66%,transparent 99%);
+ -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 66%,transparent 99%);
+}
+.studio-vignette{position:absolute!important;inset:0!important;border-radius:0!important;
+ background:linear-gradient(180deg,#0007 0%,#0001 22%,transparent 43%,#0001 53%,#0009 75%,#000e 100%)!important;
+ pointer-events:none}
+.studio-topbar{top:calc(env(safe-area-inset-top,0px) + 16px)!important}
+.studio-filters{top:calc(env(safe-area-inset-top,0px) + 79px)!important}
+.studio-counter{top:calc(env(safe-area-inset-top,0px) + 144px)!important}
+.studio-bottom{bottom:calc(env(safe-area-inset-bottom,0px) + 16px)!important}
+.studio-zip-wrap{right:calc(env(safe-area-inset-right,0px) + 10px)!important}
+@media(max-width:700px){
+ .studio-topbar{left:calc(env(safe-area-inset-left,0px) + 14px)!important;right:calc(env(safe-area-inset-right,0px) + 14px)!important}
+ .studio-filters{top:calc(env(safe-area-inset-top,0px) + 74px)!important}
+ .studio-counter{top:calc(env(safe-area-inset-top,0px) + 124px)!important}
+ .studio-bottom{left:calc(env(safe-area-inset-left,0px) + 19px)!important;right:calc(env(safe-area-inset-right,0px) + 52px)!important;bottom:calc(env(safe-area-inset-bottom,0px) + 12px)!important}
+}
+@media(max-height:650px){.studio-filters{top:calc(env(safe-area-inset-top,0px) + 62px)!important}}
