@@ -83,8 +83,7 @@ export default function SeamlessPageEdges(){
    html[data-ynot-immersive="on"] body .worlds,
    html[data-ynot-immersive="on"] body .page:has(.grid),
    html[data-ynot-immersive="on"] body .page:has(.albums),
-   html[data-ynot-immersive="on"] body .page:has(.products),
-   html[data-ynot-immersive="on"] body .ynot-app-shell{
+   html[data-ynot-immersive="on"] body .page:has(.products){
     background-color:transparent!important;
    }
    /* A tinted, enlarged continuation sits BEHIND categories while scrolling.
