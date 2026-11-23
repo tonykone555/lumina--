@@ -10,7 +10,7 @@ export const metadata:Metadata={
 export default function StudioPage(){
  const products=catalogue.products.filter(p=>p.image_link&&p.source_product_url&&p.title).map(p=>({
   id:p.id,title:p.title,brand:p.brand,price:p.ynot_discovery_price_eur,image:p.image_link,
-  sourceUrl:p.source_product_url,category:p.category
+  sourceUrl:p.source_product_url,category:p.category,score:Math.max(55,100-p.rank*.6)
  }));
  return <StudioFeed products={products}/>;
 }
