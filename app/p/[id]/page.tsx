@@ -1,5 +1,4 @@
 import {redirect} from "next/navigation";
-import StudioProductPage from "@/components/worlds/StudioProductPage";
 import catalogue from "@/data/merchant/ynot-live-premium-70-pendant-chairs-review.json";
 
 type PageProps={
@@ -11,10 +10,13 @@ export default async function ProductDeepLink({params,searchParams}:PageProps){
   const {id}=await params;
   const query=await searchParams;
   if(query.from==="studio"){
-    const title=typeof query.q==="string"?query.q.slice(0,180):"";
     const row=catalogue.products.find(product=>product.id===id);
-    const initial=row?{id:row.id,title:row.title,brand:row.brand||"",price:row.ynot_discovery_price_eur,image:row.image_link,sourceUrl:row.source_product_url,category:row.category,description:""}:null;
-    return <StudioProductPage productId={id} queryTitle={title} initial={initial}/>;
+    // Old Studio deep links should never show a random fallback product.
+    // When no exact record exists, return visitors to the curated Studio feed.
+    if(!row)redirect("/worlds/studio?product="+encodeURIComponent(id));
+    const category=row.category==="lighting"?"lighting/chandeliers":row.category==="chairs"?"living/armchairs":/sofa|couch|loveseat/i.test(row.title)?"living/sofas":/console/i.test(row.title)?"living/console-tables":"living/coffee-tables";
+    const params=new URLSearchParams({studio:"1",origin:"studio",product:row.id,title:row.title,brand:row.brand||"",image:row.image_link,price:String(row.ynot_discovery_price_eur),url:row.source_product_url});
+    redirect("/worlds/home-interiors/"+category+"?"+params.toString());
   }
   const next=new URLSearchParams();
   next.set("product",id);
