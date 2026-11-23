@@ -5,6 +5,7 @@ import {createPortal} from "react-dom";
 import {ChevronDown,ShoppingBag,Sparkles,X,ExternalLink} from "lucide-react";
 import "./ProductDetailModalV2.css";
 import ProductAiMotion from "./ProductAiMotion";
+import ProductVideoRail from "./ProductVideoRail";
 
 type Variant={
   id:string;label:string;price:number|null;currency?:string;image?:string;images?:string[];url?:string;available:boolean;
@@ -174,6 +175,10 @@ export default function ProductDetailModalV2({
             <span><b>{item.brand||"Independent store"}</b><small>{clean(item.title)}</small><em>{money(item)}</em></span>
           </button>)}
         </div>
+      </section>
+
+      <section className="ynot-pv2-video-rail" style={{padding:"4px 18px 12px"}}>
+        <ProductVideoRail product={product} maxItems={6}/>
       </section>
 
       <section className="ynot-pv2-info">
