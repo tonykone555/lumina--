@@ -16,7 +16,8 @@ export default function SeamlessPageEdges(){
   root.setAttribute("data-ynot-viewport-bleed","true");
   if(browsing){
    root.setAttribute("data-ynot-document-scroll","true");
-   // Leave scrolling to the user and Safari: no artificial scroll offset.\n   return()=>{root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
+   // Leave scrolling to the user and Safari: no artificial scroll offset.
+   return()=>{root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
   }
   return()=>root.removeAttribute("data-ynot-viewport-bleed");
  },[pathname]);
