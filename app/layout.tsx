@@ -14,6 +14,7 @@ import "./styles/product-image-scan.css";
 import "./styles/masonry-product-scan.css";
 import "./styles/masonry-card-scan-dot.css";
 import "./bubble-product-reference-restore.css";
+import "./viewport-layer-cleanup.css";
 
 export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover"};
 
