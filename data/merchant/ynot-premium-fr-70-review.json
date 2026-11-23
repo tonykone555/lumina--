@@ -1,0 +1,1341 @@
+{
+  "batch_id": "ynot-premium-fr-2026-11-23",
+  "target_country": "FR",
+  "language": "en",
+  "currency": "EUR",
+  "selection_date": "2026-11-23",
+  "stage": "supplier_verification_required",
+  "note": "Candidates ONLY; unverified stock and condition must not be invented. Do not upload until merchant verification, landing page, checkout, delivery and availability match.",
+  "products": [
+    {
+      "rank": 1,
+      "id": "ynot-fr-d1298dc273d23d0941ed4b35",
+      "title": "Lakeland Extendable Bamboo Shelf Organiser",
+      "original_title": "Lakeland Extendable Bamboo Shelf Organiser",
+      "brand": "Lakeland",
+      "category": "home",
+      "price_eur": 38.09,
+      "image_link": "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/63758_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/63758_1.jpg"
+      ],
+      "source_url": "https://www.lakeland.co.uk/products/lakeland-extendable-bamboo-shelf-organiser?variant=61474887860554&_gsid=Fp4KnBp2xBvV&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "lakeland.co.uk",
+      "description": "Lakeland Extendable Bamboo Shelf Organiser from Lakeland. kitchen product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 2,
+      "id": "ynot-fr-916744d9b48dfa6e33180795",
+      "title": "Bouclé Armchair Lilo",
+      "original_title": "Boucl Armchair Lilo",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 1285.02,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ24WES57289-211294_fbace761695dc6730ffa5be5ed3a1b0a_dtl_1_8b8a5c35-bcbd-4bf3-85ef-f62a2c565c55.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ24WES57289-211294_fbace761695dc6730ffa5be5ed3a1b0a_dtl_1_8b8a5c35-bcbd-4bf3-85ef-f62a2c565c55.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/boucle-armchair-lilo-en-24wes57289?variant=49530717405450&_gsid=uufkNxYyv2Cf&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Bouclé Armchair Lilo from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 3,
+      "id": "ynot-fr-cc8d8a83ef5155ba93b1c2b7",
+      "title": "Teddy Bouclé Sofa Alba (2-Seater)",
+      "original_title": "Teddy Boucl Sofa Alba Seater",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 1781.5,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ23WES45489-201327_aca794f3c0c36ada2d259f62cae2156d_dtl_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ23WES45489-201327_aca794f3c0c36ada2d259f62cae2156d_dtl_1.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/teddy-boucle-sofa-alba-2-seater-en-23wes45489?variant=45608056946954&_gsid=5f75Dxxk6ky7&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Teddy Bouclé Sofa Alba (2-Seater) from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 4,
+      "id": "ynot-fr-27b26db32d1bc12acbd7acdf",
+      "title": "Small Shelf Botta",
+      "original_title": "Small Shelf Botta",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 58.87,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ25HOE18368-876706_0e905db3fef90a6df58cb0bf264a1602_dtl_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ25HOE18368-876706_0e905db3fef90a6df58cb0bf264a1602_dtl_1.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/botta-wall-shelf-en-25hoe18368?variant=51939594305872&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Small Shelf Botta from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 5,
+      "id": "ynot-fr-9f5994dc9c730a01e91ef2c0",
+      "title": "Handmade Decorative Bowl Latona",
+      "original_title": "Handmade Decorative Bowl Latona",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 75.66,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ24WES89810-209186_aed1717e864ca227a9fa7139f8b11e20_dtl_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ24WES89810-209186_aed1717e864ca227a9fa7139f8b11e20_dtl_1.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/handmade-decorative-bowl-latona-en-24wes89810?variant=49703745224970&_gsid=fDSL2AuWuWoe&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Handmade Decorative Bowl Latona from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 6,
+      "id": "ynot-fr-c2c721890e9af9c28046fda0",
+      "title": "Fluted Green And White Distressed Vase",
+      "original_title": "Fluted Green White Distressed Vase",
+      "brand": "Magnolia",
+      "category": "home",
+      "price_eur": 39.25,
+      "image_link": "https://cdn.shopify.com/s/files/1/0207/8508/files/E25340J11399B-WH.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0207/8508/files/E25340J11399B-WH.jpg"
+      ],
+      "source_url": "https://magnolia.com/products/fluted-green-and-white-distressed-vase?variant=41298993086515&_gsid=QiqTTHzNX7kB&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "magnolia.com",
+      "description": "Fluted Green And White Distressed Vase from Magnolia. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 7,
+      "id": "ynot-fr-1c4db75ef5bf6251710d7196",
+      "title": "Teddy Bouclé Sofa Bed Eliot (3-Seater)",
+      "original_title": "Teddy Boucl Sofa Bed Eliot Seater",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 1701.45,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ23WES15599-201315_4379f91718cc2475fb467318344f4baf_dtl_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ23WES15599-201315_4379f91718cc2475fb467318344f4baf_dtl_1.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/teddy-boucle-sofa-bed-eliot-3-seater-en-23wes15599?variant=45607855292682&_gsid=4e63PJBEGTF1&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Teddy Bouclé Sofa Bed Eliot (3-Seater) from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 8,
+      "id": "ynot-fr-f507bde4efc7d998701f4e34",
+      "title": "French Grey Ceramic Food Storage Bowl",
+      "original_title": "French Grey Ceramic Food Storage Bowl",
+      "brand": "Magnolia",
+      "category": "kitchen",
+      "price_eur": 45.84,
+      "image_link": "https://cdn.shopify.com/s/files/1/0207/8508/products/M01105002193SM01105002193L.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0207/8508/products/M01105002193SM01105002193L.jpg"
+      ],
+      "source_url": "https://magnolia.com/products/ceramic-food-storage-bowl?variant=40564602568755&_gsid=Qosvsz5QTsaB&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "magnolia.com",
+      "description": "French Grey Ceramic Food Storage Bowl from Magnolia. kitchen product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 9,
+      "id": "ynot-fr-3b7f326f75cdd6ea54ff67a8",
+      "title": "Deco Frameless Bevelled Wall Mirror - 38cm X 50cm",
+      "original_title": "Deco Frameless Bevelled Wall Mirror",
+      "brand": "Melody Maison",
+      "category": "home",
+      "price_eur": 46.52,
+      "image_link": "https://cdn.shopify.com/s/files/1/0971/2291/0545/files/deco-frameless-bevelled-wall-mirror-38cm-x-50cm_MM31730-01.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0971/2291/0545/files/deco-frameless-bevelled-wall-mirror-38cm-x-50cm_MM31730-01.jpg"
+      ],
+      "source_url": "https://melodymaison.co.uk/products/deco-frameless-bevelled-wall-mirror-38cm-x-50cm?variant=52349028958545&_gsid=E5etJ76ugtaE&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "melodymaison.co.uk",
+      "description": "Deco Frameless Bevelled Wall Mirror - 38cm X 50cm from Melody Maison. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 10,
+      "id": "ynot-fr-f7185a97de435d17fcb3bc15",
+      "title": "Swirl Rechargeable Cordless Table Lamp - Glass",
+      "original_title": "Swirl Rechargeable Cordless Table Lamp Glass",
+      "brand": "Insight Cordless Lighting",
+      "category": "home",
+      "price_eur": 75.67,
+      "image_link": "https://cdn.shopify.com/s/files/1/0365/0597/files/Swirl-Rechargeable-Cordless-Table-Lamp-Insight-Cordless-Lighting-1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0365/0597/files/Swirl-Rechargeable-Cordless-Table-Lamp-Insight-Cordless-Lighting-1.jpg"
+      ],
+      "source_url": "https://www.insightcordlesslighting.com/products/swirl-cordless-table-lamp-glass?variant=57611571560822&_gsid=4Mg91r5nKEdC&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "insightcordlesslighting.com",
+      "description": "Swirl Rechargeable Cordless Table Lamp - Glass from Insight Cordless Lighting. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 11,
+      "id": "ynot-fr-ccea8e2a5ebc7be85cee5b1b",
+      "title": "Distressed Abstract Beige Area Rug - Grace",
+      "original_title": "Distressed Abstract Beige Area Rug Grace",
+      "brand": "Kukoon Rugs Online",
+      "category": "home",
+      "price_eur": 47.7,
+      "image_link": "https://cdn.shopify.com/s/files/1/0602/1070/8635/files/hatton-grace-beige-cam-1-bedroom-for-web.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0602/1070/8635/files/hatton-grace-beige-cam-1-bedroom-for-web.jpg"
+      ],
+      "source_url": "https://www.kukoonrugs.com/products/distressed-abstract-beige-area-rug?variant=43485293215899&_gsid=CCAtQhSAZ6vK&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "kukoonrugs.com",
+      "description": "Distressed Abstract Beige Area Rug - Grace from Kukoon Rugs Online. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 12,
+      "id": "ynot-fr-f4f229f53a4cdb554fa7dc2e",
+      "title": "Nordic Linen Table Lamp",
+      "original_title": "Nordic Linen Table Lamp",
+      "brand": "Nordic Peace",
+      "category": "home",
+      "price_eur": 55.47,
+      "image_link": "https://cdn.shopify.com/s/files/1/0224/9457/6712/files/thumbnail_1-2_aeaf7ba2-ddfa-4943-936a-7ab26ecd27d1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0224/9457/6712/files/thumbnail_1-2_aeaf7ba2-ddfa-4943-936a-7ab26ecd27d1.jpg"
+      ],
+      "source_url": "https://www.nordicpeace.com/products/nordic-linen-table-lamp?variant=45881715589364&_gsid=4Mg91r5nKEdC&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "nordicpeace.com",
+      "description": "Nordic Linen Table Lamp from Nordic Peace. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 13,
+      "id": "ynot-fr-0a50e1ccbdf637ca811ea52c",
+      "title": "Tov Furniture Jenn Accent Chair",
+      "original_title": "Tov Furniture Jenn Accent Chair",
+      "brand": "Grayson Living",
+      "category": "home",
+      "price_eur": 854.45,
+      "image_link": "https://cdn.shopify.com/s/files/1/1837/7823/files/TOV-S68456.media.01.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/1837/7823/files/TOV-S68456.media.01.jpg"
+      ],
+      "source_url": "https://www.graysonliving.com/products/tov-furniture-jenn-accent-chair?variant=40418298134626&_gsid=QgBijxsNC6JP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "graysonliving.com",
+      "description": "Tov Furniture Jenn Accent Chair from Grayson Living. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 14,
+      "id": "ynot-fr-4e2bc95a767e990d346a8c1d",
+      "title": "Beige Abstract Area Rug - Mia",
+      "original_title": "Beige Abstract Area Rug Mia",
+      "brand": "Kukoon Rugs Online",
+      "category": "home",
+      "price_eur": 223.97,
+      "image_link": "https://cdn.shopify.com/s/files/1/0602/1070/8635/files/Oscar-Mia-Beige-08070-overhead-sq.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0602/1070/8635/files/Oscar-Mia-Beige-08070-overhead-sq.jpg"
+      ],
+      "source_url": "https://www.kukoonrugs.com/products/beige-abstract-area-rug?variant=43626964844699&_gsid=CCAtQhSAZ6vK&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "kukoonrugs.com",
+      "description": "Beige Abstract Area Rug - Mia from Kukoon Rugs Online. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 15,
+      "id": "ynot-fr-d0135157138f7b85dd036500",
+      "title": "Kalem™ Sculpting Table Lamp",
+      "original_title": "Kalem Sculpting Table Lamp",
+      "brand": "Mantar Lamps",
+      "category": "home",
+      "price_eur": 80.26,
+      "image_link": "https://cdn.shopify.com/s/files/1/0616/6498/5329/files/13.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0616/6498/5329/files/13.jpg"
+      ],
+      "source_url": "https://mantarlamps.com/products/kalem?variant=43954648613105&_gsid=4Mg91r5nKEdC&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "mantarlamps.com",
+      "description": "Kalem™ Sculpting Table Lamp from Mantar Lamps. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 16,
+      "id": "ynot-fr-225b2a4b07271af906339f8c",
+      "title": "Stone Rechargeable Cordless Table Lamp (Ir Version)",
+      "original_title": "Stone Rechargeable Cordless Table Lamp Version",
+      "brand": "Insight Cordless Lighting",
+      "category": "home",
+      "price_eur": 75.67,
+      "image_link": "https://cdn.shopify.com/s/files/1/0365/0597/files/Stone-Rechargeable-Cordless-Table-Lamp-Insight-Cordless-Lighting-1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0365/0597/files/Stone-Rechargeable-Cordless-Table-Lamp-Insight-Cordless-Lighting-1.jpg"
+      ],
+      "source_url": "https://www.insightcordlesslighting.com/products/stone-cordless-table-lamp-1?variant=57611570217334&_gsid=4Mg91r5nKEdC&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "insightcordlesslighting.com",
+      "description": "Stone Rechargeable Cordless Table Lamp (Ir Version) from Insight Cordless Lighting. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 17,
+      "id": "ynot-fr-a29e61657a54baa2283fd3ab",
+      "title": "Pilu Shelf - Small - Rose",
+      "original_title": "Pilu Shelf Small Rose",
+      "brand": "Ferm Living - COM",
+      "category": "home",
+      "price_eur": 74.55,
+      "image_link": "https://cdn.shopify.com/s/files/1/0150/3336/8640/files/322515_1104271042_1.png",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0150/3336/8640/files/322515_1104271042_1.png"
+      ],
+      "source_url": "https://fermliving.com/products/pilu-shelf-h25-rose?variant=52105498362192&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "fermliving.com",
+      "description": "Pilu Shelf - Small - Rose from Ferm Living - COM. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 18,
+      "id": "ynot-fr-d2261bf2c0f1b7e26e830d39",
+      "title": "Mustard Made The Ledge Shelf",
+      "original_title": "Mustard Made Ledge Shelf",
+      "brand": "Holloways of Ludlow",
+      "category": "home",
+      "price_eur": 72.92,
+      "image_link": "https://cdn.shopify.com/s/files/1/0705/0664/3680/files/01d708a1-115f-4b92-a193-2e4e1be93092.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0705/0664/3680/files/01d708a1-115f-4b92-a193-2e4e1be93092.jpg"
+      ],
+      "source_url": "https://www.hollowaysofludlow.com/products/mustard-made-the-ledge-shelf?variant=53967723725185&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "hollowaysofludlow.com",
+      "description": "Mustard Made The Ledge Shelf from Holloways of Ludlow. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 19,
+      "id": "ynot-fr-4334a32590ea413256f54106",
+      "title": "Set Of 2 First Picture Shelves, 80 Cm, Rustic Oak",
+      "original_title": "First Picture Shelves Rustic Oak",
+      "brand": "Mobili Fiver",
+      "category": "home",
+      "price_eur": 73.19,
+      "image_link": "https://cdn.shopify.com/s/files/1/0924/2551/9431/files/MENFISWOT_prodotto_princ_02_01a66ca8-b83f-4a4f-9b80-4c3fabba1aac.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0924/2551/9431/files/MENFISWOT_prodotto_princ_02_01a66ca8-b83f-4a4f-9b80-4c3fabba1aac.jpg"
+      ],
+      "source_url": "https://www.mobilifiver.com/products/set-of-2-first-picture-shelves-80-cm-rustic-oak?variant=53302386917703&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "mobilifiver.com",
+      "description": "Set Of 2 First Picture Shelves, 80 Cm, Rustic Oak from Mobili Fiver. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 20,
+      "id": "ynot-fr-a2bc6b12ddee15fd5b3d2ff3",
+      "title": "Lacquered Steel Wall Small Shelf",
+      "original_title": "Lacquered Steel Wall Small Shelf",
+      "brand": "nobodinoz",
+      "category": "home",
+      "price_eur": 53.24,
+      "image_link": "https://cdn.shopify.com/s/files/1/1013/4054/5411/files/23550363_Steel-wall-shelf-small-burnt-red-nobodinoz-1-8435574936158.png",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/1013/4054/5411/files/23550363_Steel-wall-shelf-small-burnt-red-nobodinoz-1-8435574936158.png"
+      ],
+      "source_url": "https://nobodinoz.com/products/lacquered-steel-wall-small-shelf-black?variant=62433139917187&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "nobodinoz.com",
+      "description": "Lacquered Steel Wall Small Shelf from nobodinoz. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 21,
+      "id": "ynot-fr-5b125744517702c17b60f643",
+      "title": "Oak Lip Shelves - Natural",
+      "original_title": "Oak Lip Shelves Natural",
+      "brand": "ICONOMY",
+      "category": "home",
+      "price_eur": 58.66,
+      "image_link": "https://cdn.shopify.com/s/files/1/2865/8406/products/Lip1-01_a008c4f5-5297-4e5c-af2b-370be73b7542.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/2865/8406/products/Lip1-01_a008c4f5-5297-4e5c-af2b-370be73b7542.jpg"
+      ],
+      "source_url": "https://iconomyonline.com/products/copy-of-oak-lip-shelf-medium-500-black?variant=48264087634171&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "iconomyonline.com",
+      "description": "Oak Lip Shelves - Natural from ICONOMY. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 22,
+      "id": "ynot-fr-9e7ae35d158b110b18cfc0b0",
+      "title": "Lakeland Easy Lift Air Fryer Basket",
+      "original_title": "Lakeland Easy Lift Air Fryer Basket",
+      "brand": "Lakeland",
+      "category": "kitchen",
+      "price_eur": 27.54,
+      "image_link": "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/27758_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/27758_1.jpg"
+      ],
+      "source_url": "https://www.lakeland.co.uk/products/lakeland-easy-lift-air-fryer-basket?variant=61472675463498&_gsid=CXCRUSTquZJV&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "lakeland.co.uk",
+      "description": "Lakeland Easy Lift Air Fryer Basket from Lakeland. kitchen product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 23,
+      "id": "ynot-fr-1a6364837cd6e64c10545f7c",
+      "title": "Lakeland Drawer Organiser – Set Of 7",
+      "original_title": "Lakeland Drawer Organiser",
+      "brand": "Lakeland",
+      "category": "kitchen",
+      "price_eur": 32.53,
+      "image_link": "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/27763_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/27763_1.jpg"
+      ],
+      "source_url": "https://www.lakeland.co.uk/products/lakeland-drawer-organiser-set-of-7?variant=61472540557642&_gsid=Fp4KnBp2xBvV&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "lakeland.co.uk",
+      "description": "Lakeland Drawer Organiser – Set Of 7 from Lakeland. kitchen product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 24,
+      "id": "ynot-fr-42157653e08c209bbe3ad3f7",
+      "title": "Organizer With 6 Compartments Premium, Set Of 2",
+      "original_title": "Organizer Compartments",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 39.85,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ25EOG69095-733461_eeeb5dd099c14a8371e6c9237de8fd69_dtl_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ25EOG69095-733461_eeeb5dd099c14a8371e6c9237de8fd69_dtl_1.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/love-it-store-it-premium-organizer-2er-set-mit-6-fachern-xl-en-25eog69095?variant=51034465567056&_gsid=gWFejMzm9pSc&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Organizer With 6 Compartments Premium, Set Of 2 from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 25,
+      "id": "ynot-fr-a390517698a74105ede503d4",
+      "title": "Kids Organiser Cherry",
+      "original_title": "Kids Organiser Cherry",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 45.45,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ25KON85877-275187_33e677f9ecdd53e2d9127cf6fa2ef8cf_dtl_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ25KON85877-275187_33e677f9ecdd53e2d9127cf6fa2ef8cf_dtl_1.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/storage-organizer-en-25kon85877?variant=51765458108752&_gsid=gWFejMzm9pSc&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Kids Organiser Cherry from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 26,
+      "id": "ynot-fr-92984a55b8589c4e60f7b73d",
+      "title": "Lakeland Airtight Storage Container Set – Set Of 5",
+      "original_title": "Lakeland Airtight Storage Container Set",
+      "brand": "Lakeland",
+      "category": "kitchen",
+      "price_eur": 46.98,
+      "image_link": "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/28409_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0898/8108/4234/files/28409_1.jpg"
+      ],
+      "source_url": "https://www.lakeland.co.uk/products/lakeland-5-piece-square-storage-jar-set?variant=61533713334602&_gsid=Qosvsz5QTsaB&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "lakeland.co.uk",
+      "description": "Lakeland Airtight Storage Container Set – Set Of 5 from Lakeland. kitchen product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 27,
+      "id": "ynot-fr-e13822cb707be9e761661825",
+      "title": "Kids Organiser May",
+      "original_title": "Kids Organiser May",
+      "brand": "Westwing",
+      "category": "home",
+      "price_eur": 48.8,
+      "image_link": "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ23LIE48835-201972_b9534032aecffff63109967465a52da7_dtl_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0613/3107/9307/files/DEQ23LIE48835-201972_b9534032aecffff63109967465a52da7_dtl_1.jpg"
+      ],
+      "source_url": "https://store.westwing.com/products/kids-organiser-may-en-23lie48835?variant=45622721970442&_gsid=iSoMkocqJqY8&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "store.westwing.com",
+      "description": "Kids Organiser May from Westwing. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 28,
+      "id": "ynot-fr-f149103bdac3e80df107bd88",
+      "title": "Magnolia Linen Candle",
+      "original_title": "Magnolia Linen Candle",
+      "brand": "Magnolia",
+      "category": "home",
+      "price_eur": 49.02,
+      "image_link": "https://cdn.shopify.com/s/files/1/0207/8508/files/LNC26OZ2022_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0207/8508/files/LNC26OZ2022_1.jpg"
+      ],
+      "source_url": "https://magnolia.com/products/magnolia-linen-candle?variant=39444545798195&_gsid=5bUxbZ1BQFPK&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "magnolia.com",
+      "description": "Magnolia Linen Candle from Magnolia. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 29,
+      "id": "ynot-fr-ed38244d5900db4abdeda338",
+      "title": "Boho Tapestry Throw Blanket",
+      "original_title": "Boho Tapestry Throw Blanket",
+      "brand": "Nordic Peace",
+      "category": "home",
+      "price_eur": 64.43,
+      "image_link": "https://cdn.shopify.com/s/files/1/0224/9457/6712/files/celestial-picnic-blanket-boho-style.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0224/9457/6712/files/celestial-picnic-blanket-boho-style.jpg"
+      ],
+      "source_url": "https://www.nordicpeace.com/products/boho-tapestry-blanket?variant=46638648361204&_gsid=UxU4UCu3fPab&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "nordicpeace.com",
+      "description": "Boho Tapestry Throw Blanket from Nordic Peace. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 30,
+      "id": "ynot-fr-2d941eb0b6877412d70b223e",
+      "title": "Extendable Cutlery Tray",
+      "original_title": "Extendable Cutlery Tray",
+      "brand": "Yamazaki Home Europe",
+      "category": "kitchen",
+      "price_eur": 49.07,
+      "image_link": "https://cdn.shopify.com/s/files/1/0259/4835/6663/files/n1ive8lw2qd34m1uafdm.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0259/4835/6663/files/n1ive8lw2qd34m1uafdm.jpg"
+      ],
+      "source_url": "https://theyamazakihome-europe.com/products/tower-expandable-cutlery-drawer-organizer?variant=49557243429209&_gsid=Fp4KnBp2xBvV&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "theyamazakihome-europe.com",
+      "description": "Extendable Cutlery Tray from Yamazaki Home Europe. kitchen product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 31,
+      "id": "ynot-fr-57294b15ec8d89cd5381db96",
+      "title": "Organisateur De Rangement 2-Niveaux À Accès Facile Cupboardstore™",
+      "original_title": "Organisateur Rangement Niveaux Acc Facile Cupboardstore",
+      "brand": "Joseph Joseph FR",
+      "category": "home",
+      "price_eur": 67.84,
+      "image_link": "https://cdn.shopify.com/s/files/1/0250/4782/6468/files/8500001_04_65799eb1-969e-4ce1-b0eb-7bbbaeaa187d.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0250/4782/6468/files/8500001_04_65799eb1-969e-4ce1-b0eb-7bbbaeaa187d.jpg"
+      ],
+      "source_url": "https://fr.josephjoseph.com/products/organisateur-de-rangement-2-niveaux-a-acces-facile-cupboardstore-pierre?variant=55080355758466&_gsid=9Rb2ZxotRx5v&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "fr.josephjoseph.com",
+      "description": "Organisateur De Rangement 2-Niveaux À Accès Facile Cupboardstore™ from Joseph Joseph FR. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 32,
+      "id": "ynot-fr-66dca6f2988e5411c00656c8",
+      "title": "Fenna - Accent Chair - Multi",
+      "original_title": "Fenna Accent Chair Multi",
+      "brand": "Kansas Furniture Mart KS",
+      "category": "home",
+      "price_eur": 1570.14,
+      "image_link": "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/bd3706a1-4d7d-45a8-b816-241f015c44bb.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/bd3706a1-4d7d-45a8-b816-241f015c44bb.jpg"
+      ],
+      "source_url": "https://www.ksfurnituremart.com/products/fenna-accent-chair-multi?variant=44037093458019&_gsid=QgBijxsNC6JP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ksfurnituremart.com",
+      "description": "Fenna - Accent Chair - Multi from Kansas Furniture Mart KS. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 33,
+      "id": "ynot-fr-083e00636eedae1d9eb5dae8",
+      "title": "Bodrum Area Rug",
+      "original_title": "Bodrum Area Rug",
+      "brand": "Boutique Rugs",
+      "category": "home",
+      "price_eur": 1032.45,
+      "image_link": "https://cdn.shopify.com/s/files/1/0550/8700/5888/files/HAP-1000_28Bodrum_29_22c1dfbf-24ea-4a15-a762-e47331b7b25a.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0550/8700/5888/files/HAP-1000_28Bodrum_29_22c1dfbf-24ea-4a15-a762-e47331b7b25a.jpg"
+      ],
+      "source_url": "https://boutiquerugs.com/products/bodrum-area-rug?variant=40050664243392&_gsid=CCAtQhSAZ6vK&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "boutiquerugs.com",
+      "description": "Bodrum Area Rug from Boutique Rugs. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 34,
+      "id": "ynot-fr-dc5bbf1fe78473b5e9b2ff63",
+      "title": "Small Cascading Shelf",
+      "original_title": "Small Cascading Shelf",
+      "brand": "Big Blue Laser Designs",
+      "category": "home",
+      "price_eur": 25.26,
+      "image_link": "https://cdn.shopify.com/s/files/1/0244/7461/5863/products/Small-Cascading-Shelf-1-159374.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0244/7461/5863/products/Small-Cascading-Shelf-1-159374.jpg"
+      ],
+      "source_url": "https://bigbluelaserdesigns.com/products/small-cascading-shelf?variant=31704636915767&_gsid=2SChgADTaNb1&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "bigbluelaserdesigns.com",
+      "description": "Small Cascading Shelf from Big Blue Laser Designs. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 35,
+      "id": "ynot-fr-b6090665ae1a8bee330736a1",
+      "title": "Zigbee Smart Led Lamp Gx53 Light Bulb 6w Color Changing Dimmable Music Sync",
+      "original_title": "Zigbee Led Lamp Gx53 Light Bulb Color",
+      "brand": "MOES",
+      "category": "home",
+      "price_eur": 39.67,
+      "image_link": "https://cdn.shopify.com/s/files/1/0095/4079/6497/files/ZigBeeSmartLEDLampGX53LightBulbColorChangingDimmableMusicSync-1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0095/4079/6497/files/ZigBeeSmartLEDLampGX53LightBulbColorChangingDimmableMusicSync-1.jpg"
+      ],
+      "source_url": "https://moeshouse.com/products/zigbee-smart-led-lamp-gx53-light-bulb-color-changing-dimmable-music-sync?variant=50470560596283&_gsid=9jQk2bomu5rt&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "moeshouse.com",
+      "description": "Zigbee Smart Led Lamp Gx53 Light Bulb 6w Color Changing Dimmable Music Sync from MOES. tech product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 36,
+      "id": "ynot-fr-b816e6702524f31a0e0a7bb6",
+      "title": "Cosmos Led Desk Lamp (3 Color Option)",
+      "original_title": "Cosmos Led Desk Lamp Color Option",
+      "brand": "BlackTree",
+      "category": "home",
+      "price_eur": 30.8,
+      "image_link": "https://cdn.shopify.com/s/files/1/0384/5583/6812/files/study_desk_lamp.png",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0384/5583/6812/files/study_desk_lamp.png"
+      ],
+      "source_url": "https://myblacktree.com/products/cosmos-led-desk-lamp-3-color-option?variant=43712837419148&_gsid=cj1CcfwAjjHe&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "myblacktree.com",
+      "description": "Cosmos Led Desk Lamp (3 Color Option) from BlackTree. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 37,
+      "id": "ynot-fr-bc5d7e5f6aca09f3551db519",
+      "title": "Xiaomi Desk Lamp Lite",
+      "original_title": "Xiaomi Desk Lamp Lite",
+      "brand": "TechPunt",
+      "category": "home",
+      "price_eur": 42.05,
+      "image_link": "https://cdn.shopify.com/s/files/1/0988/1862/1815/files/xiaomi-desk-lamp-lite-2.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0988/1862/1815/files/xiaomi-desk-lamp-lite-2.jpg"
+      ],
+      "source_url": "https://www.techpunt.nl/products/xiaomi-desk-lamp-lite?variant=57326889566583&_gsid=cj1CcfwAjjHe&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "techpunt.nl",
+      "description": "Xiaomi Desk Lamp Lite from TechPunt. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 38,
+      "id": "ynot-fr-662bd6aa9e8a3c52deceda55",
+      "title": "Ultralight Roll Top Dry Bag For Backpacking",
+      "original_title": "Ultralight Roll Top Dry Bag Backpacking",
+      "brand": "Hilltop Packs LLC",
+      "category": "outdoors",
+      "price_eur": 28.42,
+      "image_link": "https://cdn.shopify.com/s/files/1/0528/9613/7401/files/ultralight-roll-top-dry-bag-for-backpacking-1966550.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0528/9613/7401/files/ultralight-roll-top-dry-bag-for-backpacking-1966550.jpg"
+      ],
+      "source_url": "https://hilltoppacks.com/products/dry-bags-roll-top-ultralight-challenge-d50t-fabric?variant=42591375753473&_gsid=pRBtFChJtE5z&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "hilltoppacks.com",
+      "description": "Ultralight Roll Top Dry Bag For Backpacking from Hilltop Packs LLC. outdoors product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 39,
+      "id": "ynot-fr-fdd3255af3e23c89e82d87e2",
+      "title": "Stackable Countertop Shelf - Two Sizes - Steel",
+      "original_title": "Stackable Countertop Shelf Two Sizes Steel",
+      "brand": "FCHF CITY",
+      "category": "home",
+      "price_eur": 47.64,
+      "image_link": "https://cdn.shopify.com/s/files/1/0572/4353/3389/files/stackable-countertop-shelf-two-sizes-steel-fchf-city-959807.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0572/4353/3389/files/stackable-countertop-shelf-two-sizes-steel-fchf-city-959807.jpg"
+      ],
+      "source_url": "https://fchfcity.com/products/stackable-countertop-shelf-two-sizes-steel?variant=41656860868685&_gsid=2SChgADTaNb1&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "fchfcity.com",
+      "description": "Stackable Countertop Shelf - Two Sizes - Steel from FCHF CITY. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 40,
+      "id": "ynot-fr-c0dd8a0263551d106bea2aaa",
+      "title": "Minoa Area Rug",
+      "original_title": "Minoa Area Rug",
+      "brand": "Boutique Rugs",
+      "category": "home",
+      "price_eur": 906.21,
+      "image_link": "https://cdn.shopify.com/s/files/1/0550/8700/5888/products/IGO-2307_design_rct_5373_studio.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0550/8700/5888/products/IGO-2307_design_rct_5373_studio.jpg"
+      ],
+      "source_url": "https://boutiquerugs.com/products/minoa-area-rug?variant=40048688267456&_gsid=CCAtQhSAZ6vK&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "boutiquerugs.com",
+      "description": "Minoa Area Rug from Boutique Rugs. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 41,
+      "id": "ynot-fr-3ba29197c580e76aedb94ac1",
+      "title": "Ultralight Zipper Pouch Organizer Patterns (Series 2)",
+      "original_title": "Ultralight Zipper Pouch Organizer Patterns Series",
+      "brand": "Hilltop Packs LLC",
+      "category": "outdoors",
+      "price_eur": 36.43,
+      "image_link": "https://cdn.shopify.com/s/files/1/0528/9613/7401/files/zipper-pouches-new-patterns-ultralight-d50t-fabric-1264143.webp",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0528/9613/7401/files/zipper-pouches-new-patterns-ultralight-d50t-fabric-1264143.webp"
+      ],
+      "source_url": "https://hilltoppacks.com/products/zipper-pouches-kit-patterns-ultralight-d50t-fabric?variant=46408862105857&_gsid=9uKKkghA4EYx&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "hilltoppacks.com",
+      "description": "Ultralight Zipper Pouch Organizer Patterns (Series 2) from Hilltop Packs LLC. outdoors product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 42,
+      "id": "ynot-fr-60dadd5d232a1cb7c167ad9c",
+      "title": "Noblue Amber Book Light",
+      "original_title": "Noblue Amber Book Light",
+      "brand": "BlockBlueLight",
+      "category": "home",
+      "price_eur": 43.16,
+      "image_link": "https://cdn.shopify.com/s/files/1/0620/6196/9600/products/blockbluelight-book-lights-noblue-amber-book-light-29923482894510.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0620/6196/9600/products/blockbluelight-book-lights-noblue-amber-book-light-29923482894510.jpg"
+      ],
+      "source_url": "https://www.blockbluelight.com/products/no-blue-book-light?variant=42920866971840&_gsid=ZCjMXgwiDywR&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "blockbluelight.com",
+      "description": "Noblue Amber Book Light from BlockBlueLight. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 43,
+      "id": "ynot-fr-cbb110717f2564276f29322f",
+      "title": "Alecto Smartlight40 - Smart Wifi Kleuren Led Lamp",
+      "original_title": "Alecto Smartlight40 Wifi Kleuren Led Lamp",
+      "brand": "Alecto Home",
+      "category": "home",
+      "price_eur": 39.71,
+      "image_link": "https://cdn.shopify.com/s/files/1/0513/9913/1291/files/SMARTLIGHT40_P10.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0513/9913/1291/files/SMARTLIGHT40_P10.jpg"
+      ],
+      "source_url": "https://alectohome.nl/products/alecto-smartlight40-smart-wifi-kleuren-led-lamp?variant=39466541088923&_gsid=jx5MRLWA6nTH&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "alectohome.nl",
+      "description": "Alecto Smartlight40 - Smart Wifi Kleuren Led Lamp from Alecto Home. tech product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 44,
+      "id": "ynot-fr-a5653fbe38c767fea4896db0",
+      "title": "Lightweight Dry Bag",
+      "original_title": "Lightweight Dry Bag",
+      "brand": "Sea to Summit EU",
+      "category": "outdoors",
+      "price_eur": 30.71,
+      "image_link": "https://cdn.shopify.com/s/files/1/0604/9218/5750/products/00_LightweightDryBagSurftheWebFamily.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0604/9218/5750/products/00_LightweightDryBagSurftheWebFamily.jpg"
+      ],
+      "source_url": "https://seatosummit.eu/products/lightweight-dry-bag?variant=42398587256982&_gsid=pRBtFChJtE5z&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "seatosummit.eu",
+      "description": "Lightweight Dry Bag from Sea to Summit EU. outdoors product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 45,
+      "id": "ynot-fr-e089d075ccf5b12966273f39",
+      "title": "Wallshelfie 2.0 - Floating Shelf",
+      "original_title": "Wallshelfie Floating Shelf",
+      "brand": "Smallish",
+      "category": "home",
+      "price_eur": 45.4,
+      "image_link": "https://cdn.shopify.com/s/files/1/0682/2792/4249/files/WallShelfie_Black_515c8589-8006-4d96-afb7-11eb15087bb8.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0682/2792/4249/files/WallShelfie_Black_515c8589-8006-4d96-afb7-11eb15087bb8.jpg"
+      ],
+      "source_url": "https://thinksmallish.com/products/wallshelfie?variant=50891879285017&_gsid=2SChgADTaNb1&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "thinksmallish.com",
+      "description": "Wallshelfie 2.0 - Floating Shelf from Smallish. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 46,
+      "id": "ynot-fr-cffd4e029a1ed6f42069a0a6",
+      "title": "4-Pack Small Floating Shelves – 5-Inch Wooden Wall Ledges For Home Décor, Storage & Display",
+      "original_title": "Pack Small Floating Shelves Inch Wooden Wall",
+      "brand": "Elysianoble",
+      "category": "home",
+      "price_eur": 47.05,
+      "image_link": "https://cdn.shopify.com/s/files/1/0610/4747/2198/files/S5b9f5ba106304be0a9dfce2fdfaa9d255.webp",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0610/4747/2198/files/S5b9f5ba106304be0a9dfce2fdfaa9d255.webp"
+      ],
+      "source_url": "https://elysianoble.com/products/4-pack-small-floating-shelves-5-inch-wooden-wall-ledges-for-home-decor-storage-display?variant=42533622480966&_gsid=2SChgADTaNb1&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "elysianoble.com",
+      "description": "4-Pack Small Floating Shelves – 5-Inch Wooden Wall Ledges For Home Décor, Storage & Display from Elysianoble. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 47,
+      "id": "ynot-fr-494d322dba55f3527b84692a",
+      "title": "Dominy Area Rug",
+      "original_title": "Dominy Area Rug",
+      "brand": "Boutique Rugs",
+      "category": "home",
+      "price_eur": 1273.6,
+      "image_link": "https://cdn.shopify.com/s/files/1/0550/8700/5888/files/etq2303-537.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0550/8700/5888/files/etq2303-537.jpg"
+      ],
+      "source_url": "https://boutiquerugs.com/products/dominy-area-rug?variant=48790440378560&_gsid=CCAtQhSAZ6vK&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "boutiquerugs.com",
+      "description": "Dominy Area Rug from Boutique Rugs. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 48,
+      "id": "ynot-fr-b5be9e0bbdffca5029b3c59a",
+      "title": "The Minimal Acrylic Shelf",
+      "original_title": "Minimal Acrylic Shelf",
+      "brand": "Sickhaus",
+      "category": "home",
+      "price_eur": 51,
+      "image_link": "https://cdn.shopify.com/s/files/1/0585/8652/9826/files/SickHaus_-_Minimal_Acrylic_Shelf-2.avif",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0585/8652/9826/files/SickHaus_-_Minimal_Acrylic_Shelf-2.avif"
+      ],
+      "source_url": "https://sickhaus.com/products/the-minimal-acrylic-shelf?variant=41106381471778&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "sickhaus.com",
+      "description": "The Minimal Acrylic Shelf from Sickhaus. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 49,
+      "id": "ynot-fr-4e2a033f0edf3ee766b996e5",
+      "title": "Noblue Amber Sleep Lamp",
+      "original_title": "Noblue Amber Sleep Lamp",
+      "brand": "BlockBlueLight",
+      "category": "home",
+      "price_eur": 65.54,
+      "image_link": "https://cdn.shopify.com/s/files/1/0620/6196/9600/products/blockbluelight-blue-light-free-lamps-noblue-amber-sleep-lamp-29923418046638.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0620/6196/9600/products/blockbluelight-blue-light-free-lamps-noblue-amber-sleep-lamp-29923418046638.jpg"
+      ],
+      "source_url": "https://www.blockbluelight.com/products/amber-sleep-lamp?variant=42920866382016&_gsid=NdxTErcTKWGP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "blockbluelight.com",
+      "description": "Noblue Amber Sleep Lamp from BlockBlueLight. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 50,
+      "id": "ynot-fr-cb42711deebec57ee21765f2",
+      "title": "Frohn - Reclining Sofa",
+      "original_title": "Frohn Reclining Sofa",
+      "brand": "Kansas Furniture Mart KS",
+      "category": "home",
+      "price_eur": 1782.92,
+      "image_link": "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/e792c332-3b23-40d7-9886-8233ca9ba2a1_0fdf03f6-da39-4afc-87c8-c2b4defd316d.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/e792c332-3b23-40d7-9886-8233ca9ba2a1_0fdf03f6-da39-4afc-87c8-c2b4defd316d.jpg"
+      ],
+      "source_url": "https://www.ksfurnituremart.com/products/frohn-reclining-sofa?variant=44037051809891&_gsid=BsyRFZpjxhRB&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ksfurnituremart.com",
+      "description": "Frohn - Reclining Sofa from Kansas Furniture Mart KS. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 51,
+      "id": "ynot-fr-90fbac57628bdf985bd7fce5",
+      "title": "Dorney - Accent Chair - Charcoal / Brown",
+      "original_title": "Dorney Accent Chair Charcoal Brown",
+      "brand": "Kansas Furniture Mart KS",
+      "category": "home",
+      "price_eur": 1109.13,
+      "image_link": "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/4009fb7a-2fb1-4f5b-b880-12bc43775d33.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/4009fb7a-2fb1-4f5b-b880-12bc43775d33.jpg"
+      ],
+      "source_url": "https://www.ksfurnituremart.com/products/dorney-accent-chair-charcoal-brown?variant=44037111152739&_gsid=QgBijxsNC6JP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ksfurnituremart.com",
+      "description": "Dorney - Accent Chair - Charcoal / Brown from Kansas Furniture Mart KS. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 52,
+      "id": "ynot-fr-9146b920ef014ae778bec715",
+      "title": "Padova - Swivel Accent Chair - Ivory",
+      "original_title": "Padova Swivel Accent Chair Ivory",
+      "brand": "Kansas Furniture Mart KS",
+      "category": "home",
+      "price_eur": 1428.29,
+      "image_link": "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/c2c3cd77-a369-4cc6-840a-4aa138f7775a.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/c2c3cd77-a369-4cc6-840a-4aa138f7775a.jpg"
+      ],
+      "source_url": "https://www.ksfurnituremart.com/products/padova-swivel-accent-chair-ivory?variant=44036915462243&_gsid=QgBijxsNC6JP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ksfurnituremart.com",
+      "description": "Padova - Swivel Accent Chair - Ivory from Kansas Furniture Mart KS. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 53,
+      "id": "ynot-fr-69a54d5c40bace65402ae414",
+      "title": "Soletren - Swivel Accent Chair - Stone",
+      "original_title": "Soletren Swivel Accent Chair Stone",
+      "brand": "Kansas Furniture Mart KS",
+      "category": "home",
+      "price_eur": 1357.37,
+      "image_link": "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/02bb119d-8529-4767-9cbe-c22c8b748e6c.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/02bb119d-8529-4767-9cbe-c22c8b748e6c.jpg"
+      ],
+      "source_url": "https://www.ksfurnituremart.com/products/soletren-swivel-accent-chair-stone?variant=44480479264867&_gsid=QgBijxsNC6JP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ksfurnituremart.com",
+      "description": "Soletren - Swivel Accent Chair - Stone from Kansas Furniture Mart KS. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 54,
+      "id": "ynot-fr-55620c48ee1c7e83a39f230b",
+      "title": "Joseph Joseph - Cupboardstore™ Under-Shelf Drawer",
+      "original_title": "Joseph Joseph Cupboardstore Under Shelf Drawer",
+      "brand": "LIMOLIN",
+      "category": "home",
+      "price_eur": 39.86,
+      "image_link": "https://cdn.shopify.com/s/files/1/0848/9716/files/DEV_2Fcompanies_2F1_2Fproducts_2Fimages_2F170868-image-306603.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0848/9716/files/DEV_2Fcompanies_2F1_2Fproducts_2Fimages_2F170868-image-306603.jpg"
+      ],
+      "source_url": "https://www.limolin.com/products/joseph-joseph-cupboardstore-under-shelf-drawer?variant=47262026727651&_gsid=Fp4KnBp2xBvV&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "limolin.com",
+      "description": "Joseph Joseph - Cupboardstore™ Under-Shelf Drawer from LIMOLIN. kitchen product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 55,
+      "id": "ynot-fr-4a70a5ba03a925b92ace51bc",
+      "title": "Circadian Rhythm Desk Lamp",
+      "original_title": "Circadian Rhythm Desk Lamp",
+      "brand": "Hooga",
+      "category": "home",
+      "price_eur": 49.88,
+      "image_link": "https://cdn.shopify.com/s/files/1/0075/2923/4522/files/MainImage_21ac8262-5012-4895-8b35-1a5be000af15.png",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0075/2923/4522/files/MainImage_21ac8262-5012-4895-8b35-1a5be000af15.png"
+      ],
+      "source_url": "https://hoogahealth.com/products/tri-color-desk-lamp-amber-red-white?variant=44534793208055&_gsid=cj1CcfwAjjHe&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "hoogahealth.com",
+      "description": "Circadian Rhythm Desk Lamp from Hooga. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 56,
+      "id": "ynot-fr-f595ff1b4349a17aab43569c",
+      "title": "Triptis - Accent Chair - Gray",
+      "original_title": "Triptis Accent Chair Gray",
+      "brand": "Kansas Furniture Mart KS",
+      "category": "home",
+      "price_eur": 347.74,
+      "image_link": "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/785a215f-982c-4389-95cc-d47df45891f4.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0666/1750/7939/files/785a215f-982c-4389-95cc-d47df45891f4.jpg"
+      ],
+      "source_url": "https://www.ksfurnituremart.com/products/triptis-accent-chair-gray?variant=44480480346211&_gsid=QgBijxsNC6JP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ksfurnituremart.com",
+      "description": "Triptis - Accent Chair - Gray from Kansas Furniture Mart KS. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 57,
+      "id": "ynot-fr-3aa408e3f1f7585e441ceaf1",
+      "title": "Coleridge Velvet Armchair - Apricot",
+      "original_title": "Coleridge Velvet Armchair Apricot",
+      "brand": "OKA",
+      "category": "home",
+      "price_eur": 1788.89,
+      "image_link": "https://cdn.shopify.com/s/files/1/0769/7347/4059/files/coleridge-armchair-with-fixed-cover-apricot-a19712-2-11-1030-10-01.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0769/7347/4059/files/coleridge-armchair-with-fixed-cover-apricot-a19712-2-11-1030-10-01.jpg"
+      ],
+      "source_url": "https://www.oka.com/products/coleridge-velvet-armchair-apricot?variant=52003336028427&_gsid=uufkNxYyv2Cf&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "oka.com",
+      "description": "Coleridge Velvet Armchair - Apricot from OKA. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 58,
+      "id": "ynot-fr-02a140b0681d59168c03a366",
+      "title": "Erinslane Sofa",
+      "original_title": "Erinslane Sofa",
+      "brand": "Deals 4 Less (CA) - Multi Location",
+      "category": "home",
+      "price_eur": 754.51,
+      "image_link": "https://cdn.shopify.com/s/files/1/0757/7210/0653/files/a65ab2934747b54a5110f22c8e9b53988b2a788241eb4dd351a45534afb6df44.webp",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0757/7210/0653/files/a65ab2934747b54a5110f22c8e9b53988b2a788241eb4dd351a45534afb6df44.webp"
+      ],
+      "source_url": "https://deals4lessfurniture.com/products/erinslane-sofa?variant=66807423828013&_gsid=5f75Dxxk6ky7&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "deals4lessfurniture.com",
+      "description": "Erinslane Sofa from Deals 4 Less (CA) - Multi Location. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 59,
+      "id": "ynot-fr-eea6a30644fa41ce317e1c28",
+      "title": "Kilos High-Back Armchair 2.0",
+      "original_title": "Kilos High Back Armchair",
+      "brand": "KILOS GEAR",
+      "category": "home",
+      "price_eur": 149.64,
+      "image_link": "https://cdn.shopify.com/s/files/1/0581/5579/4624/files/74.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0581/5579/4624/files/74.jpg"
+      ],
+      "source_url": "https://kilosgear.com/products/high-back-armchair-2?variant=42364730179797&_gsid=uufkNxYyv2Cf&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "kilosgear.com",
+      "description": "Kilos High-Back Armchair 2.0 from KILOS GEAR. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 60,
+      "id": "ynot-fr-dfad47d5ac874e0c5a429758",
+      "title": "Faux Leather Upholstered Convertible Sofa Bed Futon W/ 2 Cupholders",
+      "original_title": "Faux Leather Upholstered Convertible Sofa Bed Futon",
+      "brand": "Ibiza One Stop",
+      "category": "home",
+      "price_eur": 158.02,
+      "image_link": "https://cdn.shopify.com/s/files/1/0830/5567/3687/files/SKY6596LRG-1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0830/5567/3687/files/SKY6596LRG-1.jpg"
+      ],
+      "source_url": "https://ibizaonestop.com/products/faux-leather-upholstered-convertible-sofa-bed-futon-w-2-cupholders?variant=54022514409815&_gsid=smhueAQyQqnk&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ibizaonestop.com",
+      "description": "Faux Leather Upholstered Convertible Sofa Bed Futon W/ 2 Cupholders from Ibiza One Stop. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 61,
+      "id": "ynot-fr-4f0a580fcb69b17848e19946",
+      "title": "Upholstered Sectional Sofa Couch W/ Chaise Lounge, Reversible Ottoman Bench",
+      "original_title": "Upholstered Sectional Sofa Couch Chaise Lounge Reversible",
+      "brand": "Ibiza One Stop",
+      "category": "home",
+      "price_eur": 295.61,
+      "image_link": "https://cdn.shopify.com/s/files/1/0830/5567/3687/files/SKY7317LRG-1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0830/5567/3687/files/SKY7317LRG-1.jpg"
+      ],
+      "source_url": "https://ibizaonestop.com/products/upholstered-sectional-sofa-couch-w-chaise-lounge-reversible-ottoman-bench?variant=54022519783767&_gsid=8ZwbqMMxXmRt&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "ibizaonestop.com",
+      "description": "Upholstered Sectional Sofa Couch W/ Chaise Lounge, Reversible Ottoman Bench from Ibiza One Stop. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 62,
+      "id": "ynot-fr-85d961dbd806392fa8d93df2",
+      "title": "Judy 80\" Contract-Grade Boucle Sofa",
+      "original_title": "Judy Contract Grade Boucle Sofa",
+      "brand": "TOV B2B US Dealer Portal",
+      "category": "home",
+      "price_eur": 1440.47,
+      "image_link": "https://cdn.shopify.com/s/files/1/0705/6346/3411/files/TOV-L54364.media.01_6812148d-6a9d-4c22-922b-f51f2f6551ab.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0705/6346/3411/files/TOV-L54364.media.01_6812148d-6a9d-4c22-922b-f51f2f6551ab.jpg"
+      ],
+      "source_url": "https://trade.tovfurniture.com/products/judy-boucle-sofa?variant=46798232092915&_gsid=8ZwbqMMxXmRt&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "trade.tovfurniture.com",
+      "description": "Judy 80\" Contract-Grade Boucle Sofa from TOV B2B US Dealer Portal. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 63,
+      "id": "ynot-fr-a92933652539511777804292",
+      "title": "🌊Lighted Coastal Fish Wall Decor",
+      "original_title": "Lighted Coastal Fish Wall Decor",
+      "brand": "suzvo",
+      "category": "home",
+      "price_eur": 58.77,
+      "image_link": "https://cdn.shopify.com/s/files/1/0743/2654/0399/files/ChatGPT-Image-2026-7-6-16-55-45-_2.png",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0743/2654/0399/files/ChatGPT-Image-2026-7-6-16-55-45-_2.png"
+      ],
+      "source_url": "https://suzvo.com/products/%F0%9F%8C%8Alighted-coastal-fish-wall-decor?variant=53935977955439&_gsid=fDSL2AuWuWoe&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "suzvo.com",
+      "description": "🌊Lighted Coastal Fish Wall Decor from suzvo. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 64,
+      "id": "ynot-fr-fb6e4bf5b9f1b14b4939b1c0",
+      "title": "Modern Adjustable Led Desk Lamp For Home",
+      "original_title": "Modern Adjustable Led Desk Lamp Home",
+      "brand": "Dekorzaly",
+      "category": "home",
+      "price_eur": 62.23,
+      "image_link": "https://cdn.shopify.com/s/files/1/0927/1145/3046/files/Lumira_-_Leseleuchte_mit_Ber_hrungssteuerung_1.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0927/1145/3046/files/Lumira_-_Leseleuchte_mit_Ber_hrungssteuerung_1.jpg"
+      ],
+      "source_url": "https://dekorzaly.com/products/nowoczesna-regulowana-led-lampa-biurkowa-do-domu?variant=56395285365110&_gsid=NdxTErcTKWGP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "dekorzaly.com",
+      "description": "Modern Adjustable Led Desk Lamp For Home from Dekorzaly. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 65,
+      "id": "ynot-fr-a2b4c5fd13187a023267e689",
+      "title": "Twilight Red Light Sleep Lamp",
+      "original_title": "Twilight Red Light Sleep Lamp",
+      "brand": "BlockBlueLight AU",
+      "category": "home",
+      "price_eur": 65.54,
+      "image_link": "https://cdn.shopify.com/s/files/1/1014/4865/products/blockbluelight-blue-light-free-lamps-twilight-red-light-sleep-lamp-22864793665710.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/1014/4865/products/blockbluelight-blue-light-free-lamps-twilight-red-light-sleep-lamp-22864793665710.jpg"
+      ],
+      "source_url": "https://www.blockbluelight.com.au/products/red-light-lamp?variant=32577549172817&_gsid=NdxTErcTKWGP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "blockbluelight.com.au",
+      "description": "Twilight Red Light Sleep Lamp from BlockBlueLight AU. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 66,
+      "id": "ynot-fr-67338876b42feb18b6ccda9c",
+      "title": "Whale Wall Decor",
+      "original_title": "Whale Wall Decor",
+      "brand": "CocoNene Hawaii",
+      "category": "home",
+      "price_eur": 79.06,
+      "image_link": "https://cdn.shopify.com/s/files/1/0419/3881/3077/files/R9453.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0419/3881/3077/files/R9453.jpg"
+      ],
+      "source_url": "https://coconene.com/products/whale-wall-decor?variant=46973008642301&_gsid=hKBxTRVKVLpa&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "coconene.com",
+      "description": "Whale Wall Decor from CocoNene Hawaii. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 67,
+      "id": "ynot-fr-36360254087acbc758ab2c5b",
+      "title": "Shelf 1x0.5",
+      "original_title": "Shelf 1x0",
+      "brand": "MONA",
+      "category": "home",
+      "price_eur": 79.78,
+      "image_link": "https://cdn.shopify.com/s/files/1/0799/5264/2301/files/Screenshot_2026-03-10_at_16.46.16.png",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0799/5264/2301/files/Screenshot_2026-03-10_at_16.46.16.png"
+      ],
+      "source_url": "https://www.monacollective.store/products/shelf-0-5x1?variant=47413773795581&_gsid=rU5TxtdSSZDQ&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "monacollective.store",
+      "description": "Shelf 1x0.5 from MONA. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 68,
+      "id": "ynot-fr-2a5877e3afdb22393608c4ab",
+      "title": "26\"H Slim Design Led Bright Reader Natural Daylight Full Spectrum Desk Lamp Black",
+      "original_title": "Slim Design Led Bright Reader Natural Daylight",
+      "brand": "Lightsdaddy",
+      "category": "home",
+      "price_eur": 80.09,
+      "image_link": "https://cdn.shopify.com/s/files/1/0731/6163/8129/files/201a1452-1cff-43d2-97f0-7dbaeb3ed873.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0731/6163/8129/files/201a1452-1cff-43d2-97f0-7dbaeb3ed873.jpg"
+      ],
+      "source_url": "https://lightsdaddy.com/products/26h-slim-design-led-bright-reader-natural-daylight-full-spectrum-desk-lamp-black?variant=48392471085297&_gsid=NdxTErcTKWGP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "lightsdaddy.com",
+      "description": "26\"H Slim Design Led Bright Reader Natural Daylight Full Spectrum Desk Lamp Black from Lightsdaddy. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 69,
+      "id": "ynot-fr-8c271bfc2b0aa15c65dfefea",
+      "title": "Everyday Wreath Magnetic Wall Art - 16\"",
+      "original_title": "Everyday Wreath Magnetic Wall Art",
+      "brand": "Roeda",
+      "category": "home",
+      "price_eur": 60.5,
+      "image_link": "https://cdn.shopify.com/s/files/1/0269/3817/9702/files/20020GEverydayWreathnew.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0269/3817/9702/files/20020GEverydayWreathnew.jpg"
+      ],
+      "source_url": "https://roedastudio.com/products/everyday-wreath?variant=31757478920310&_gsid=fDSL2AuWuWoe&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "roedastudio.com",
+      "description": "Everyday Wreath Magnetic Wall Art - 16\" from Roeda. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    },
+    {
+      "rank": 70,
+      "id": "ynot-fr-4bbd71eec2165627d9fd81f0",
+      "title": "Radiantbeam Flexible Desk Lamp",
+      "original_title": "Radiantbeam Flexible Desk Lamp",
+      "brand": "Josh & Tate",
+      "category": "home",
+      "price_eur": 59.95,
+      "image_link": "https://cdn.shopify.com/s/files/1/0908/4564/3038/files/RadiantBeam_Flexible_Desk_Lamp_Adjustable_and_Space-Saving_Design.jpg",
+      "additional_image_links": [
+        "https://cdn.shopify.com/s/files/1/0908/4564/3038/files/RadiantBeam_Flexible_Desk_Lamp_Adjustable_and_Space-Saving_Design.jpg"
+      ],
+      "source_url": "https://joshandtate.com/products/radiantbeam-flexible-desk-lamp?variant=50172136947998&_gsid=NdxTErcTKWGP&utm_source=shopify&utm_medium=catalog",
+      "supplier_domain": "joshandtate.com",
+      "description": "Radiantbeam Flexible Desk Lamp from Josh & Tate. home product available through YNOT in FR.",
+      "quality_score": 92,
+      "verified_at": null,
+      "review_status": "needs_verification"
+    }
+  ]
+}
