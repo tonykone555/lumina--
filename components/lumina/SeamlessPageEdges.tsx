@@ -16,60 +16,61 @@ export default function SeamlessPageEdges(){
   return()=>root.removeAttribute("data-ynot-viewport-bleed");
  },[pathname]);
  return <style jsx global>{`
-  @media(max-width:800px){
-   html[data-ynot-viewport-bleed="true"]{
-    margin:0!important;padding:0!important;
-    width:100%!important;min-height:100%!important;
-    -webkit-text-size-adjust:100%;
-   }
-   html[data-ynot-viewport-bleed="true"] body{
-    margin:0!important;padding:0!important;
-    width:100%!important;min-height:100dvh!important;
-    overscroll-behavior-x:none;
-   }
-   /* The real masonry/cover tiles are the scrolling page. Do not introduce
-      a fixed backdrop or a black spacer at the screen cutout. */
-   html[data-ynot-viewport-bleed="true"] body .worlds{
-    position:relative!important;
-    width:100%!important;
-    min-height:calc(100dvh + env(safe-area-inset-top,0px))!important;
-    top:calc(-1 * env(safe-area-inset-top,0px))!important;
-    margin-bottom:calc(-1 * env(safe-area-inset-top,0px))!important;
-    border:0!important;border-radius:0!important;
-   }
-   html[data-ynot-viewport-bleed="true"] body .page:has(.grid),
-   html[data-ynot-viewport-bleed="true"] body .page:has(.albums),
-   html[data-ynot-viewport-bleed="true"] body .page:has(.products){
-    position:relative!important;
-    top:calc(-1 * env(safe-area-inset-top,0px))!important;
-    min-height:calc(100dvh + env(safe-area-inset-top,0px))!important;
-    padding-top:env(safe-area-inset-top,0px)!important;
-    padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important;
-    margin-bottom:calc(-1 * env(safe-area-inset-top,0px))!important;
-    border:0!important;border-radius:0!important;
-   }
-   /* Real cards scroll behind the navigation overlay. Keep their existing
-      negative top positioning, masonry and interaction intact. */
-   html[data-ynot-viewport-bleed="true"] .worldGrid,
-   html[data-ynot-viewport-bleed="true"] .page .grid,
-   html[data-ynot-viewport-bleed="true"] .page .albums,
-   html[data-ynot-viewport-bleed="true"] .page .products{
-    border-top:0!important;border-bottom:0!important;
-   }
-   /* Full-viewport experience for modal, Room, Studio and shop screens:
-      child media itself fills the screen; browser controls are independent. */
-   html[data-ynot-viewport-bleed="true"] .studio-stage,
-   html[data-ynot-viewport-bleed="true"] .ynot-pv2-backdrop,
-   html[data-ynot-viewport-bleed="true"] .ynot-story,
-   html[data-ynot-viewport-bleed="true"] .yr-product-fullscreen{
-    inset:0!important;
-    border:0!important;border-radius:0!important;
-    max-height:none!important;
-   }
-   /* Never create an additional decorative bar over content. */
-   html[data-ynot-viewport-bleed="true"] .worlds:before{
-    display:none!important;
-   }
+ /* Use the same geometry as a YNOT product hero: full-bleed real content,
+    with floating UI inset for the iPhone safe areas. No copied photo layer. */
+ @media(max-width:800px){
+  html[data-ynot-viewport-bleed="true"],
+  html[data-ynot-viewport-bleed="true"] body{
+   margin:0!important;padding:0!important;width:100%!important;
+   min-height:100dvh!important;overscroll-behavior-x:none;
   }
+  html[data-ynot-viewport-bleed="true"] body .worlds{
+   position:relative!important;top:0!important;margin-top:0!important;
+   margin-bottom:0!important;min-height:100dvh!important;
+   padding:0!important;border:0!important;border-radius:0!important;
+   isolation:isolate;
+  }
+  html[data-ynot-viewport-bleed="true"] .worlds .worldGrid{
+   position:relative!important;
+   margin-top:calc(-1 * (env(safe-area-inset-top,0px) + 120px))!important;
+   padding-top:0!important;
+   padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))!important;
+  }
+  html[data-ynot-viewport-bleed="true"] body .page:has(>.grid),
+  html[data-ynot-viewport-bleed="true"] body .page:has(>.albums){
+   position:relative!important;top:0!important;margin:0!important;
+   padding-top:0!important;padding-bottom:calc(105px + env(safe-area-inset-bottom,0px))!important;
+   min-height:100dvh!important;border:0!important;border-radius:0!important;
+  }
+  html[data-ynot-viewport-bleed="true"] body .page:has(>.grid)>.grid,
+  html[data-ynot-viewport-bleed="true"] body .page:has(>.albums)>.albums{
+   margin-top:calc(-1 * env(safe-area-inset-top,0px))!important;
+   padding-top:0!important;
+  }
+  html[data-ynot-viewport-bleed="true"] body .page:has(>.products){
+   position:relative!important;top:0!important;margin:0!important;
+   padding-top:0!important;
+   min-height:100dvh!important;border:0!important;border-radius:0!important;
+  }
+  html[data-ynot-viewport-bleed="true"] body .page:has(>.products)>.products{
+   padding-top:0!important;
+  }
+  /* Underlay the fixed search/nav on top of the first real row, not
+     a black placeholder; let the page keep scrolling behind it. */
+  html[data-ynot-viewport-bleed="true"] .worlds:before{display:none!important}
+  html[data-ynot-viewport-bleed="true"] .worldsFloat,
+  html[data-ynot-viewport-bleed="true"] .subFloat,
+  html[data-ynot-viewport-bleed="true"] .productFloat{
+   top:calc(8px + env(safe-area-inset-top,0px))!important;
+  }
+  html[data-ynot-viewport-bleed="true"] .studio-stage{
+   position:fixed!important;inset:0!important;width:100dvw!important;height:100dvh!important;
+   border:0!important;border-radius:0!important;
+  }
+  html[data-ynot-viewport-bleed="true"] .ynot-pv2-backdrop,
+  html[data-ynot-viewport-bleed="true"] .yr-product-fullscreen{
+   inset:0!important;border:0!important;border-radius:0!important;
+  }
+ }
  `}</style>;
 }
