@@ -106,7 +106,7 @@ export default function StudioFeed({products}:{products:Product[]}){
    </div>
    <div className="studio-actions">
     <button className={saved.includes(current.id)?"is-saved":""} onClick={save}><Bookmark size={19} fill={saved.includes(current.id)?"currentColor":"none"}/><span>{saved.includes(current.id)?"Saved":"Save"}</span></button>
-    <Link href={`/p/${encodeURIComponent(current.id)}?from=studio`}><ArrowUpRight size={19}/><span>Product details</span></Link>
+    <Link href={`/p/${encodeURIComponent(current.id)}?from=studio&q=${encodeURIComponent(current.title)}`} onClick={()=>{try{sessionStorage.setItem("ynot-studio-product:"+current.id,JSON.stringify(current))}catch{}}}><ArrowUpRight size={19}/><span>Product details</span></Link>
     <button onClick={share} aria-label="Share current product"><Share2 size={18}/><span>Share</span></button>
    </div>
    <div className="studio-hint"><span>SWIPE UP TO DISCOVER · {catalog.length} PIECES{hasMore?"+":""}</span><ChevronUp size={15}/>{loadingMore&&<span>Finding more…</span>}{loadError&&<button className="studio-retry" onClick={()=>void loadMore()}>Retry loading</button>}</div>
