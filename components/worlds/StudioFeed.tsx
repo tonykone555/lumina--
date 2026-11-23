@@ -74,6 +74,9 @@ export default function StudioFeed({products}:{products:Product[]}){
  const onStageUp=(e:React.PointerEvent<HTMLElement>)=>{const start=swipe.current;swipe.current=null;if(!start)return;const dy=e.clientY-start.y;const dx=e.clientX-start.x;if(Math.abs(dy)>52&&Math.abs(dy)>Math.abs(dx))setSafeIndex(currentIndex+(dy<0?1:-1))};
  const onWheel=(e:React.WheelEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest(".studio-project-panel,.studio-zip"))return;if(Math.abs(e.deltaY)<12)return;const now=Date.now();if(now-lastWheel.current<360)return;lastWheel.current=now;setSafeIndex(currentIndex+(e.deltaY>0?1:-1))};
  if(!current)return <main className="studio-empty"><Link href="/worlds">Back to Worlds</Link><p>No catalogue pieces available.</p></main>;
+ const masonryCategory=current.category==="lighting"?"lighting/chandeliers":current.category==="chairs"?"living/armchairs":/sofa|couch|loveseat/i.test(current.title)?"living/sofas":/console/i.test(current.title)?"living/console-tables":"living/coffee-tables";
+ const masonryParams=new URLSearchParams({studio:"1",product:current.id,title:current.title,brand:current.brand||"",image:current.image,price:String(current.price),url:current.sourceUrl||"",description:current.description||"",origin:"studio"});
+ const masonryHref="/worlds/home-interiors/"+masonryCategory+"?"+masonryParams.toString();
  const progress=items.length>1?currentIndex/(items.length-1):0;
  return <main className="studio-stage" tabIndex={0} aria-label="YNOT Studio vertical interiors product feed" onPointerDown={onStageDown} onPointerUp={onStageUp} onWheel={onWheel} onKeyDown={e=>{if(e.key==="ArrowDown"){e.preventDefault();setSafeIndex(currentIndex+1)}if(e.key==="ArrowUp"){e.preventDefault();setSafeIndex(currentIndex-1)}if(e.key==="Escape")e.currentTarget.blur()}}>
   <div className="studio-backdrop" key={"bg-"+current.id} style={{backgroundImage:`url("${current.image.replaceAll('"',"%22")}")`}} aria-hidden="true"/>
@@ -107,7 +110,7 @@ export default function StudioFeed({products}:{products:Product[]}){
    </div>
    <div className="studio-actions">
     <button className={saved.includes(current.id)?"is-saved":""} onClick={save}><Bookmark size={19} fill={saved.includes(current.id)?"currentColor":"none"}/><span>{saved.includes(current.id)?"Saved":"Save"}</span></button>
-    <Link href={`/p/${encodeURIComponent(current.id)}?from=studio&q=${encodeURIComponent(current.title)}`} onClick={()=>{try{sessionStorage.setItem("ynot-studio-product:"+current.id,JSON.stringify(current))}catch{}}}><ArrowUpRight size={19}/><span>Product details</span></Link>
+    <Link href={masonryHref} onClick={()=>{try{sessionStorage.setItem("ynot-studio-product:"+current.id,JSON.stringify(current))}catch{}}}><ArrowUpRight size={19}/><span>Product details</span></Link>
     <button onClick={share} aria-label="Share current product"><Share2 size={18}/><span>Share</span></button>
    </div>
    <div className="studio-hint"><span>SWIPE UP TO DISCOVER · {catalog.length} PIECES{hasMore?"+":""}</span><ChevronUp size={15}/>{loadingMore&&<span>Finding more…</span>}{loadError&&<button className="studio-retry" onClick={()=>void loadMore()}>Retry loading</button>}</div>
