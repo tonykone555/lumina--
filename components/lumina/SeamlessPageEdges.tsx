@@ -12,7 +12,21 @@ export default function SeamlessPageEdges(){
  const pathname=usePathname();
  useEffect(()=>{
   const root=document.documentElement;
+  const browsing=pathname==="/worlds"||(pathname.startsWith("/worlds/")&&!pathname.startsWith("/worlds/studio"));
   root.setAttribute("data-ynot-viewport-bleed","true");
+  if(browsing){
+   root.setAttribute("data-ynot-document-scroll","true");
+   // Only prime a newly opened, scrollable document. Do not fight Safari's
+   // native user gesture, an anchor link, scroll restoration, or product modals.
+   let frame=0,delay=0;
+   const prime=()=>{
+    if(window.scrollY!==0||window.location.hash||window.history.state?.__NA===false)return;
+    const maxScroll=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
+    if(maxScroll>120)window.scrollTo({top:1,behavior:"instant"});
+   };
+   frame=window.requestAnimationFrame(()=>{delay=window.setTimeout(prime,90)});
+   return()=>{window.cancelAnimationFrame(frame);window.clearTimeout(delay);root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
+  }
   return()=>root.removeAttribute("data-ynot-viewport-bleed");
  },[pathname]);
  return <style jsx global>{`
@@ -23,6 +37,23 @@ export default function SeamlessPageEdges(){
   html[data-ynot-viewport-bleed="true"] body{
    margin:0!important;padding:0!important;width:100%!important;
    min-height:100dvh!important;overscroll-behavior-x:none;
+  }
+  /* Safari collapses its chrome on real document scroll, not on a trapped
+     100vh inner scroller. Keep the actual document vertically scrollable. */
+  html[data-ynot-document-scroll="true"],
+  html[data-ynot-document-scroll="true"] body{
+   height:auto!important;
+   min-height:100dvh!important;
+   overflow-y:auto!important;
+   overflow-x:clip!important;
+   overscroll-behavior-y:auto!important;
+   -webkit-overflow-scrolling:touch;
+   touch-action:pan-y;
+  }
+  html[data-ynot-document-scroll="true"] .worlds,
+  html[data-ynot-document-scroll="true"] .page{
+   overflow:visible!important;
+   touch-action:pan-y;
   }
   html[data-ynot-viewport-bleed="true"] body .worlds{
    position:relative!important;top:0!important;margin-top:0!important;
