@@ -14,8 +14,8 @@ export function checkoutMode(p:{id?:string;url?:string;source?:string}){
   if(p.source?.includes("shopify")&&p.url&&approvedSupplier(p.url))return{mode:"ynot" as const,reason:"Approved supplier"};
   return{mode:"merchant" as const,reason:"Marketplace checkout"};
 }
-export function checkoutEnabled(){return process.env.YNOT_CHECKOUT_ENABLED!=="false"&&Boolean(process.env.STRIPE_RESTRICTED_KEY&&process.env.STRIPE_WEBHOOK_SECRET&&process.env.YNOT_CHECKOUT_SIGNING_SECRET&&process.env.YNOT_OPERATOR_SECRET)}
-export function manualProcurementEnabled(){return process.env.YNOT_MANUAL_PROCUREMENT_ENABLED!=="false"}
+export function checkoutEnabled(){return process.env.YNOT_CHECKOUT_ENABLED==="true"&&Boolean(process.env.STRIPE_RESTRICTED_KEY&&process.env.STRIPE_WEBHOOK_SECRET&&process.env.YNOT_CHECKOUT_SIGNING_SECRET&&process.env.YNOT_OPERATOR_SECRET)}
+export function manualProcurementEnabled(){return process.env.YNOT_MANUAL_PROCUREMENT_ENABLED==="true"}
 function publicMerchantUrl(raw:string){
  const url=new URL(raw);if(url.protocol!=="https:")throw new Error("INVALID_SUPPLIER_URL");
  const host=url.hostname.toLowerCase();
@@ -30,7 +30,10 @@ export function manualProcurementProduct(input:CheckoutProduct):CheckoutProduct{
 function manualShippingTable(){try{return JSON.parse(process.env.YNOT_MANUAL_SHIPPING_JSON||"{}")}catch{return{}}}
 export function manualShippingFor(p:CheckoutProduct,region:Region):ShippingQuote{
  const country=String(region?.country||"").toUpperCase();if(!country)throw new Error("REGION_REQUIRED");
- const table=manualShippingTable(),entry=domainEntry<any>(table,p.url),raw=entry?.[country]??entry?.default??table?.[country]??table?.default??0;
+ const table=manualShippingTable(),entry=domainEntry<any>(table,p.url);
+ if(!approvedSupplier(p.url)||entry==null)throw new Error("SUPPLIER_SHIPPING_NOT_VERIFIED");
+ const raw=entry?.[country]??entry?.default;
+ if(raw==null)throw new Error("SHIPPING_NOT_AVAILABLE_FOR_REGION");
  const amount=Number(typeof raw==="object"?raw?.amount:raw),currency=String(typeof raw==="object"?raw?.currency||p.currency:p.currency).toUpperCase();
  if(!Number.isFinite(amount)||amount<0)throw new Error("SHIPPING_NOT_AVAILABLE_FOR_REGION");
  return{amount:Math.round(amount*100)/100,currency,country,source:"operator"};
