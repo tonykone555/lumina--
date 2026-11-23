@@ -28,6 +28,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const zipper=useRef<HTMLDivElement>(null);
  const swipe=useRef<{x:number;y:number;at:number}|null>(null);
  const lastWheel=useRef(0);
+ const deepLinkConsumed=useRef(false);
  const items=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>p.category===category),[category,catalog]);
  const current=items[Math.min(index,Math.max(0,items.length-1))];
  const currentIndex=Math.min(index,Math.max(0,items.length-1));
@@ -64,7 +65,7 @@ export default function StudioFeed({products}:{products:Product[]}){
   setToast(exists?"Removed from Saves":"Saved");
  };
  const share=async()=>{if(!current)return;const url=window.location.origin+"/worlds/studio?product="+encodeURIComponent(current.id);try{if(navigator.share)await navigator.share({title:current.title,url});else{await navigator.clipboard.writeText(url);setToast("Link copied")}}catch{}};
- useEffect(()=>{const params=new URLSearchParams(window.location.search);const selected=params.get("product");if(selected){const idx=items.findIndex(p=>p.id===selected);if(idx>=0)setIndex(idx)}},[items]);
+ useEffect(()=>{if(deepLinkConsumed.current)return;const params=new URLSearchParams(window.location.search);const selected=params.get("product");if(!selected){deepLinkConsumed.current=true;return}const idx=items.findIndex(p=>p.id===selected);if(idx>=0){setIndex(idx);deepLinkConsumed.current=true}},[items]);
  const selectFromPoint=(clientY:number)=>{const el=zipper.current;if(!el)return;const b=el.getBoundingClientRect();const percent=Math.min(1,Math.max(0,(clientY-b.top)/b.height));setSafeIndex(percent*(items.length-1))};
  const onZipperDown=(e:React.PointerEvent<HTMLDivElement>)=>{e.preventDefault();e.stopPropagation();setScrubbing(true);e.currentTarget.setPointerCapture(e.pointerId);selectFromPoint(e.clientY)};
  const onZipperMove=(e:React.PointerEvent<HTMLDivElement>)=>{if(scrubbing)selectFromPoint(e.clientY)};
