@@ -6,8 +6,8 @@ import {ArrowLeft,ArrowUpRight,Bookmark,Check,ChevronDown,ChevronUp,Share2} from
 import "./StudioFeed.css";
 
 type Product={id:string;title:string;brand:string;price:number;image:string;sourceUrl:string;category:string;description?:string;score?:number};
-type Category="all"|"lighting"|"chairs"|"furniture";
-const tabs:{key:Category;label:string}[]=[{key:"all",label:"All pieces"},{key:"lighting",label:"Lighting"},{key:"chairs",label:"Chairs"},{key:"furniture",label:"Furniture"}];
+type Category="all"|"featured"|"lighting"|"chairs"|"furniture";
+const tabs:{key:Category;label:string}[]=[{key:"all",label:"All pieces"},{key:"featured",label:"Best picks"},{key:"lighting",label:"Lighting"},{key:"chairs",label:"Chairs"},{key:"furniture",label:"Furniture"}];
 const describe=(p:Product)=>p.category==="lighting"?"A statement light for atmospheric residential, hospitality and interior design projects.":p.category==="chairs"?"A distinctive seating piece for refined residential and contemporary commercial spaces.":"An expressive furniture piece for curated interiors and spatial compositions.";
 const money=(n:number)=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(n);
 const storageKey="ynot-saved-items";
@@ -28,7 +28,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const zipper=useRef<HTMLDivElement>(null);
  const swipe=useRef<{x:number;y:number;at:number}|null>(null);
  const lastWheel=useRef(0);
- const items=useMemo(()=>category==="all"?catalog:catalog.filter(p=>p.category===category),[category,catalog]);
+ const items=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>p.category===category),[category,catalog]);
  const current=items[Math.min(index,Math.max(0,items.length-1))];
  const currentIndex=Math.min(index,Math.max(0,items.length-1));
  const setSafeIndex=useCallback((next:number)=>setIndex(Math.max(0,Math.min(items.length-1,Math.round(next)))),[items.length]);
