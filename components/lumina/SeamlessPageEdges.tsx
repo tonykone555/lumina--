@@ -1,111 +1,75 @@
 "use client";
-import {useEffect,useState} from "react";
+import {useEffect} from "react";
 import {usePathname} from "next/navigation";
 
 /**
- * Dynamic photo bleed for iPhone web browsing. Uses a duplicate of the currently
- * visible image for the page background, even above the first masonry row and
- * underneath the bottom edge. The regular cards/images are not cropped.
+ * All YNOT pages share one edge-to-edge viewport policy. No fake image,
+ * no copied blurred picture and no fixed overlay covering product cards.
+ * Scrolling content moves through the actual viewport including the
+ * site-controllable iOS safe areas.
  */
-const GROUPS=[
- ".worlds .worldGrid .world img",
- ".page .detail .hero img",
- ".page .products > button img",
- ".page .albums .album img",
- ".page .grid .card img",
- ".ynot-app-shell .ynot-studio-home-entry img",
- ".ynot-app-shell .lv4-detail img",
- ".ynot-app-shell .ynot-pv2 img",
- ".ynot-app-shell img"
-];
-function pickImage():string{
- const viewportHeight=window.visualViewport?.height||window.innerHeight;
- const topY=window.visualViewport?.offsetTop||0;
- for(const group of GROUPS){
-  let best:{url:string;weight:number}|null=null;
-  const images=document.querySelectorAll<HTMLImageElement>(group);
-  for(const img of Array.from(images).slice(0,90)){
-   const b=img.getBoundingClientRect(),url=img.currentSrc||img.src;
-   if(!/^https?:\/\//.test(url)||b.width<85||b.height<85||b.bottom<topY-5||b.top>topY+viewportHeight+10)continue;
-   // Use the largest prominent product/cover image near the visible top,
-   // rather than a small thumbnail or site icon.
-   const topDistance=Math.abs(Math.max(topY,b.top)-(topY+viewportHeight*.23));
-   const visible=Math.min(b.bottom,topY+viewportHeight)-Math.max(b.top,topY);
-   const weight=Math.min(b.width,window.innerWidth)*Math.max(0,visible)/1000-topDistance*.18;
-   if(!best||weight>best.weight)best={url,weight};
-  }
-  if(best)return best.url;
- }
- return "";
-}
 export default function SeamlessPageEdges(){
- const path=usePathname();
- const enabled=path==="/"||path==="/worlds"||(path.startsWith("/worlds/")&&!path.startsWith("/worlds/studio"));
- const [image,setImage]=useState("");
- useEffect(()=>{
-  if(!enabled){setImage("");return;}
-  let timer=0,frame=0,live=true;
-  const update=()=>{
-   if(!live||frame)return;
-   frame=requestAnimationFrame(()=>{
-    frame=0;const url=pickImage();
-    if(url)setImage(old=>old===url?old:url);
-   });
-  };
-  const scheduled=()=>{clearTimeout(timer);timer=window.setTimeout(update,75);};
-  const observer=new MutationObserver(scheduled);
-  observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["src","class","style"]});
-  window.addEventListener("scroll",scheduled,{passive:true});
-  window.addEventListener("resize",scheduled,{passive:true});
-  window.visualViewport?.addEventListener("resize",scheduled);
-  window.setTimeout(update,70);
-  return()=>{live=false;observer.disconnect();window.removeEventListener("scroll",scheduled);window.removeEventListener("resize",scheduled);window.visualViewport?.removeEventListener("resize",scheduled);clearTimeout(timer);if(frame)cancelAnimationFrame(frame)};
- },[path,enabled]);
+ const pathname=usePathname();
  useEffect(()=>{
   const root=document.documentElement;
-  if(!enabled||!image){root.style.removeProperty("--ynot-immersive-photo");root.removeAttribute("data-ynot-immersive");return;}
-  root.style.setProperty("--ynot-immersive-photo",`url("${image.replaceAll('"',"%22")}")`);
-  root.setAttribute("data-ynot-immersive","on");
-  return()=>{root.style.removeProperty("--ynot-immersive-photo");root.removeAttribute("data-ynot-immersive")};
- },[image,enabled]);
- if(!enabled)return null;
+  root.setAttribute("data-ynot-viewport-bleed","true");
+  return()=>root.removeAttribute("data-ynot-viewport-bleed");
+ },[pathname]);
  return <style jsx global>{`
-  /* The live photo is the full page background, not a strip laid over content.
-     On pages with aggressive black !important declarations, this override wins. */
   @media(max-width:800px){
-   html[data-ynot-immersive="on"],html[data-ynot-immersive="on"] body{
-    background-image:var(--ynot-immersive-photo)!important;
-    background-position:center 32%!important;
-    background-size:cover!important;
-    background-attachment:fixed!important;
-    background-repeat:no-repeat!important;
+   html[data-ynot-viewport-bleed="true"]{
+    margin:0!important;padding:0!important;
+    width:100%!important;min-height:100%!important;
+    -webkit-text-size-adjust:100%;
    }
-   html[data-ynot-immersive="on"] body .worlds,
-   html[data-ynot-immersive="on"] body .page:has(.grid),
-   html[data-ynot-immersive="on"] body .page:has(.albums),
-   html[data-ynot-immersive="on"] body .page:has(.products){
-    background-color:transparent!important;
+   html[data-ynot-viewport-bleed="true"] body{
+    margin:0!important;padding:0!important;
+    width:100%!important;min-height:100dvh!important;
+    overscroll-behavior-x:none;
    }
-   /* A tinted, enlarged continuation sits BEHIND categories while scrolling.
-      The sharp product photographs remain above it at their natural sizing. */
-   html[data-ynot-immersive="on"] body .worlds:before{
-    background-image:linear-gradient(180deg,rgba(0,0,0,.4),rgba(0,0,0,.1)),var(--ynot-immersive-photo)!important;
-    background-position:center!important;background-size:cover!important;
-    top:calc(-120px - env(safe-area-inset-top,0px))!important;
-    height:calc(230px + env(safe-area-inset-top,0px))!important;
-    filter:blur(20px)!important;
+   /* The real masonry/cover tiles are the scrolling page. Do not introduce
+      a fixed backdrop or a black spacer at the screen cutout. */
+   html[data-ynot-viewport-bleed="true"] body .worlds{
+    position:relative!important;
+    width:100%!important;
+    min-height:calc(100dvh + env(safe-area-inset-top,0px))!important;
+    top:calc(-1 * env(safe-area-inset-top,0px))!important;
+    margin-bottom:calc(-1 * env(safe-area-inset-top,0px))!important;
+    border:0!important;border-radius:0!important;
    }
-   html[data-ynot-immersive="on"] body .page:has(.grid):before,
-   html[data-ynot-immersive="on"] body .page:has(.albums):before,
-   html[data-ynot-immersive="on"] body .page:has(.products):before{
-    content:"";position:fixed;top:-100px;left:-45px;right:-45px;height:calc(200px + env(safe-area-inset-top,0px));
-    background-image:linear-gradient(#0005,#0002),var(--ynot-immersive-photo);
-    background-size:cover;background-position:center;filter:blur(26px);
-    pointer-events:none;z-index:0;
+   html[data-ynot-viewport-bleed="true"] body .page:has(.grid),
+   html[data-ynot-viewport-bleed="true"] body .page:has(.albums),
+   html[data-ynot-viewport-bleed="true"] body .page:has(.products){
+    position:relative!important;
+    top:calc(-1 * env(safe-area-inset-top,0px))!important;
+    min-height:calc(100dvh + env(safe-area-inset-top,0px))!important;
+    padding-top:env(safe-area-inset-top,0px)!important;
+    padding-bottom:calc(100px + env(safe-area-inset-bottom,0px))!important;
+    margin-bottom:calc(-1 * env(safe-area-inset-top,0px))!important;
+    border:0!important;border-radius:0!important;
    }
-   html[data-ynot-immersive="on"] body .page:has(.grid)>.grid,
-   html[data-ynot-immersive="on"] body .page:has(.albums)>.albums,
-   html[data-ynot-immersive="on"] body .page:has(.products)>.products{position:relative;z-index:1}
+   /* Real cards scroll behind the navigation overlay. Keep their existing
+      negative top positioning, masonry and interaction intact. */
+   html[data-ynot-viewport-bleed="true"] .worldGrid,
+   html[data-ynot-viewport-bleed="true"] .page .grid,
+   html[data-ynot-viewport-bleed="true"] .page .albums,
+   html[data-ynot-viewport-bleed="true"] .page .products{
+    border-top:0!important;border-bottom:0!important;
+   }
+   /* Full-viewport experience for modal, Room, Studio and shop screens:
+      child media itself fills the screen; browser controls are independent. */
+   html[data-ynot-viewport-bleed="true"] .studio-stage,
+   html[data-ynot-viewport-bleed="true"] .ynot-pv2-backdrop,
+   html[data-ynot-viewport-bleed="true"] .ynot-story,
+   html[data-ynot-viewport-bleed="true"] .yr-product-fullscreen{
+    inset:0!important;
+    border:0!important;border-radius:0!important;
+    max-height:none!important;
+   }
+   /* Never create an additional decorative bar over content. */
+   html[data-ynot-viewport-bleed="true"] .worlds:before{
+    display:none!important;
+   }
   }
  `}</style>;
 }
