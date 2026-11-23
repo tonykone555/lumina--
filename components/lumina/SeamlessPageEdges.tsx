@@ -16,88 +16,62 @@ export default function SeamlessPageEdges(){
   root.setAttribute("data-ynot-viewport-bleed","true");
   if(browsing){
    root.setAttribute("data-ynot-document-scroll","true");
-   // Only prime a newly opened, scrollable document. Do not fight Safari's
-   // native user gesture, an anchor link, scroll restoration, or product modals.
-   let frame=0,delay=0;
-   const prime=()=>{
-    if(window.scrollY!==0||window.location.hash||window.history.state?.__NA===false)return;
-    const maxScroll=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
-    if(maxScroll>120)window.scrollTo({top:1,behavior:"instant"});
-   };
-   frame=window.requestAnimationFrame(()=>{delay=window.setTimeout(prime,90)});
-   return()=>{window.cancelAnimationFrame(frame);window.clearTimeout(delay);root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
+   // Leave scrolling to the user and Safari: no artificial scroll offset.\n   return()=>{root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
   }
   return()=>root.removeAttribute("data-ynot-viewport-bleed");
  },[pathname]);
  return <style jsx global>{`
- /* Use the same geometry as a YNOT product hero: full-bleed real content,
-    with floating UI inset for the iPhone safe areas. No copied photo layer. */
+ /* No top/bottom fences on YNOT's scrolling documents. Page content itself
+    reaches the viewport edge. Navigation floats above the scrolling cards. */
  @media(max-width:800px){
   html[data-ynot-viewport-bleed="true"],
   html[data-ynot-viewport-bleed="true"] body{
-   margin:0!important;padding:0!important;width:100%!important;
-   min-height:100dvh!important;overscroll-behavior-x:none;
+   width:100%!important;height:auto!important;min-height:100%!important;
+   margin:0!important;padding:0!important;
+   overflow-x:clip!important;
   }
-  /* Safari collapses its chrome on real document scroll, not on a trapped
-     100vh inner scroller. Keep the actual document vertically scrollable. */
   html[data-ynot-document-scroll="true"],
   html[data-ynot-document-scroll="true"] body{
-   height:auto!important;
-   min-height:100dvh!important;
-   overflow-y:auto!important;
-   overflow-x:clip!important;
-   overscroll-behavior-y:auto!important;
-   -webkit-overflow-scrolling:touch;
-   touch-action:pan-y;
+   overflow-y:auto!important;overscroll-behavior-y:auto!important;
+   -webkit-overflow-scrolling:touch!important;
   }
-  html[data-ynot-document-scroll="true"] .worlds,
-  html[data-ynot-document-scroll="true"] .page{
-   overflow:visible!important;
-   touch-action:pan-y;
-  }
-  html[data-ynot-viewport-bleed="true"] body .worlds{
-   position:relative!important;top:0!important;margin-top:0!important;
-   margin-bottom:0!important;min-height:100dvh!important;
-   padding:0!important;border:0!important;border-radius:0!important;
-   isolation:isolate;
-  }
-  html[data-ynot-viewport-bleed="true"] .worlds .worldGrid{
-   position:relative!important;
-   margin-top:calc(-1 * (env(safe-area-inset-top,0px) + 120px))!important;
-   padding-top:0!important;
-   padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))!important;
-  }
-  html[data-ynot-viewport-bleed="true"] body .page:has(>.grid),
-  html[data-ynot-viewport-bleed="true"] body .page:has(>.albums){
-   position:relative!important;top:0!important;margin:0!important;
-   padding-top:0!important;padding-bottom:calc(105px + env(safe-area-inset-bottom,0px))!important;
-   min-height:100dvh!important;border:0!important;border-radius:0!important;
-  }
-  html[data-ynot-viewport-bleed="true"] body .page:has(>.grid)>.grid,
-  html[data-ynot-viewport-bleed="true"] body .page:has(>.albums)>.albums{
-   margin-top:calc(-1 * env(safe-area-inset-top,0px))!important;
-   padding-top:0!important;
-  }
-  html[data-ynot-viewport-bleed="true"] body .page:has(>.products){
-   position:relative!important;top:0!important;margin:0!important;
-   padding-top:0!important;
-   min-height:100dvh!important;border:0!important;border-radius:0!important;
-  }
-  html[data-ynot-viewport-bleed="true"] body .page:has(>.products)>.products{
-   padding-top:0!important;
-  }
-  /* Underlay the fixed search/nav on top of the first real row, not
-     a black placeholder; let the page keep scrolling behind it. */
-  html[data-ynot-viewport-bleed="true"] .worlds:before{display:none!important}
-  html[data-ynot-viewport-bleed="true"] .worldsFloat,
-  html[data-ynot-viewport-bleed="true"] .subFloat,
-  html[data-ynot-viewport-bleed="true"] .productFloat{
-   top:calc(8px + env(safe-area-inset-top,0px))!important;
-  }
-  html[data-ynot-viewport-bleed="true"] .studio-stage{
-   position:fixed!important;inset:0!important;width:100dvw!important;height:100dvh!important;
+  /* Do not move the whole page out of flow or reserve blank safe-area bands. */
+  html[data-ynot-document-scroll="true"] body .worlds,
+  html[data-ynot-document-scroll="true"] body .page:has(>.grid),
+  html[data-ynot-document-scroll="true"] body .page:has(>.albums),
+  html[data-ynot-document-scroll="true"] body .page:has(>.products){
+   position:relative!important;top:auto!important;bottom:auto!important;
+   height:auto!important;max-height:none!important;min-height:100dvh!important;
+   margin-top:0!important;margin-bottom:0!important;
+   padding-top:0!important;padding-bottom:0!important;
    border:0!important;border-radius:0!important;
+   overflow:visible!important;touch-action:pan-y;
   }
+  /* Actual scrollable masonry begins flush at the top, not behind a reserved
+     56/64/110/170px zone. */
+  html[data-ynot-document-scroll="true"] body .worlds .worldGrid,
+  html[data-ynot-document-scroll="true"] body .page:has(>.grid)>.grid,
+  html[data-ynot-document-scroll="true"] body .page:has(>.albums)>.albums,
+  html[data-ynot-document-scroll="true"] body .page:has(>.products)>.products{
+   position:relative!important;
+   top:auto!important;bottom:auto!important;
+   margin-top:0!important;margin-bottom:0!important;
+   padding-top:0!important;padding-bottom:0!important;
+   border-top:0!important;border-bottom:0!important;
+   transform:none!important;
+  }
+  html[data-ynot-document-scroll="true"] body .page:has(>.products)>.chips{
+   top:0!important;
+  }
+  html[data-ynot-document-scroll="true"] body .worlds:before{display:none!important}
+  /* Keep only the interactive controls inset. The tiles themselves have no
+     safe-area padding or opaque wrapper. */
+  html[data-ynot-document-scroll="true"] .worldsFloat,
+  html[data-ynot-document-scroll="true"] .subFloat,
+  html[data-ynot-document-scroll="true"] .productFloat{
+   top:calc(7px + env(safe-area-inset-top,0px))!important;
+  }
+  html[data-ynot-viewport-bleed="true"] .studio-stage,
   html[data-ynot-viewport-bleed="true"] .ynot-pv2-backdrop,
   html[data-ynot-viewport-bleed="true"] .yr-product-fullscreen{
    inset:0!important;border:0!important;border-radius:0!important;
