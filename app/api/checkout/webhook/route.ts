@@ -10,7 +10,7 @@ export async function POST(req:Request){
   const stripe=stripeClient(),event=stripe.webhooks.constructEvent(await req.text(),req.headers.get("stripe-signature")||"",secret);
   if(event.type==="checkout.session.completed"){
    const session=await stripe.checkout.sessions.retrieve(event.data.object.id,{expand:["customer","payment_intent"]}),m=session.metadata||{};
-   if(m.ynotFlow==="manual_procurement"){
+   if(m.ynotFlow==="manual_procurement"||m.ynotFlow==="multi_item_manual_procurement"){
     const paymentIntent=typeof session.payment_intent==="string"?await stripe.paymentIntents.retrieve(session.payment_intent):session.payment_intent;
     if(paymentIntent?.status==="requires_capture"&&m.orderStatus!=="awaiting_operator_approval"){const authorizedAt=String(Date.now());await stripe.checkout.sessions.update(session.id,{metadata:{...m,orderStatus:"awaiting_operator_approval",authorizedAt}});await stripe.paymentIntents.update(paymentIntent.id,{metadata:{...paymentIntent.metadata,orderStatus:"awaiting_operator_approval",authorizedAt,checkoutSessionId:session.id}});await notifyOperator({...session,metadata:{...m,orderStatus:"awaiting_operator_approval",authorizedAt}})}
    }
