@@ -1,83 +1,112 @@
 "use client";
-
 import {useEffect,useState} from "react";
 import {usePathname} from "next/navigation";
 
 /**
- * Visual continuity at the edges of full-screen browsing pages.
- * The blurred image follows the first prominently visible catalogue image,
- * instead of falling back to a flat black strip while scrolling.
- * Browser-owned Safari controls remain under iOS control.
+ * Dynamic photo bleed for iPhone web browsing. Uses a duplicate of the currently
+ * visible image for the page background, even above the first masonry row and
+ * underneath the bottom edge. The regular cards/images are not cropped.
  */
-const PAGE_IMAGE_SELECTORS=[
+const GROUPS=[
  ".worlds .worldGrid .world img",
  ".page .detail .hero img",
- ".page .products>button img",
+ ".page .products > button img",
+ ".page .albums .album img",
  ".page .grid .card img",
- ".ynot-app-shell .ynot-pv2-gallery img",
- ".ynot-app-shell .lv4-detail img",
  ".ynot-app-shell .ynot-studio-home-entry img",
+ ".ynot-app-shell .lv4-detail img",
+ ".ynot-app-shell .ynot-pv2 img",
  ".ynot-app-shell img"
 ];
-function source(){
- const visible: Array<{src:string;distance:number;area:number}>=[];
- for(const selector of PAGE_IMAGE_SELECTORS){
-  const images=document.querySelectorAll<HTMLImageElement>(selector);
-  for(const img of Array.from(images).slice(0,42)){
-   const r=img.getBoundingClientRect();
-   if(r.width<95||r.height<95||r.bottom<0||r.top>innerHeight||r.right<0||r.left>innerWidth)continue;
-   const src=img.currentSrc||img.src;
-   if(!/^https?:\/\//.test(src))continue;
-   const topDistance=Math.abs(Math.max(r.top,0)-Math.max(0,innerHeight*.2));
-   const area=Math.min(r.width* r.height,1e6);
-   visible.push({src,distance:topDistance,area});
+function pickImage():string{
+ const viewportHeight=window.visualViewport?.height||window.innerHeight;
+ const topY=window.visualViewport?.offsetTop||0;
+ for(const group of GROUPS){
+  let best:{url:string;weight:number}|null=null;
+  const images=document.querySelectorAll<HTMLImageElement>(group);
+  for(const img of Array.from(images).slice(0,90)){
+   const b=img.getBoundingClientRect(),url=img.currentSrc||img.src;
+   if(!/^https?:\/\//.test(url)||b.width<85||b.height<85||b.bottom<topY-5||b.top>topY+viewportHeight+10)continue;
+   // Use the largest prominent product/cover image near the visible top,
+   // rather than a small thumbnail or site icon.
+   const topDistance=Math.abs(Math.max(topY,b.top)-(topY+viewportHeight*.23));
+   const visible=Math.min(b.bottom,topY+viewportHeight)-Math.max(b.top,topY);
+   const weight=Math.min(b.width,window.innerWidth)*Math.max(0,visible)/1000-topDistance*.18;
+   if(!best||weight>best.weight)best={url,weight};
   }
-  if(visible.length)break;
+  if(best)return best.url;
  }
- visible.sort((a,b)=>a.distance-b.distance||b.area-a.area);
- return visible[0]?.src||"";
+ return "";
 }
 export default function SeamlessPageEdges(){
- const pathname=usePathname();
- const active=pathname==="/"||pathname==="/worlds"||(pathname.startsWith("/worlds/")&&!pathname.startsWith("/worlds/studio")&&!pathname.includes("/product/"));
+ const path=usePathname();
+ const enabled=path==="/"||path==="/worlds"||(path.startsWith("/worlds/")&&!path.startsWith("/worlds/studio"));
  const [image,setImage]=useState("");
  useEffect(()=>{
-  if(!active){setImage("");return}
-  let raf=0,timeout=0;
-  const update=()=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const next=source();if(next)setImage(v=>v===next?v:next)})};
-  const onScroll=()=>{clearTimeout(timeout);timeout=window.setTimeout(update,110)};
-  const observer=new MutationObserver(()=>{clearTimeout(timeout);timeout=window.setTimeout(update,240)});
-  observer.observe(document.body,{subtree:true,childList:true,attributes:false});
-  window.addEventListener("scroll",onScroll,{passive:true});
-  window.addEventListener("resize",update,{passive:true});
-  update();
-  return()=>{observer.disconnect();window.removeEventListener("scroll",onScroll);window.removeEventListener("resize",update);if(raf)cancelAnimationFrame(raf);clearTimeout(timeout)};
- },[pathname,active]);
+  if(!enabled){setImage("");return;}
+  let timer=0,frame=0,live=true;
+  const update=()=>{
+   if(!live||frame)return;
+   frame=requestAnimationFrame(()=>{
+    frame=0;const url=pickImage();
+    if(url)setImage(old=>old===url?old:url);
+   });
+  };
+  const scheduled=()=>{clearTimeout(timer);timer=window.setTimeout(update,75);};
+  const observer=new MutationObserver(scheduled);
+  observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:["src","class","style"]});
+  window.addEventListener("scroll",scheduled,{passive:true});
+  window.addEventListener("resize",scheduled,{passive:true});
+  window.visualViewport?.addEventListener("resize",scheduled);
+  window.setTimeout(update,70);
+  return()=>{live=false;observer.disconnect();window.removeEventListener("scroll",scheduled);window.removeEventListener("resize",scheduled);window.visualViewport?.removeEventListener("resize",scheduled);clearTimeout(timer);if(frame)cancelAnimationFrame(frame)};
+ },[path,enabled]);
  useEffect(()=>{
-  if(!active)return;
-  let meta=document.head.querySelector<HTMLMetaElement>('meta[name="theme-color"][data-ynot-edge="true"]');
-  if(!meta){meta=document.createElement("meta");meta.name="theme-color";meta.dataset.ynotEdge="true";document.head.appendChild(meta)}
-  meta.content="#282623";
-  return()=>{meta?.remove()};
- },[active]);
- if(!active||!image)return null;
- return <div className="ynot-page-edge-fill" aria-hidden="true" style={{backgroundImage:`url("${image.replaceAll('"',"%22")}")`}}>
-  <style jsx global>{`
-   .ynot-page-edge-fill{display:none}
-   @media(max-width:800px){
-    .ynot-page-edge-fill{
-      display:block;position:fixed;inset:-34px;z-index:100;
-      pointer-events:none;user-select:none;background-position:center 30%;background-size:cover;
-      filter:blur(29px) brightness(.72) saturate(.8);
-      -webkit-mask-image:linear-gradient(to bottom,#000 0, #000 11%,transparent 18%,transparent 87%,#000 97%,#000 100%);
-      mask-image:linear-gradient(to bottom,#000 0, #000 11%,transparent 18%,transparent 87%,#000 97%,#000 100%);
-      opacity:.94;transition:background-image .3s ease;
-    }
-    body:has(.ynot-pv2-backdrop) .ynot-page-edge-fill,
-    body:has(.lv4-detail-backdrop) .ynot-page-edge-fill,
-    body:has(.ynot-selected) .ynot-page-edge-fill,
-    body:has(.page .detail) .ynot-page-edge-fill{display:none}
+  const root=document.documentElement;
+  if(!enabled||!image){root.style.removeProperty("--ynot-immersive-photo");root.removeAttribute("data-ynot-immersive");return;}
+  root.style.setProperty("--ynot-immersive-photo",`url("${image.replaceAll('"',"%22")}")`);
+  root.setAttribute("data-ynot-immersive","on");
+  return()=>{root.style.removeProperty("--ynot-immersive-photo");root.removeAttribute("data-ynot-immersive")};
+ },[image,enabled]);
+ if(!enabled)return null;
+ return <style jsx global>{`
+  /* The live photo is the full page background, not a strip laid over content.
+     On pages with aggressive black !important declarations, this override wins. */
+  @media(max-width:800px){
+   html[data-ynot-immersive="on"],html[data-ynot-immersive="on"] body{
+    background-image:var(--ynot-immersive-photo)!important;
+    background-position:center 32%!important;
+    background-size:cover!important;
+    background-attachment:fixed!important;
+    background-repeat:no-repeat!important;
    }
-  `}</style>
- </div>;
+   html[data-ynot-immersive="on"] body .worlds,
+   html[data-ynot-immersive="on"] body .page:has(.grid),
+   html[data-ynot-immersive="on"] body .page:has(.albums),
+   html[data-ynot-immersive="on"] body .page:has(.products),
+   html[data-ynot-immersive="on"] body .ynot-app-shell{
+    background-color:transparent!important;
+   }
+   /* A tinted, enlarged continuation sits BEHIND categories while scrolling.
+      The sharp product photographs remain above it at their natural sizing. */
+   html[data-ynot-immersive="on"] body .worlds:before{
+    background-image:linear-gradient(180deg,rgba(0,0,0,.4),rgba(0,0,0,.1)),var(--ynot-immersive-photo)!important;
+    background-position:center!important;background-size:cover!important;
+    top:calc(-120px - env(safe-area-inset-top,0px))!important;
+    height:calc(230px + env(safe-area-inset-top,0px))!important;
+    filter:blur(20px)!important;
+   }
+   html[data-ynot-immersive="on"] body .page:has(.grid):before,
+   html[data-ynot-immersive="on"] body .page:has(.albums):before,
+   html[data-ynot-immersive="on"] body .page:has(.products):before{
+    content:"";position:fixed;top:-100px;left:-45px;right:-45px;height:calc(200px + env(safe-area-inset-top,0px));
+    background-image:linear-gradient(#0005,#0002),var(--ynot-immersive-photo);
+    background-size:cover;background-position:center;filter:blur(26px);
+    pointer-events:none;z-index:0;
+   }
+   html[data-ynot-immersive="on"] body .page:has(.grid)>.grid,
+   html[data-ynot-immersive="on"] body .page:has(.albums)>.albums,
+   html[data-ynot-immersive="on"] body .page:has(.products)>.products{position:relative;z-index:1}
+  }
+ `}</style>;
 }
