@@ -148,7 +148,7 @@ export default function StudioFeed({products}:{products:Product[]}){
   finally{loadingRef.current=false;setLoadingMore(false)}
  },[]);
  useEffect(()=>{void loadMore()},[loadMore]);
- useEffect(()=>{if(hasMore&&!loadingMore&&!loadError&&(nextPage<3||items.length-currentIndex<20||(category!=="all"&&items.length<20)))void loadMore()},[items.length,currentIndex,category,hasMore,loadingMore,loadError,loadMore]);
+ useEffect(()=>{if(hasMore&&!loadingMore&&!loadError&&(nextPage<4||items.length-currentIndex<20||(category!=="all"&&items.length<20)))void loadMore()},[items.length,currentIndex,category,hasMore,loadingMore,loadError,loadMore]);
  useEffect(()=>{if(!toast)return;const t=window.setTimeout(()=>setToast(""),2500);return()=>clearTimeout(t)},[toast]);
  useEffect(()=>{if(!current)return;const nearby=items.slice(currentIndex+1,currentIndex+5);for(const p of nearby){const image=new Image();image.src=p.image}},[items,currentIndex,current?.id]);
  const save=()=>{
