@@ -6,35 +6,92 @@ import {ArrowLeft,ArrowUpRight,Bookmark,Check,ChevronDown,ChevronUp,Share2} from
 import "./StudioFeed.css";
 
 type Product={id:string;title:string;brand:string;price:number;image:string;sourceUrl:string;category:string;description?:string;score?:number};
-type Category="all"|"featured"|"lighting"|"chairs"|"furniture";
-const tabs:{key:Category;label:string}[]=[{key:"all",label:"All pieces"},{key:"featured",label:"Best picks"},{key:"lighting",label:"Lighting"},{key:"chairs",label:"Chairs"},{key:"furniture",label:"Furniture"}];
+type Category="all"|"featured"|"home"|"fashion"|"beauty"|"tech"|"fitness"|"jewelry"|"kitchen"|"outdoor"|"pets"|"travel"|"kids"|"auto";
+const tabs:{key:Category;label:string}[]=[
+ {key:"all",label:"For you"},{key:"featured",label:"Best finds"},{key:"home",label:"Home"},{key:"fashion",label:"Fashion"},{key:"beauty",label:"Beauty"},{key:"tech",label:"Tech"},{key:"fitness",label:"Fitness"},{key:"jewelry",label:"Jewelry"},{key:"kitchen",label:"Kitchen"},{key:"outdoor",label:"Outdoor"},{key:"pets",label:"Pets"},{key:"travel",label:"Travel"},{key:"kids",label:"Kids"},{key:"auto",label:"Auto"}
+];
 type NavStep="categories"|"types"|"brands";
 type Subtype={key:string;label:string;test:(title:string)=>boolean};
-const subtypeGroups:Record<Exclude<Category,"all"|"featured">,Subtype[]>={
- lighting:[
-  {key:"chandeliers",label:"Chandeliers",test:t=>/chandelier/i.test(t)},
-  {key:"pendants",label:"Pendant lights",test:t=>/pendant|hanging|suspension/i.test(t)&&!/chandelier/i.test(t)},
-  {key:"ceiling",label:"Ceiling lights",test:t=>/ceiling|flush mount/i.test(t)&&!/chandelier|pendant/i.test(t)},
-  {key:"other",label:"Other lighting",test:t=>/lamp|light|fixture/i.test(t)&&!/chandelier|pendant|hanging|suspension|ceiling/i.test(t)}
- ],
- chairs:[
-  {key:"armchairs",label:"Armchairs",test:t=>/armchair|accent chair|occasional chair|reading chair|boucl[eé] chair/i.test(t)},
-  {key:"lounge",label:"Lounge chairs",test:t=>/lounge chair|recliner|swivel chair/i.test(t)&&!/armchair/i.test(t)},
-  {key:"dining",label:"Dining chairs",test:t=>/dining chair|side chair|wood chair/i.test(t)},
-  {key:"other",label:"Other chairs",test:t=>/chair|seating/i.test(t)&&!/armchair|accent chair|occasional chair|reading chair|boucl[eé] chair|lounge chair|recliner|swivel chair|dining chair|side chair|wood chair/i.test(t)}
- ],
- furniture:[
+const subtypeGroups:Record<string,Subtype[]>={
+ "home":[
+  {key:"lighting",label:"Lighting",test:t=>/pendant|lamp|light|chandelier|fixture/i.test(t)},
+  {key:"chairs",label:"Chairs",test:t=>/chair|armchair|recliner|stool/i.test(t)},
   {key:"sofas",label:"Sofas",test:t=>/sofa|couch|loveseat|sectional/i.test(t)},
-  {key:"coffee-tables",label:"Coffee tables",test:t=>/coffee table|cocktail table/i.test(t)},
-  {key:"side-tables",label:"Side tables",test:t=>/side table|accent table|nesting table/i.test(t)},
-  {key:"consoles",label:"Consoles",test:t=>/console table|media console/i.test(t)},
-  {key:"other",label:"Other furniture",test:t=>/ottoman|stool|furniture/i.test(t)&&!/sofa|couch|loveseat|sectional|coffee table|cocktail table|side table|accent table|nesting table|console table|media console/i.test(t)}
- ]
+  {key:"tables",label:"Tables",test:t=>/table|console|desk/i.test(t)},
+  {key:"d-cor",label:"Décor",test:t=>/rug|mirror|vase|decor|shelf|cabinet|bed|ottoman/i.test(t)},
+ ],
+ "fashion":[
+  {key:"dresses",label:"Dresses",test:t=>/dress|gown|jumpsuit/i.test(t)},
+  {key:"tops",label:"Tops",test:t=>/shirt|blouse|tee|sweater|cardigan|hoodie/i.test(t)},
+  {key:"trousers",label:"Trousers",test:t=>/trouser|pant|jean|skirt|shorts/i.test(t)},
+  {key:"outerwear",label:"Outerwear",test:t=>/coat|jacket|blazer/i.test(t)},
+  {key:"shoes",label:"Shoes",test:t=>/shoe|sneaker|boot|sandal/i.test(t)},
+  {key:"bags",label:"Bags",test:t=>/handbag|bag|tote|purse/i.test(t)},
+ ],
+ "beauty":[
+  {key:"skincare",label:"Skincare",test:t=>/serum|moisturiz|skincare|face cream|sunscreen/i.test(t)},
+  {key:"makeup",label:"Makeup",test:t=>/lipstick|mascara|foundation|concealer|makeup|blush/i.test(t)},
+  {key:"hair",label:"Hair",test:t=>/shampoo|conditioner|hair|curler/i.test(t)},
+  {key:"fragrance",label:"Fragrance",test:t=>/perfume|fragrance|eau de/i.test(t)},
+ ],
+ "tech":[
+  {key:"audio",label:"Audio",test:t=>/headphone|earbud|speaker|audio/i.test(t)},
+  {key:"phones",label:"Phones",test:t=>/phone|smartphone/i.test(t)},
+  {key:"wearables",label:"Wearables",test:t=>/smartwatch|smart watch|wearable/i.test(t)},
+  {key:"cameras",label:"Cameras",test:t=>/camera|lens/i.test(t)},
+  {key:"computing",label:"Computing",test:t=>/laptop|tablet|keyboard|monitor|computer|projector/i.test(t)},
+ ],
+ "fitness":[
+  {key:"training",label:"Training",test:t=>/dumbbell|kettlebell|resistance|training|weight/i.test(t)},
+  {key:"yoga",label:"Yoga",test:t=>/yoga|pilates|mat/i.test(t)},
+  {key:"running",label:"Running",test:t=>/running|sneaker|shoe/i.test(t)},
+  {key:"gym-gear",label:"Gym gear",test:t=>/gym|sport|fitness|exercise/i.test(t)},
+ ],
+ "jewelry":[
+  {key:"necklaces",label:"Necklaces",test:t=>/necklace|pendant/i.test(t)},
+  {key:"earrings",label:"Earrings",test:t=>/earring/i.test(t)},
+  {key:"rings",label:"Rings",test:t=>/ring/i.test(t)},
+  {key:"bracelets",label:"Bracelets",test:t=>/bracelet/i.test(t)},
+  {key:"other-jewelry",label:"Other jewelry",test:t=>/jewel|gemstone/i.test(t)},
+ ],
+ "kitchen":[
+  {key:"coffee",label:"Coffee",test:t=>/coffee|espresso/i.test(t)},
+  {key:"appliances",label:"Appliances",test:t=>/air fryer|kettle|blender|mixer|toaster/i.test(t)},
+  {key:"dinnerware",label:"Dinnerware",test:t=>/plate|cup|dinnerware|mug|ceramic/i.test(t)},
+  {key:"cookware",label:"Cookware",test:t=>/pot|pan|cookware|cast iron|cooking/i.test(t)},
+ ],
+ "outdoor":[
+  {key:"outdoor-furniture",label:"Outdoor furniture",test:t=>/patio|outdoor|pergola|lounge/i.test(t)},
+  {key:"lighting",label:"Lighting",test:t=>/lamp|lantern|lighting/i.test(t)},
+  {key:"camping",label:"Camping",test:t=>/camp|tent/i.test(t)},
+  {key:"garden",label:"Garden",test:t=>/garden|lawn|grill/i.test(t)},
+ ],
+ "pets":[
+  {key:"dogs",label:"Dogs",test:t=>/dog|leash|kennel/i.test(t)},
+  {key:"cats",label:"Cats",test:t=>/cat|scratcher/i.test(t)},
+  {key:"other-pets",label:"Other pets",test:t=>/pet|aquarium/i.test(t)},
+ ],
+ "travel":[
+  {key:"luggage",label:"Luggage",test:t=>/luggage|suitcase/i.test(t)},
+  {key:"bags",label:"Bags",test:t=>/backpack|weekender|duffle/i.test(t)},
+  {key:"accessories",label:"Accessories",test:t=>/travel|packing/i.test(t)},
+ ],
+ "kids":[
+  {key:"baby",label:"Baby",test:t=>/baby|nursery|stroller/i.test(t)},
+  {key:"toys",label:"Toys",test:t=>/toy|playset|educational/i.test(t)},
+  {key:"clothing",label:"Clothing",test:t=>/kids|toddler|children/i.test(t)},
+ ],
+ "auto":[
+  {key:"accessories",label:"Accessories",test:t=>/car|auto|vehicle|phone mount/i.test(t)},
+  {key:"care",label:"Care",test:t=>/detailing|cleaner|wash/i.test(t)},
+  {key:"interior",label:"Interior",test:t=>/organizer|seat|dashboard/i.test(t)},
+ ],
 };
-const primary=(name:string)=>subtypeGroups[name as keyof typeof subtypeGroups]||[];
-const matchesSubtype=(p:Product,sub:string)=>primary(p.category).some(x=>x.key===sub&&x.test(p.title));
+const normalizeCategory=(cat:string):Category=>cat==="lighting"||cat==="chairs"||cat==="furniture"?"home":tabs.some(t=>t.key===cat)?cat as Category:"home";
+const primary=(name:string)=>subtypeGroups[name]||[];
+const matchesSubtype=(p:Product,sub:string)=>primary(normalizeCategory(p.category)).some(x=>x.key===sub&&x.test(p.title));
 const cleanBrand=(brand:string)=>brand?.trim().replace(/\s+/g," ")||"Independent";
-const describe=(p:Product)=>p.category==="lighting"?"A statement light for atmospheric residential, hospitality and interior design projects.":p.category==="chairs"?"A distinctive seating piece for refined residential and contemporary commercial spaces.":"An expressive furniture piece for curated interiors and spatial compositions.";
+const describe=(p:Product)=>`Explore ${p.brand||"independent store"} on YNOT World. Discover, save, and view product details.`;
 const money=(n:number)=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(n);
 const storageKey="ynot-saved-items";
 const valid=(p:Product)=>Boolean(p.id&&p.title&&p.image&&p.price>0&&p.category);
@@ -58,13 +115,13 @@ export default function StudioFeed({products}:{products:Product[]}){
  const swipe=useRef<{x:number;y:number;at:number}|null>(null);
  const lastWheel=useRef(0);
  const deepLinkConsumed=useRef(false);
- const categoryItems=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>p.category===category),[category,catalog]);
+ const categoryItems=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>normalizeCategory(p.category)===category),[category,catalog]);
  const typedItems=useMemo(()=>!subtype?categoryItems:categoryItems.filter(p=>matchesSubtype(p,subtype)),[categoryItems,subtype]);
  const items=useMemo(()=>!brand?typedItems:typedItems.filter(p=>cleanBrand(p.brand).toLowerCase()===brand.toLowerCase()),[typedItems,brand]);
  const subOptions=useMemo(()=>primary(category).map(option=>({key:option.key,label:option.label,products:categoryItems.filter(p=>option.test(p.title))})).filter(x=>x.products.length>0),[category,categoryItems]);
  const brandOptions=useMemo(()=>{const map=new Map<string,Product[]>();for(const p of typedItems){const name=cleanBrand(p.brand);const current=map.get(name)||[];current.push(p);map.set(name,current)}return [...map.entries()].map(([name,products])=>({name,products})).sort((a,b)=>b.products.length-a.products.length||a.name.localeCompare(b.name))},[typedItems]);
  const displayBubbles=useMemo(()=>{
-  if(navStep==="categories")return tabs.map(tab=>({key:tab.key,label:tab.label,products:tab.key==="all"?catalog:tab.key==="featured"?catalog.filter(p=>Number(p.score||0)>=63):catalog.filter(p=>p.category===tab.key)})).filter(x=>x.products.length>0);
+  if(navStep==="categories")return tabs.map(tab=>({key:tab.key,label:tab.label,products:tab.key==="all"?catalog:tab.key==="featured"?catalog.filter(p=>Number(p.score||0)>=63):catalog.filter(p=>normalizeCategory(p.category)===tab.key)}));
   if(navStep==="types")return subOptions;
   return brandOptions.map(x=>({key:x.name,label:x.name,products:x.products}));
  },[navStep,catalog,subOptions,brandOptions]);
@@ -88,7 +145,7 @@ export default function StudioFeed({products}:{products:Product[]}){
   finally{loadingRef.current=false;setLoadingMore(false)}
  },[]);
  useEffect(()=>{void loadMore()},[loadMore]);
- useEffect(()=>{if(hasMore&&!loadingMore&&!loadError&&(items.length-currentIndex<20||(category!=="all"&&items.length<30)))void loadMore()},[items.length,currentIndex,category,hasMore,loadingMore,loadError,loadMore]);
+ useEffect(()=>{if(hasMore&&!loadingMore&&!loadError&&(nextPage<3||items.length-currentIndex<20||(category!=="all"&&items.length<20)))void loadMore()},[items.length,currentIndex,category,hasMore,loadingMore,loadError,loadMore]);
  useEffect(()=>{if(!toast)return;const t=window.setTimeout(()=>setToast(""),2500);return()=>clearTimeout(t)},[toast]);
  useEffect(()=>{if(!current)return;const nearby=items.slice(currentIndex+1,currentIndex+5);for(const p of nearby){const image=new Image();image.src=p.image}},[items,currentIndex,current?.id]);
  const save=()=>{
@@ -129,9 +186,12 @@ export default function StudioFeed({products}:{products:Product[]}){
  const onStageUp=(e:React.PointerEvent<HTMLElement>)=>{const start=swipe.current;swipe.current=null;if(!start)return;const dy=e.clientY-start.y;const dx=e.clientX-start.x;if(Math.abs(dy)>52&&Math.abs(dy)>Math.abs(dx))setSafeIndex(currentIndex+(dy<0?1:-1))};
  const onWheel=(e:React.WheelEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest(".studio-project-panel,.studio-zip"))return;if(Math.abs(e.deltaY)<12)return;const now=Date.now();if(now-lastWheel.current<360)return;lastWheel.current=now;setSafeIndex(currentIndex+(e.deltaY>0?1:-1))};
  if(!current)return <main className="studio-empty"><Link href="/worlds">Back to Worlds</Link><p>No catalogue pieces available.</p></main>;
- const masonryCategory=current.category==="lighting"?"lighting/chandeliers":current.category==="chairs"?"living/armchairs":/sofa|couch|loveseat/i.test(current.title)?"living/sofas":/console/i.test(current.title)?"living/console-tables":"living/coffee-tables";
+ const matchingWorld=normalizeCategory(current.category);
+ const worldIds:Record<string,string>={home:"home-interiors",fashion:"fashion",beauty:"beauty",tech:"tech",fitness:"fitness",jewelry:"jewelry",kitchen:"kitchen",outdoor:"outdoor",pets:"pets",travel:"travel",kids:"baby-kids",auto:"automotive"};
+ const selectedWorld=worldIds[matchingWorld]||"home-interiors";
+ const categoryPath=matchingWorld==="home"?(current.category==="lighting"||/chandelier|lamp|light/i.test(current.title)?"lighting/chandeliers":current.category==="chairs"||/chair/i.test(current.title)?"living/armchairs":/sofa|couch|loveseat/i.test(current.title)?"living/sofas":"living/coffee-tables"):null;
  const masonryParams=new URLSearchParams({studio:"1",product:current.id,title:current.title,brand:current.brand||"",image:current.image,price:String(current.price),url:current.sourceUrl||"",description:current.description||"",origin:"studio"});
- const masonryHref="/worlds/home-interiors/"+masonryCategory+"?"+masonryParams.toString();
+ const masonryHref=categoryPath?"/worlds/home-interiors/"+categoryPath+"?"+masonryParams.toString():"/p/"+encodeURIComponent(current.id)+"?from=studio&q="+encodeURIComponent(current.title);
  const progress=items.length>1?currentIndex/(items.length-1):0;
  return <main className="studio-stage" tabIndex={0} aria-label="YNOT Studio vertical interiors product feed" onPointerDown={onStageDown} onPointerUp={onStageUp} onWheel={onWheel} onKeyDown={e=>{if(e.key==="ArrowDown"){e.preventDefault();setSafeIndex(currentIndex+1)}if(e.key==="ArrowUp"){e.preventDefault();setSafeIndex(currentIndex-1)}if(e.key==="Escape")e.currentTarget.blur()}}>
   <div className="studio-backdrop" key={"bg-"+current.id} style={{backgroundImage:`url("${current.image.replaceAll('"',"%22")}")`}} aria-hidden="true"/>
