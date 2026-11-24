@@ -206,13 +206,13 @@ export default function StudioFeed({products}:{products:Product[]}){
   <div className="studio-vignette" aria-hidden="true"/>
   <header className="studio-topbar">
    <Link href="/worlds" className="studio-back" aria-label="Back to YNOT Worlds"><ArrowLeft size={18}/></Link>
-   <div className="studio-wordmark"><b>YNOT</b> <span>/ STUDIO</span><small>THE INTERIORS EDIT</small></div>
-   <Link className="studio-project-trigger" href="/worlds" aria-label="Explore YNOT Worlds"><span>WORLDs</span></Link>
+   <div className="studio-wordmark">STUDIO</div>
+   <Link className="studio-project-trigger" href="/" aria-label="YNOT home"><span>Home</span></Link>
   </header>
   <nav className="studio-bubble-browser" aria-label="Studio categories and collections">
    <div className="studio-bubble-heading">
     {navStep!=="categories"?<button className="studio-bubble-back" type="button" onClick={backLevel} aria-label="Back to previous categories"><ArrowLeft size={15}/></button>:null}
-    <span>{navStep==="categories"?"EXPLORE COLLECTIONS":navStep==="types"?category.toUpperCase()+" / TYPES":subtype.replaceAll("-"," ").toUpperCase()+" / BRANDS"}</span>
+    <span>{navStep==="categories"?"":navStep==="types"?category.toUpperCase()+" / TYPES":subtype.replaceAll("-"," ").toUpperCase()+" / BRANDS"}</span>
     {navStep!=="categories"&&<button className="studio-bubble-reset" type="button" onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories");setIndex(0)}}>All</button>}
    </div>
    <div className="studio-bubble-scroll">
