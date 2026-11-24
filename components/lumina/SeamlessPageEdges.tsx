@@ -15,13 +15,22 @@ export default function SeamlessPageEdges(){
   const browsing=pathname==="/worlds"||(pathname.startsWith("/worlds/")&&!pathname.startsWith("/worlds/studio"));
   root.setAttribute("data-ynot-viewport-bleed","true");
   if(browsing){
+   const masonry=pathname.split("/").filter(Boolean).length>=4;
+   const metas=Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'));
+   const previous=metas.map(m=>m.content);
+   const added=masonry&&!metas.length?document.createElement("meta"):null;
+   if(added){added.name="theme-color";added.content="#080808";document.head.appendChild(added)}
+   if(masonry){root.setAttribute("data-ynot-masonry-edge","true");metas.forEach(m=>m.content="#080808")}
+
    root.setAttribute("data-ynot-document-scroll","true");
    // Leave scrolling to the user and Safari: no artificial scroll offset.
-   return()=>{root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
+   return()=>{metas.forEach((m,i)=>m.content=previous[i]);added?.remove();root.removeAttribute("data-ynot-masonry-edge");root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
   }
   return()=>root.removeAttribute("data-ynot-viewport-bleed");
  },[pathname]);
  return <style jsx global>{`
+ html[data-ynot-masonry-edge="true"],html[data-ynot-masonry-edge="true"] body{background:#080808!important;color-scheme:dark}
+ html[data-ynot-masonry-edge="true"] .productFloat form{background:linear-gradient(180deg,#08080880,#08080820)!important}
  /* No top/bottom fences on YNOT's scrolling documents. Page content itself
     reaches the viewport edge. Navigation floats above the scrolling cards. */
  @media(max-width:800px){

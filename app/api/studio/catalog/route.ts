@@ -42,7 +42,15 @@ function score(title:string,brand:string,price:number,description:string){
 export async function GET(req:NextRequest){
  const pageNumber=Number(req.nextUrl.searchParams.get("page")||"0");
  if(!Number.isInteger(pageNumber)||pageNumber<0||pageNumber>=SEARCHES.length)return NextResponse.json({products:[],hasMore:false,page:pageNumber});
- const queries=SEARCHES[pageNumber];
+ const categoryParam=req.nextUrl.searchParams.get("category")||"";
+ const subtype=(req.nextUrl.searchParams.get("subtype")||"").replace(/[^a-z-]/g,"").replaceAll("-"," ");
+ const style=(req.nextUrl.searchParams.get("style")||"").replace(/[^a-z-]/g,"");
+ const synonyms:Record<string,string[]>={sofas:["sofa","couch","sectional","loveseat"],chairs:["chair","armchair","recliner","accent chair"],lighting:["lamp","pendant light","chandelier","light fixture"],training:["weight plates","dumbbells","kettlebells","strength equipment"],soft:["boucle","velvet","linen","fabric"],natural:["wood","rattan","stone","bamboo"],modern:["modern","contemporary","minimal","designer"]};
+ const targeted=Object.hasOwn(checks,categoryParam);
+ const base=SEARCHES.flat().filter(([c])=>c===categoryParam).map(([,q])=>q);
+ const terms=subtype?(synonyms[subtype]||[subtype,subtype+" products",subtype+" accessories",subtype+" collection"]):base;
+ const styles=style?(synonyms[style]||[style]):[""];
+ const queries:readonly (readonly [string,string])[]=targeted?terms.slice(0,4).map((term,i)=>[categoryParam,[styles[(pageNumber+i)%styles.length],term,pageNumber===0?"": ["","design","collection","new"][pageNumber%4]].filter(Boolean).join(" ")] as const):SEARCHES[pageNumber];
  const results=await Promise.allSettled(queries.map(async ([category,query])=>{
   const url=new URL("/api/catalog",req.nextUrl.origin);
   url.searchParams.set("q",query);url.searchParams.set("country","FR");url.searchParams.set("source","shopify");url.searchParams.set("category_load","1");
@@ -67,6 +75,6 @@ export async function GET(req:NextRequest){
   }
  }
  const products=[...distinct.values()].sort((a,b)=>b.score-a.score).slice(0,280);
- return NextResponse.json({products,page:pageNumber,hasMore:pageNumber+1<SEARCHES.length,searches:queries.map(([,q])=>q),source:"YNOT live multi-store catalogue"},
+ return NextResponse.json({products,page:pageNumber,hasMore:pageNumber+1<(targeted?4:SEARCHES.length),searches:queries.map(([,q])=>q),source:"YNOT live multi-store catalogue"},
   {headers:{"Cache-Control":"public, s-maxage=1800, stale-while-revalidate=3600"}});
 }

@@ -11,7 +11,7 @@ type Category="all"|"featured"|"home"|"fashion"|"beauty"|"tech"|"fitness"|"jewel
 const tabs:{key:Category;label:string}[]=[
  {key:"all",label:"For you"},{key:"featured",label:"Best finds"},{key:"home",label:"Home"},{key:"fashion",label:"Fashion"},{key:"beauty",label:"Beauty"},{key:"tech",label:"Tech"},{key:"fitness",label:"Fitness"},{key:"jewelry",label:"Jewelry"},{key:"kitchen",label:"Kitchen"},{key:"outdoor",label:"Outdoor"},{key:"pets",label:"Pets"},{key:"travel",label:"Travel"},{key:"kids",label:"Kids"},{key:"auto",label:"Auto"},{key:"electric",label:"Electric"},{key:"sports",label:"Sports"}
 ];
-type NavStep="categories"|"types"|"brands";
+type NavStep="categories"|"types"|"styles";
 type Subtype={key:string;label:string;test:(title:string)=>boolean};
 const subtypeGroups:Record<string,Subtype[]>={
  electric:[{key:"e-bikes",label:"E-bikes",test:t=>/ebike|e-bike|electric bicycle/i.test(t)},{key:"scooters",label:"Scooters",test:t=>/scooter/i.test(t)},{key:"electric-ride",label:"Electric ride",test:t=>/dirt bike|motorcycle|board|efoil|surfboard|electric/i.test(t)}],
@@ -90,10 +90,22 @@ const subtypeGroups:Record<string,Subtype[]>={
   {key:"interior",label:"Interior",test:t=>/organizer|seat|dashboard/i.test(t)},
  ],
 };
+const styleGroups:Subtype[]=[
+{key:"modern",label:"Modern",test:t=>/modern|contemporary|minimal|sleek/i.test(t)},
+{key:"curved",label:"Curved",test:t=>/curved|rounded|organic|arched/i.test(t)},
+{key:"modular",label:"Modular",test:t=>/modular|sectional|adjustable|configurable/i.test(t)},
+{key:"leather",label:"Leather",test:t=>/leather|suede/i.test(t)},
+{key:"soft",label:"Soft textures",test:t=>/boucl|velvet|linen|fabric|plush/i.test(t)},
+{key:"natural",label:"Natural",test:t=>/wood|rattan|bamboo|stone|natural/i.test(t)},
+{key:"classic",label:"Classic",test:t=>/classic|vintage|retro|traditional/i.test(t)},
+{key:"compact",label:"Compact",test:t=>/compact|portable|mini|foldable|lightweight/i.test(t)},
+{key:"premium",label:"Premium",test:t=>/premium|luxury|professional|pro\b/i.test(t)},
+{key:"wireless",label:"Wireless",test:t=>/wireless|bluetooth|cordless/i.test(t)},
+{key:"sport",label:"Performance",test:t=>/performance|training|sport|running/i.test(t)}
+];
 const normalizeCategory=(cat:string):Category=>cat==="lighting"||cat==="chairs"||cat==="furniture"?"home":tabs.some(t=>t.key===cat)?cat as Category:"home";
 const primary=(name:string)=>subtypeGroups[name]||[];
 const matchesSubtype=(p:Product,sub:string)=>primary(normalizeCategory(p.category)).some(x=>x.key===sub&&x.test(p.title));
-const cleanBrand=(brand:string)=>brand?.trim().replace(/\s+/g," ")||"Independent";
 const describe=(p:Product)=>`Explore ${p.brand||"independent store"} on YNOT World. Discover, save, and view product details.`;
 const money=(n:number)=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(n);
 const storageKey="ynot-saved-items";
@@ -103,7 +115,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const [index,setIndex]=useState(0);
  const [navStep,setNavStep]=useState<NavStep>("categories");
  const [subtype,setSubtype]=useState("");
- const [brand,setBrand]=useState("");
+ const [style,setStyle]=useState("");
  const [saved,setSaved]=useState<string[]>([]);
  const [catalog,setCatalog]=useState<Product[]>(products);
  const [nextPage,setNextPage]=useState(0);
@@ -112,6 +124,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const loadingRef=useRef(false);
  const nextRef=useRef(0);
  const [hasMore,setHasMore]=useState(true);
+ const targetedPages=useRef(new Map<string,number>());
  const [toast,setToast]=useState("");
  const [scrubbing,setScrubbing]=useState(false);
  const zipper=useRef<HTMLDivElement>(null);
@@ -120,35 +133,38 @@ export default function StudioFeed({products}:{products:Product[]}){
  const deepLinkConsumed=useRef(false);
  const categoryItems=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>normalizeCategory(p.category)===category),[category,catalog]);
  const typedItems=useMemo(()=>!subtype?categoryItems:categoryItems.filter(p=>matchesSubtype(p,subtype)),[categoryItems,subtype]);
- const items=useMemo(()=>!brand?typedItems:typedItems.filter(p=>cleanBrand(p.brand).toLowerCase()===brand.toLowerCase()),[typedItems,brand]);
+ const items=useMemo(()=>!style?typedItems:typedItems.filter(p=>styleGroups.some(x=>x.key===style&&x.test(p.title+" "+(p.description||"")))),[typedItems,style]);
  const subOptions=useMemo(()=>primary(category).map(option=>({key:option.key,label:option.label,products:categoryItems.filter(p=>option.test(p.title))})).filter(x=>x.products.length>0),[category,categoryItems]);
- const brandOptions=useMemo(()=>{const map=new Map<string,Product[]>();for(const p of typedItems){const name=cleanBrand(p.brand);const current=map.get(name)||[];current.push(p);map.set(name,current)}return [...map.entries()].map(([name,products])=>({name,products})).sort((a,b)=>b.products.length-a.products.length||a.name.localeCompare(b.name))},[typedItems]);
+ const styleOptions=useMemo(()=>styleGroups.map(x=>({...x,products:typedItems.filter(p=>x.test(p.title+" "+(p.description||"")))})).filter(x=>x.products.length>=2),[typedItems]);
  const displayBubbles=useMemo(()=>{
   if(navStep==="categories")return tabs.map(tab=>({key:tab.key,label:tab.label,products:tab.key==="all"?catalog:tab.key==="featured"?catalog.filter(p=>Number(p.score||0)>=63):catalog.filter(p=>normalizeCategory(p.category)===tab.key)}));
   if(navStep==="types")return subOptions;
-  return brandOptions.map(x=>({key:x.name,label:x.name,products:x.products}));
- },[navStep,catalog,subOptions,brandOptions]);
+  return [{key:"",label:"All styles",products:typedItems},...styleOptions];
+ },[navStep,catalog,subOptions,styleOptions,typedItems]);
  const current=items[Math.min(index,Math.max(0,items.length-1))];
  const currentIndex=Math.min(index,Math.max(0,items.length-1));
  const setSafeIndex=useCallback((next:number)=>setIndex(Math.max(0,Math.min(items.length-1,Math.round(next)))),[items.length]);
  useEffect(()=>{try{const value=JSON.parse(localStorage.getItem(storageKey)||"[]");if(Array.isArray(value))setSaved(value.filter(x=>typeof x==="string"))}catch{}},[]);
- useEffect(()=>{setIndex(0)},[category,subtype,brand]);
+ useEffect(()=>{setIndex(0)},[category,subtype,style]);
  const loadMore=useCallback(async()=>{
-  if(loadingRef.current||nextRef.current>=14)return;
+  if(loadingRef.current||(category==="all"&&nextRef.current>=14))return;
   loadingRef.current=true;setLoadingMore(true);setLoadError(false);
-  const page=nextRef.current;
+  const targeted=category!=="all"&&category!=="featured";
+  const key=[category,subtype,style].join("|");
+  const page=targeted?(targetedPages.current.get(key)||0):nextRef.current;
+  if(targeted&&page>=4){loadingRef.current=false;setLoadingMore(false);return;}
   try{
-   const response=await fetch("/api/studio/catalog?page="+page,{cache:"force-cache",signal:AbortSignal.timeout(35000)});
+   const response=await fetch("/api/studio/catalog?"+new URLSearchParams({page:String(page),...(targeted?{category,subtype,style}:{})}),{cache:"force-cache",signal:AbortSignal.timeout(35000)});
    if(!response.ok)throw new Error("CATALOG_UNAVAILABLE");
    const data=await response.json() as {products?:Product[];hasMore?:boolean};
    const incoming=(Array.isArray(data.products)?data.products:[]).filter(valid);
    setCatalog(previous=>{const keys=new Set(previous.map(p=>p.id));const titles=new Set(previous.map(p=>(p.title+"|"+p.brand).toLowerCase().replace(/[^a-z0-9]/g,"")));const fresh=incoming.filter(p=>{const key=(p.title+"|"+p.brand).toLowerCase().replace(/[^a-z0-9]/g,"");if(keys.has(p.id)||titles.has(key))return false;keys.add(p.id);titles.add(key);return true});return [...previous,...fresh]});
-   nextRef.current=page+1;setNextPage(nextRef.current);setHasMore(Boolean(data.hasMore)&&nextRef.current<14);
+   if(targeted)targetedPages.current.set(key,data.hasMore?page+1:4);else{nextRef.current=page+1;setNextPage(nextRef.current)}setHasMore(Boolean(data.hasMore)&&(targeted?page<3:nextRef.current<14));
   }catch{setLoadError(true)}
   finally{loadingRef.current=false;setLoadingMore(false)}
- },[]);
- useEffect(()=>{void loadMore()},[loadMore]);
- useEffect(()=>{if(hasMore&&!loadingMore&&!loadError&&(nextPage<4||items.length-currentIndex<20||(category!=="all"&&items.length<20)))void loadMore()},[items.length,currentIndex,category,hasMore,loadingMore,loadError,loadMore]);
+ },[category,subtype,style]);
+ useEffect(()=>{setHasMore(true);setLoadError(false);void loadMore()},[loadMore]);
+ useEffect(()=>{if(hasMore&&!loadingMore&&!loadError&&((category==="all"&&nextPage<4)||items.length-currentIndex<20||(category!=="all"&&items.length<20)))void loadMore()},[items.length,currentIndex,category,hasMore,loadingMore,loadError,loadMore]);
  useEffect(()=>{if(!toast)return;const t=window.setTimeout(()=>setToast(""),2500);return()=>clearTimeout(t)},[toast]);
  useEffect(()=>{if(!current)return;const nearby=items.slice(currentIndex+1,currentIndex+5);for(const p of nearby){const image=new Image();image.src=p.image}},[items,currentIndex,current?.id]);
  const save=()=>{
@@ -167,18 +183,18 @@ export default function StudioFeed({products}:{products:Product[]}){
  const onBubbleSelect=(key:string)=>{
   if(navStep==="categories"){
    const next=key as Category;
-   setCategory(next);setSubtype("");setBrand("");
+   setCategory(next);setSubtype("");setStyle("");
    setNavStep(next==="all"||next==="featured"?"categories":"types");
   }else if(navStep==="types"){
-   setSubtype(key);setBrand("");setNavStep("brands");
+   setSubtype(key);setStyle("");setNavStep("styles");
   }else{
-   setBrand(key);
+   setStyle(key);
   }
   setIndex(0);
  };
  const backLevel=()=>{
-  if(navStep==="brands"){setBrand("");setSubtype("");setNavStep("types")}
-  else if(navStep==="types"){setCategory("all");setSubtype("");setBrand("");setNavStep("categories")}
+  if(navStep==="styles"){setStyle("");setSubtype("");setNavStep("types")}
+  else if(navStep==="types"){setCategory("all");setSubtype("");setStyle("");setNavStep("categories")}
   setIndex(0);
  };
  const selectFromPoint=(clientY:number)=>{const el=zipper.current;if(!el)return;const b=el.getBoundingClientRect();const percent=Math.min(1,Math.max(0,(clientY-b.top)/b.height));setSafeIndex(percent*(items.length-1))};
@@ -188,7 +204,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const onStageDown=(e:React.PointerEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest("button,a,input,.studio-zip,.studio-bubble-browser,.studio-project-panel"))return;swipe.current={x:e.clientX,y:e.clientY,at:Date.now()}};
  const onStageUp=(e:React.PointerEvent<HTMLElement>)=>{const start=swipe.current;swipe.current=null;if(!start)return;const dy=e.clientY-start.y;const dx=e.clientX-start.x;if(Math.abs(dy)>52&&Math.abs(dy)>Math.abs(dx))setSafeIndex(currentIndex+(dy<0?1:-1))};
  const onWheel=(e:React.WheelEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest(".studio-project-panel,.studio-zip"))return;if(Math.abs(e.deltaY)<12)return;const now=Date.now();if(now-lastWheel.current<360)return;lastWheel.current=now;setSafeIndex(currentIndex+(e.deltaY>0?1:-1))};
- if(!current)return <main className="studio-empty"><Link href="/worlds/studio">YNOT Studio</Link><p>{loadingMore?"Finding products in this collection…":"No products found in this collection yet."}</p><button onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories")}} style={{padding:"12px 18px",borderRadius:30}}>All products</button>{loadError&&<button onClick={()=>void loadMore()}>Retry search</button>}</main>;
+ if(!current)return <main className="studio-empty"><Link href="/worlds/studio">YNOT Studio</Link><p>{loadingMore?"Finding products in this collection…":"No products found in this collection yet."}</p><button onClick={()=>{setCategory("all");setSubtype("");setStyle("");setNavStep("categories")}} style={{padding:"12px 18px",borderRadius:30}}>All products</button>{loadError&&<button onClick={()=>void loadMore()}>Retry search</button>}</main>;
  const matchingWorld=normalizeCategory(current.category);
  const worldIds:Record<string,string>={home:"home-interiors",fashion:"fashion",beauty:"beauty",tech:"tech",fitness:"fitness",jewelry:"jewelry",kitchen:"kitchen",outdoor:"outdoor",pets:"pets",travel:"travel",kids:"baby-kids",auto:"automotive",electric:"electric",sports:"sports"};
  const selectedWorld=worldIds[matchingWorld]||"home-interiors";
@@ -212,15 +228,15 @@ export default function StudioFeed({products}:{products:Product[]}){
   <nav className="studio-bubble-browser" aria-label="Studio categories and collections">
    <div className="studio-bubble-heading">
     {navStep!=="categories"?<button className="studio-bubble-back" type="button" onClick={backLevel} aria-label="Back to previous categories"><ArrowLeft size={15}/></button>:null}
-    <span>{navStep==="categories"?"":navStep==="types"?category.toUpperCase()+" / TYPES":subtype.replaceAll("-"," ").toUpperCase()+" / BRANDS"}</span>
-    {navStep!=="categories"&&<button className="studio-bubble-reset" type="button" onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories");setIndex(0)}}>All</button>}
+    <span>{navStep==="categories"?"":navStep==="types"?category.toUpperCase()+" / TYPES":subtype.replaceAll("-"," ").toUpperCase()+" / STYLES"}</span>
+    {navStep!=="categories"&&<button className="studio-bubble-reset" type="button" onClick={()=>{setCategory("all");setSubtype("");setStyle("");setNavStep("categories");setIndex(0)}}>All</button>}
    </div>
    <div className="studio-bubble-scroll">
-    {displayBubbles.map(option=><button type="button" key={option.key} className={`studio-bubble-choice ${navStep==="brands"&&brand===option.key?"selected":""}`} onClick={()=>onBubbleSelect(option.key)} aria-label={option.label+" · "+option.products.length+" pieces"}>
+    {displayBubbles.map(option=><button type="button" key={option.key} className={`studio-bubble-choice ${navStep==="styles"&&style===option.key?"selected":""}`} onClick={()=>onBubbleSelect(option.key)} aria-label={option.label+" · "+option.products.length+" pieces"}>
       <span className="studio-bubble-photo">{option.products[0]?.image?<img src={option.products[0].image} alt="" loading="lazy"/>:<span>Y</span>}</span>
       <span className="studio-bubble-label">{option.label}</span>
     </button>)}
-    {navStep==="brands"&&brand&&<button type="button" className="studio-bubble-choice" onClick={()=>{setBrand("");setIndex(0)}}><span className="studio-bubble-photo studio-bubble-all">✦</span><span className="studio-bubble-label">All brands</span></button>}
+    {navStep==="styles"&&style&&<button type="button" className="studio-bubble-choice" onClick={()=>{setStyle("");setIndex(0)}}><span className="studio-bubble-photo studio-bubble-all">✦</span><span className="studio-bubble-label">All styles</span></button>}
    </div>
   </nav>
   <div className="studio-counter" aria-live="off"><span>{String(currentIndex+1).padStart(3,"0")}</span><em> / {String(items.length).padStart(3,"0")}</em></div>
