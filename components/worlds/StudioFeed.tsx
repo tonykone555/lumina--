@@ -8,6 +8,32 @@ import "./StudioFeed.css";
 type Product={id:string;title:string;brand:string;price:number;image:string;sourceUrl:string;category:string;description?:string;score?:number};
 type Category="all"|"featured"|"lighting"|"chairs"|"furniture";
 const tabs:{key:Category;label:string}[]=[{key:"all",label:"All pieces"},{key:"featured",label:"Best picks"},{key:"lighting",label:"Lighting"},{key:"chairs",label:"Chairs"},{key:"furniture",label:"Furniture"}];
+type NavStep="categories"|"types"|"brands";
+type Subtype={key:string;label:string;test:(title:string)=>boolean};
+const subtypeGroups:Record<Exclude<Category,"all"|"featured">,Subtype[]>={
+ lighting:[
+  {key:"chandeliers",label:"Chandeliers",test:t=>/chandelier/i.test(t)},
+  {key:"pendants",label:"Pendant lights",test:t=>/pendant|hanging|suspension/i.test(t)&&!/chandelier/i.test(t)},
+  {key:"ceiling",label:"Ceiling lights",test:t=>/ceiling|flush mount/i.test(t)&&!/chandelier|pendant/i.test(t)},
+  {key:"other",label:"Other lighting",test:t=>/lamp|light|fixture/i.test(t)&&!/chandelier|pendant|hanging|suspension|ceiling/i.test(t)}
+ ],
+ chairs:[
+  {key:"armchairs",label:"Armchairs",test:t=>/armchair|accent chair|occasional chair|reading chair|boucl[eé] chair/i.test(t)},
+  {key:"lounge",label:"Lounge chairs",test:t=>/lounge chair|recliner|swivel chair/i.test(t)&&!/armchair/i.test(t)},
+  {key:"dining",label:"Dining chairs",test:t=>/dining chair|side chair|wood chair/i.test(t)},
+  {key:"other",label:"Other chairs",test:t=>/chair|seating/i.test(t)&&!/armchair|accent chair|occasional chair|reading chair|boucl[eé] chair|lounge chair|recliner|swivel chair|dining chair|side chair|wood chair/i.test(t)}
+ ],
+ furniture:[
+  {key:"sofas",label:"Sofas",test:t=>/sofa|couch|loveseat|sectional/i.test(t)},
+  {key:"coffee-tables",label:"Coffee tables",test:t=>/coffee table|cocktail table/i.test(t)},
+  {key:"side-tables",label:"Side tables",test:t=>/side table|accent table|nesting table/i.test(t)},
+  {key:"consoles",label:"Consoles",test:t=>/console table|media console/i.test(t)},
+  {key:"other",label:"Other furniture",test:t=>/ottoman|stool|furniture/i.test(t)&&!/sofa|couch|loveseat|sectional|coffee table|cocktail table|side table|accent table|nesting table|console table|media console/i.test(t)}
+ ]
+};
+const primary=(name:string)=>subtypeGroups[name as keyof typeof subtypeGroups]||[];
+const matchesSubtype=(p:Product,sub:string)=>primary(p.category).some(x=>x.key===sub&&x.test(p.title));
+const cleanBrand=(brand:string)=>brand?.trim().replace(/\s+/g," ")||"Independent";
 const describe=(p:Product)=>p.category==="lighting"?"A statement light for atmospheric residential, hospitality and interior design projects.":p.category==="chairs"?"A distinctive seating piece for refined residential and contemporary commercial spaces.":"An expressive furniture piece for curated interiors and spatial compositions.";
 const money=(n:number)=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(n);
 const storageKey="ynot-saved-items";
@@ -15,6 +41,9 @@ const valid=(p:Product)=>Boolean(p.id&&p.title&&p.image&&p.price>0&&p.category);
 export default function StudioFeed({products}:{products:Product[]}){
  const [category,setCategory]=useState<Category>("all");
  const [index,setIndex]=useState(0);
+ const [navStep,setNavStep]=useState<NavStep>("categories");
+ const [subtype,setSubtype]=useState("");
+ const [brand,setBrand]=useState("");
  const [saved,setSaved]=useState<string[]>([]);
  const [catalog,setCatalog]=useState<Product[]>(products);
  const [nextPage,setNextPage]=useState(0);
@@ -29,12 +58,21 @@ export default function StudioFeed({products}:{products:Product[]}){
  const swipe=useRef<{x:number;y:number;at:number}|null>(null);
  const lastWheel=useRef(0);
  const deepLinkConsumed=useRef(false);
- const items=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>p.category===category),[category,catalog]);
+ const categoryItems=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>p.category===category),[category,catalog]);
+ const typedItems=useMemo(()=>!subtype?categoryItems:categoryItems.filter(p=>matchesSubtype(p,subtype)),[categoryItems,subtype]);
+ const items=useMemo(()=>!brand?typedItems:typedItems.filter(p=>cleanBrand(p.brand).toLowerCase()===brand.toLowerCase()),[typedItems,brand]);
+ const subOptions=useMemo(()=>primary(category).map(option=>({key:option.key,label:option.label,products:categoryItems.filter(p=>option.test(p.title))})).filter(x=>x.products.length>0),[category,categoryItems]);
+ const brandOptions=useMemo(()=>{const map=new Map<string,Product[]>();for(const p of typedItems){const name=cleanBrand(p.brand);const current=map.get(name)||[];current.push(p);map.set(name,current)}return [...map.entries()].map(([name,products])=>({name,products})).sort((a,b)=>b.products.length-a.products.length||a.name.localeCompare(b.name))},[typedItems]);
+ const displayBubbles=useMemo(()=>{
+  if(navStep==="categories")return tabs.map(tab=>({key:tab.key,label:tab.label,products:tab.key==="all"?catalog:tab.key==="featured"?catalog.filter(p=>Number(p.score||0)>=63):catalog.filter(p=>p.category===tab.key)})).filter(x=>x.products.length>0);
+  if(navStep==="types")return subOptions;
+  return brandOptions.map(x=>({key:x.name,label:x.name,products:x.products}));
+ },[navStep,catalog,subOptions,brandOptions]);
  const current=items[Math.min(index,Math.max(0,items.length-1))];
  const currentIndex=Math.min(index,Math.max(0,items.length-1));
  const setSafeIndex=useCallback((next:number)=>setIndex(Math.max(0,Math.min(items.length-1,Math.round(next)))),[items.length]);
  useEffect(()=>{try{const value=JSON.parse(localStorage.getItem(storageKey)||"[]");if(Array.isArray(value))setSaved(value.filter(x=>typeof x==="string"))}catch{}},[]);
- useEffect(()=>{setIndex(0)},[category]);
+ useEffect(()=>{setIndex(0)},[category,subtype,brand]);
  const loadMore=useCallback(async()=>{
   if(loadingRef.current||nextRef.current>=12)return;
   loadingRef.current=true;setLoadingMore(true);setLoadError(false);
@@ -66,11 +104,28 @@ export default function StudioFeed({products}:{products:Product[]}){
  };
  const share=async()=>{if(!current)return;const url=window.location.origin+"/worlds/studio?product="+encodeURIComponent(current.id);try{if(navigator.share)await navigator.share({title:current.title,url});else{await navigator.clipboard.writeText(url);setToast("Link copied")}}catch{}};
  useEffect(()=>{if(deepLinkConsumed.current)return;const params=new URLSearchParams(window.location.search);const selected=params.get("product");if(!selected){deepLinkConsumed.current=true;return}const idx=items.findIndex(p=>p.id===selected);if(idx>=0){setIndex(idx);deepLinkConsumed.current=true}},[items]);
+ const onBubbleSelect=(key:string)=>{
+  if(navStep==="categories"){
+   const next=key as Category;
+   setCategory(next);setSubtype("");setBrand("");
+   setNavStep(next==="all"||next==="featured"?"categories":"types");
+  }else if(navStep==="types"){
+   setSubtype(key);setBrand("");setNavStep("brands");
+  }else{
+   setBrand(key);
+  }
+  setIndex(0);
+ };
+ const backLevel=()=>{
+  if(navStep==="brands"){setBrand("");setSubtype("");setNavStep("types")}
+  else if(navStep==="types"){setCategory("all");setSubtype("");setBrand("");setNavStep("categories")}
+  setIndex(0);
+ };
  const selectFromPoint=(clientY:number)=>{const el=zipper.current;if(!el)return;const b=el.getBoundingClientRect();const percent=Math.min(1,Math.max(0,(clientY-b.top)/b.height));setSafeIndex(percent*(items.length-1))};
  const onZipperDown=(e:React.PointerEvent<HTMLDivElement>)=>{e.preventDefault();e.stopPropagation();setScrubbing(true);e.currentTarget.setPointerCapture(e.pointerId);selectFromPoint(e.clientY)};
  const onZipperMove=(e:React.PointerEvent<HTMLDivElement>)=>{if(scrubbing)selectFromPoint(e.clientY)};
  const onZipperUp=(e:React.PointerEvent<HTMLDivElement>)=>{setScrubbing(false);if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId)};
- const onStageDown=(e:React.PointerEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest("button,a,input,.studio-zip,.studio-filters,.studio-project-panel"))return;swipe.current={x:e.clientX,y:e.clientY,at:Date.now()}};
+ const onStageDown=(e:React.PointerEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest("button,a,input,.studio-zip,.studio-bubble-browser,.studio-project-panel"))return;swipe.current={x:e.clientX,y:e.clientY,at:Date.now()}};
  const onStageUp=(e:React.PointerEvent<HTMLElement>)=>{const start=swipe.current;swipe.current=null;if(!start)return;const dy=e.clientY-start.y;const dx=e.clientX-start.x;if(Math.abs(dy)>52&&Math.abs(dy)>Math.abs(dx))setSafeIndex(currentIndex+(dy<0?1:-1))};
  const onWheel=(e:React.WheelEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest(".studio-project-panel,.studio-zip"))return;if(Math.abs(e.deltaY)<12)return;const now=Date.now();if(now-lastWheel.current<360)return;lastWheel.current=now;setSafeIndex(currentIndex+(e.deltaY>0?1:-1))};
  if(!current)return <main className="studio-empty"><Link href="/worlds">Back to Worlds</Link><p>No catalogue pieces available.</p></main>;
@@ -87,8 +142,19 @@ export default function StudioFeed({products}:{products:Product[]}){
    <div className="studio-wordmark"><b>YNOT</b> <span>/ STUDIO</span><small>THE INTERIORS EDIT</small></div>
    <Link className="studio-project-trigger" href="/worlds" aria-label="Explore YNOT Worlds"><span>WORLDs</span></Link>
   </header>
-  <nav className="studio-filters" aria-label="Filter Studio collections">
-   {tabs.map(tab=><button key={tab.key} onClick={()=>setCategory(tab.key)} className={category===tab.key?"selected":""} aria-pressed={category===tab.key}>{tab.label}</button>)}
+  <nav className="studio-bubble-browser" aria-label="Studio categories and collections">
+   <div className="studio-bubble-heading">
+    {navStep!=="categories"?<button className="studio-bubble-back" type="button" onClick={backLevel} aria-label="Back to previous categories"><ArrowLeft size={15}/></button>:null}
+    <span>{navStep==="categories"?"EXPLORE COLLECTIONS":navStep==="types"?category.toUpperCase()+" / TYPES":subtype.replaceAll("-"," ").toUpperCase()+" / BRANDS"}</span>
+    {navStep!=="categories"&&<button className="studio-bubble-reset" type="button" onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories");setIndex(0)}}>All</button>}
+   </div>
+   <div className="studio-bubble-scroll">
+    {displayBubbles.map(option=><button type="button" key={option.key} className={`studio-bubble-choice ${navStep==="brands"&&brand===option.key?"selected":""}`} onClick={()=>onBubbleSelect(option.key)} aria-label={option.label+" · "+option.products.length+" pieces"}>
+      <span className="studio-bubble-photo">{option.products[0]?.image?<img src={option.products[0].image} alt="" loading="lazy"/>:<span>Y</span>}</span>
+      <span className="studio-bubble-label">{option.label}</span>
+    </button>)}
+    {navStep==="brands"&&brand&&<button type="button" className="studio-bubble-choice" onClick={()=>{setBrand("");setIndex(0)}}><span className="studio-bubble-photo studio-bubble-all">✦</span><span className="studio-bubble-label">All brands</span></button>}
+   </div>
   </nav>
   <div className="studio-counter" aria-live="off"><span>{String(currentIndex+1).padStart(3,"0")}</span><em> / {String(items.length).padStart(3,"0")}</em></div>
   <div className="studio-zip-wrap">
