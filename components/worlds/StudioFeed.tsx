@@ -4,6 +4,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from "react";
 import Link from "next/link";
 import {ArrowLeft,ArrowUpRight,Bookmark,Check,ChevronDown,ChevronUp,Share2} from "lucide-react";
 import "./StudioFeed.css";
+import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 
 type Product={id:string;title:string;brand:string;price:number;image:string;sourceUrl:string;category:string;description?:string;score?:number};
 type Category="all"|"featured"|"home"|"fashion"|"beauty"|"tech"|"fitness"|"jewelry"|"kitchen"|"outdoor"|"pets"|"travel"|"kids"|"auto";
@@ -185,13 +186,17 @@ export default function StudioFeed({products}:{products:Product[]}){
  const onStageDown=(e:React.PointerEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest("button,a,input,.studio-zip,.studio-bubble-browser,.studio-project-panel"))return;swipe.current={x:e.clientX,y:e.clientY,at:Date.now()}};
  const onStageUp=(e:React.PointerEvent<HTMLElement>)=>{const start=swipe.current;swipe.current=null;if(!start)return;const dy=e.clientY-start.y;const dx=e.clientX-start.x;if(Math.abs(dy)>52&&Math.abs(dy)>Math.abs(dx))setSafeIndex(currentIndex+(dy<0?1:-1))};
  const onWheel=(e:React.WheelEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest(".studio-project-panel,.studio-zip"))return;if(Math.abs(e.deltaY)<12)return;const now=Date.now();if(now-lastWheel.current<360)return;lastWheel.current=now;setSafeIndex(currentIndex+(e.deltaY>0?1:-1))};
- if(!current)return <main className="studio-empty"><Link href="/worlds">Back to Worlds</Link><p>No catalogue pieces available.</p></main>;
+ if(!current)return <main className="studio-empty"><Link href="/worlds/studio">YNOT Studio</Link><p>{loadingMore?"Finding products in this collection…":"No products found in this collection yet."}</p><button onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories")}} style={{padding:"12px 18px",borderRadius:30}}>All products</button>{loadError&&<button onClick={()=>void loadMore()}>Retry search</button>}</main>;
  const matchingWorld=normalizeCategory(current.category);
  const worldIds:Record<string,string>={home:"home-interiors",fashion:"fashion",beauty:"beauty",tech:"tech",fitness:"fitness",jewelry:"jewelry",kitchen:"kitchen",outdoor:"outdoor",pets:"pets",travel:"travel",kids:"baby-kids",auto:"automotive"};
  const selectedWorld=worldIds[matchingWorld]||"home-interiors";
- const categoryPath=matchingWorld==="home"?(current.category==="lighting"||/chandelier|lamp|light/i.test(current.title)?"lighting/chandeliers":current.category==="chairs"||/chair/i.test(current.title)?"living/armchairs":/sofa|couch|loveseat/i.test(current.title)?"living/sofas":"living/coffee-tables"):null;
+ const taxonomyWorld=YNOT_VISUAL_WORLDS.find(w=>w.id===selectedWorld);
+ const productWords=(current.title||"").toLowerCase();
+ const taxonomyCandidates=taxonomyWorld?.categories.flatMap(c=>c.subcategories.map(s=>({category:c.id,subcategory:s.id,term:s.queries[0]||s.title})))||[];
+ const bestPath=taxonomyCandidates.map(p=>({...p,hit:p.term.toLowerCase().split(/\s+/).filter(w=>w.length>3&&productWords.includes(w)).length})).sort((a,b)=>b.hit-a.hit)[0];
+ const categoryPath=matchingWorld==="home"?(current.category==="lighting"||/chandelier|lamp|light/i.test(current.title)?"lighting/chandeliers":current.category==="chairs"||/chair/i.test(current.title)?"living/armchairs":/sofa|couch|loveseat/i.test(current.title)?"living/sofas":"living/coffee-tables"):(bestPath?bestPath.category+"/"+bestPath.subcategory:null);
  const masonryParams=new URLSearchParams({studio:"1",product:current.id,title:current.title,brand:current.brand||"",image:current.image,price:String(current.price),url:current.sourceUrl||"",description:current.description||"",origin:"studio"});
- const masonryHref=categoryPath?"/worlds/home-interiors/"+categoryPath+"?"+masonryParams.toString():"/p/"+encodeURIComponent(current.id)+"?from=studio&q="+encodeURIComponent(current.title);
+ const masonryHref=categoryPath?"/worlds/"+selectedWorld+"/"+categoryPath+"?"+masonryParams.toString():"/worlds/studio?product="+encodeURIComponent(current.id);
  const progress=items.length>1?currentIndex/(items.length-1):0;
  return <main className="studio-stage" tabIndex={0} aria-label="YNOT Studio vertical interiors product feed" onPointerDown={onStageDown} onPointerUp={onStageUp} onWheel={onWheel} onKeyDown={e=>{if(e.key==="ArrowDown"){e.preventDefault();setSafeIndex(currentIndex+1)}if(e.key==="ArrowUp"){e.preventDefault();setSafeIndex(currentIndex-1)}if(e.key==="Escape")e.currentTarget.blur()}}>
   <div className="studio-backdrop" key={"bg-"+current.id} style={{backgroundImage:`url("${current.image.replaceAll('"',"%22")}")`}} aria-hidden="true"/>
