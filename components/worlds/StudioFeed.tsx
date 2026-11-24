@@ -7,13 +7,15 @@ import "./StudioFeed.css";
 import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 
 type Product={id:string;title:string;brand:string;price:number;image:string;sourceUrl:string;category:string;description?:string;score?:number};
-type Category="all"|"featured"|"home"|"fashion"|"beauty"|"tech"|"fitness"|"jewelry"|"kitchen"|"outdoor"|"pets"|"travel"|"kids"|"auto";
+type Category="all"|"featured"|"home"|"fashion"|"beauty"|"tech"|"fitness"|"jewelry"|"kitchen"|"outdoor"|"pets"|"travel"|"kids"|"auto"|"electric"|"sports";
 const tabs:{key:Category;label:string}[]=[
- {key:"all",label:"For you"},{key:"featured",label:"Best finds"},{key:"home",label:"Home"},{key:"fashion",label:"Fashion"},{key:"beauty",label:"Beauty"},{key:"tech",label:"Tech"},{key:"fitness",label:"Fitness"},{key:"jewelry",label:"Jewelry"},{key:"kitchen",label:"Kitchen"},{key:"outdoor",label:"Outdoor"},{key:"pets",label:"Pets"},{key:"travel",label:"Travel"},{key:"kids",label:"Kids"},{key:"auto",label:"Auto"}
+ {key:"all",label:"For you"},{key:"featured",label:"Best finds"},{key:"home",label:"Home"},{key:"fashion",label:"Fashion"},{key:"beauty",label:"Beauty"},{key:"tech",label:"Tech"},{key:"fitness",label:"Fitness"},{key:"jewelry",label:"Jewelry"},{key:"kitchen",label:"Kitchen"},{key:"outdoor",label:"Outdoor"},{key:"pets",label:"Pets"},{key:"travel",label:"Travel"},{key:"kids",label:"Kids"},{key:"auto",label:"Auto"},{key:"electric",label:"Electric"},{key:"sports",label:"Sports"}
 ];
 type NavStep="categories"|"types"|"brands";
 type Subtype={key:string;label:string;test:(title:string)=>boolean};
 const subtypeGroups:Record<string,Subtype[]>={
+ electric:[{key:"e-bikes",label:"E-bikes",test:t=>/ebike|e-bike|electric bicycle/i.test(t)},{key:"scooters",label:"Scooters",test:t=>/scooter/i.test(t)},{key:"electric-ride",label:"Electric ride",test:t=>/dirt bike|motorcycle|board|efoil|surfboard|electric/i.test(t)}],
+ sports:[{key:"football",label:"Football",test:t=>/football|soccer/i.test(t)},{key:"basketball",label:"Basketball",test:t=>/basketball/i.test(t)},{key:"tennis",label:"Tennis",test:t=>/tennis|racket/i.test(t)},{key:"equipment",label:"Equipment",test:t=>/sport|training|ball|equipment/i.test(t)}],
  "home":[
   {key:"lighting",label:"Lighting",test:t=>/pendant|lamp|light|chandelier|fixture/i.test(t)},
   {key:"chairs",label:"Chairs",test:t=>/chair|armchair|recliner|stool/i.test(t)},
@@ -132,7 +134,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  useEffect(()=>{try{const value=JSON.parse(localStorage.getItem(storageKey)||"[]");if(Array.isArray(value))setSaved(value.filter(x=>typeof x==="string"))}catch{}},[]);
  useEffect(()=>{setIndex(0)},[category,subtype,brand]);
  const loadMore=useCallback(async()=>{
-  if(loadingRef.current||nextRef.current>=12)return;
+  if(loadingRef.current||nextRef.current>=14)return;
   loadingRef.current=true;setLoadingMore(true);setLoadError(false);
   const page=nextRef.current;
   try{
@@ -141,7 +143,7 @@ export default function StudioFeed({products}:{products:Product[]}){
    const data=await response.json() as {products?:Product[];hasMore?:boolean};
    const incoming=(Array.isArray(data.products)?data.products:[]).filter(valid);
    setCatalog(previous=>{const keys=new Set(previous.map(p=>p.id));const titles=new Set(previous.map(p=>(p.title+"|"+p.brand).toLowerCase().replace(/[^a-z0-9]/g,"")));const fresh=incoming.filter(p=>{const key=(p.title+"|"+p.brand).toLowerCase().replace(/[^a-z0-9]/g,"");if(keys.has(p.id)||titles.has(key))return false;keys.add(p.id);titles.add(key);return true});return [...previous,...fresh]});
-   nextRef.current=page+1;setNextPage(nextRef.current);setHasMore(Boolean(data.hasMore)&&nextRef.current<12);
+   nextRef.current=page+1;setNextPage(nextRef.current);setHasMore(Boolean(data.hasMore)&&nextRef.current<14);
   }catch{setLoadError(true)}
   finally{loadingRef.current=false;setLoadingMore(false)}
  },[]);
@@ -188,7 +190,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const onWheel=(e:React.WheelEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest(".studio-project-panel,.studio-zip"))return;if(Math.abs(e.deltaY)<12)return;const now=Date.now();if(now-lastWheel.current<360)return;lastWheel.current=now;setSafeIndex(currentIndex+(e.deltaY>0?1:-1))};
  if(!current)return <main className="studio-empty"><Link href="/worlds/studio">YNOT Studio</Link><p>{loadingMore?"Finding products in this collection…":"No products found in this collection yet."}</p><button onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories")}} style={{padding:"12px 18px",borderRadius:30}}>All products</button>{loadError&&<button onClick={()=>void loadMore()}>Retry search</button>}</main>;
  const matchingWorld=normalizeCategory(current.category);
- const worldIds:Record<string,string>={home:"home-interiors",fashion:"fashion",beauty:"beauty",tech:"tech",fitness:"fitness",jewelry:"jewelry",kitchen:"kitchen",outdoor:"outdoor",pets:"pets",travel:"travel",kids:"baby-kids",auto:"automotive"};
+ const worldIds:Record<string,string>={home:"home-interiors",fashion:"fashion",beauty:"beauty",tech:"tech",fitness:"fitness",jewelry:"jewelry",kitchen:"kitchen",outdoor:"outdoor",pets:"pets",travel:"travel",kids:"baby-kids",auto:"automotive",electric:"electric",sports:"sports"};
  const selectedWorld=worldIds[matchingWorld]||"home-interiors";
  const taxonomyWorld=YNOT_VISUAL_WORLDS.find(w=>w.id===selectedWorld);
  const productWords=(current.title||"").toLowerCase();
