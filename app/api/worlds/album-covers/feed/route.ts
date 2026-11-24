@@ -1,3 +1,4 @@
+import {YNOT_VISUAL_WORLDS} from "@/lib/visual/expanded-world-taxonomy";
 import {NextRequest,NextResponse} from "next/server";
 export const dynamic="force-dynamic";
 const SB=process.env.NEXT_PUBLIC_SUPABASE_URL||"",KEY=process.env.SUPABASE_SERVICE_ROLE_KEY||"",PEXELS=process.env.PEXELS_API_KEY||process.env.PEXELS_KEY||"",BUCKET="YNOT FEED",ROOT="album-covers",TARGET=2;
@@ -8,7 +9,37 @@ async function urls(prefix:string,pexelsOnly=false){const all=await names(prefix
 async function upload(path:string,b:ArrayBuffer,type:string){const r=await fetch(`${SB}/storage/v1/object/${encodeURIComponent(BUCKET)}/${enc(path)}`,{method:"POST",headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,"Content-Type":type,"x-upsert":"false"},body:b,cache:"no-store"});return r.ok}
 const clean=(x:string)=>x.replace(/[-_]+/g," ").replace(/\b(world|category)\b/gi," ").replace(/\s+/g," ").trim();
 async function fillPexels(prefix:string,w:string,c:string,s:string){if(!PEXELS||!SB||!KEY)return[];const existing=(await names(prefix)).filter(n=>/^pexels-/i.test(n));if(existing.length>=TARGET)return urls(prefix,true);const label=clean(s||c||w),context=clean([w,c].filter(Boolean).join(" "));const q=`${label} ${context} products lifestyle aesthetic`;const r=await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&orientation=portrait&per_page=30`,{headers:{Authorization:PEXELS},cache:"no-store"});if(!r.ok)return urls(prefix,true);const j=await r.json();const photos=Array.isArray(j?.photos)?j.photos:[];let added=existing.length;for(const p of photos){if(added>=TARGET)break;try{const fileBase=`pexels-${p.id}`;if(existing.some(n=>n.startsWith(fileBase)))continue;const src=p?.src?.large2x||p?.src?.large||p?.src?.portrait||p?.src?.original;if(!src)continue;const ir=await fetch(src,{cache:"no-store"});if(!ir.ok)continue;const type=ir.headers.get("content-type")||"image/jpeg";if(!type.startsWith("image/"))continue;const body=await ir.arrayBuffer();if(body.byteLength<30000)continue;const ext=type.includes("png")?"png":type.includes("webp")?"webp":"jpg";if(await upload(`${prefix}/${fileBase}.${ext}`,body,type))added++}catch{}}return urls(prefix,true)}
-export async function GET(req:NextRequest){const w=req.nextUrl.searchParams.get("world")||"",c=req.nextUrl.searchParams.get("category")||"",s=req.nextUrl.searchParams.get("subcategory")||"";if(!w)return NextResponse.json({images:[]});const prefix=s?`${ROOT}/${w}/${c}/${s}`:c?`${ROOT}/${w}/${c}/_category`:`${ROOT}/${w}/_world`;let images=await urls(prefix,true);if(!images.length)images=await urls(prefix,false);/* Read-only Pexels fallback: no downloads or Supabase writes. */
+
+// A photo can only represent its own category. Prefer real, matching YNOT
+// catalogue products to an unrelated cached world photo or broad Pexels hit.
+const terms=(s:string)=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").split(/\s+/).filter(t=>t.length>2&&!["the","and","for","with","product","products","style","modern","women","mens","men","womens","electric","home"].includes(t));
+function matchingProduct(title:string,query:string,id:string){
+ const t=String(title||"").toLowerCase(),qt=terms(query),idTerms=terms(id);
+ if(!qt.length)return false;
+ const found=qt.filter(w=>t.includes(w)).length;
+ const idFound=idTerms.some(w=>t.includes(w));
+ return found>=Math.min(2,qt.length)||(found>=1&&idFound);
+}
+async function catalogueCovers(req:NextRequest,w:string,c:string,s:string){
+ try{
+ const world=YNOT_VISUAL_WORLDS.find(x=>x.id===w);
+ const category=world?.categories.find(x=>x.id===c);
+ const sub=category?.subcategories.find(x=>x.id===s);
+ const pick=sub||category?.subcategories[0]||world?.categories[0]?.subcategories[0];
+ const query=String(pick?.queries?.[0]||pick?.title||category?.title||world?.title||"").trim();
+ if(!query)return [];
+ const url=new URL("/api/catalog",req.nextUrl.origin);
+ url.searchParams.set("q",query);url.searchParams.set("country","FR");url.searchParams.set("source","shopify");
+ const response=await fetch(url,{signal:AbortSignal.timeout(14000),next:{revalidate:3600}});
+ if(!response.ok)return [];
+ const data=await response.json();
+ const products=Array.isArray(data.products)?data.products:[];
+ const seen=new Set<string>();
+ return products.filter((p:any)=>p&&/^https:\/\//.test(String(p.image||""))&&matchingProduct(String(p.title||""),query,pick?.id||""))
+  .map((p:any)=>String(p.image)).filter((url:string)=>{if(seen.has(url))return false;seen.add(url);return true}).slice(0,4);
+ }catch{return []}
+}
+export async function GET(req:NextRequest){const w=req.nextUrl.searchParams.get("world")||"",c=req.nextUrl.searchParams.get("category")||"",s=req.nextUrl.searchParams.get("subcategory")||"";if(!w)return NextResponse.json({images:[]});const prefix=s?`${ROOT}/${w}/${c}/${s}`:c?`${ROOT}/${w}/${c}/_category`:`${ROOT}/${w}/_world`;let images=await catalogueCovers(req,w,c,s);if(!images.length)images=await urls(prefix,true);if(!images.length)images=await urls(prefix,false);/* Read-only Pexels fallback: no downloads or Supabase writes. */
 if(!images.length&&PEXELS){try{
 const clean=(v:string)=>v.replace(/[-_]+/g," ").trim();
 const q=[clean(s||c||w),clean(s?c:w),"product photography"].join(" ");
