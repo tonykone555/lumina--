@@ -8,28 +8,23 @@ export const dynamic="force-dynamic";
  * global catalogue. Results are discovery candidates; do not infer stock,
  * shipping to France, GTINs, or guaranteed YNOT checkout from them.
  */
-const SEARCHES=[
- ["sculptural pendant lights","modern chandeliers","designer hanging lamps","glass ceiling pendants"],
- ["boucle armchairs","designer accent chairs","sculptural lounge chairs","upholstered dining chairs"],
- ["contemporary modular sofas","modern sectional sofas","curved designer sofa","small space accent chair"],
- ["travertine coffee table","sculptural side tables","modern console tables","designer nesting tables"],
- ["rattan pendant lights","ceramic pendant lights","minimalist ceiling lamp","statement pendant chandelier"],
- ["velvet accent chairs","swivel armchairs","wood dining chairs","mid century modern lounge chair"],
- ["designer sofa bed","cream boucle couch","linen loveseat","modular corner sofa"],
- ["natural stone tables","marble coffee tables","organic shaped side table","designer console table"],
- ["wabi sabi pendant lighting","brass pendant chandelier","contemporary hanging lamps","alabaster hanging light"],
- ["contemporary occasional chairs","leather lounge chair","custom upholstered chair","architectural accent chair"],
- ["modern accent furniture","sculptural hallway console","minimalist living room sofa","luxury contemporary ottoman"],
- ["modern dining pendant light","handmade pendant lamp","scandinavian dining chair","statement interior furniture"]
-] as const;
+const SEARCHES=[[["home","designer pendant light"],["fashion","women midi dress"],["beauty","face serum skincare"],["tech","wireless headphones"]],[["fitness","yoga mats"],["jewelry","silver necklace"],["kitchen","espresso coffee machine"],["outdoor","outdoor lounge chair"]],[["pets","dog beds"],["travel","cabin luggage suitcase"],["kids","baby toys"],["auto","car accessories"]],[["home","boucle armchair"],["fashion","men linen shirts"],["beauty","lipstick makeup"],["tech","smart watch"]],[["fitness","adjustable dumbbells"],["jewelry","gold earrings"],["kitchen","ceramic dinnerware"],["outdoor","patio furniture"]],[["pets","cat scratchers"],["travel","travel backpack"],["kids","baby stroller"],["auto","car phone mount"]],[["home","modern sofa"],["fashion","women sneakers"],["beauty","hair styling tools"],["tech","bluetooth speakers"]],[["fitness","running shoes"],["jewelry","bracelets jewelry"],["kitchen","air fryer"],["outdoor","garden lighting"]],[["pets","dog leash"],["travel","weekender bag"],["kids","kids clothing"],["auto","car organizer"]],[["home","travertine coffee table"],["fashion","handbags"],["beauty","moisturizer face cream"],["tech","digital camera"]],[["fitness","resistance bands"],["jewelry","rings jewelry"],["kitchen","cast iron cookware"],["outdoor","camping equipment"]],[["pets","cat toys"],["travel","travel accessories"],["kids","educational toys"],["auto","car detailing kit"]]] as const;
 type CatalogProduct={id?:string;title?:string;brand?:string;price?:number;currency?:string;image?:string;url?:string;description?:string;source?:string};
-const exclusion=/necklace|jewelry|jewellery|pendant charm|earring|bracelet|cover only|chair cover|sofa cover|slipcover|canopy kit|bulb only|bulb cover|replacement part|laptop|toy chair|gaming chair|high chair|wheelchair|chair mat|chair legs|tablecloth|table tennis|mystery box|jersey chair|pendant connector|lamp socket|mobile phone|christmas ornament/i;
-function kind(title:string):"lighting"|"chairs"|"furniture"|null{
- if(/pendant (?:lamp|light)|chandelier|hanging (?:lamp|light)|ceiling (?:lamp|light)|suspension lamp|pendant lighting|pendant chandelier|pendant fixture/i.test(title))return "lighting";
- if(/armchair|accent chair|lounge chair|dining chair|occasional chair|swivel chair|upholstered chair|reading chair|side chair|accent seating|boucle chair|bouclé chair/i.test(title))return "chairs";
- if(/sofa|couch|loveseat|coffee table|side table|console table|nesting table|ottoman|accent table/i.test(title))return "furniture";
- return null;
-}
+const rejection=/gift card|digital download|pattern only|manual pdf|replacement part|screen protector for|charger cable only|pillow case only|sofa cover|chair cover|slipcover|wall sticker|free shipping/i;
+const checks:Record<string,RegExp>={
+ home:/pendant|lamp|light|chandelier|armchair|chair|sofa|couch|table|console|ottoman|furniture|shelf|bed|rug|vase|mirror|decor|stool/i,
+ fashion:/dress|shirt|sweater|cardigan|hoodie|trousers|pants|jeans|skirt|coat|jacket|sneaker|boots|shoes|handbag|tote|blouse|linen|jumpsuit/i,
+ beauty:/serum|skincare|moisturiz|cream|lipstick|makeup|concealer|foundation|mascara|shampoo|hair|fragrance|perfume|conditioner/i,
+ tech:/headphone|earbud|speaker|watch|camera|smartphone|phone|laptop|tablet|keyboard|mouse|monitor|projector|electronics/i,
+ fitness:/yoga|dumbbell|resistance band|exercise|gym|fitness|running|training|kettlebell|pilates|sport/i,
+ jewelry:/necklace|pendant|earring|bracelet|ring|jewelry|jewellery|gemstone/i,
+ kitchen:/coffee|espresso|air fryer|cookware|cooking|dinnerware|ceramic|plate|cup|mug|pot|pan|cutlery|kettle/i,
+ outdoor:/outdoor|patio|garden|camping|tent|pergola|lantern|lawn|grill/i,
+ pets:/dog|cat|pet|leash|scratcher|kennel|aquarium/i,
+ travel:/suitcase|luggage|backpack|travel|weekender|duffle|packing cube/i,
+ kids:/baby|toddler|kids|children|stroller|toy|nursery|playset/i,
+ auto:/car |auto|vehicle|automotive|detailing|dashboard|seat cover|carphone/i
+};
 function score(title:string,brand:string,price:number,description:string){
  const txt=(title+" "+brand).toLowerCase();
  let n=0;
@@ -44,22 +39,22 @@ export async function GET(req:NextRequest){
  const pageNumber=Number(req.nextUrl.searchParams.get("page")||"0");
  if(!Number.isInteger(pageNumber)||pageNumber<0||pageNumber>=SEARCHES.length)return NextResponse.json({products:[],hasMore:false,page:pageNumber});
  const queries=SEARCHES[pageNumber];
- const results=await Promise.allSettled(queries.map(async query=>{
+ const results=await Promise.allSettled(queries.map(async ([category,query])=>{
   const url=new URL("/api/catalog",req.nextUrl.origin);
   url.searchParams.set("q",query);url.searchParams.set("country","FR");url.searchParams.set("source","shopify");url.searchParams.set("category_load","1");
   const response=await fetch(url,{cache:"no-store",signal:AbortSignal.timeout(23000)});
   if(!response.ok)throw new Error("CATALOG_UNAVAILABLE");
   const data=await response.json() as {products?:CatalogProduct[]};
-  return Array.isArray(data.products)?data.products:[];
+  return {category,query,products:Array.isArray(data.products)?data.products:[]};
  }));
  const distinct=new Map<string,any>();
  for(const result of results){
   if(result.status!=="fulfilled")continue;
-  for(const p of result.value){
+  for(const p of result.value.products){
    const title=String(p.title||"").trim(),id=String(p.id||"");
-   if(!id||!title||exclusion.test(title)||!/^https:\/\//.test(String(p.image||""))||!/^https:\/\//.test(String(p.url||"")))continue;
-   const category=kind(title),price=Number(p.price);
-   if(!category||!Number.isFinite(price)||price<40||price>4000||String(p.currency||"EUR").toUpperCase()!=="EUR")continue;
+   const category=result.value.category,price=Number(p.price);
+   if(!id||!title||rejection.test(title)||!checks[category]?.test(title)||!/^https:\/\//.test(String(p.image||""))||!/^https:\/\//.test(String(p.url||"")))continue;
+   if(!Number.isFinite(price)||price<5||price>12000||String(p.currency||"EUR").toUpperCase()!=="EUR")continue;
    const key=(title+" "+String(p.brand||"")).toLowerCase().replace(/[^a-z0-9]/g,"");
    if(distinct.has(key))continue;
    distinct.set(key,{id,title,brand:p.brand||"Independent store",price:Math.round(price*100)/100,
@@ -67,7 +62,7 @@ export async function GET(req:NextRequest){
     score:score(title,p.brand||"",price,String(p.description||""))});
   }
  }
- const products=[...distinct.values()].sort((a,b)=>b.score-a.score).slice(0,270);
- return NextResponse.json({products,page:pageNumber,hasMore:pageNumber+1<SEARCHES.length,searches:queries,source:"YNOT live multi-store catalogue"},
+ const products=[...distinct.values()].sort((a,b)=>b.score-a.score).slice(0,280);
+ return NextResponse.json({products,page:pageNumber,hasMore:pageNumber+1<SEARCHES.length,searches:queries.map(([,q])=>q),source:"YNOT live multi-store catalogue"},
   {headers:{"Cache-Control":"public, s-maxage=1800, stale-while-revalidate=3600"}});
 }
