@@ -89,4 +89,15 @@
 body .ynot-app-shell .lv4-category-bubble{background:radial-gradient(circle at 34% 25%,#e1e1e1 0%,#bcbcbc 43%,#969696 78%,#858585 100%)!important;border-color:#c5c5c5!important;}
 
 /* Plain neutral grey world canvas; keep the requested mobile bezel fade. */
-body .ynot-app-shell:not(.chrome-hidden),body .ynot-app-shell:not(.chrome-hidden) .lv4-shell,body .ynot-app-shell:not(.chrome-hidden) .lv4-world{background:#a3a3a3!important;background-image:none!important;}
+body .ynot-app-shell:not(.chrome-hidden),body .ynot-app-shell:not(.chrome-hidden) .lv4-shell,body .ynot-app-shell:not(.chrome-hidden) .lv4-world{background:#505050!important;background-image:none!important;}
+
+/* Seamless charcoal canvas at every visible world depth, including product bubbles. */
+@media(max-width:899px){
+ html:has(.ynot-app-shell:not(.chrome-hidden)),body:has(.ynot-app-shell:not(.chrome-hidden)){background:#000!important;}
+ body .ynot-app-shell:not(.chrome-hidden)::after{
+ content:""!important;display:block!important;position:fixed!important;inset:auto 0 0!important;
+ height:calc(env(safe-area-inset-bottom,0px) + 88px)!important;
+ background:linear-gradient(to top,#000 0%,rgba(0,0,0,.65) 22%,rgba(0,0,0,.22) 60%,transparent 100%)!important;
+ opacity:1!important;z-index:2!important;pointer-events:none!important;
+ }
+}
