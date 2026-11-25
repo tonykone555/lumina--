@@ -42,7 +42,9 @@ function score(title:string,brand:string,price:number,description:string){
 export async function GET(req:NextRequest){
  const pageNumber=Number(req.nextUrl.searchParams.get("page")||"0");
  if(!Number.isInteger(pageNumber)||pageNumber<0||pageNumber>=SEARCHES.length)return NextResponse.json({products:[],hasMore:false,page:pageNumber});
- const queries=SEARCHES[pageNumber];
+ const categoryParam=req.nextUrl.searchParams.get("category")||"";
+ const term=(req.nextUrl.searchParams.get("term")||"").trim().slice(0,100);
+ const queries:readonly (readonly [string,string])[]=term&&Object.hasOwn(checks,categoryParam)?[[categoryParam,term],[categoryParam,term+" products"]]:SEARCHES[pageNumber];
  const results=await Promise.allSettled(queries.map(async ([category,query])=>{
   const url=new URL("/api/catalog",req.nextUrl.origin);
   url.searchParams.set("q",query);url.searchParams.set("country","FR");url.searchParams.set("source","shopify");url.searchParams.set("category_load","1");

@@ -15,13 +15,15 @@ export default function SeamlessPageEdges(){
   const browsing=pathname==="/worlds"||(pathname.startsWith("/worlds/")&&!pathname.startsWith("/worlds/studio"));
   root.setAttribute("data-ynot-viewport-bleed","true");
   if(browsing){
+   const metas=Array.from(document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'));const previous=metas.map(m=>m.content);const added=metas.length?null:document.createElement("meta");if(added){added.name="theme-color";document.head.appendChild(added);metas.push(added)};metas.forEach(m=>m.content="#080808");
    root.setAttribute("data-ynot-document-scroll","true");
    // Leave scrolling to the user and Safari: no artificial scroll offset.
-   return()=>{root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
+   return()=>{metas.forEach((m,i)=>{if(m!==added)m.content=previous[i]});added?.remove();root.removeAttribute("data-ynot-document-scroll");root.removeAttribute("data-ynot-viewport-bleed")};
   }
   return()=>root.removeAttribute("data-ynot-viewport-bleed");
  },[pathname]);
  return <style jsx global>{`
+ html[data-ynot-document-scroll="true"],html[data-ynot-document-scroll="true"] body{background:#080808!important;}
  /* No top/bottom fences on YNOT's scrolling documents. Page content itself
     reaches the viewport edge. Navigation floats above the scrolling cards. */
  @media(max-width:800px){

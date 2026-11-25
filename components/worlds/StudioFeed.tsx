@@ -11,7 +11,7 @@ type Category="all"|"featured"|"home"|"fashion"|"beauty"|"tech"|"fitness"|"jewel
 const tabs:{key:Category;label:string}[]=[
  {key:"all",label:"For you"},{key:"featured",label:"Best finds"},{key:"home",label:"Home"},{key:"fashion",label:"Fashion"},{key:"beauty",label:"Beauty"},{key:"tech",label:"Tech"},{key:"fitness",label:"Fitness"},{key:"jewelry",label:"Jewelry"},{key:"kitchen",label:"Kitchen"},{key:"outdoor",label:"Outdoor"},{key:"pets",label:"Pets"},{key:"travel",label:"Travel"},{key:"kids",label:"Kids"},{key:"auto",label:"Auto"},{key:"electric",label:"Electric"},{key:"sports",label:"Sports"}
 ];
-type NavStep="categories"|"types"|"brands";
+type NavStep="categories"|"types"|"styles";
 type Subtype={key:string;label:string;test:(title:string)=>boolean};
 const subtypeGroups:Record<string,Subtype[]>={
  electric:[{key:"e-bikes",label:"E-bikes",test:t=>/ebike|e-bike|electric bicycle/i.test(t)},{key:"scooters",label:"Scooters",test:t=>/scooter/i.test(t)},{key:"electric-ride",label:"Electric ride",test:t=>/dirt bike|motorcycle|board|efoil|surfboard|electric/i.test(t)}],
@@ -93,7 +93,22 @@ const subtypeGroups:Record<string,Subtype[]>={
 const normalizeCategory=(cat:string):Category=>cat==="lighting"||cat==="chairs"||cat==="furniture"?"home":tabs.some(t=>t.key===cat)?cat as Category:"home";
 const primary=(name:string)=>subtypeGroups[name]||[];
 const matchesSubtype=(p:Product,sub:string)=>primary(normalizeCategory(p.category)).some(x=>x.key===sub&&x.test(p.title));
-const cleanBrand=(brand:string)=>brand?.trim().replace(/\s+/g," ")||"Independent";
+const styles:Subtype[]=[
+{key:"modern",label:"Modern",test:t=>/modern|contemporary|minimal/i.test(t)},
+{key:"classic",label:"Classic",test:t=>/classic|traditional|vintage|retro/i.test(t)},
+{key:"curved",label:"Curved",test:t=>/curved|rounded|organic/i.test(t)},
+{key:"modular",label:"Modular",test:t=>/modular|sectional|adjustable/i.test(t)},
+{key:"leather",label:"Leather",test:t=>/leather|suede/i.test(t)},
+{key:"boucle",label:"Bouclé",test:t=>/boucl[eé]|teddy|sherpa/i.test(t)},
+{key:"wood",label:"Wood",test:t=>/wood|oak|walnut|timber/i.test(t)},
+{key:"compact",label:"Compact",test:t=>/compact|mini|portable|foldable/i.test(t)},
+{key:"premium",label:"Premium",test:t=>/premium|luxury|professional/i.test(t)},
+{key:"wireless",label:"Wireless",test:t=>/wireless|bluetooth|cordless/i.test(t)},
+{key:"outdoor",label:"Outdoor",test:t=>/outdoor|waterproof|weatherproof/i.test(t)},
+{key:"lightweight",label:"Lightweight",test:t=>/lightweight|ultralight/i.test(t)},
+{key:"cotton",label:"Cotton",test:t=>/cotton|linen/i.test(t)},
+{key:"hydrating",label:"Hydrating",test:t=>/hydrat|moistur/i.test(t)}];
+const productText=(p:Product)=>p.title+" "+(p.description||"");
 const describe=(p:Product)=>`Explore ${p.brand||"independent store"} on YNOT World. Discover, save, and view product details.`;
 const money=(n:number)=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"EUR",maximumFractionDigits:2}).format(n);
 const storageKey="ynot-saved-items";
@@ -103,7 +118,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const [index,setIndex]=useState(0);
  const [navStep,setNavStep]=useState<NavStep>("categories");
  const [subtype,setSubtype]=useState("");
- const [brand,setBrand]=useState("");
+ const [style,setStyle]=useState("");
  const [saved,setSaved]=useState<string[]>([]);
  const [catalog,setCatalog]=useState<Product[]>(products);
  const [nextPage,setNextPage]=useState(0);
@@ -120,19 +135,19 @@ export default function StudioFeed({products}:{products:Product[]}){
  const deepLinkConsumed=useRef(false);
  const categoryItems=useMemo(()=>category==="all"?catalog:category==="featured"?catalog.filter(p=>Number(p.score||0)>=63).sort((a,b)=>Number(b.score||0)-Number(a.score||0)):catalog.filter(p=>normalizeCategory(p.category)===category),[category,catalog]);
  const typedItems=useMemo(()=>!subtype?categoryItems:categoryItems.filter(p=>matchesSubtype(p,subtype)),[categoryItems,subtype]);
- const items=useMemo(()=>!brand?typedItems:typedItems.filter(p=>cleanBrand(p.brand).toLowerCase()===brand.toLowerCase()),[typedItems,brand]);
+ const items=useMemo(()=>!style?typedItems:typedItems.filter(p=>styles.some(x=>x.key===style&&x.test(productText(p)))),[typedItems,style]);
  const subOptions=useMemo(()=>primary(category).map(option=>({key:option.key,label:option.label,products:categoryItems.filter(p=>option.test(p.title))})).filter(x=>x.products.length>0),[category,categoryItems]);
- const brandOptions=useMemo(()=>{const map=new Map<string,Product[]>();for(const p of typedItems){const name=cleanBrand(p.brand);const current=map.get(name)||[];current.push(p);map.set(name,current)}return [...map.entries()].map(([name,products])=>({name,products})).sort((a,b)=>b.products.length-a.products.length||a.name.localeCompare(b.name))},[typedItems]);
+ const styleOptions=useMemo(()=>[{key:"",label:"All styles",products:typedItems},...styles.map(x=>({key:x.key,label:x.label,products:typedItems.filter(p=>x.test(productText(p)))})).filter(x=>x.products.length>=3)],[typedItems]);
  const displayBubbles=useMemo(()=>{
   if(navStep==="categories")return tabs.map(tab=>({key:tab.key,label:tab.label,products:tab.key==="all"?catalog:tab.key==="featured"?catalog.filter(p=>Number(p.score||0)>=63):catalog.filter(p=>normalizeCategory(p.category)===tab.key)}));
   if(navStep==="types")return subOptions;
-  return brandOptions.map(x=>({key:x.name,label:x.name,products:x.products}));
- },[navStep,catalog,subOptions,brandOptions]);
+  return styleOptions;
+ },[navStep,catalog,subOptions,styleOptions]);
  const current=items[Math.min(index,Math.max(0,items.length-1))];
  const currentIndex=Math.min(index,Math.max(0,items.length-1));
  const setSafeIndex=useCallback((next:number)=>setIndex(Math.max(0,Math.min(items.length-1,Math.round(next)))),[items.length]);
  useEffect(()=>{try{const value=JSON.parse(localStorage.getItem(storageKey)||"[]");if(Array.isArray(value))setSaved(value.filter(x=>typeof x==="string"))}catch{}},[]);
- useEffect(()=>{setIndex(0)},[category,subtype,brand]);
+ useEffect(()=>{setIndex(0)},[category,subtype,style]);
  const loadMore=useCallback(async()=>{
   if(loadingRef.current||nextRef.current>=14)return;
   loadingRef.current=true;setLoadingMore(true);setLoadError(false);
@@ -164,21 +179,27 @@ export default function StudioFeed({products}:{products:Product[]}){
  };
  const share=async()=>{if(!current)return;const url=window.location.origin+"/worlds/studio?product="+encodeURIComponent(current.id);try{if(navigator.share)await navigator.share({title:current.title,url});else{await navigator.clipboard.writeText(url);setToast("Link copied")}}catch{}};
  useEffect(()=>{if(deepLinkConsumed.current)return;const params=new URLSearchParams(window.location.search);const selected=params.get("product");if(!selected){deepLinkConsumed.current=true;return}const idx=items.findIndex(p=>p.id===selected);if(idx>=0){setIndex(idx);deepLinkConsumed.current=true}},[items]);
+ const expandSelection=async(cat:Category,sub:string,variation:string)=>{
+ if(cat==="all"||cat==="featured")return;
+ const label=primary(cat).find(x=>x.key===sub)?.label||cat;
+ const extra=styles.find(x=>x.key===variation)?.label||"";
+ try{const params=new URLSearchParams({category:cat,term:[extra,label].filter(Boolean).join(" ")});const res=await fetch("/api/studio/catalog?"+params);if(!res.ok)return;const data=await res.json() as {products?:Product[]};setCatalog(prev=>{const ids=new Set(prev.map(p=>p.id));return [...prev,...(data.products||[]).filter(p=>valid(p)&&!ids.has(p.id)&&(ids.add(p.id),true))]})}catch{}
+ };
  const onBubbleSelect=(key:string)=>{
   if(navStep==="categories"){
    const next=key as Category;
-   setCategory(next);setSubtype("");setBrand("");
-   setNavStep(next==="all"||next==="featured"?"categories":"types");
+   setCategory(next);setSubtype("");setStyle("");
+   setNavStep(next==="all"||next==="featured"?"categories":"types");void expandSelection(next,"","");
   }else if(navStep==="types"){
-   setSubtype(key);setBrand("");setNavStep("brands");
+   setSubtype(key);setStyle("");setNavStep("styles");void expandSelection(category,key,"");
   }else{
-   setBrand(key);
+   setStyle(key);void expandSelection(category,subtype,key);
   }
   setIndex(0);
  };
  const backLevel=()=>{
-  if(navStep==="brands"){setBrand("");setSubtype("");setNavStep("types")}
-  else if(navStep==="types"){setCategory("all");setSubtype("");setBrand("");setNavStep("categories")}
+  if(navStep==="styles"){setStyle("");setSubtype("");setNavStep("types")}
+  else if(navStep==="types"){setCategory("all");setSubtype("");setStyle("");setNavStep("categories")}
   setIndex(0);
  };
  const selectFromPoint=(clientY:number)=>{const el=zipper.current;if(!el)return;const b=el.getBoundingClientRect();const percent=Math.min(1,Math.max(0,(clientY-b.top)/b.height));setSafeIndex(percent*(items.length-1))};
@@ -188,7 +209,7 @@ export default function StudioFeed({products}:{products:Product[]}){
  const onStageDown=(e:React.PointerEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest("button,a,input,.studio-zip,.studio-bubble-browser,.studio-project-panel"))return;swipe.current={x:e.clientX,y:e.clientY,at:Date.now()}};
  const onStageUp=(e:React.PointerEvent<HTMLElement>)=>{const start=swipe.current;swipe.current=null;if(!start)return;const dy=e.clientY-start.y;const dx=e.clientX-start.x;if(Math.abs(dy)>52&&Math.abs(dy)>Math.abs(dx))setSafeIndex(currentIndex+(dy<0?1:-1))};
  const onWheel=(e:React.WheelEvent<HTMLElement>)=>{if((e.target as HTMLElement).closest(".studio-project-panel,.studio-zip"))return;if(Math.abs(e.deltaY)<12)return;const now=Date.now();if(now-lastWheel.current<360)return;lastWheel.current=now;setSafeIndex(currentIndex+(e.deltaY>0?1:-1))};
- if(!current)return <main className="studio-empty"><Link href="/worlds/studio">YNOT Studio</Link><p>{loadingMore?"Finding products in this collection…":"No products found in this collection yet."}</p><button onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories")}} style={{padding:"12px 18px",borderRadius:30}}>All products</button>{loadError&&<button onClick={()=>void loadMore()}>Retry search</button>}</main>;
+ if(!current)return <main className="studio-empty"><Link href="/worlds/studio">YNOT Studio</Link><p>{loadingMore?"Finding products in this collection…":"No products found in this collection yet."}</p><button onClick={()=>{setCategory("all");setSubtype("");setStyle("");setNavStep("categories")}} style={{padding:"12px 18px",borderRadius:30}}>All products</button>{loadError&&<button onClick={()=>void loadMore()}>Retry search</button>}</main>;
  const matchingWorld=normalizeCategory(current.category);
  const worldIds:Record<string,string>={home:"home-interiors",fashion:"fashion",beauty:"beauty",tech:"tech",fitness:"fitness",jewelry:"jewelry",kitchen:"kitchen",outdoor:"outdoor",pets:"pets",travel:"travel",kids:"baby-kids",auto:"automotive",electric:"electric",sports:"sports"};
  const selectedWorld=worldIds[matchingWorld]||"home-interiors";
@@ -212,15 +233,15 @@ export default function StudioFeed({products}:{products:Product[]}){
   <nav className="studio-bubble-browser" aria-label="Studio categories and collections">
    <div className="studio-bubble-heading">
     {navStep!=="categories"?<button className="studio-bubble-back" type="button" onClick={backLevel} aria-label="Back to previous categories"><ArrowLeft size={15}/></button>:null}
-    <span>{navStep==="categories"?"":navStep==="types"?category.toUpperCase()+" / TYPES":subtype.replaceAll("-"," ").toUpperCase()+" / BRANDS"}</span>
-    {navStep!=="categories"&&<button className="studio-bubble-reset" type="button" onClick={()=>{setCategory("all");setSubtype("");setBrand("");setNavStep("categories");setIndex(0)}}>All</button>}
+    <span>{navStep==="categories"?"":navStep==="types"?category.toUpperCase()+" / TYPES":subtype.replaceAll("-"," ").toUpperCase()+" / STYLES"}</span>
+    {navStep!=="categories"&&<button className="studio-bubble-reset" type="button" onClick={()=>{setCategory("all");setSubtype("");setStyle("");setNavStep("categories");setIndex(0)}}>All</button>}
    </div>
    <div className="studio-bubble-scroll">
-    {displayBubbles.map(option=><button type="button" key={option.key} className={`studio-bubble-choice ${navStep==="brands"&&brand===option.key?"selected":""}`} onClick={()=>onBubbleSelect(option.key)} aria-label={option.label+" · "+option.products.length+" pieces"}>
+    {displayBubbles.map(option=><button type="button" key={option.key} className={`studio-bubble-choice ${navStep==="styles"&&style===option.key?"selected":""}`} onClick={()=>onBubbleSelect(option.key)} aria-label={option.label+" · "+option.products.length+" pieces"}>
       <span className="studio-bubble-photo">{option.products[0]?.image?<img src={option.products[0].image} alt="" loading="lazy"/>:<span>Y</span>}</span>
       <span className="studio-bubble-label">{option.label}</span>
     </button>)}
-    {navStep==="brands"&&brand&&<button type="button" className="studio-bubble-choice" onClick={()=>{setBrand("");setIndex(0)}}><span className="studio-bubble-photo studio-bubble-all">✦</span><span className="studio-bubble-label">All brands</span></button>}
+    
    </div>
   </nav>
   <div className="studio-counter" aria-live="off"><span>{String(currentIndex+1).padStart(3,"0")}</span><em> / {String(items.length).padStart(3,"0")}</em></div>

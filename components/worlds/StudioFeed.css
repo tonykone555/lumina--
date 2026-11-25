@@ -138,3 +138,7 @@ body:has(.studio-stage) #__next,body:has(.studio-stage) main{margin:0}
 .studio-stage .studio-vignette{background:linear-gradient(180deg,rgba(0,0,0,.38),transparent 26%,transparent 48%,rgba(0,0,0,.22) 62%,rgba(0,0,0,.72) 84%,rgba(0,0,0,.93))!important;box-shadow:none!important;}
 .studio-stage .studio-bottom{background:transparent!important;}.studio-stage .studio-kind{display:none!important;}.studio-stage .studio-next-arrow{background:transparent!important;border:0!important;backdrop-filter:none!important;}
 @media(min-aspect-ratio:4/3){.studio-stage .studio-hero img{object-fit:contain!important;mask-image:radial-gradient(ellipse 65% 85%,#000 65%,transparent 100%)!important;-webkit-mask-image:radial-gradient(ellipse 65% 85%,#000 65%,transparent 100%)!important;}}
+
+/* Preserve the full product silhouette over the immersive backdrop. */
+.studio-stage .studio-hero img{object-fit:contain!important;object-position:center 43%!important;mask-image:linear-gradient(to bottom,#000 0%,#000 83%,transparent 100%)!important;-webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 83%,transparent 100%)!important;}
+.studio-stage .studio-vignette{background:linear-gradient(180deg,#0006,transparent 24%,transparent 64%,#0005 80%,#000e 100%)!important;}
