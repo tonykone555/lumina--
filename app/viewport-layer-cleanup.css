@@ -74,3 +74,13 @@
     display:none!important;
   }
 }
+
+/* Homepage-only soft transition into the black iOS status area. */
+@media (max-width:899px){
+ body .ynot-app-shell:not(.chrome-hidden)::before{
+  content:""!important;display:block!important;position:fixed!important;inset:0 0 auto!important;
+  height:calc(env(safe-area-inset-top,0px) + 84px)!important;
+  background:linear-gradient(to bottom,#000 0%,rgba(0,0,0,.72) 19%,rgba(0,0,0,.28) 49%,transparent 100%)!important;
+  opacity:1!important;z-index:2!important;pointer-events:none!important;
+ }
+}
