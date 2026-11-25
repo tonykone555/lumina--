@@ -89,4 +89,4 @@
 body .ynot-app-shell .lv4-category-bubble{background:radial-gradient(circle at 34% 25%,#e1e1e1 0%,#bcbcbc 43%,#969696 78%,#858585 100%)!important;border-color:#c5c5c5!important;}
 
 /* Plain neutral grey world canvas; keep the requested mobile bezel fade. */
-body .ynot-app-shell:not(.chrome-hidden),body .ynot-app-shell:not(.chrome-hidden) .lv4-shell,body .ynot-app-shell:not(.chrome-hidden) .lv4-world{background:#b8b8b8!important;background-image:none!important;}
+body .ynot-app-shell:not(.chrome-hidden),body .ynot-app-shell:not(.chrome-hidden) .lv4-shell,body .ynot-app-shell:not(.chrome-hidden) .lv4-world{background:#a3a3a3!important;background-image:none!important;}
